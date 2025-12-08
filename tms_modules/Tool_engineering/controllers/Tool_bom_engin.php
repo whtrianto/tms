@@ -20,25 +20,63 @@ class Tool_bom_engin extends MY_Controller
         log_message('debug', '[Tool_bom_engin::__construct] username_from_session=' . var_export($username_from_session, true) . ', uid="' . $this->uid . '"');
 
         // load model AFTER setting uid, then assign uid to model
-        // Try loading with full path first, then fallback to simple name
-        $model_paths = array(
+        // Try multiple paths
+        $candidates = array(
             'tms_modules/Tool_engineering/models/M_tool_bom_engin',
+            'tms_modules/tool_engineering/models/M_tool_bom_engin',
             'M_tool_bom_engin'
         );
         
         $model_loaded = false;
-        foreach ($model_paths as $path) {
+        foreach ($candidates as $c) {
+            $try = str_replace('.php', '', $c);
             try {
-                $this->load->model($path, 'tool_bom_engin');
+                $this->load->model($try, 'tool_bom_engin');
                 if (isset($this->tool_bom_engin) && is_object($this->tool_bom_engin) && method_exists($this->tool_bom_engin, 'get_all')) {
                     $model_loaded = true;
-                    log_message('debug', '[Tool_bom_engin::__construct] Model loaded successfully from: ' . $path);
+                    log_message('debug', '[Tool_bom_engin::__construct] Model loaded successfully from: ' . $try);
                     break;
+                } else {
+                    if (isset($this->tool_bom_engin)) {
+                        unset($this->tool_bom_engin);
+                    }
                 }
             } catch (Exception $e) {
-                log_message('debug', '[Tool_bom_engin::__construct] Failed to load from ' . $path . ': ' . $e->getMessage());
+                log_message('debug', '[Tool_bom_engin::__construct] Failed to load from ' . $try . ': ' . $e->getMessage());
                 if (isset($this->tool_bom_engin)) {
                     unset($this->tool_bom_engin);
+                }
+            }
+        }
+        
+        // Fallback: try direct include
+        if (!$model_loaded) {
+            $possibleFiles = array(
+                APPPATH . 'tms_modules/Tool_engineering/models/M_tool_bom_engin.php',
+                APPPATH . 'tms_modules/tool_engineering/models/M_tool_bom_engin.php',
+                APPPATH . 'models/M_tool_bom_engin.php'
+            );
+            
+            foreach ($possibleFiles as $f) {
+                if (is_file($f) && is_readable($f)) {
+                    try {
+                        require_once($f);
+                        if (class_exists('M_tool_bom_engin')) {
+                            $this->tool_bom_engin = new M_tool_bom_engin();
+                            if (method_exists($this->tool_bom_engin, 'get_all')) {
+                                $model_loaded = true;
+                                log_message('debug', '[Tool_bom_engin::__construct] Model loaded via direct include from: ' . $f);
+                                break;
+                            } else {
+                                unset($this->tool_bom_engin);
+                            }
+                        }
+                    } catch (Exception $e) {
+                        log_message('error', '[Tool_bom_engin::__construct] Direct include failed for ' . $f . ': ' . $e->getMessage());
+                        if (isset($this->tool_bom_engin)) {
+                            unset($this->tool_bom_engin);
+                        }
+                    }
                 }
             }
         }
@@ -87,30 +125,74 @@ class Tool_bom_engin extends MY_Controller
         // Check if model is loaded, try to load if not
         if (!isset($this->tool_bom_engin) || !is_object($this->tool_bom_engin)) {
             log_message('error', '[submit_data] Model not loaded, attempting to load...');
-            // Try to load model
-            $model_paths = array(
+            
+            // Try multiple paths
+            $candidates = array(
                 'tms_modules/Tool_engineering/models/M_tool_bom_engin',
+                'tms_modules/tool_engineering/models/M_tool_bom_engin',
                 'M_tool_bom_engin'
             );
             
             $model_loaded = false;
-            foreach ($model_paths as $path) {
+            foreach ($candidates as $c) {
+                $try = str_replace('.php', '', $c);
                 try {
-                    $this->load->model($path, 'tool_bom_engin');
-                    if (isset($this->tool_bom_engin) && is_object($this->tool_bom_engin)) {
+                    $this->load->model($try, 'tool_bom_engin');
+                    if (isset($this->tool_bom_engin) && is_object($this->tool_bom_engin) && method_exists($this->tool_bom_engin, 'get_all')) {
                         $this->tool_bom_engin->uid = $this->uid;
                         $model_loaded = true;
-                        log_message('debug', '[submit_data] Model loaded successfully from: ' . $path);
+                        log_message('debug', '[submit_data] Model loaded successfully from: ' . $try);
                         break;
+                    } else {
+                        if (isset($this->tool_bom_engin)) {
+                            unset($this->tool_bom_engin);
+                        }
                     }
                 } catch (Exception $e) {
-                    log_message('error', '[submit_data] Failed to load model from ' . $path . ': ' . $e->getMessage());
+                    log_message('error', '[submit_data] Failed to load from ' . $try . ': ' . $e->getMessage());
+                    if (isset($this->tool_bom_engin)) {
+                        unset($this->tool_bom_engin);
+                    }
+                }
+            }
+            
+            // Fallback: try direct include
+            if (!$model_loaded) {
+                $possibleFiles = array(
+                    APPPATH . 'tms_modules/Tool_engineering/models/M_tool_bom_engin.php',
+                    APPPATH . 'tms_modules/tool_engineering/models/M_tool_bom_engin.php',
+                    APPPATH . 'models/M_tool_bom_engin.php'
+                );
+                
+                foreach ($possibleFiles as $f) {
+                    if (is_file($f) && is_readable($f)) {
+                        try {
+                            require_once($f);
+                            if (class_exists('M_tool_bom_engin')) {
+                                $this->tool_bom_engin = new M_tool_bom_engin();
+                                if (method_exists($this->tool_bom_engin, 'get_all')) {
+                                    $this->tool_bom_engin->uid = $this->uid;
+                                    $model_loaded = true;
+                                    log_message('debug', '[submit_data] Model loaded via direct include from: ' . $f);
+                                    break;
+                                } else {
+                                    unset($this->tool_bom_engin);
+                                }
+                            }
+                        } catch (Exception $e) {
+                            log_message('error', '[submit_data] Direct include failed for ' . $f . ': ' . $e->getMessage());
+                            if (isset($this->tool_bom_engin)) {
+                                unset($this->tool_bom_engin);
+                            }
+                        }
+                    }
                 }
             }
             
             if (!$model_loaded) {
-                log_message('error', '[submit_data] Model tool_bom_engin could not be loaded');
-                $result['message'] = 'Model tidak dapat di-load. Cek log untuk detail.';
+                $error_msg = 'Model tidak dapat di-load dari semua path yang dicoba. File model mungkin tidak ditemukan atau ada error di constructor model.';
+                log_message('error', '[submit_data] ' . $error_msg);
+                $result['message'] = $error_msg . ' Cek log untuk detail.';
                 echo json_encode($result);
                 return;
             }
