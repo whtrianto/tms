@@ -25,11 +25,16 @@ if (!class_exists('M_tool_bom_engin')) {
             $col = trim((string)$col);
             if ($col === '') return false;
 
-            // use INFORMATION_SCHEMA for SQL Server compatibility
-            $sql = "SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS
-                    WHERE TABLE_SCHEMA = 'dbo' AND TABLE_NAME = 'TMS_TC_TOOL_BOM_ENGIN' AND COLUMN_NAME = ?";
-            $q = $this->tms_db->query($sql, array($col));
-            return ($q && $q->num_rows() > 0);
+            try {
+                // use INFORMATION_SCHEMA for SQL Server compatibility
+                $sql = "SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS
+                        WHERE TABLE_SCHEMA = 'dbo' AND TABLE_NAME = 'TMS_TC_TOOL_BOM_ENGIN' AND COLUMN_NAME = ?";
+                $q = $this->tms_db->query($sql, array($col));
+                return ($q && $q->num_rows() > 0);
+            } catch (Exception $e) {
+                log_message('error', '[has_column] Error checking column: ' . $e->getMessage());
+                return false;
+            }
         }
 
         public function get_all()
@@ -197,25 +202,27 @@ if (!class_exists('M_tool_bom_engin')) {
             if ($this->has_column('MACHINE_GROUP_ID')) {
                 $insertData['MACHINE_GROUP_ID'] = $machine_group_id > 0 ? $machine_group_id : null;
             }
-            // Keep old text columns for backward compatibility
-            if ($this->has_column('PRODUCT') && $product_id > 0) {
-                // Get product name (with error handling)
+            // Keep old text columns for backward compatibility (skip if errors occur)
+            if ($product_id > 0) {
                 try {
-                    $product = $this->tms_db->select('PRODUCT_NAME')->from('TMS_DB.dbo.TMS_M_PRODUCT')->where('PRODUCT_ID', $product_id)->limit(1)->get()->row_array();
-                    $insertData['PRODUCT'] = $product && isset($product['PRODUCT_NAME']) ? $product['PRODUCT_NAME'] : null;
+                    if ($this->has_column('PRODUCT')) {
+                        $product = $this->tms_db->select('PRODUCT_NAME')->from('TMS_DB.dbo.TMS_M_PRODUCT')->where('PRODUCT_ID', $product_id)->limit(1)->get()->row_array();
+                        $insertData['PRODUCT'] = $product && isset($product['PRODUCT_NAME']) ? $product['PRODUCT_NAME'] : null;
+                    }
                 } catch (Exception $e) {
                     log_message('error', '[add_data] Error getting product name: ' . $e->getMessage());
-                    $insertData['PRODUCT'] = null;
+                    // Don't set PRODUCT if error occurs
                 }
             }
-            if ($this->has_column('MACHINE_GROUP') && $machine_group_id > 0) {
-                // Get machine group name (with error handling)
+            if ($machine_group_id > 0) {
                 try {
-                    $mg = $this->tms_db->select('MACHINE_NAME')->from('TMS_DB.dbo.TMS_M_MACHINES')->where('MACHINE_ID', $machine_group_id)->limit(1)->get()->row_array();
-                    $insertData['MACHINE_GROUP'] = $mg && isset($mg['MACHINE_NAME']) ? $mg['MACHINE_NAME'] : null;
+                    if ($this->has_column('MACHINE_GROUP')) {
+                        $mg = $this->tms_db->select('MACHINE_NAME')->from('TMS_DB.dbo.TMS_M_MACHINES')->where('MACHINE_ID', $machine_group_id)->limit(1)->get()->row_array();
+                        $insertData['MACHINE_GROUP'] = $mg && isset($mg['MACHINE_NAME']) ? $mg['MACHINE_NAME'] : null;
+                    }
                 } catch (Exception $e) {
                     log_message('error', '[add_data] Error getting machine group name: ' . $e->getMessage());
-                    $insertData['MACHINE_GROUP'] = null;
+                    // Don't set MACHINE_GROUP if error occurs
                 }
             }
             // Add new columns
@@ -246,43 +253,60 @@ if (!class_exists('M_tool_bom_engin')) {
             // Log insert data for debugging
             log_message('debug', '[add_data] Insert data: ' . json_encode($insertData));
             
-            $this->tms_db->trans_start();
-            $ok = $this->tms_db->insert($this->table, $insertData);
-            
-            // try to obtain the inserted id and set EFFECTIVE_DATE if column exists
-            $new_id = 0;
-            if ($ok) {
-                $new_id = (int)$this->tms_db->insert_id();
-                if ($new_id <= 0) {
-                    // fallback: try to get IDENT_CURRENT (best-effort)
-                    try {
-                        $row = $this->tms_db->query("SELECT IDENT_CURRENT('TMS_TC_TOOL_BOM_ENGIN') AS last_id")->row_array();
-                        if ($row && isset($row['last_id']) && $row['last_id'] !== null) {
-                            $new_id = (int)$row['last_id'];
+            try {
+                $this->tms_db->trans_start();
+                $ok = $this->tms_db->insert($this->table, $insertData);
+                
+                // Check for database errors
+                $db_error = $this->tms_db->error();
+                if (!empty($db_error) && isset($db_error['code']) && $db_error['code'] != 0) {
+                    $this->tms_db->trans_rollback();
+                    $error_msg = isset($db_error['message']) ? $db_error['message'] : 'Database error';
+                    log_message('error', '[add_data] Database error: ' . $error_msg);
+                    $this->messages = 'Gagal menambahkan tool BOM engineering. ' . $error_msg;
+                    return false;
+                }
+                
+                // try to obtain the inserted id and set EFFECTIVE_DATE if column exists
+                $new_id = 0;
+                if ($ok) {
+                    $new_id = (int)$this->tms_db->insert_id();
+                    if ($new_id <= 0) {
+                        // fallback: try to get IDENT_CURRENT (best-effort)
+                        try {
+                            $row = $this->tms_db->query("SELECT IDENT_CURRENT('TMS_TC_TOOL_BOM_ENGIN') AS last_id")->row_array();
+                            if ($row && isset($row['last_id']) && $row['last_id'] !== null) {
+                                $new_id = (int)$row['last_id'];
+                            }
+                        } catch (Exception $e2) {
+                            log_message('error', '[add_data] Error getting IDENT_CURRENT: ' . $e2->getMessage());
                         }
-                    } catch (Exception $e2) {
-                        log_message('error', '[add_data] Error getting IDENT_CURRENT: ' . $e2->getMessage());
+                    }
+                    // Set EFFECTIVE_DATE if column exists and not set
+                    if ($this->has_column('EFFECTIVE_DATE') && ($effective_date === '' || $effective_date === null) && $new_id > 0) {
+                        try {
+                            $this->tms_db->query("UPDATE {$this->table} SET EFFECTIVE_DATE = GETDATE() WHERE ID = ?", array($new_id));
+                        } catch (Exception $e2) {
+                            log_message('warning', '[add_data] Exception updating EFFECTIVE_DATE: ' . $e2->getMessage());
+                        }
                     }
                 }
-                // Set EFFECTIVE_DATE if column exists and not set
-                if ($this->has_column('EFFECTIVE_DATE') && ($effective_date === '' || $effective_date === null) && $new_id > 0) {
-                    try {
-                        $this->tms_db->query("UPDATE {$this->table} SET EFFECTIVE_DATE = GETDATE() WHERE ID = ?", array($new_id));
-                    } catch (Exception $e2) {
-                        log_message('warning', '[add_data] Exception updating EFFECTIVE_DATE: ' . $e2->getMessage());
-                    }
+                
+                $this->tms_db->trans_complete();
+                
+                if ($this->tms_db->trans_status()) {
+                    $this->messages = 'Tool BOM Engineering berhasil ditambahkan.';
+                    return true;
                 }
+                $err = $this->tms_db->error();
+                $this->messages = 'Gagal menambahkan tool BOM engineering. ' . (isset($err['message']) ? $err['message'] : 'Transaction failed');
+                return false;
+            } catch (Exception $e) {
+                $this->tms_db->trans_rollback();
+                log_message('error', '[add_data] Exception: ' . $e->getMessage() . ' | File: ' . $e->getFile() . ' | Line: ' . $e->getLine());
+                $this->messages = 'Gagal menambahkan tool BOM engineering. Error: ' . $e->getMessage();
+                return false;
             }
-            
-            $this->tms_db->trans_complete();
-            
-            if ($this->tms_db->trans_status()) {
-                $this->messages = 'Tool BOM Engineering berhasil ditambahkan.';
-                return true;
-            }
-            $err = $this->tms_db->error();
-            $this->messages = 'Gagal menambahkan tool BOM engineering. ' . (isset($err['message']) ? $err['message'] : '');
-            return false;
         }
 
         public function edit_data($id, $tool_bom, $description, $product_id, $process_id, $machine_group_id, $revision, $status, $effective_date, $change_summary, $drawing_filename)
@@ -334,25 +358,27 @@ if (!class_exists('M_tool_bom_engin')) {
             if ($this->has_column('MACHINE_GROUP_ID')) {
                 $updateData['MACHINE_GROUP_ID'] = $machine_group_id > 0 ? $machine_group_id : null;
             }
-            // Keep old text columns for backward compatibility
-            if ($this->has_column('PRODUCT') && $product_id > 0) {
-                // Get product name (with error handling)
+            // Keep old text columns for backward compatibility (skip if errors occur)
+            if ($product_id > 0) {
                 try {
-                    $product = $this->tms_db->select('PRODUCT_NAME')->from('TMS_DB.dbo.TMS_M_PRODUCT')->where('PRODUCT_ID', $product_id)->limit(1)->get()->row_array();
-                    $updateData['PRODUCT'] = $product && isset($product['PRODUCT_NAME']) ? $product['PRODUCT_NAME'] : null;
+                    if ($this->has_column('PRODUCT')) {
+                        $product = $this->tms_db->select('PRODUCT_NAME')->from('TMS_DB.dbo.TMS_M_PRODUCT')->where('PRODUCT_ID', $product_id)->limit(1)->get()->row_array();
+                        $updateData['PRODUCT'] = $product && isset($product['PRODUCT_NAME']) ? $product['PRODUCT_NAME'] : null;
+                    }
                 } catch (Exception $e) {
                     log_message('error', '[edit_data] Error getting product name: ' . $e->getMessage());
-                    $updateData['PRODUCT'] = null;
+                    // Don't set PRODUCT if error occurs
                 }
             }
-            if ($this->has_column('MACHINE_GROUP') && $machine_group_id > 0) {
-                // Get machine group name (with error handling)
+            if ($machine_group_id > 0) {
                 try {
-                    $mg = $this->tms_db->select('MACHINE_NAME')->from('TMS_DB.dbo.TMS_M_MACHINES')->where('MACHINE_ID', $machine_group_id)->limit(1)->get()->row_array();
-                    $updateData['MACHINE_GROUP'] = $mg && isset($mg['MACHINE_NAME']) ? $mg['MACHINE_NAME'] : null;
+                    if ($this->has_column('MACHINE_GROUP')) {
+                        $mg = $this->tms_db->select('MACHINE_NAME')->from('TMS_DB.dbo.TMS_M_MACHINES')->where('MACHINE_ID', $machine_group_id)->limit(1)->get()->row_array();
+                        $updateData['MACHINE_GROUP'] = $mg && isset($mg['MACHINE_NAME']) ? $mg['MACHINE_NAME'] : null;
+                    }
                 } catch (Exception $e) {
                     log_message('error', '[edit_data] Error getting machine group name: ' . $e->getMessage());
-                    $updateData['MACHINE_GROUP'] = null;
+                    // Don't set MACHINE_GROUP if error occurs
                 }
             }
             // Add new columns

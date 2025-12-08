@@ -43,15 +43,33 @@ class Tool_bom_engin extends MY_Controller
      */
     public function submit_data()
     {
-        // Clear output buffers to ensure clean JSON response
-        if (ob_get_level()) ob_clean();
-        
+        // Set content type first
         $this->output->set_content_type('application/json');
         $result = array('success' => false, 'message' => '');
+
+        // Log entry point
+        log_message('debug', '[submit_data] Method called');
+
+        // Check if model is loaded
+        if (!isset($this->tool_bom_engin) || !is_object($this->tool_bom_engin)) {
+            log_message('error', '[submit_data] Model tool_bom_engin not loaded');
+            $result['message'] = 'Model tidak ter-load.';
+            echo json_encode($result);
+            return;
+        }
 
         try {
             $action = strtoupper($this->input->post('action', TRUE));
             $id     = (int)$this->input->post('ID', TRUE);
+            
+            log_message('debug', '[submit_data] action=' . $action . ', id=' . $id);
+            
+            // Validate action
+            if ($action !== 'ADD' && $action !== 'EDIT') {
+                $result['message'] = 'Action tidak valid. Harus ADD atau EDIT.';
+                echo json_encode($result);
+                return;
+            }
 
             // validation rules
             $this->form_validation->set_rules('TOOL_BOM', 'Tool BOM', 'required|trim');
