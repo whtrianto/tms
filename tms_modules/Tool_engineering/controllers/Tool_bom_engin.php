@@ -44,15 +44,9 @@ class Tool_bom_engin extends MY_Controller
     public function submit_data()
     {
         // Clear output buffers to ensure clean JSON response
-        while (ob_get_level()) {
-            ob_end_clean();
-        }
-
-        // Set headers first
-        $this->output->set_content_type('application/json');
-        $this->output->set_header('Cache-Control: no-cache, must-revalidate');
-        $this->output->set_header('Expires: Mon, 26 Jul 1997 05:00:00 GMT');
+        if (ob_get_level()) ob_clean();
         
+        $this->output->set_content_type('application/json');
         $result = array('success' => false, 'message' => '');
 
         try {
@@ -73,7 +67,7 @@ class Tool_bom_engin extends MY_Controller
             if ($this->form_validation->run() == FALSE) {
                 $this->form_validation->set_error_delimiters('', '');
                 $result['message'] = validation_errors() ?: 'Data tidak valid.';
-                $this->output->set_output(json_encode($result));
+                echo json_encode($result);
                 return;
             }
 
@@ -110,14 +104,14 @@ class Tool_bom_engin extends MY_Controller
                 if (!is_dir($uploadDir)) {
                     if (!@mkdir($uploadDir, 0755, true)) {
                         $result['message'] = 'Gagal membuat direktori upload.';
-                        $this->output->set_output(json_encode($result));
+                        echo json_encode($result);
                         return;
                     }
                 }
                 // Check if directory is writable
                 if (!is_writable($uploadDir)) {
                     $result['message'] = 'Direktori upload tidak dapat ditulis.';
-                    $this->output->set_output(json_encode($result));
+                    echo json_encode($result);
                     return;
                 }
                 $origName = $_FILES['DRAWING_FILE']['name'];
@@ -128,78 +122,53 @@ class Tool_bom_engin extends MY_Controller
                     $drawing_filename = $fileName;
                 } else {
                     $result['message'] = 'Gagal mengunggah file drawing.';
-                    $this->output->set_output(json_encode($result));
+                    echo json_encode($result);
                     return;
                 }
             } else {
                 // Keep old filename if editing and no new file uploaded
                 if ($action === 'EDIT' && $id > 0) {
-                    try {
-                        $current = $this->tool_bom_engin->get_by_id($id);
-                        if ($current && isset($current['DRAWING']) && $current['DRAWING'] !== '') {
-                            $drawing_filename = $current['DRAWING'];
-                        }
-                    } catch (Exception $e) {
-                        log_message('error', '[submit_data] Error getting current drawing: ' . $e->getMessage());
-                        // Continue without drawing filename if error occurs
+                    $current = $this->tool_bom_engin->get_by_id($id);
+                    if ($current && isset($current['DRAWING']) && $current['DRAWING'] !== '') {
+                        $drawing_filename = $current['DRAWING'];
                     }
                 }
             }
 
             if ($action === 'ADD') {
-                try {
-                    $ok = $this->tool_bom_engin->add_data($tool_bom, $description, $product_id, $process_id, $machine_group_id, $revision, $status, $effective_date, $change_summary, $drawing_filename);
-                    if ($ok === true) {
-                        $result['success'] = true;
-                        $result['message'] = $this->tool_bom_engin->messages ?: 'Tool BOM Engineering berhasil ditambahkan.';
-                    } else {
-                        $result['success'] = false;
-                        $result['message'] = $this->tool_bom_engin->messages ?: 'Gagal menambahkan tool BOM engineering.';
-                    }
-                } catch (Exception $e) {
-                    log_message('error', '[submit_data ADD] Exception in add_data: ' . $e->getMessage());
+                $ok = $this->tool_bom_engin->add_data($tool_bom, $description, $product_id, $process_id, $machine_group_id, $revision, $status, $effective_date, $change_summary, $drawing_filename);
+                if ($ok === true) {
+                    $result['success'] = true;
+                    $result['message'] = $this->tool_bom_engin->messages ?: 'Tool BOM Engineering berhasil ditambahkan.';
+                } else {
                     $result['success'] = false;
-                    $result['message'] = 'Error: ' . $e->getMessage();
-                } catch (Error $e) {
-                    log_message('error', '[submit_data ADD] Fatal Error in add_data: ' . $e->getMessage());
-                    $result['success'] = false;
-                    $result['message'] = 'Fatal Error: ' . $e->getMessage();
+                    $result['message'] = $this->tool_bom_engin->messages ?: 'Gagal menambahkan tool BOM engineering.';
                 }
                 $json = json_encode($result);
                 log_message('debug', '[submit_data ADD] response: ' . $json);
-                $this->output->set_output($json);
+                echo $json;
                 return;
             }
 
             if ($action === 'EDIT' && $id > 0) {
-                try {
-                    $ok = $this->tool_bom_engin->edit_data($id, $tool_bom, $description, $product_id, $process_id, $machine_group_id, $revision, $status, $effective_date, $change_summary, $drawing_filename);
-                    if ($ok === true) {
-                        $result['success'] = true;
-                        $result['message'] = $this->tool_bom_engin->messages ?: 'Tool BOM Engineering berhasil diperbarui.';
-                    } else {
-                        $result['success'] = false;
-                        $result['message'] = $this->tool_bom_engin->messages ?: 'Gagal memperbarui tool BOM engineering.';
-                    }
-                } catch (Exception $e) {
-                    log_message('error', '[submit_data EDIT] Exception in edit_data: ' . $e->getMessage());
+                $ok = $this->tool_bom_engin->edit_data($id, $tool_bom, $description, $product_id, $process_id, $machine_group_id, $revision, $status, $effective_date, $change_summary, $drawing_filename);
+                if ($ok === true) {
+                    $result['success'] = true;
+                    $result['message'] = $this->tool_bom_engin->messages ?: 'Tool BOM Engineering berhasil diperbarui.';
+                } else {
                     $result['success'] = false;
-                    $result['message'] = 'Error: ' . $e->getMessage();
-                } catch (Error $e) {
-                    log_message('error', '[submit_data EDIT] Fatal Error in edit_data: ' . $e->getMessage());
-                    $result['success'] = false;
-                    $result['message'] = 'Fatal Error: ' . $e->getMessage();
+                    $result['message'] = $this->tool_bom_engin->messages ?: 'Gagal memperbarui tool BOM engineering.';
                 }
                 $json = json_encode($result);
                 log_message('debug', '[submit_data EDIT] response: ' . $json);
-                $this->output->set_output($json);
+                echo $json;
                 return;
             }
 
             $result['message'] = 'Parameter action/ID tidak valid.';
             $json = json_encode($result);
             log_message('debug', '[submit_data] invalid action/id response: ' . $json);
-            $this->output->set_output($json);
+            echo $json;
             return;
         } catch (Exception $e) {
             // log full context for debugging
@@ -212,14 +181,7 @@ class Tool_bom_engin extends MY_Controller
             log_message('error', '[Tool_bom_engin::submit_data] Exception: ' . $e->getMessage() . ' | Context: ' . json_encode($ctx));
             $result['success'] = false;
             $result['message'] = 'Server error: ' . $e->getMessage() . '. Cek log untuk detail.';
-            $this->output->set_output(json_encode($result));
-            return;
-        } catch (Error $e) {
-            // Catch PHP 7+ errors
-            log_message('error', '[Tool_bom_engin::submit_data] Fatal Error: ' . $e->getMessage() . ' | File: ' . $e->getFile() . ' | Line: ' . $e->getLine());
-            $result['success'] = false;
-            $result['message'] = 'Fatal error: ' . $e->getMessage();
-            $this->output->set_output(json_encode($result));
+            echo json_encode($result);
             return;
         }
     }

@@ -246,88 +246,43 @@ if (!class_exists('M_tool_bom_engin')) {
             // Log insert data for debugging
             log_message('debug', '[add_data] Insert data: ' . json_encode($insertData));
             
-            try {
-                // Check database connection
-                if (!$this->tms_db->conn_id) {
-                    $this->messages = 'Database connection tidak tersedia.';
-                    log_message('error', '[add_data] Database connection not available');
-                    return false;
-                }
-
-                $this->tms_db->trans_start();
-                $ok = $this->tms_db->insert($this->table, $insertData);
-                
-                // Check for database errors immediately after insert
-                $db_error = $this->tms_db->error();
-                if (!empty($db_error) && !empty($db_error['message'])) {
-                    $this->tms_db->trans_rollback();
-                    $error_msg = $db_error['message'];
-                    log_message('error', '[add_data] Database error on insert: ' . $error_msg . ' | SQL: ' . $this->tms_db->last_query());
-                    $this->messages = 'Gagal menambahkan tool BOM engineering. ' . $error_msg;
-                    return false;
-                }
-                
-                if ($ok) {
-                    // Set EFFECTIVE_DATE if column exists and not set
-                    if ($this->has_column('EFFECTIVE_DATE') && ($effective_date === '' || $effective_date === null)) {
-                        $new_id = (int)$this->tms_db->insert_id();
-                        if ($new_id <= 0) {
-                            // fallback: try to get IDENT_CURRENT (use table name without schema for IDENT_CURRENT)
-                            try {
-                                $row = $this->tms_db->query("SELECT IDENT_CURRENT('TMS_TC_TOOL_BOM_ENGIN') AS last_id")->row_array();
-                                if ($row && isset($row['last_id']) && $row['last_id'] !== null) {
-                                    $new_id = (int)$row['last_id'];
-                                }
-                            } catch (Exception $e2) {
-                                log_message('error', '[add_data] Error getting IDENT_CURRENT: ' . $e2->getMessage());
-                                // Continue without setting EFFECTIVE_DATE if we can't get the ID
-                            }
+            $this->tms_db->trans_start();
+            $ok = $this->tms_db->insert($this->table, $insertData);
+            
+            // try to obtain the inserted id and set EFFECTIVE_DATE if column exists
+            $new_id = 0;
+            if ($ok) {
+                $new_id = (int)$this->tms_db->insert_id();
+                if ($new_id <= 0) {
+                    // fallback: try to get IDENT_CURRENT (best-effort)
+                    try {
+                        $row = $this->tms_db->query("SELECT IDENT_CURRENT('TMS_TC_TOOL_BOM_ENGIN') AS last_id")->row_array();
+                        if ($row && isset($row['last_id']) && $row['last_id'] !== null) {
+                            $new_id = (int)$row['last_id'];
                         }
-                        if ($new_id > 0) {
-                            try {
-                                $update_result = $this->tms_db->query("UPDATE {$this->table} SET EFFECTIVE_DATE = GETDATE() WHERE ID = ?", array($new_id));
-                                $update_error = $this->tms_db->error();
-                                if (!empty($update_error) && !empty($update_error['message'])) {
-                                    log_message('warning', '[add_data] Error updating EFFECTIVE_DATE: ' . $update_error['message']);
-                                    // Don't fail the transaction if EFFECTIVE_DATE update fails
-                                }
-                            } catch (Exception $e2) {
-                                log_message('warning', '[add_data] Exception updating EFFECTIVE_DATE: ' . $e2->getMessage());
-                                // Don't fail the transaction if EFFECTIVE_DATE update fails
-                            }
-                        }
+                    } catch (Exception $e2) {
+                        log_message('error', '[add_data] Error getting IDENT_CURRENT: ' . $e2->getMessage());
                     }
-                    $this->tms_db->trans_complete();
-                    
-                    if ($this->tms_db->trans_status()) {
-                        $this->messages = 'Tool BOM Engineering berhasil ditambahkan.';
-                        return true;
-                    } else {
-                        $err = $this->tms_db->error();
-                        $error_msg = isset($err['message']) && !empty($err['message']) ? $err['message'] : 'Transaction failed';
-                        log_message('error', '[add_data] Transaction failed: ' . $error_msg);
-                        $this->messages = 'Gagal menambahkan tool BOM engineering. ' . $error_msg;
-                        return false;
-                    }
-                } else {
-                    $this->tms_db->trans_rollback();
-                    $err = $this->tms_db->error();
-                    $error_msg = isset($err['message']) && !empty($err['message']) ? $err['message'] : 'Unknown database error';
-                    log_message('error', '[add_data] Insert returned false: ' . $error_msg . ' | SQL: ' . $this->tms_db->last_query());
-                    $this->messages = 'Gagal menambahkan tool BOM engineering. ' . $error_msg;
-                    return false;
                 }
-            } catch (Exception $e) {
-                $this->tms_db->trans_rollback();
-                log_message('error', '[add_data] Exception: ' . $e->getMessage() . ' | File: ' . $e->getFile() . ' | Line: ' . $e->getLine() . ' | Trace: ' . $e->getTraceAsString());
-                $this->messages = 'Gagal menambahkan tool BOM engineering. Error: ' . $e->getMessage();
-                return false;
-            } catch (Error $e) {
-                $this->tms_db->trans_rollback();
-                log_message('error', '[add_data] Fatal Error: ' . $e->getMessage() . ' | File: ' . $e->getFile() . ' | Line: ' . $e->getLine());
-                $this->messages = 'Gagal menambahkan tool BOM engineering. Fatal Error: ' . $e->getMessage();
-                return false;
+                // Set EFFECTIVE_DATE if column exists and not set
+                if ($this->has_column('EFFECTIVE_DATE') && ($effective_date === '' || $effective_date === null) && $new_id > 0) {
+                    try {
+                        $this->tms_db->query("UPDATE {$this->table} SET EFFECTIVE_DATE = GETDATE() WHERE ID = ?", array($new_id));
+                    } catch (Exception $e2) {
+                        log_message('warning', '[add_data] Exception updating EFFECTIVE_DATE: ' . $e2->getMessage());
+                    }
+                }
             }
+            
+            $this->tms_db->trans_complete();
+            
+            if ($this->tms_db->trans_status()) {
+                $this->messages = 'Tool BOM Engineering berhasil ditambahkan.';
+                return true;
+            }
+            $err = $this->tms_db->error();
+            $this->messages = 'Gagal menambahkan tool BOM engineering. ' . (isset($err['message']) ? $err['message'] : '');
+            return false;
         }
 
         public function edit_data($id, $tool_bom, $description, $product_id, $process_id, $machine_group_id, $revision, $status, $effective_date, $change_summary, $drawing_filename)
@@ -427,58 +382,24 @@ if (!class_exists('M_tool_bom_engin')) {
                 $updateData['MODIFIED_BY'] = $modifiedBy;
             }
 
-            try {
-                // Check database connection
-                if (!$this->tms_db->conn_id) {
-                    $this->messages = 'Database connection tidak tersedia.';
-                    log_message('error', '[edit_data] Database connection not available');
-                    return false;
+            $ok = $this->tms_db->where('ID', $id)->update($this->table, $updateData);
+            
+            // update MODIFIED_DATE if column exists
+            if ($ok && $this->has_column('MODIFIED_DATE')) {
+                try {
+                    $this->tms_db->query("UPDATE {$this->table} SET MODIFIED_DATE = GETDATE() WHERE ID = ?", array($id));
+                } catch (Exception $e2) {
+                    log_message('warning', '[edit_data] Exception updating MODIFIED_DATE: ' . $e2->getMessage());
                 }
-
-                $ok = $this->tms_db->where('ID', $id)->update($this->table, $updateData);
-                
-                // Check for database errors immediately after update
-                $db_error = $this->tms_db->error();
-                if (!empty($db_error) && !empty($db_error['message'])) {
-                    $error_msg = $db_error['message'];
-                    log_message('error', '[edit_data] Database error on update: ' . $error_msg . ' | SQL: ' . $this->tms_db->last_query());
-                    $this->messages = 'Gagal mengubah tool BOM engineering. ' . $error_msg;
-                    return false;
-                }
-
-                if ($ok) {
-                    // update MODIFIED_DATE if column exists
-                    if ($this->has_column('MODIFIED_DATE')) {
-                        try {
-                            $this->tms_db->query("UPDATE {$this->table} SET MODIFIED_DATE = GETDATE() WHERE ID = ?", array($id));
-                            $mod_error = $this->tms_db->error();
-                            if (!empty($mod_error) && !empty($mod_error['message'])) {
-                                log_message('warning', '[edit_data] Error updating MODIFIED_DATE: ' . $mod_error['message']);
-                                // Don't fail if MODIFIED_DATE update fails
-                            }
-                        } catch (Exception $e2) {
-                            log_message('warning', '[edit_data] Exception updating MODIFIED_DATE: ' . $e2->getMessage());
-                            // Don't fail if MODIFIED_DATE update fails
-                        }
-                    }
-                    $this->messages = 'Tool BOM Engineering berhasil diubah.';
-                    return true;
-                } else {
-                    $err = $this->tms_db->error();
-                    $error_msg = isset($err['message']) && !empty($err['message']) ? $err['message'] : 'Unknown database error';
-                    log_message('error', '[edit_data] Update returned false: ' . $error_msg . ' | SQL: ' . $this->tms_db->last_query());
-                    $this->messages = 'Gagal mengubah tool BOM engineering. ' . $error_msg;
-                    return false;
-                }
-            } catch (Exception $e) {
-                log_message('error', '[edit_data] Exception: ' . $e->getMessage() . ' | File: ' . $e->getFile() . ' | Line: ' . $e->getLine() . ' | Trace: ' . $e->getTraceAsString());
-                $this->messages = 'Gagal mengubah tool BOM engineering. Error: ' . $e->getMessage();
-                return false;
-            } catch (Error $e) {
-                log_message('error', '[edit_data] Fatal Error: ' . $e->getMessage() . ' | File: ' . $e->getFile() . ' | Line: ' . $e->getLine());
-                $this->messages = 'Gagal mengubah tool BOM engineering. Fatal Error: ' . $e->getMessage();
-                return false;
             }
+            
+            if ($ok) {
+                $this->messages = 'Tool BOM Engineering berhasil diubah.';
+                return true;
+            }
+            $err = $this->tms_db->error();
+            $this->messages = 'Gagal mengubah tool BOM engineering. ' . (isset($err['message']) ? $err['message'] : '');
+            return false;
         }
 
         public function delete_data($id)
