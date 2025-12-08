@@ -17,7 +17,8 @@
             table-layout: fixed;
         }
 
-        .table-fixed th, .table-fixed td {
+        .table-fixed th,
+        .table-fixed td {
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
@@ -28,7 +29,8 @@
             text-overflow: ellipsis;
             white-space: nowrap;
             display: block;
-            max-width: 140px; /* limit width so columns fit */
+            max-width: 140px;
+            /* limit width so columns fit */
         }
 
         .label-required::after {
@@ -71,89 +73,89 @@
                         </div>
                         <div class="card-body">
                             <div class="table-responsive">
-                            <table id="table-tool-draw-tooling" class="table table-bordered table-striped table-fixed w-100 text-center">
-                                <thead>
-                                    <tr>
-                                        <th>Tool Drawing No.</th>
-                                        <th>Tool Name</th>
-                                        <th>Min Quantity</th>
-                                        <th>Replenish Quantity</th>
-                                        <th>Maker</th>
-                                        <th>Price</th>
-                                        <th>Description</th>
-                                        <th>Effective Date</th>
-                                        <th>Material</th>
-                                        <th>Standard Tool Life</th>
-                                        <th>ACTION</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <?php
-                                    // Ensure master arrays exist to avoid warnings
-                                    $tools = isset($tools) ? $tools : array();
-                                    $makers = isset($makers) ? $makers : array();
-                                    $materials = isset($materials) ? $materials : array();
-
-                                    foreach ($list_data as $row):
-                                        // Support both TT_* (tooling table) and TD_* (engineering table) keys
-                                        $row_id = isset($row['TT_ID']) ? (int)$row['TT_ID'] : (isset($row['TD_ID']) ? (int)$row['TD_ID'] : 0);
-                                        $drawing_no = isset($row['TD_DRAWING_NO']) ? $row['TD_DRAWING_NO'] : (isset($row['TT_DRAWING_NO']) ? $row['TT_DRAWING_NO'] : '');
-                                        $drawing_label = $drawing_no ? pathinfo($drawing_no, PATHINFO_FILENAME) : '';
-                                        $tool_key = isset($row['TT_TOOL_ID']) ? $row['TT_TOOL_ID'] : (isset($row['TD_TOOL_ID']) ? $row['TD_TOOL_ID'] : null);
-                                        $maker_key = isset($row['TT_MAKER_ID']) ? $row['TT_MAKER_ID'] : (isset($row['TD_MAKER_ID']) ? $row['TD_MAKER_ID'] : null);
-                                        $material_key = isset($row['TT_MATERIAL_ID']) ? $row['TT_MATERIAL_ID'] : (isset($row['TD_MATERIAL_ID']) ? $row['TD_MATERIAL_ID'] : null);
-
-                                        $tool_name = '';
-                                        foreach ($tools as $t) {
-                                            if (isset($t['TOOL_ID']) && (int)$t['TOOL_ID'] == (int)$tool_key) {
-                                                $tool_name = $t['TOOL_NAME'];
-                                                break;
-                                            }
-                                        }
-                                        // If engineering row provides TD_TOOL_NAME (string), use it as fallback
-                                        if ($tool_name === '' && isset($row['TD_TOOL_NAME']) && $row['TD_TOOL_NAME'] !== '') {
-                                            $tool_name = $row['TD_TOOL_NAME'];
-                                        }
-
-                                        $maker_name = '';
-                                        foreach ($makers as $m) {
-                                            if (isset($m['MAKER_ID']) && (int)$m['MAKER_ID'] == (int)$maker_key) {
-                                                $maker_name = $m['MAKER_NAME'];
-                                                break;
-                                            }
-                                        }
-
-                                        $material_name = '';
-                                        foreach ($materials as $mat) {
-                                            if (isset($mat['MATERIAL_ID']) && (int)$mat['MATERIAL_ID'] == (int)$material_key) {
-                                                $material_name = $mat['MATERIAL_NAME'];
-                                                break;
-                                            }
-                                        }
-                                    ?>
+                                <table id="table-tool-draw-tooling" class="table table-bordered table-striped table-fixed w-100 text-center">
+                                    <thead>
                                         <tr>
-                                            <td class="text-left"><span class="cell-ellipsis"><?= htmlspecialchars($drawing_label, ENT_QUOTES, 'UTF-8'); ?></span></td>
-                                            <td class="text-left"><span class="cell-ellipsis"><?= htmlspecialchars($tool_name, ENT_QUOTES, 'UTF-8'); ?></span></td>
-                                            <td class="text-center"><?= isset($row['TT_MIN_QTY']) ? (int)$row['TT_MIN_QTY'] : (isset($row['TD_MIN_QTY']) ? (int)$row['TD_MIN_QTY'] : 0); ?></td>
-                                            <td class="text-center"><?= isset($row['TT_REPLENISH_QTY']) ? (int)$row['TT_REPLENISH_QTY'] : (isset($row['TD_REPLENISH_QTY']) ? (int)$row['TD_REPLENISH_QTY'] : 0); ?></td>
-                                            <td class="text-left"><span class="cell-ellipsis"><?= htmlspecialchars($maker_name, ENT_QUOTES, 'UTF-8'); ?></span></td>
-                                            <td class="text-right"><?= number_format((float)(isset($row['TT_PRICE']) ? $row['TT_PRICE'] : (isset($row['TD_PRICE']) ? $row['TD_PRICE'] : 0)), 2); ?></td>
-                                            <td class="text-left"><span class="cell-ellipsis"><?= htmlspecialchars(isset($row['TT_DESCRIPTION']) ? $row['TT_DESCRIPTION'] : (isset($row['TD_DESCRIPTION']) ? $row['TD_DESCRIPTION'] : ''), ENT_QUOTES, 'UTF-8'); ?></span></td>
-                                            <td><span class="cell-ellipsis"><?= htmlspecialchars(isset($row['TT_EFFECTIVE_DATE']) ? $row['TT_EFFECTIVE_DATE'] : (isset($row['TD_EFFECTIVE_DATE']) ? $row['TD_EFFECTIVE_DATE'] : ''), ENT_QUOTES, 'UTF-8'); ?></span></td>
-                                            <td class="text-left"><span class="cell-ellipsis"><?= htmlspecialchars($material_name, ENT_QUOTES, 'UTF-8'); ?></span></td>
-                                            <td class="text-center"><?= isset($row['TT_TOOL_LIFE']) ? (int)$row['TT_TOOL_LIFE'] : (isset($row['TD_TOOL_LIFE']) ? (int)$row['TD_TOOL_LIFE'] : 0); ?></td>
-                                            <td>
-                                                <div class="action-buttons">
-                                                    <button class="btn btn-secondary btn-sm btn-edit"
-                                                        data-edit='<?= htmlspecialchars(json_encode($row), ENT_QUOTES, 'UTF-8') ?>'>Edit</button>
-                                                    <button class="btn btn-warning btn-sm btn-history"
-                                                        data-id="<?= $row_id; ?>">Hist</button>
-                                                </div>
-                                            </td>
+                                            <th>Tool Drawing No.</th>
+                                            <th>Tool Name</th>
+                                            <th>Min Quantity</th>
+                                            <th>Replenish Quantity</th>
+                                            <th>Maker</th>
+                                            <th>Price</th>
+                                            <th>Description</th>
+                                            <th>Effective Date</th>
+                                            <th>Material</th>
+                                            <th>Standard Tool Life</th>
+                                            <th>ACTION</th>
                                         </tr>
-                                    <?php endforeach; ?>
-                                </tbody>
-                            </table>
+                                    </thead>
+                                    <tbody>
+                                        <?php
+                                        // Ensure master arrays exist to avoid warnings
+                                        $tools = isset($tools) ? $tools : array();
+                                        $makers = isset($makers) ? $makers : array();
+                                        $materials = isset($materials) ? $materials : array();
+
+                                        foreach ($list_data as $row):
+                                            // Support both TT_* (tooling table) and TD_* (engineering table) keys
+                                            $row_id = isset($row['TT_ID']) ? (int)$row['TT_ID'] : (isset($row['TD_ID']) ? (int)$row['TD_ID'] : 0);
+                                            $drawing_no = isset($row['TD_DRAWING_NO']) ? $row['TD_DRAWING_NO'] : (isset($row['TT_DRAWING_NO']) ? $row['TT_DRAWING_NO'] : '');
+                                            $drawing_label = $drawing_no ? pathinfo($drawing_no, PATHINFO_FILENAME) : '';
+                                            $tool_key = isset($row['TT_TOOL_ID']) ? $row['TT_TOOL_ID'] : (isset($row['TD_TOOL_ID']) ? $row['TD_TOOL_ID'] : null);
+                                            $maker_key = isset($row['TT_MAKER_ID']) ? $row['TT_MAKER_ID'] : (isset($row['TD_MAKER_ID']) ? $row['TD_MAKER_ID'] : null);
+                                            $material_key = isset($row['TT_MATERIAL_ID']) ? $row['TT_MATERIAL_ID'] : (isset($row['TD_MATERIAL_ID']) ? $row['TD_MATERIAL_ID'] : null);
+
+                                            $tool_name = '';
+                                            foreach ($tools as $t) {
+                                                if (isset($t['TOOL_ID']) && (int)$t['TOOL_ID'] == (int)$tool_key) {
+                                                    $tool_name = $t['TOOL_NAME'];
+                                                    break;
+                                                }
+                                            }
+                                            // If engineering row provides TD_TOOL_NAME (string), use it as fallback
+                                            if ($tool_name === '' && isset($row['TD_TOOL_NAME']) && $row['TD_TOOL_NAME'] !== '') {
+                                                $tool_name = $row['TD_TOOL_NAME'];
+                                            }
+
+                                            $maker_name = '';
+                                            foreach ($makers as $m) {
+                                                if (isset($m['MAKER_ID']) && (int)$m['MAKER_ID'] == (int)$maker_key) {
+                                                    $maker_name = $m['MAKER_NAME'];
+                                                    break;
+                                                }
+                                            }
+
+                                            $material_name = '';
+                                            foreach ($materials as $mat) {
+                                                if (isset($mat['MATERIAL_ID']) && (int)$mat['MATERIAL_ID'] == (int)$material_key) {
+                                                    $material_name = $mat['MATERIAL_NAME'];
+                                                    break;
+                                                }
+                                            }
+                                        ?>
+                                            <tr>
+                                                <td class="text-left"><span class="cell-ellipsis"><?= htmlspecialchars($drawing_label, ENT_QUOTES, 'UTF-8'); ?></span></td>
+                                                <td class="text-left"><span class="cell-ellipsis"><?= htmlspecialchars($tool_name, ENT_QUOTES, 'UTF-8'); ?></span></td>
+                                                <td class="text-center"><?= isset($row['TT_MIN_QTY']) ? (int)$row['TT_MIN_QTY'] : (isset($row['TD_MIN_QTY']) ? (int)$row['TD_MIN_QTY'] : 0); ?></td>
+                                                <td class="text-center"><?= isset($row['TT_REPLENISH_QTY']) ? (int)$row['TT_REPLENISH_QTY'] : (isset($row['TD_REPLENISH_QTY']) ? (int)$row['TD_REPLENISH_QTY'] : 0); ?></td>
+                                                <td class="text-left"><span class="cell-ellipsis"><?= htmlspecialchars($maker_name, ENT_QUOTES, 'UTF-8'); ?></span></td>
+                                                <td class="text-right"><?= number_format((float)(isset($row['TT_PRICE']) ? $row['TT_PRICE'] : (isset($row['TD_PRICE']) ? $row['TD_PRICE'] : 0)), 2); ?></td>
+                                                <td class="text-left"><span class="cell-ellipsis"><?= htmlspecialchars(isset($row['TT_DESCRIPTION']) ? $row['TT_DESCRIPTION'] : (isset($row['TD_DESCRIPTION']) ? $row['TD_DESCRIPTION'] : ''), ENT_QUOTES, 'UTF-8'); ?></span></td>
+                                                <td><span class="cell-ellipsis"><?= htmlspecialchars(isset($row['TT_EFFECTIVE_DATE']) ? $row['TT_EFFECTIVE_DATE'] : (isset($row['TD_EFFECTIVE_DATE']) ? $row['TD_EFFECTIVE_DATE'] : ''), ENT_QUOTES, 'UTF-8'); ?></span></td>
+                                                <td class="text-left"><span class="cell-ellipsis"><?= htmlspecialchars($material_name, ENT_QUOTES, 'UTF-8'); ?></span></td>
+                                                <td class="text-center"><?= isset($row['TT_TOOL_LIFE']) ? (int)$row['TT_TOOL_LIFE'] : (isset($row['TD_TOOL_LIFE']) ? (int)$row['TD_TOOL_LIFE'] : 0); ?></td>
+                                                <td>
+                                                    <div class="action-buttons">
+                                                        <button class="btn btn-secondary btn-sm btn-edit"
+                                                            data-edit='<?= htmlspecialchars(json_encode($row), ENT_QUOTES, 'UTF-8') ?>'>Edit</button>
+                                                        <button class="btn btn-warning btn-sm btn-history"
+                                                            data-id="<?= $row_id; ?>">Hist</button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        <?php endforeach; ?>
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
                     </div>
@@ -169,17 +171,50 @@
                             </div>
                             <div class="modal-body">
                                 <table class="table table-bordered table-sm">
-                                    <tr><th style="width:160px">Tool</th><td id="detailTool"></td></tr>
-                                    <tr><th>Min Qty</th><td id="detailMinQty"></td></tr>
-                                    <tr><th>Replenish Qty</th><td id="detailReplenishQty"></td></tr>
-                                    <tr><th>Maker</th><td id="detailMaker"></td></tr>
-                                    <tr><th>Price</th><td id="detailPrice"></td></tr>
-                                    <tr><th>Description</th><td id="detailDescription"></td></tr>
-                                    <tr><th>Material</th><td id="detailMaterial"></td></tr>
-                                    <tr><th>Tool Life</th><td id="detailToolLife"></td></tr>
-                                    <tr><th>Effective Date</th><td id="detailEffective"></td></tr>
-                                    <tr><th>Modified Date</th><td id="detailModified"></td></tr>
-                                    <tr><th>Modified By</th><td id="detailModifiedBy"></td></tr>
+                                    <tr>
+                                        <th style="width:160px">Tool</th>
+                                        <td id="detailTool"></td>
+                                    </tr>
+                                    <tr>
+                                        <th>Min Qty</th>
+                                        <td id="detailMinQty"></td>
+                                    </tr>
+                                    <tr>
+                                        <th>Replenish Qty</th>
+                                        <td id="detailReplenishQty"></td>
+                                    </tr>
+                                    <tr>
+                                        <th>Maker</th>
+                                        <td id="detailMaker"></td>
+                                    </tr>
+                                    <tr>
+                                        <th>Price</th>
+                                        <td id="detailPrice"></td>
+                                    </tr>
+                                    <tr>
+                                        <th>Description</th>
+                                        <td id="detailDescription"></td>
+                                    </tr>
+                                    <tr>
+                                        <th>Material</th>
+                                        <td id="detailMaterial"></td>
+                                    </tr>
+                                    <tr>
+                                        <th>Tool Life</th>
+                                        <td id="detailToolLife"></td>
+                                    </tr>
+                                    <tr>
+                                        <th>Effective Date</th>
+                                        <td id="detailEffective"></td>
+                                    </tr>
+                                    <tr>
+                                        <th>Modified Date</th>
+                                        <td id="detailModified"></td>
+                                    </tr>
+                                    <tr>
+                                        <th>Modified By</th>
+                                        <td id="detailModifiedBy"></td>
+                                    </tr>
                                 </table>
                             </div>
                             <div class="modal-footer">
@@ -198,7 +233,7 @@
                                 <button type="button" class="close" data-dismiss="modal">&times;</button>
                             </div>
                             <div class="modal-body">
-                                    <form id="formToolDrawing" method="post" action="<?= base_url('Tool_engineering/tool_draw_tooling/submit_data'); ?>">
+                                <form id="formToolDrawing" method="post" action="<?= base_url('Tool_engineering/tool_draw_tooling/submit_data'); ?>">
                                     <input type="hidden" name="action" value="">
                                     <input type="hidden" name="TT_ID" value="">
 
@@ -324,24 +359,66 @@
                                 <div class="row">
                                     <div class="col-md-6">
                                         <table class="table table-borderless table-sm">
-                                            <tr><th style="width:140px">Product</th><td>: <span id="detailHistProduct"></span></td></tr>
-                                            <tr><th>Tool Name</th><td>: <span id="detailHistToolName"></span></td></tr>
-                                            <tr><th>Tool Drawing No.</th><td>: <span id="detailHistDrawingNo"></span></td></tr>
-                                            <tr><th>Revision</th><td>: <span id="detailHistRevision"></span></td></tr>
-                                            <tr><th>Maker</th><td>: <span id="detailHistMaker"></span></td></tr>
-                                            <tr><th>Min Quantity</th><td>: <span id="detailHistMinQty"></span></td></tr>
-                                            <tr><th>Replenish Quantity</th><td>: <span id="detailHistReplenishQty"></span></td></tr>
-                                            <tr><th>Process</th><td>: <span id="detailHistProcess"></span></td></tr>
-                                            <tr><th>Price</th><td>: <span id="detailHistPrice"></span></td></tr>
+                                            <tr>
+                                                <th style="width:140px">Product</th>
+                                                <td>: <span id="detailHistProduct"></span></td>
+                                            </tr>
+                                            <tr>
+                                                <th>Tool Name</th>
+                                                <td>: <span id="detailHistToolName"></span></td>
+                                            </tr>
+                                            <tr>
+                                                <th>Tool Drawing No.</th>
+                                                <td>: <span id="detailHistDrawingNo"></span></td>
+                                            </tr>
+                                            <tr>
+                                                <th>Revision</th>
+                                                <td>: <span id="detailHistRevision"></span></td>
+                                            </tr>
+                                            <tr>
+                                                <th>Maker</th>
+                                                <td>: <span id="detailHistMaker"></span></td>
+                                            </tr>
+                                            <tr>
+                                                <th>Min Quantity</th>
+                                                <td>: <span id="detailHistMinQty"></span></td>
+                                            </tr>
+                                            <tr>
+                                                <th>Replenish Quantity</th>
+                                                <td>: <span id="detailHistReplenishQty"></span></td>
+                                            </tr>
+                                            <tr>
+                                                <th>Process</th>
+                                                <td>: <span id="detailHistProcess"></span></td>
+                                            </tr>
+                                            <tr>
+                                                <th>Price</th>
+                                                <td>: <span id="detailHistPrice"></span></td>
+                                            </tr>
                                         </table>
                                     </div>
                                     <div class="col-md-6">
                                         <table class="table table-borderless table-sm">
-                                            <tr><th style="width:140px">Standard Tool Life</th><td>: <span id="detailHistToolLife"></span></td></tr>
-                                            <tr><th>Description</th><td>: <span id="detailHistDescription"></span></td></tr>
-                                            <tr><th>Status</th><td>: <span id="detailHistStatus"></span></td></tr>
-                                            <tr><th>Effective Date</th><td>: <span id="detailHistEffective"></span></td></tr>
-                                            <tr><th>Material</th><td>: <span id="detailHistMaterial"></span></td></tr>
+                                            <tr>
+                                                <th style="width:140px">Standard Tool Life</th>
+                                                <td>: <span id="detailHistToolLife"></span></td>
+                                            </tr>
+                                            <tr>
+                                                <th>Description</th>
+                                                <td>: <span id="detailHistDescription"></span></td>
+                                            </tr>
+                                            <tr>
+                                                <th>Status</th>
+                                                <td>: <span id="detailHistStatus"></span></td>
+                                            </tr>
+                                            <tr>
+                                                <th>Effective Date</th>
+                                                <td>: <span id="detailHistEffective"></span></td>
+                                            </tr>
+                                            <tr>
+                                                <th>Material</th>
+                                                <td>: <span id="detailHistMaterial"></span></td>
+                                            </tr>
                                         </table>
                                     </div>
                                 </div>
@@ -383,19 +460,54 @@
                     ],
                     autoWidth: false,
                     scrollX: false,
-                    columnDefs: [
-                        { orderable: false, targets: [10] },
-                        { width: '100px', targets: 0 },    // Tool Drawing No.
-                        { width: '110px', targets: 1 },    // Tool Name
-                        { width: '70px', targets: 2 },     // Min Quantity
-                        { width: '80px', targets: 3 },     // Replenish Quantity
-                        { width: '100px', targets: 4 },    // Maker
-                        { width: '70px', targets: 5 },     // Price
-                        { width: '120px', targets: 6 },    // Description
-                        { width: '90px', targets: 7 },     // Effective Date
-                        { width: '90px', targets: 8 },     // Material
-                        { width: '80px', targets: 9 },     // Standard Tool Life
-                        { width: '90px', targets: 10 }     // ACTION
+                    columnDefs: [{
+                            orderable: false,
+                            targets: [10]
+                        },
+                        {
+                            width: '100px',
+                            targets: 0
+                        }, // Tool Drawing No.
+                        {
+                            width: '110px',
+                            targets: 1
+                        }, // Tool Name
+                        {
+                            width: '70px',
+                            targets: 2
+                        }, // Min Quantity
+                        {
+                            width: '80px',
+                            targets: 3
+                        }, // Replenish Quantity
+                        {
+                            width: '100px',
+                            targets: 4
+                        }, // Maker
+                        {
+                            width: '70px',
+                            targets: 5
+                        }, // Price
+                        {
+                            width: '120px',
+                            targets: 6
+                        }, // Description
+                        {
+                            width: '90px',
+                            targets: 7
+                        }, // Effective Date
+                        {
+                            width: '90px',
+                            targets: 8
+                        }, // Material
+                        {
+                            width: '80px',
+                            targets: 9
+                        }, // Standard Tool Life
+                        {
+                            width: '90px',
+                            targets: 10
+                        } // ACTION
                     ]
                 });
 
@@ -454,7 +566,10 @@
                             // If ID present, set it. If option missing, append with a sensible label.
                             if ($toolSel.find('option[value="' + toolIdVal + '"]').length === 0) {
                                 var toolLabel = (d.TOOL_NAME && String(d.TOOL_NAME).trim() !== '') ? d.TOOL_NAME : ((d.TD_TOOL_NAME && String(d.TD_TOOL_NAME).trim() !== '') ? d.TD_TOOL_NAME : ('Tool #' + toolIdVal));
-                                $toolSel.append($('<option>', { value: toolIdVal, text: toolLabel }));
+                                $toolSel.append($('<option>', {
+                                    value: toolIdVal,
+                                    text: toolLabel
+                                }));
                             }
                             $toolSel.val(toolIdVal);
                         } else {
@@ -472,8 +587,11 @@
                                     $toolSel.val(foundVal);
                                 } else {
                                     // append a stable custom value so selection persists while editing
-                                    var safeVal = 'custom_tool_' + String(Math.random()).slice(2,8);
-                                    $toolSel.append($('<option>', { value: safeVal, text: toolName }));
+                                    var safeVal = 'custom_tool_' + String(Math.random()).slice(2, 8);
+                                    $toolSel.append($('<option>', {
+                                        value: safeVal,
+                                        text: toolName
+                                    }));
                                     $toolSel.val(safeVal);
                                 }
                             } else {
@@ -504,7 +622,7 @@
                 $('#formToolDrawing').on('submit', function(e) {
                     e.preventDefault();
                     var toolId = $.trim($('[name="TT_TOOL_ID"]').val());
-                    
+
                     var isValid = true;
                     if (toolId === '' || toolId <= 0) {
                         $('[name="TT_TOOL_ID"]').addClass('is-invalid');
@@ -541,7 +659,12 @@
                             toastr.error('Response tidak valid dari server');
                         }
                     }).fail(function(xhr, status, error) {
-                        console.error('✗ Submit AJAX Error:', {status: status, error: error, statusCode: xhr.status, responseText: xhr.responseText});
+                        console.error('✗ Submit AJAX Error:', {
+                            status: status,
+                            error: error,
+                            statusCode: xhr.status,
+                            responseText: xhr.responseText
+                        });
                         var msg = 'Terjadi kesalahan pada server';
                         if (status === 'timeout') msg = 'Request timeout (30s)';
                         else if (status === 'error') msg = 'HTTP Error ' + xhr.status;
@@ -568,19 +691,21 @@
                         url: '<?= base_url("tool_engineering/tool_draw_tooling/get_history_by_id"); ?>',
                         type: 'POST',
                         dataType: 'json',
-                        data: { TT_ID: id }
+                        data: {
+                            TT_ID: id
+                        }
                     }).done(function(res) {
                         console.log('History response from tooling:', res);
                         if (res && res.success && res.data && res.data.length > 0) {
                             historyCache[id] = res.data;
-                            
+
                             // Populate header info from first history record
                             var firstRec = res.data[0];
                             $('#historyProduct').text(firstRec.PRODUCT_NAME || '');
                             $('#historyToolName').text(firstRec.TOOL_NAME || firstRec.TD_TOOL_NAME || '');
                             $('#historyProcess').text(firstRec.OPERATION_NAME || '');
                             $('#historyDrawingNo').text(firstRec.TD_DRAWING_NO || '');
-                            
+
                             // Build table rows with only: ID, Revision, Status, Effective Date, Modified Date, Modified By
                             var html = '';
                             res.data.forEach(function(h, idx) {
@@ -622,39 +747,67 @@
                     $('#detailHistToolName').text(h.TOOL_NAME || h.TD_TOOL_NAME || '');
                     $('#detailHistDrawingNo').text(h.TD_DRAWING_NO || '');
                     $('#detailHistRevision').text((typeof h.TD_REVISION !== 'undefined' && h.TD_REVISION !== null) ? h.TD_REVISION : (typeof h.TT_REVISION !== 'undefined' && h.TT_REVISION !== null) ? h.TT_REVISION : '');
-                    
+
                     // Maker: prefer MAKER_NAME when available
                     $('#detailHistMaker').text((typeof h.MAKER_NAME !== 'undefined' && h.MAKER_NAME !== null && h.MAKER_NAME !== '') ? h.MAKER_NAME : '');
-                    
-                    // Min Quantity: prefer TD_MIN_QTY, fallback TT_MIN_QTY, default to 0
-                    var minQtyVal = (typeof h.TD_MIN_QTY !== 'undefined' && h.TD_MIN_QTY !== null) ? h.TD_MIN_QTY :
-                                    (typeof h.TT_MIN_QTY !== 'undefined' && h.TT_MIN_QTY !== null) ? h.TT_MIN_QTY : 0;
+
+                    // Min Quantity: prefer TD_MIN_QTY, fallback TT_MIN_QTY, MIN_QTY, default to 0
+                    var minQtyVal = 0;
+                    if (typeof h.TD_MIN_QTY !== 'undefined' && h.TD_MIN_QTY !== null && h.TD_MIN_QTY !== '') {
+                        minQtyVal = parseInt(h.TD_MIN_QTY, 10) || 0;
+                    } else if (typeof h.TT_MIN_QTY !== 'undefined' && h.TT_MIN_QTY !== null && h.TT_MIN_QTY !== '') {
+                        minQtyVal = parseInt(h.TT_MIN_QTY, 10) || 0;
+                    } else if (typeof h.MIN_QTY !== 'undefined' && h.MIN_QTY !== null && h.MIN_QTY !== '') {
+                        minQtyVal = parseInt(h.MIN_QTY, 10) || 0;
+                    }
                     $('#detailHistMinQty').text(minQtyVal);
-                    
-                    // Replenish Quantity: prefer TD_REPLENISH_QTY, fallback TT_REPLENISH_QTY, default to 0
-                    var replenishQtyVal = (typeof h.TD_REPLENISH_QTY !== 'undefined' && h.TD_REPLENISH_QTY !== null) ? h.TD_REPLENISH_QTY :
-                                          (typeof h.TT_REPLENISH_QTY !== 'undefined' && h.TT_REPLENISH_QTY !== null) ? h.TT_REPLENISH_QTY : 0;
+
+                    // Replenish Quantity: prefer TD_REPLENISH_QTY, fallback TT_REPLENISH_QTY, REPLENISH_QTY, default to 0
+                    var replenishQtyVal = 0;
+                    if (typeof h.TD_REPLENISH_QTY !== 'undefined' && h.TD_REPLENISH_QTY !== null && h.TD_REPLENISH_QTY !== '') {
+                        replenishQtyVal = parseInt(h.TD_REPLENISH_QTY, 10) || 0;
+                    } else if (typeof h.TT_REPLENISH_QTY !== 'undefined' && h.TT_REPLENISH_QTY !== null && h.TT_REPLENISH_QTY !== '') {
+                        replenishQtyVal = parseInt(h.TT_REPLENISH_QTY, 10) || 0;
+                    } else if (typeof h.REPLENISH_QTY !== 'undefined' && h.REPLENISH_QTY !== null && h.REPLENISH_QTY !== '') {
+                        replenishQtyVal = parseInt(h.REPLENISH_QTY, 10) || 0;
+                    }
                     $('#detailHistReplenishQty').text(replenishQtyVal);
-                    
+
                     $('#detailHistProcess').text(h.OPERATION_NAME || '');
-                    
-                    // Price: prefer TD_PRICE, fallback TT_PRICE, default to 0.00
-                    var priceVal = (typeof h.TD_PRICE !== 'undefined' && h.TD_PRICE !== null) ? h.TD_PRICE :
-                                   (typeof h.TT_PRICE !== 'undefined' && h.TT_PRICE !== null) ? h.TT_PRICE : 0.0;
-                    if (typeof priceVal === 'string') priceVal = parseFloat(priceVal);
+
+                    // Price: prefer TD_PRICE, fallback TT_PRICE, PRICE, default to 0.00
+                    var priceVal = 0.0;
+                    if (typeof h.TD_PRICE !== 'undefined' && h.TD_PRICE !== null && h.TD_PRICE !== '') {
+                        priceVal = parseFloat(h.TD_PRICE) || 0.0;
+                    } else if (typeof h.TT_PRICE !== 'undefined' && h.TT_PRICE !== null && h.TT_PRICE !== '') {
+                        priceVal = parseFloat(h.TT_PRICE) || 0.0;
+                    } else if (typeof h.PRICE !== 'undefined' && h.PRICE !== null && h.PRICE !== '') {
+                        priceVal = parseFloat(h.PRICE) || 0.0;
+                    }
                     $('#detailHistPrice').text(isNaN(priceVal) ? '0.00' : parseFloat(priceVal).toFixed(2));
-                    
-                    // Tool Life: prefer TD_TOOL_LIFE, fallback TT_TOOL_LIFE, default to 0
-                    var toolLifeVal = (typeof h.TD_TOOL_LIFE !== 'undefined' && h.TD_TOOL_LIFE !== null) ? h.TD_TOOL_LIFE :
-                                      (typeof h.TT_TOOL_LIFE !== 'undefined' && h.TT_TOOL_LIFE !== null) ? h.TT_TOOL_LIFE : 0;
+
+                    // Tool Life: prefer TD_TOOL_LIFE, fallback TT_TOOL_LIFE, TOOL_LIFE, default to 0
+                    var toolLifeVal = 0;
+                    if (typeof h.TD_TOOL_LIFE !== 'undefined' && h.TD_TOOL_LIFE !== null && h.TD_TOOL_LIFE !== '') {
+                        toolLifeVal = parseInt(h.TD_TOOL_LIFE, 10) || 0;
+                    } else if (typeof h.TT_TOOL_LIFE !== 'undefined' && h.TT_TOOL_LIFE !== null && h.TT_TOOL_LIFE !== '') {
+                        toolLifeVal = parseInt(h.TT_TOOL_LIFE, 10) || 0;
+                    } else if (typeof h.TOOL_LIFE !== 'undefined' && h.TOOL_LIFE !== null && h.TOOL_LIFE !== '') {
+                        toolLifeVal = parseInt(h.TOOL_LIFE, 10) || 0;
+                    }
                     $('#detailHistToolLife').text(toolLifeVal);
-                    
-                    // Description: prefer TD_DESCRIPTION, fallback TT_DESCRIPTION, default to ''
-                    // var descVal = (typeof h.TD_DESCRIPTION !== 'undefined' && h.TD_DESCRIPTION !== null) ? h.TD_DESCRIPTION :
-                    //               (typeof h.TT_DESCRIPTION !== 'undefined' && h.TT_DESCRIPTION !== null) ? h.TT_DESCRIPTION : '';
-                    // $('#detailHistDescription').text(descVal);
-                    $('#detailHistDescription').text(h.TT_DESCRIPTION || h.TD_DESCRIPTION || '');
-                    
+
+                    // Description: prefer TD_DESCRIPTION, fallback TT_DESCRIPTION, DESCRIPTION, default to ''
+                    var descVal = '';
+                    if (typeof h.TD_DESCRIPTION !== 'undefined' && h.TD_DESCRIPTION !== null && h.TD_DESCRIPTION !== '') {
+                        descVal = String(h.TD_DESCRIPTION);
+                    } else if (typeof h.TT_DESCRIPTION !== 'undefined' && h.TT_DESCRIPTION !== null && h.TT_DESCRIPTION !== '') {
+                        descVal = String(h.TT_DESCRIPTION);
+                    } else if (typeof h.DESCRIPTION !== 'undefined' && h.DESCRIPTION !== null && h.DESCRIPTION !== '') {
+                        descVal = String(h.DESCRIPTION);
+                    }
+                    $('#detailHistDescription').text(descVal);
+
                     $('#detailHistStatus').text(mapStatus(h.TD_STATUS || h.TT_STATUS));
                     $('#detailHistEffective').text(h.TD_EFFECTIVE_DATE || h.TT_EFFECTIVE_DATE || '');
                     $('#detailHistMaterial').text(h.MATERIAL_NAME || '');
