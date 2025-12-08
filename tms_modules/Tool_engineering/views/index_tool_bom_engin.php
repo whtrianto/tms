@@ -146,11 +146,11 @@
                                             <td><?= htmlspecialchars($row['MODIFIED_DATE'] ?: '', ENT_QUOTES, 'UTF-8'); ?></td>
                                             <td>
                                                 <div class="action-buttons">
-                                                    <button class="btn btn-sm btn-warning btn-edit" 
+                                                    <!-- <button class="btn btn-sm btn-warning btn-edit" 
                                                             data-edit='<?= htmlspecialchars(json_encode($row), ENT_QUOTES, 'UTF-8'); ?>'
                                                             title="Edit">
                                                         <i class="fas fa-edit"></i>
-                                                    </button>
+                                                    </button> -->
                                                     <a class="btn btn-sm btn-info" 
                                                        href="<?= base_url('Tool_engineering/tool_bom_engin/edit_page/' . (int)$row['ID']); ?>"
                                                        title="Edit Page">
