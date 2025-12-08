@@ -40,7 +40,7 @@ class M_tool_draw_tooling extends CI_Model
             ->from($this->table)
             ->order_by('TT_ID', 'DESC')
             ->get();
-        
+
         if ($result && $result->num_rows() > 0) {
             return $result->result_array();
         }
@@ -51,7 +51,7 @@ class M_tool_draw_tooling extends CI_Model
     {
         $id = (int)$id;
         if ($id <= 0) return null;
-        
+
         $result = $this->tms_db->where('TT_ID', $id)->limit(1)->get($this->table);
         if ($result && $result->num_rows() > 0) {
             return $result->row_array();
@@ -97,6 +97,7 @@ class M_tool_draw_tooling extends CI_Model
         $result = $this->tms_db
             ->select('MAKER_ID, MAKER_NAME')
             ->from($table)
+            ->where('IS_DELETED', 0)
             ->order_by('MAKER_NAME', 'ASC')
             ->get();
 
@@ -111,7 +112,7 @@ class M_tool_draw_tooling extends CI_Model
         $id = (int)$id;
         if ($id <= 0) return null;
         $table = 'TMS_DB.dbo.TMS_M_MAKER';
-        $result = $this->tms_db->select('MAKER_ID, MAKER_NAME')->from($table)->where('MAKER_ID', $id)->limit(1)->get();
+        $result = $this->tms_db->select('MAKER_ID, MAKER_NAME')->from($table)->where('MAKER_ID', $id)->where('IS_DELETED', 0)->limit(1)->get();
         if ($result && $result->num_rows() > 0) return $result->row_array();
         return null;
     }
@@ -125,9 +126,10 @@ class M_tool_draw_tooling extends CI_Model
         $result = $this->tms_db
             ->select('MATERIAL_ID, MATERIAL_NAME')
             ->from($table)
+            ->where('IS_DELETED', 0)
             ->order_by('MATERIAL_NAME', 'ASC')
             ->get();
-        
+
         if ($result && $result->num_rows() > 0) {
             return $result->result_array();
         }
@@ -139,7 +141,7 @@ class M_tool_draw_tooling extends CI_Model
         $id = (int)$id;
         if ($id <= 0) return null;
         $table = 'TMS_DB.dbo.TMS_M_MATERIAL';
-        $result = $this->tms_db->select('MATERIAL_ID, MATERIAL_NAME')->from($table)->where('MATERIAL_ID', $id)->limit(1)->get();
+        $result = $this->tms_db->select('MATERIAL_ID, MATERIAL_NAME')->from($table)->where('MATERIAL_ID', $id)->where('IS_DELETED', 0)->limit(1)->get();
         if ($result && $result->num_rows() > 0) return $result->row_array();
         return null;
     }

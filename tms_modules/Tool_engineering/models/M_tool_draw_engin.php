@@ -35,7 +35,7 @@ class M_tool_draw_engin extends CI_Model
     {
         // Build select columns - include tooling columns if they exist
         $selectCols = 'TD_ID, TD_PRODUCT_ID, TD_PROCESS_ID, TD_DRAWING_NO, TD_TOOL_NAME, TD_REVISION, TD_STATUS, TD_EFFECTIVE_DATE, TD_MODIFIED_DATE, TD_MODIFIED_BY, TD_MATERIAL_ID';
-        
+
         // Add tooling columns dynamically if they exist
         if ($this->has_column('TD_MAKER_ID')) {
             $selectCols .= ', TD_MAKER_ID';
@@ -61,7 +61,7 @@ class M_tool_draw_engin extends CI_Model
             ->from($this->table)
             ->order_by('TD_ID', 'DESC')
             ->get();
-        
+
         if ($result && $result->num_rows() > 0) {
             return $result->result_array();
         }
@@ -72,7 +72,7 @@ class M_tool_draw_engin extends CI_Model
     {
         $id = (int)$id;
         if ($id <= 0) return null;
-        
+
         $result = $this->tms_db->where('TD_ID', $id)->limit(1)->get($this->table);
         // select all columns (caller will use names)
         if ($result && $result->num_rows() > 0) {
@@ -96,9 +96,10 @@ class M_tool_draw_engin extends CI_Model
         $result = $this->tms_db
             ->select('PRODUCT_ID, PRODUCT_NAME')
             ->from($table)
+            ->where('IS_DELETED', 0)
             ->order_by('PRODUCT_NAME', 'ASC')
             ->get();
-        
+
         if ($result && $result->num_rows() > 0) {
             return $result->result_array();
         }
@@ -114,9 +115,10 @@ class M_tool_draw_engin extends CI_Model
         $result = $this->tms_db
             ->select('OPERATION_ID, OPERATION_NAME')
             ->from($table)
+            ->where('IS_DELETED', 0)
             ->order_by('OPERATION_NAME', 'ASC')
             ->get();
-        
+
         if ($result && $result->num_rows() > 0) {
             return $result->result_array();
         }
@@ -151,6 +153,7 @@ class M_tool_draw_engin extends CI_Model
         $result = $this->tms_db
             ->select('MAKER_ID, MAKER_NAME')
             ->from($table)
+            ->where('IS_DELETED', 0)
             ->order_by('MAKER_NAME', 'ASC')
             ->get();
 
@@ -165,7 +168,7 @@ class M_tool_draw_engin extends CI_Model
         $id = (int)$id;
         if ($id <= 0) return null;
         $table = 'TMS_DB.dbo.TMS_M_TOOL';
-        $result = $this->tms_db->select('TOOL_ID, TOOL_NAME')->from($table)->where('TOOL_ID', $id)->where('IS_DELETED',0)->limit(1)->get();
+        $result = $this->tms_db->select('TOOL_ID, TOOL_NAME')->from($table)->where('TOOL_ID', $id)->where('IS_DELETED', 0)->limit(1)->get();
         if ($result && $result->num_rows() > 0) return $result->row_array();
         return null;
     }
@@ -180,9 +183,10 @@ class M_tool_draw_engin extends CI_Model
         $result = $this->tms_db
             ->select('MATERIAL_ID, MATERIAL_NAME')
             ->from($table)
+            ->where('IS_DELETED', 0)
             ->order_by('MATERIAL_NAME', 'ASC')
             ->get();
-        
+
         if ($result && $result->num_rows() > 0) {
             return $result->result_array();
         }
@@ -197,7 +201,7 @@ class M_tool_draw_engin extends CI_Model
         $id = (int)$id;
         if ($id <= 0) return null;
         $table = 'TMS_DB.dbo.TMS_M_MATERIAL';
-        $result = $this->tms_db->select('MATERIAL_ID, MATERIAL_NAME')->from($table)->where('MATERIAL_ID', $id)->limit(1)->get();
+        $result = $this->tms_db->select('MATERIAL_ID, MATERIAL_NAME')->from($table)->where('MATERIAL_ID', $id)->where('IS_DELETED', 0)->limit(1)->get();
         if ($result && $result->num_rows() > 0) return $result->row_array();
         return null;
     }
@@ -744,10 +748,28 @@ class M_tool_draw_engin extends CI_Model
                 @TD_EFFECTIVE_DATE = ?, @TD_MODIFIED_DATE = ?, @TD_MODIFIED_BY = ?, @TD_MATERIAL_ID = ?, @MATERIAL_NAME = ?,
                 @TD_MAKER_ID = ?, @MAKER_NAME = ?, @TD_MIN_QTY = ?, @TD_REPLENISH_QTY = ?, @TD_PRICE = ?, @TD_TOOL_LIFE = ?, @TD_DESCRIPTION = ?, @HISTORY_ACTION = ?";
             $spParams = array(
-                $params['TD_ID'], $params['TD_PRODUCT_ID'], $params['PRODUCT_NAME'], $params['TD_PROCESS_ID'], $params['OPERATION_NAME'],
-                $params['TD_TOOL_NAME'], $params['TOOL_RESOLVED_NAME'], $params['TD_DRAWING_NO'], $params['TD_REVISION'], $params['TD_STATUS'],
-                $params['TD_EFFECTIVE_DATE'], $params['TD_MODIFIED_DATE'], $params['TD_MODIFIED_BY'], $params['TD_MATERIAL_ID'], $params['MATERIAL_NAME'],
-                $params['TD_MAKER_ID'], $params['MAKER_NAME'], $params['TD_MIN_QTY'], $params['TD_REPLENISH_QTY'], $params['TD_PRICE'], $params['TD_TOOL_LIFE'], $params['TD_DESCRIPTION'],
+                $params['TD_ID'],
+                $params['TD_PRODUCT_ID'],
+                $params['PRODUCT_NAME'],
+                $params['TD_PROCESS_ID'],
+                $params['OPERATION_NAME'],
+                $params['TD_TOOL_NAME'],
+                $params['TOOL_RESOLVED_NAME'],
+                $params['TD_DRAWING_NO'],
+                $params['TD_REVISION'],
+                $params['TD_STATUS'],
+                $params['TD_EFFECTIVE_DATE'],
+                $params['TD_MODIFIED_DATE'],
+                $params['TD_MODIFIED_BY'],
+                $params['TD_MATERIAL_ID'],
+                $params['MATERIAL_NAME'],
+                $params['TD_MAKER_ID'],
+                $params['MAKER_NAME'],
+                $params['TD_MIN_QTY'],
+                $params['TD_REPLENISH_QTY'],
+                $params['TD_PRICE'],
+                $params['TD_TOOL_LIFE'],
+                $params['TD_DESCRIPTION'],
                 $params['HISTORY_ACTION']
             );
             $this->tms_db->query($sql, $spParams);
@@ -792,5 +814,3 @@ class M_tool_draw_engin extends CI_Model
         return false;
     }
 }
-
-
