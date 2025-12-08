@@ -31,6 +31,9 @@ class Tool_bom_engin extends MY_Controller
     {
         $data = array();
         $data['list_data'] = $this->tool_bom_engin->get_all();
+        $data['products'] = $this->tool_bom_engin->get_products();
+        $data['operations'] = $this->tool_bom_engin->get_operations();
+        $data['machine_groups'] = $this->tool_bom_engin->get_machine_groups();
 
         $this->view('index_tool_bom_engin', $data, FALSE);
     }
@@ -53,10 +56,13 @@ class Tool_bom_engin extends MY_Controller
             // validation rules
             $this->form_validation->set_rules('TOOL_BOM', 'Tool BOM', 'required|trim');
             $this->form_validation->set_rules('DESCRIPTION', 'Description', 'trim');
-            $this->form_validation->set_rules('PRODUCT', 'Product', 'trim');
-            $this->form_validation->set_rules('MACHINE_GROUP', 'Machine Group', 'trim');
+            $this->form_validation->set_rules('PRODUCT_ID', 'Product', 'integer');
+            $this->form_validation->set_rules('PROCESS_ID', 'Process', 'integer');
+            $this->form_validation->set_rules('MACHINE_GROUP_ID', 'Machine Group', 'integer');
             $this->form_validation->set_rules('REVISION', 'Revision', 'integer');
             $this->form_validation->set_rules('STATUS', 'Status', 'integer');
+            $this->form_validation->set_rules('EFFECTIVE_DATE', 'Effective Date', 'trim');
+            $this->form_validation->set_rules('CHANGE_SUMMARY', 'Change Summary', 'trim');
 
             if ($this->form_validation->run() == FALSE) {
                 $this->form_validation->set_error_delimiters('', '');
@@ -67,13 +73,45 @@ class Tool_bom_engin extends MY_Controller
 
             $tool_bom = trim($this->input->post('TOOL_BOM', TRUE));
             $description = trim($this->input->post('DESCRIPTION', TRUE));
-            $product = trim($this->input->post('PRODUCT', TRUE));
-            $machine_group = trim($this->input->post('MACHINE_GROUP', TRUE));
+            $product_id = (int)$this->input->post('PRODUCT_ID', TRUE);
+            $process_id = (int)$this->input->post('PROCESS_ID', TRUE);
+            $machine_group_id = (int)$this->input->post('MACHINE_GROUP_ID', TRUE);
             $revision = (int)$this->input->post('REVISION', TRUE);
             $status = (int)$this->input->post('STATUS', TRUE);
+            $effective_date = trim($this->input->post('EFFECTIVE_DATE', TRUE));
+            $change_summary = trim($this->input->post('CHANGE_SUMMARY', TRUE));
+
+            // Handle file upload for drawing
+            $drawing_filename = '';
+            if (!empty($_FILES) && isset($_FILES['DRAWING_FILE']) && !empty($_FILES['DRAWING_FILE']['name'])) {
+                // save drawing under project/tool_engineering/img/
+                $uploadDir = FCPATH . 'tool_engineering/img/';
+                if (!is_dir($uploadDir)) {
+                    @mkdir($uploadDir, 0755, true);
+                }
+                $origName = $_FILES['DRAWING_FILE']['name'];
+                $safeName = preg_replace('/[^A-Za-z0-9_\-\.]/', '_', basename($origName));
+                $fileName = 'BOM_' . time() . '_' . $safeName;
+                $target = $uploadDir . $fileName;
+                if (move_uploaded_file($_FILES['DRAWING_FILE']['tmp_name'], $target)) {
+                    $drawing_filename = $fileName;
+                } else {
+                    $result['message'] = 'Gagal mengunggah file drawing.';
+                    echo json_encode($result);
+                    return;
+                }
+            } else {
+                // Keep old filename if editing and no new file uploaded
+                if ($action === 'EDIT' && $id > 0) {
+                    $current = $this->tool_bom_engin->get_by_id($id);
+                    if ($current && isset($current['DRAWING']) && $current['DRAWING'] !== '') {
+                        $drawing_filename = $current['DRAWING'];
+                    }
+                }
+            }
 
             if ($action === 'ADD') {
-                $ok = $this->tool_bom_engin->add_data($tool_bom, $description, $product, $machine_group, $revision, $status);
+                $ok = $this->tool_bom_engin->add_data($tool_bom, $description, $product_id, $process_id, $machine_group_id, $revision, $status, $effective_date, $change_summary, $drawing_filename);
                 if ($ok === true) {
                     $result['success'] = true;
                     $result['message'] = $this->tool_bom_engin->messages ?: 'Tool BOM Engineering berhasil ditambahkan.';
@@ -88,7 +126,7 @@ class Tool_bom_engin extends MY_Controller
             }
 
             if ($action === 'EDIT' && $id > 0) {
-                $ok = $this->tool_bom_engin->edit_data($id, $tool_bom, $description, $product, $machine_group, $revision, $status);
+                $ok = $this->tool_bom_engin->edit_data($id, $tool_bom, $description, $product_id, $process_id, $machine_group_id, $revision, $status, $effective_date, $change_summary, $drawing_filename);
                 if ($ok === true) {
                     $result['success'] = true;
                     $result['message'] = $this->tool_bom_engin->messages ?: 'Tool BOM Engineering berhasil diperbarui.';

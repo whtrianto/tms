@@ -70,6 +70,7 @@
                                         <th>Tool BOM</th>
                                         <th>Description</th>
                                         <th>Product</th>
+                                        <th>Process</th>
                                         <th>Machine Group</th>
                                         <th>Revision</th>
                                         <th>Status</th>
@@ -79,27 +80,73 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <?php foreach ($list_data as $row): ?>
+                                    <?php foreach ($list_data as $row): 
+                                        // Resolve product name
+                                        $product_name = '';
+                                        if (isset($row['PRODUCT_ID']) && $row['PRODUCT_ID'] > 0) {
+                                            foreach ($products as $p) {
+                                                if ((int)$p['PRODUCT_ID'] === (int)$row['PRODUCT_ID']) {
+                                                    $product_name = $p['PRODUCT_NAME'];
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                        if ($product_name === '' && isset($row['PRODUCT'])) {
+                                            $product_name = $row['PRODUCT'];
+                                        }
+                                        
+                                        // Resolve process name
+                                        $process_name = '';
+                                        if (isset($row['PROCESS_ID']) && $row['PROCESS_ID'] > 0) {
+                                            foreach ($operations as $o) {
+                                                if ((int)$o['OPERATION_ID'] === (int)$row['PROCESS_ID']) {
+                                                    $process_name = $o['OPERATION_NAME'];
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                        
+                                        // Resolve machine group name
+                                        $machine_group_name = '';
+                                        if (isset($row['MACHINE_GROUP_ID']) && $row['MACHINE_GROUP_ID'] > 0) {
+                                            foreach ($machine_groups as $mg) {
+                                                if ((int)$mg['MACHINE_ID'] === (int)$row['MACHINE_GROUP_ID']) {
+                                                    $machine_group_name = $mg['MACHINE_NAME'];
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                        if ($machine_group_name === '' && isset($row['MACHINE_GROUP'])) {
+                                            $machine_group_name = $row['MACHINE_GROUP'];
+                                        }
+                                        
+                                        // Status badge
+                                        $status_badge = '';
+                                        if (isset($row['STATUS'])) {
+                                            if ($row['STATUS'] == 1) {
+                                                $status_badge = '<span class="badge badge-success">Active</span>';
+                                            } elseif ($row['STATUS'] == 2) {
+                                                $status_badge = '<span class="badge badge-warning">Pending</span>';
+                                            } else {
+                                                $status_badge = '<span class="badge badge-secondary">Inactive</span>';
+                                            }
+                                        }
+                                    ?>
                                         <tr>
                                             <td><?= htmlspecialchars($row['ID'], ENT_QUOTES, 'UTF-8'); ?></td>
                                             <td><?= htmlspecialchars($row['TOOL_BOM'], ENT_QUOTES, 'UTF-8'); ?></td>
                                             <td><?= htmlspecialchars($row['DESCRIPTION'] ?: '', ENT_QUOTES, 'UTF-8'); ?></td>
-                                            <td><?= htmlspecialchars($row['PRODUCT'] ?: '', ENT_QUOTES, 'UTF-8'); ?></td>
-                                            <td><?= htmlspecialchars($row['MACHINE_GROUP'] ?: '', ENT_QUOTES, 'UTF-8'); ?></td>
+                                            <td><?= htmlspecialchars($product_name, ENT_QUOTES, 'UTF-8'); ?></td>
+                                            <td><?= htmlspecialchars($process_name, ENT_QUOTES, 'UTF-8'); ?></td>
+                                            <td><?= htmlspecialchars($machine_group_name, ENT_QUOTES, 'UTF-8'); ?></td>
                                             <td><?= htmlspecialchars($row['REVISION'], ENT_QUOTES, 'UTF-8'); ?></td>
-                                            <td>
-                                                <?php if (isset($row['STATUS']) && $row['STATUS'] == 1): ?>
-                                                    <span class="badge badge-success">Active</span>
-                                                <?php else: ?>
-                                                    <span class="badge badge-secondary">Inactive</span>
-                                                <?php endif; ?>
-                                            </td>
+                                            <td><?= $status_badge; ?></td>
                                             <td><?= htmlspecialchars($row['MODIFIED_BY'] ?: '', ENT_QUOTES, 'UTF-8'); ?></td>
                                             <td><?= htmlspecialchars($row['MODIFIED_DATE'] ?: '', ENT_QUOTES, 'UTF-8'); ?></td>
                                             <td>
                                                 <div class="action-buttons">
                                                     <button class="btn btn-sm btn-warning btn-edit" 
-                                                            data-edit='<?= json_encode($row); ?>'
+                                                            data-edit='<?= htmlspecialchars(json_encode($row), ENT_QUOTES, 'UTF-8'); ?>'
                                                             title="Edit">
                                                         <i class="fas fa-edit"></i>
                                                     </button>
@@ -127,19 +174,58 @@
                                 <button type="button" class="close" data-dismiss="modal">&times;</button>
                             </div>
                             <div class="modal-body">
-                                <form id="formToolBOM" method="post" action="<?= base_url('Tool_engineering/tool_bom_engin/submit_data'); ?>">
+                                <form id="formToolBOM" method="post" action="<?= base_url('Tool_engineering/tool_bom_engin/submit_data'); ?>" enctype="multipart/form-data">
                                     <input type="hidden" name="action" value="">
                                     <input type="hidden" name="ID" value="">
 
                                     <div class="form-row">
-                                        <div class="form-group col-md-6">
+                                        <div class="form-group col-md-12">
+                                            <label class="label-required">Product</label>
+                                            <select name="PRODUCT_ID" class="form-control">
+                                                <option value="">-- Select Product --</option>
+                                                <?php foreach ($products as $p): ?>
+                                                    <option value="<?= (int)$p['PRODUCT_ID']; ?>"><?= htmlspecialchars($p['PRODUCT_NAME'], ENT_QUOTES, 'UTF-8'); ?></option>
+                                                <?php endforeach; ?>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div class="form-row">
+                                        <div class="form-group col-md-12">
                                             <label class="label-required">Tool BOM</label>
                                             <input type="text" name="TOOL_BOM" class="form-control" required>
                                             <div class="invalid-feedback">Tool BOM wajib diisi.</div>
                                         </div>
-                                        <div class="form-group col-md-6">
-                                            <label>Product</label>
-                                            <input type="text" name="PRODUCT" class="form-control">
+                                    </div>
+
+                                    <div class="form-row">
+                                        <div class="form-group col-md-12">
+                                            <label>Revision</label>
+                                            <input type="number" name="REVISION" class="form-control" value="0">
+                                        </div>
+                                    </div>
+
+                                    <div class="form-row">
+                                        <div class="form-group col-md-12">
+                                            <label>Process</label>
+                                            <select name="PROCESS_ID" class="form-control">
+                                                <option value="">-- Select Process --</option>
+                                                <?php foreach ($operations as $o): ?>
+                                                    <option value="<?= (int)$o['OPERATION_ID']; ?>"><?= htmlspecialchars($o['OPERATION_NAME'], ENT_QUOTES, 'UTF-8'); ?></option>
+                                                <?php endforeach; ?>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div class="form-row">
+                                        <div class="form-group col-md-12">
+                                            <label>Machine Group</label>
+                                            <select name="MACHINE_GROUP_ID" class="form-control">
+                                                <option value="">-- Select Machine Group --</option>
+                                                <?php foreach ($machine_groups as $mg): ?>
+                                                    <option value="<?= (int)$mg['MACHINE_ID']; ?>"><?= htmlspecialchars($mg['MACHINE_NAME'], ENT_QUOTES, 'UTF-8'); ?></option>
+                                                <?php endforeach; ?>
+                                            </select>
                                         </div>
                                     </div>
 
@@ -151,20 +237,35 @@
                                     </div>
 
                                     <div class="form-row">
-                                        <div class="form-group col-md-6">
-                                            <label>Machine Group</label>
-                                            <input type="text" name="MACHINE_GROUP" class="form-control">
-                                        </div>
-                                        <div class="form-group col-md-3">
-                                            <label>Revision</label>
-                                            <input type="number" name="REVISION" class="form-control" value="0">
-                                        </div>
-                                        <div class="form-group col-md-3">
+                                        <div class="form-group col-md-12">
                                             <label>Status</label>
                                             <select name="STATUS" class="form-control">
                                                 <option value="1">Active</option>
                                                 <option value="0">Inactive</option>
+                                                <option value="2">Pending</option>
                                             </select>
+                                        </div>
+                                    </div>
+
+                                    <div class="form-row">
+                                        <div class="form-group col-md-12">
+                                            <label>Effective Date</label>
+                                            <input type="date" name="EFFECTIVE_DATE" class="form-control">
+                                        </div>
+                                    </div>
+
+                                    <div class="form-row">
+                                        <div class="form-group col-md-12">
+                                            <label>Change Summary</label>
+                                            <textarea name="CHANGE_SUMMARY" class="form-control" rows="3"></textarea>
+                                        </div>
+                                    </div>
+
+                                    <div class="form-row">
+                                        <div class="form-group col-md-12">
+                                            <label>Drawing</label>
+                                            <input type="file" name="DRAWING_FILE" class="form-control" accept="image/*">
+                                            <small class="form-text text-muted">Upload file gambar untuk drawing.</small>
                                         </div>
                                     </div>
                                 </form>
@@ -202,17 +303,18 @@
                     autoWidth: false,
                     scrollX: false,
                     columnDefs: [
-                        { orderable: false, targets: [9] },
+                        { orderable: false, targets: [10] },
                         { width: '50px', targets: 0 },      // ID
-                        { width: '120px', targets: 1 },    // Tool BOM
+                        { width: '120px', targets: 1 },     // Tool BOM
                         { width: '150px', targets: 2 },     // Description
                         { width: '100px', targets: 3 },     // Product
-                        { width: '120px', targets: 4 },     // Machine Group
-                        { width: '70px', targets: 5 },      // Revision
-                        { width: '80px', targets: 6 },      // Status
-                        { width: '100px', targets: 7 },     // Modified By
-                        { width: '120px', targets: 8 },     // Modified Date
-                        { width: '100px', targets: 9 }      // ACTION
+                        { width: '100px', targets: 4 },     // Process
+                        { width: '120px', targets: 5 },     // Machine Group
+                        { width: '70px', targets: 6 },      // Revision
+                        { width: '80px', targets: 7 },      // Status
+                        { width: '100px', targets: 8 },     // Modified By
+                        { width: '120px', targets: 9 },     // Modified Date
+                        { width: '100px', targets: 10 }     // ACTION
                     ]
                 });
 
@@ -228,6 +330,9 @@
                     $('[name="TOOL_BOM"]').removeClass('is-invalid');
                     $('[name="REVISION"]').val(0);
                     $('[name="STATUS"]').val(1);
+                    // Set default effective date to today
+                    var today = new Date().toISOString().split('T')[0];
+                    $('[name="EFFECTIVE_DATE"]').val(today);
                     $('#modalForm').modal('show');
                 });
 
@@ -244,10 +349,13 @@
                     $('input[name="ID"]').val(d.ID);
                     $('[name="TOOL_BOM"]').val(d.TOOL_BOM || '');
                     $('[name="DESCRIPTION"]').val(d.DESCRIPTION || '');
-                    $('[name="PRODUCT"]').val(d.PRODUCT || '');
-                    $('[name="MACHINE_GROUP"]').val(d.MACHINE_GROUP || '');
+                    $('[name="PRODUCT_ID"]').val(d.PRODUCT_ID || '');
+                    $('[name="PROCESS_ID"]').val(d.PROCESS_ID || '');
+                    $('[name="MACHINE_GROUP_ID"]').val(d.MACHINE_GROUP_ID || '');
                     $('[name="REVISION"]').val(d.REVISION || 0);
-                    $('[name="STATUS"]').val(d.STATUS || 0);
+                    $('[name="STATUS"]').val(d.STATUS !== undefined ? d.STATUS : 1);
+                    $('[name="EFFECTIVE_DATE"]').val(d.EFFECTIVE_DATE || '');
+                    $('[name="CHANGE_SUMMARY"]').val(d.CHANGE_SUMMARY || '');
                     $('[name="TOOL_BOM"]').removeClass('is-invalid');
                     $('#modalForm').modal('show');
                 });
@@ -272,11 +380,18 @@
 
                     if (!isValid) return;
 
+                    var formEl = $(this)[0];
+                    var fd = new FormData(formEl);
+                    
                     $.ajax({
                         url: $(this).attr('action'),
                         type: 'POST',
-                        data: $(this).serialize(),
-                        dataType: 'json'
+                        data: fd,
+                        dataType: 'json',
+                        processData: false,
+                        contentType: false,
+                        cache: false,
+                        timeout: 30000
                     }).done(function(res) {
                         if (typeof res === 'object' && res !== null && res.hasOwnProperty('success')) {
                             if (res.success === true) {
@@ -295,6 +410,9 @@
                         var msg = 'Terjadi kesalahan pada server';
                         if (status === 'timeout') msg = 'Request timeout';
                         else if (status === 'error') msg = 'HTTP Error ' + xhr.status;
+                        else if (status === 'parsererror') {
+                            msg = 'Response bukan JSON valid. Raw response: ' + xhr.responseText.substring(0, 200);
+                        }
                         toastr.error(msg);
                     });
                 });

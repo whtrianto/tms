@@ -34,7 +34,36 @@ if (!class_exists('M_tool_bom_engin')) {
 
         public function get_all()
         {
-            $selectCols = 'ID, TOOL_BOM, DESCRIPTION, PRODUCT, MACHINE_GROUP, REVISION, STATUS, MODIFIED_BY, MODIFIED_DATE';
+            // Build select columns - include new columns if they exist
+            $selectCols = 'ID, TOOL_BOM, DESCRIPTION, REVISION, STATUS, MODIFIED_BY, MODIFIED_DATE';
+            
+            // Add FK columns if they exist
+            if ($this->has_column('PRODUCT_ID')) {
+                $selectCols .= ', PRODUCT_ID';
+            }
+            if ($this->has_column('PROCESS_ID')) {
+                $selectCols .= ', PROCESS_ID';
+            }
+            if ($this->has_column('MACHINE_GROUP_ID')) {
+                $selectCols .= ', MACHINE_GROUP_ID';
+            }
+            // Keep old text columns for backward compatibility
+            if ($this->has_column('PRODUCT')) {
+                $selectCols .= ', PRODUCT';
+            }
+            if ($this->has_column('MACHINE_GROUP')) {
+                $selectCols .= ', MACHINE_GROUP';
+            }
+            // Add new columns
+            if ($this->has_column('EFFECTIVE_DATE')) {
+                $selectCols .= ', EFFECTIVE_DATE';
+            }
+            if ($this->has_column('CHANGE_SUMMARY')) {
+                $selectCols .= ', CHANGE_SUMMARY';
+            }
+            if ($this->has_column('DRAWING')) {
+                $selectCols .= ', DRAWING';
+            }
 
             $result = $this->tms_db
                 ->select($selectCols)
@@ -66,16 +95,78 @@ if (!class_exists('M_tool_bom_engin')) {
             return isset($row['ID']) ? ((int)$row['ID'] + 1) : 1;
         }
 
+        /**
+         * Get all products from TMS_M_PRODUCT
+         */
+        public function get_products()
+        {
+            $table = 'TMS_DB.dbo.TMS_M_PRODUCT';
+            $result = $this->tms_db
+                ->select('PRODUCT_ID, PRODUCT_NAME')
+                ->from($table)
+                ->where('IS_DELETED', 0)
+                ->order_by('PRODUCT_NAME', 'ASC')
+                ->get();
+
+            if ($result && $result->num_rows() > 0) {
+                return $result->result_array();
+            }
+            return array();
+        }
+
+        /**
+         * Get all operations from TMS_M_OPERATION
+         */
+        public function get_operations()
+        {
+            $table = 'TMS_DB.dbo.TMS_M_OPERATION';
+            $result = $this->tms_db
+                ->select('OPERATION_ID, OPERATION_NAME')
+                ->from($table)
+                ->where('IS_DELETED', 0)
+                ->order_by('OPERATION_NAME', 'ASC')
+                ->get();
+
+            if ($result && $result->num_rows() > 0) {
+                return $result->result_array();
+            }
+            return array();
+        }
+
+        /**
+         * Get all machine groups from TMS_M_MACHINES (IS_GROUP = 1)
+         */
+        public function get_machine_groups()
+        {
+            $table = 'TMS_DB.dbo.TMS_M_MACHINES';
+            $result = $this->tms_db
+                ->select('MACHINE_ID, MACHINE_NAME')
+                ->from($table)
+                ->where('IS_DELETED', 0)
+                ->where('IS_GROUP', 1)
+                ->order_by('MACHINE_NAME', 'ASC')
+                ->get();
+
+            if ($result && $result->num_rows() > 0) {
+                return $result->result_array();
+            }
+            return array();
+        }
+
         /* ========== MUTATORS ========== */
 
-        public function add_data($tool_bom, $description, $product, $machine_group, $revision, $status)
+        public function add_data($tool_bom, $description, $product_id, $process_id, $machine_group_id, $revision, $status, $effective_date, $change_summary, $drawing_filename)
         {
             $tool_bom = trim((string)$tool_bom);
             $description = trim((string)$description);
-            $product = trim((string)$product);
-            $machine_group = trim((string)$machine_group);
+            $product_id = (int)$product_id;
+            $process_id = (int)$process_id;
+            $machine_group_id = (int)$machine_group_id;
             $revision = (int)$revision;
             $status = (int)$status;
+            $effective_date = trim((string)$effective_date);
+            $change_summary = trim((string)$change_summary);
+            $drawing_filename = trim((string)$drawing_filename);
 
             if ($tool_bom === '') {
                 $this->messages = 'Tool BOM tidak boleh kosong.';
@@ -92,11 +183,41 @@ if (!class_exists('M_tool_bom_engin')) {
             $insertData = array(
                 'TOOL_BOM'      => $tool_bom,
                 'DESCRIPTION'   => $description !== '' ? $description : null,
-                'PRODUCT'       => $product !== '' ? $product : null,
-                'MACHINE_GROUP' => $machine_group !== '' ? $machine_group : null,
                 'REVISION'      => $revision,
                 'STATUS'        => $status
             );
+
+            // Add FK columns if they exist
+            if ($this->has_column('PRODUCT_ID')) {
+                $insertData['PRODUCT_ID'] = $product_id > 0 ? $product_id : null;
+            }
+            if ($this->has_column('PROCESS_ID')) {
+                $insertData['PROCESS_ID'] = $process_id > 0 ? $process_id : null;
+            }
+            if ($this->has_column('MACHINE_GROUP_ID')) {
+                $insertData['MACHINE_GROUP_ID'] = $machine_group_id > 0 ? $machine_group_id : null;
+            }
+            // Keep old text columns for backward compatibility
+            if ($this->has_column('PRODUCT') && $product_id > 0) {
+                // Get product name
+                $product = $this->tms_db->select('PRODUCT_NAME')->from('TMS_DB.dbo.TMS_M_PRODUCT')->where('PRODUCT_ID', $product_id)->limit(1)->get()->row_array();
+                $insertData['PRODUCT'] = $product ? $product['PRODUCT_NAME'] : null;
+            }
+            if ($this->has_column('MACHINE_GROUP') && $machine_group_id > 0) {
+                // Get machine group name
+                $mg = $this->tms_db->select('MACHINE_NAME')->from('TMS_DB.dbo.TMS_M_MACHINES')->where('MACHINE_ID', $machine_group_id)->limit(1)->get()->row_array();
+                $insertData['MACHINE_GROUP'] = $mg ? $mg['MACHINE_NAME'] : null;
+            }
+            // Add new columns
+            if ($this->has_column('EFFECTIVE_DATE')) {
+                $insertData['EFFECTIVE_DATE'] = $effective_date !== '' ? $effective_date : null;
+            }
+            if ($this->has_column('CHANGE_SUMMARY')) {
+                $insertData['CHANGE_SUMMARY'] = $change_summary !== '' ? $change_summary : null;
+            }
+            if ($this->has_column('DRAWING')) {
+                $insertData['DRAWING'] = $drawing_filename !== '' ? $drawing_filename : null;
+            }
 
             if ($modifiedBy !== '') {
                 $insertData['MODIFIED_BY'] = $modifiedBy;
@@ -105,6 +226,13 @@ if (!class_exists('M_tool_bom_engin')) {
             $ok = $this->tms_db->insert($this->table, $insertData);
 
             if ($ok) {
+                // Set EFFECTIVE_DATE if column exists and not set
+                if ($this->has_column('EFFECTIVE_DATE') && ($effective_date === '' || $effective_date === null)) {
+                    $new_id = (int)$this->tms_db->insert_id();
+                    if ($new_id > 0) {
+                        $this->tms_db->query("UPDATE {$this->table} SET EFFECTIVE_DATE = GETDATE() WHERE ID = ?", array($new_id));
+                    }
+                }
                 $this->messages = 'Tool BOM Engineering berhasil ditambahkan.';
                 return true;
             }
@@ -113,15 +241,19 @@ if (!class_exists('M_tool_bom_engin')) {
             return false;
         }
 
-        public function edit_data($id, $tool_bom, $description, $product, $machine_group, $revision, $status)
+        public function edit_data($id, $tool_bom, $description, $product_id, $process_id, $machine_group_id, $revision, $status, $effective_date, $change_summary, $drawing_filename)
         {
             $id = (int)$id;
             $tool_bom = trim((string)$tool_bom);
             $description = trim((string)$description);
-            $product = trim((string)$product);
-            $machine_group = trim((string)$machine_group);
+            $product_id = (int)$product_id;
+            $process_id = (int)$process_id;
+            $machine_group_id = (int)$machine_group_id;
             $revision = (int)$revision;
             $status = (int)$status;
+            $effective_date = trim((string)$effective_date);
+            $change_summary = trim((string)$change_summary);
+            $drawing_filename = trim((string)$drawing_filename);
 
             $current = $this->get_by_id($id);
             if (!$current) {
@@ -144,11 +276,42 @@ if (!class_exists('M_tool_bom_engin')) {
             $updateData = array(
                 'TOOL_BOM'      => $tool_bom,
                 'DESCRIPTION'   => $description !== '' ? $description : null,
-                'PRODUCT'       => $product !== '' ? $product : null,
-                'MACHINE_GROUP' => $machine_group !== '' ? $machine_group : null,
                 'REVISION'      => $revision,
                 'STATUS'        => $status
             );
+
+            // Add FK columns if they exist
+            if ($this->has_column('PRODUCT_ID')) {
+                $updateData['PRODUCT_ID'] = $product_id > 0 ? $product_id : null;
+            }
+            if ($this->has_column('PROCESS_ID')) {
+                $updateData['PROCESS_ID'] = $process_id > 0 ? $process_id : null;
+            }
+            if ($this->has_column('MACHINE_GROUP_ID')) {
+                $updateData['MACHINE_GROUP_ID'] = $machine_group_id > 0 ? $machine_group_id : null;
+            }
+            // Keep old text columns for backward compatibility
+            if ($this->has_column('PRODUCT') && $product_id > 0) {
+                // Get product name
+                $product = $this->tms_db->select('PRODUCT_NAME')->from('TMS_DB.dbo.TMS_M_PRODUCT')->where('PRODUCT_ID', $product_id)->limit(1)->get()->row_array();
+                $updateData['PRODUCT'] = $product ? $product['PRODUCT_NAME'] : null;
+            }
+            if ($this->has_column('MACHINE_GROUP') && $machine_group_id > 0) {
+                // Get machine group name
+                $mg = $this->tms_db->select('MACHINE_NAME')->from('TMS_DB.dbo.TMS_M_MACHINES')->where('MACHINE_ID', $machine_group_id)->limit(1)->get()->row_array();
+                $updateData['MACHINE_GROUP'] = $mg ? $mg['MACHINE_NAME'] : null;
+            }
+            // Add new columns
+            if ($this->has_column('EFFECTIVE_DATE')) {
+                $updateData['EFFECTIVE_DATE'] = $effective_date !== '' ? $effective_date : null;
+            }
+            if ($this->has_column('CHANGE_SUMMARY')) {
+                $updateData['CHANGE_SUMMARY'] = $change_summary !== '' ? $change_summary : null;
+            }
+            // Only update drawing if new file is provided
+            if ($this->has_column('DRAWING') && $drawing_filename !== '') {
+                $updateData['DRAWING'] = $drawing_filename;
+            }
 
             // Only set MODIFIED_BY if we have a valid value
             if ($modifiedBy !== '') {
