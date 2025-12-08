@@ -13,12 +13,12 @@ class Tool_draw_tooling extends MY_Controller
         parent::__construct();
 
         $this->load->library(array('form_validation', 'session'));
-        
+
         // capture current user id/username for later use (fallback to SYSTEM)
         $username_from_session = $this->session->userdata('username');
         $this->uid = (string) ($username_from_session ?: 'SYSTEM');
         log_message('debug', '[Tool_draw_tooling::__construct] username_from_session=' . var_export($username_from_session, true) . ', uid="' . $this->uid . '"');
-        
+
         // load models AFTER setting uid
         $this->load->model('M_tool_draw_tooling', 'tool_draw_tooling');
         $this->tool_draw_tooling->uid = $this->uid;
@@ -28,7 +28,7 @@ class Tool_draw_tooling extends MY_Controller
         $this->load->model('M_tool_draw_engin', 'tool_draw_engin');
         $this->tool_draw_engin->uid = $this->uid;
         log_message('debug', '[Tool_draw_tooling::__construct] engin model uid set to "' . $this->tool_draw_engin->uid . '"');
-        
+
         $this->config->set_item('Blade_enable', FALSE);
     }
 
@@ -56,10 +56,10 @@ class Tool_draw_tooling extends MY_Controller
     {
         // Clear output buffers to ensure clean JSON response
         if (ob_get_level()) ob_clean();
-        
+
         $this->output->set_content_type('application/json');
         $result = array('success' => false, 'message' => '');
-        
+
         try {
             $action = strtoupper($this->input->post('action', TRUE));
             $id     = (int)$this->input->post('TT_ID', TRUE);
@@ -173,7 +173,6 @@ class Tool_draw_tooling extends MY_Controller
             log_message('debug', '[submit_data] invalid action/id response: ' . $json);
             echo $json;
             return;
-            
         } catch (Exception $e) {
             // log full context for debugging
             $ctx = array(
@@ -374,30 +373,66 @@ class Tool_draw_tooling extends MY_Controller
                         break;
                     }
                 }
-                
+
                 // Final fallback: if any snapshot name is still empty, try to fetch current TD record
-                if ((empty($h['PRODUCT_NAME']) || empty($h['OPERATION_NAME']) || empty($h['MATERIAL_NAME']) || empty($h['MAKER_NAME'])) && isset($h['TD_ID']) && (int)$h['TD_ID'] > 0) {
+                // Also check if tooling fields are missing and try to get from current record
+                $needFallback = (empty($h['PRODUCT_NAME']) || empty($h['OPERATION_NAME']) || empty($h['MATERIAL_NAME']) || empty($h['MAKER_NAME']) ||
+                    (!isset($h['TD_MIN_QTY']) || $h['TD_MIN_QTY'] === null) ||
+                    (!isset($h['TD_REPLENISH_QTY']) || $h['TD_REPLENISH_QTY'] === null) ||
+                    (!isset($h['TD_PRICE']) || $h['TD_PRICE'] === null) ||
+                    (!isset($h['TD_TOOL_LIFE']) || $h['TD_TOOL_LIFE'] === null) ||
+                    (!isset($h['TD_DESCRIPTION']) || $h['TD_DESCRIPTION'] === null));
+
+                if ($needFallback && isset($h['TD_ID']) && (int)$h['TD_ID'] > 0) {
                     $current = $this->tool_draw_engin->get_by_id((int)$h['TD_ID']);
                     if ($current) {
                         if (empty($h['PRODUCT_NAME']) && isset($current['TD_PRODUCT_ID'])) {
                             foreach ($products as $p) {
-                                if ((int)$p['PRODUCT_ID'] === (int)$current['TD_PRODUCT_ID']) { $h['PRODUCT_NAME'] = $p['PRODUCT_NAME']; break; }
+                                if ((int)$p['PRODUCT_ID'] === (int)$current['TD_PRODUCT_ID']) {
+                                    $h['PRODUCT_NAME'] = $p['PRODUCT_NAME'];
+                                    break;
+                                }
                             }
                         }
                         if (empty($h['OPERATION_NAME']) && isset($current['TD_PROCESS_ID'])) {
                             foreach ($operations as $op) {
-                                if ((int)$op['OPERATION_ID'] === (int)$current['TD_PROCESS_ID']) { $h['OPERATION_NAME'] = $op['OPERATION_NAME']; break; }
+                                if ((int)$op['OPERATION_ID'] === (int)$current['TD_PROCESS_ID']) {
+                                    $h['OPERATION_NAME'] = $op['OPERATION_NAME'];
+                                    break;
+                                }
                             }
                         }
                         if (empty($h['MATERIAL_NAME']) && isset($current['TD_MATERIAL_ID'])) {
                             foreach ($materials as $mat) {
-                                if ((int)$mat['MATERIAL_ID'] === (int)$current['TD_MATERIAL_ID']) { $h['MATERIAL_NAME'] = $mat['MATERIAL_NAME']; break; }
+                                if ((int)$mat['MATERIAL_ID'] === (int)$current['TD_MATERIAL_ID']) {
+                                    $h['MATERIAL_NAME'] = $mat['MATERIAL_NAME'];
+                                    break;
+                                }
                             }
                         }
                         if (empty($h['MAKER_NAME']) && isset($current['TD_MAKER_ID'])) {
                             foreach ($makers as $m2) {
-                                if ((int)$m2['MAKER_ID'] === (int)$current['TD_MAKER_ID']) { $h['MAKER_NAME'] = $m2['MAKER_NAME']; break; }
+                                if ((int)$m2['MAKER_ID'] === (int)$current['TD_MAKER_ID']) {
+                                    $h['MAKER_NAME'] = $m2['MAKER_NAME'];
+                                    break;
+                                }
                             }
+                        }
+                        // Fallback for tooling fields from current record
+                        if ((!isset($h['TD_MIN_QTY']) || $h['TD_MIN_QTY'] === null) && isset($current['TD_MIN_QTY'])) {
+                            $h['TD_MIN_QTY'] = (int)$current['TD_MIN_QTY'];
+                        }
+                        if ((!isset($h['TD_REPLENISH_QTY']) || $h['TD_REPLENISH_QTY'] === null) && isset($current['TD_REPLENISH_QTY'])) {
+                            $h['TD_REPLENISH_QTY'] = (int)$current['TD_REPLENISH_QTY'];
+                        }
+                        if ((!isset($h['TD_PRICE']) || $h['TD_PRICE'] === null) && isset($current['TD_PRICE'])) {
+                            $h['TD_PRICE'] = (float)$current['TD_PRICE'];
+                        }
+                        if ((!isset($h['TD_TOOL_LIFE']) || $h['TD_TOOL_LIFE'] === null) && isset($current['TD_TOOL_LIFE'])) {
+                            $h['TD_TOOL_LIFE'] = (int)$current['TD_TOOL_LIFE'];
+                        }
+                        if ((!isset($h['TD_DESCRIPTION']) || $h['TD_DESCRIPTION'] === null) && isset($current['TD_DESCRIPTION'])) {
+                            $h['TD_DESCRIPTION'] = $current['TD_DESCRIPTION'];
                         }
                     }
                 }
@@ -411,7 +446,10 @@ class Tool_draw_tooling extends MY_Controller
                 // If MAKER_NAME still missing but we have TD_MAKER_ID, resolve from masters
                 if ((empty($h['MAKER_NAME']) || $h['MAKER_NAME'] === null) && isset($h['TD_MAKER_ID']) && (int)$h['TD_MAKER_ID'] > 0) {
                     foreach ($makers as $m3) {
-                        if ((int)$m3['MAKER_ID'] === (int)$h['TD_MAKER_ID']) { $h['MAKER_NAME'] = $m3['MAKER_NAME']; break; }
+                        if ((int)$m3['MAKER_ID'] === (int)$h['TD_MAKER_ID']) {
+                            $h['MAKER_NAME'] = $m3['MAKER_NAME'];
+                            break;
+                        }
                     }
                 }
             }
