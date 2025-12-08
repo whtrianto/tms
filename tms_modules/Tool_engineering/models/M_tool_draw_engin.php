@@ -559,13 +559,15 @@ class M_tool_draw_engin extends CI_Model
                     $h['TD_TOOL_NAME'] = isset($r['TOOL_NAME']) ? $r['TOOL_NAME'] : (isset($r['TD_TOOL_NAME']) ? $r['TD_TOOL_NAME'] : '');
                     $h['TD_MATERIAL_ID'] = isset($r['TD_MATERIAL_ID']) ? (int)$r['TD_MATERIAL_ID'] : (isset($r['TD_MATERIAL_ID']) ? (int)$r['TD_MATERIAL_ID'] : 0);
                     // tooling fields from SP result (if SP returns them)
-                    $h['TD_MAKER_ID'] = isset($r['TD_MAKER_ID']) ? (int)$r['TD_MAKER_ID'] : (isset($r['MAKER_ID']) ? (int)$r['MAKER_ID'] : null);
-                    $h['MAKER_NAME'] = isset($r['MAKER_NAME']) ? $r['MAKER_NAME'] : (isset($r['MAKER']) ? $r['MAKER'] : null);
-                    $h['TD_MIN_QTY'] = isset($r['TD_MIN_QTY']) ? (int)$r['TD_MIN_QTY'] : (isset($r['MIN_QTY']) ? (int)$r['MIN_QTY'] : 0);
-                    $h['TD_REPLENISH_QTY'] = isset($r['TD_REPLENISH_QTY']) ? (int)$r['TD_REPLENISH_QTY'] : (isset($r['REPLENISH_QTY']) ? (int)$r['REPLENISH_QTY'] : 0);
-                    $h['TD_PRICE'] = isset($r['TD_PRICE']) ? (float)$r['TD_PRICE'] : (isset($r['PRICE']) ? (float)$r['PRICE'] : 0.0);
-                    $h['TD_TOOL_LIFE'] = isset($r['TD_TOOL_LIFE']) ? (int)$r['TD_TOOL_LIFE'] : (isset($r['TOOL_LIFE']) ? (int)$r['TOOL_LIFE'] : 0);
-                    $h['TD_DESCRIPTION'] = isset($r['TD_DESCRIPTION']) ? $r['TD_DESCRIPTION'] : (isset($r['DESCRIPTION']) ? $r['DESCRIPTION'] : null);
+                    // Preserve actual values from database - don't default to 0 if value exists
+                    $h['TD_MAKER_ID'] = isset($r['TD_MAKER_ID']) && $r['TD_MAKER_ID'] !== null && $r['TD_MAKER_ID'] !== '' ? (int)$r['TD_MAKER_ID'] : (isset($r['MAKER_ID']) && $r['MAKER_ID'] !== null && $r['MAKER_ID'] !== '' ? (int)$r['MAKER_ID'] : null);
+                    $h['MAKER_NAME'] = isset($r['MAKER_NAME']) && $r['MAKER_NAME'] !== null && $r['MAKER_NAME'] !== '' ? $r['MAKER_NAME'] : (isset($r['MAKER']) && $r['MAKER'] !== null && $r['MAKER'] !== '' ? $r['MAKER'] : null);
+                    // Preserve actual values including 0 - only default to 0 if truly null/not set
+                    $h['TD_MIN_QTY'] = isset($r['TD_MIN_QTY']) && $r['TD_MIN_QTY'] !== null && $r['TD_MIN_QTY'] !== '' ? (int)$r['TD_MIN_QTY'] : (isset($r['MIN_QTY']) && $r['MIN_QTY'] !== null && $r['MIN_QTY'] !== '' ? (int)$r['MIN_QTY'] : null);
+                    $h['TD_REPLENISH_QTY'] = isset($r['TD_REPLENISH_QTY']) && $r['TD_REPLENISH_QTY'] !== null && $r['TD_REPLENISH_QTY'] !== '' ? (int)$r['TD_REPLENISH_QTY'] : (isset($r['REPLENISH_QTY']) && $r['REPLENISH_QTY'] !== null && $r['REPLENISH_QTY'] !== '' ? (int)$r['REPLENISH_QTY'] : null);
+                    $h['TD_PRICE'] = isset($r['TD_PRICE']) && $r['TD_PRICE'] !== null && $r['TD_PRICE'] !== '' ? (float)$r['TD_PRICE'] : (isset($r['PRICE']) && $r['PRICE'] !== null && $r['PRICE'] !== '' ? (float)$r['PRICE'] : null);
+                    $h['TD_TOOL_LIFE'] = isset($r['TD_TOOL_LIFE']) && $r['TD_TOOL_LIFE'] !== null && $r['TD_TOOL_LIFE'] !== '' ? (int)$r['TD_TOOL_LIFE'] : (isset($r['TOOL_LIFE']) && $r['TOOL_LIFE'] !== null && $r['TOOL_LIFE'] !== '' ? (int)$r['TOOL_LIFE'] : null);
+                    $h['TD_DESCRIPTION'] = isset($r['TD_DESCRIPTION']) && $r['TD_DESCRIPTION'] !== null && $r['TD_DESCRIPTION'] !== '' ? $r['TD_DESCRIPTION'] : (isset($r['DESCRIPTION']) && $r['DESCRIPTION'] !== null && $r['DESCRIPTION'] !== '' ? $r['DESCRIPTION'] : null);
                     // keep master snapshots too
                     $h['PRODUCT_NAME'] = isset($r['PRODUCT_NAME']) ? $r['PRODUCT_NAME'] : null;
                     $h['OPERATION_NAME'] = isset($r['OPERATION_NAME']) ? $r['OPERATION_NAME'] : null;
@@ -598,14 +600,35 @@ class M_tool_draw_engin extends CI_Model
                         $h['TD_PRODUCT_ID'] = (int)$h['TD_PRODUCT_ID'];
                         $h['TD_PROCESS_ID'] = (int)$h['TD_PROCESS_ID'];
                         $h['TD_MATERIAL_ID'] = (int)$h['TD_MATERIAL_ID'];
-                        // Ensure tooling fields exist and have proper types
-                        $h['TD_MAKER_ID'] = isset($h['TD_MAKER_ID']) && $h['TD_MAKER_ID'] !== null ? (int)$h['TD_MAKER_ID'] : null;
-                        $h['TD_MIN_QTY'] = isset($h['TD_MIN_QTY']) && $h['TD_MIN_QTY'] !== null ? (int)$h['TD_MIN_QTY'] : 0;
-                        $h['TD_REPLENISH_QTY'] = isset($h['TD_REPLENISH_QTY']) && $h['TD_REPLENISH_QTY'] !== null ? (int)$h['TD_REPLENISH_QTY'] : 0;
-                        $h['TD_PRICE'] = isset($h['TD_PRICE']) && $h['TD_PRICE'] !== null ? (float)$h['TD_PRICE'] : 0.0;
-                        $h['TD_TOOL_LIFE'] = isset($h['TD_TOOL_LIFE']) && $h['TD_TOOL_LIFE'] !== null ? (int)$h['TD_TOOL_LIFE'] : 0;
-                        $h['TD_DESCRIPTION'] = isset($h['TD_DESCRIPTION']) && $h['TD_DESCRIPTION'] !== null ? $h['TD_DESCRIPTION'] : '';
-                        $h['MAKER_NAME'] = isset($h['MAKER_NAME']) && $h['MAKER_NAME'] !== null ? $h['MAKER_NAME'] : '';
+                        // Ensure tooling fields exist and have proper types - preserve actual values from DB
+                        // Log raw values for debugging
+                        log_message('debug', '[M_tool_draw_engin::get_history] Raw from DB - TD_MIN_QTY=' . var_export($h['TD_MIN_QTY'] ?? 'NOT_SET', true) . ', TD_REPLENISH_QTY=' . var_export($h['TD_REPLENISH_QTY'] ?? 'NOT_SET', true) . ', TD_PRICE=' . var_export($h['TD_PRICE'] ?? 'NOT_SET', true) . ', TD_TOOL_LIFE=' . var_export($h['TD_TOOL_LIFE'] ?? 'NOT_SET', true));
+                        
+                        $h['TD_MAKER_ID'] = isset($h['TD_MAKER_ID']) && $h['TD_MAKER_ID'] !== null && $h['TD_MAKER_ID'] !== '' ? (int)$h['TD_MAKER_ID'] : null;
+                        // Preserve actual values from database - only convert null/empty to null (not 0), let controller handle default to 0
+                        // This ensures we preserve actual database values including 0
+                        if (isset($h['TD_MIN_QTY']) && $h['TD_MIN_QTY'] !== null && $h['TD_MIN_QTY'] !== '') {
+                            $h['TD_MIN_QTY'] = (int)$h['TD_MIN_QTY'];
+                        } else {
+                            $h['TD_MIN_QTY'] = null; // Let controller decide default
+                        }
+                        if (isset($h['TD_REPLENISH_QTY']) && $h['TD_REPLENISH_QTY'] !== null && $h['TD_REPLENISH_QTY'] !== '') {
+                            $h['TD_REPLENISH_QTY'] = (int)$h['TD_REPLENISH_QTY'];
+                        } else {
+                            $h['TD_REPLENISH_QTY'] = null; // Let controller decide default
+                        }
+                        if (isset($h['TD_PRICE']) && $h['TD_PRICE'] !== null && $h['TD_PRICE'] !== '') {
+                            $h['TD_PRICE'] = (float)$h['TD_PRICE'];
+                        } else {
+                            $h['TD_PRICE'] = null; // Let controller decide default
+                        }
+                        if (isset($h['TD_TOOL_LIFE']) && $h['TD_TOOL_LIFE'] !== null && $h['TD_TOOL_LIFE'] !== '') {
+                            $h['TD_TOOL_LIFE'] = (int)$h['TD_TOOL_LIFE'];
+                        } else {
+                            $h['TD_TOOL_LIFE'] = null; // Let controller decide default
+                        }
+                        $h['TD_DESCRIPTION'] = isset($h['TD_DESCRIPTION']) && $h['TD_DESCRIPTION'] !== null && $h['TD_DESCRIPTION'] !== '' ? $h['TD_DESCRIPTION'] : '';
+                        $h['MAKER_NAME'] = isset($h['MAKER_NAME']) && $h['MAKER_NAME'] !== null && $h['MAKER_NAME'] !== '' ? $h['MAKER_NAME'] : '';
                         $history[] = $h;
                     }
                     log_message('debug', '[M_tool_draw_engin::get_history] returning ' . count($history) . ' rows from history table for id=' . $id);

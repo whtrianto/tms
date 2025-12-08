@@ -480,10 +480,16 @@ class Tool_draw_tooling extends MY_Controller
                     }
                 }
                 // Ensure tooling numeric fields are present and normalized (avoid empty/null in JSON)
-                // Only set to 0 if truly null/empty, preserve existing values (including 0)
+                // Preserve actual values from database - only convert null/empty to 0, but keep existing numeric values
+                // Log original values for debugging
+                log_message('debug', '[get_history_by_id] Raw TD_MIN_QTY=' . var_export($h['TD_MIN_QTY'] ?? 'NOT_SET', true) . ', TD_REPLENISH_QTY=' . var_export($h['TD_REPLENISH_QTY'] ?? 'NOT_SET', true) . ', TD_PRICE=' . var_export($h['TD_PRICE'] ?? 'NOT_SET', true) . ', TD_TOOL_LIFE=' . var_export($h['TD_TOOL_LIFE'] ?? 'NOT_SET', true));
+                
+                // Only convert to 0 if truly null/empty/not set - preserve actual values including 0
+                // Check if value exists and is not null/empty, then preserve it (including 0)
                 if (!isset($h['TD_MIN_QTY']) || $h['TD_MIN_QTY'] === null || $h['TD_MIN_QTY'] === '') {
                     $h['TD_MIN_QTY'] = 0;
                 } else {
+                    // Preserve the actual value from database (including 0)
                     $h['TD_MIN_QTY'] = (int)$h['TD_MIN_QTY'];
                 }
                 if (!isset($h['TD_REPLENISH_QTY']) || $h['TD_REPLENISH_QTY'] === null || $h['TD_REPLENISH_QTY'] === '') {
