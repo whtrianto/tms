@@ -20,73 +20,9 @@ class Tool_bom_engin extends MY_Controller
         log_message('debug', '[Tool_bom_engin::__construct] username_from_session=' . var_export($username_from_session, true) . ', uid="' . $this->uid . '"');
 
         // load model AFTER setting uid, then assign uid to model
-        // Try multiple paths
-        $candidates = array(
-            'tms_modules/Tool_engineering/models/M_tool_bom_engin',
-            'tms_modules/tool_engineering/models/M_tool_bom_engin',
-            'M_tool_bom_engin'
-        );
-        
-        $model_loaded = false;
-        foreach ($candidates as $c) {
-            $try = str_replace('.php', '', $c);
-            try {
-                $this->load->model($try, 'tool_bom_engin');
-                if (isset($this->tool_bom_engin) && is_object($this->tool_bom_engin) && method_exists($this->tool_bom_engin, 'get_all')) {
-                    $model_loaded = true;
-                    log_message('debug', '[Tool_bom_engin::__construct] Model loaded successfully from: ' . $try);
-                    break;
-                } else {
-                    if (isset($this->tool_bom_engin)) {
-                        unset($this->tool_bom_engin);
-                    }
-                }
-            } catch (Exception $e) {
-                log_message('debug', '[Tool_bom_engin::__construct] Failed to load from ' . $try . ': ' . $e->getMessage());
-                if (isset($this->tool_bom_engin)) {
-                    unset($this->tool_bom_engin);
-                }
-            }
-        }
-        
-        // Fallback: try direct include
-        if (!$model_loaded) {
-            $possibleFiles = array(
-                APPPATH . 'tms_modules/Tool_engineering/models/M_tool_bom_engin.php',
-                APPPATH . 'tms_modules/tool_engineering/models/M_tool_bom_engin.php',
-                APPPATH . 'models/M_tool_bom_engin.php'
-            );
-            
-            foreach ($possibleFiles as $f) {
-                if (is_file($f) && is_readable($f)) {
-                    try {
-                        require_once($f);
-                        if (class_exists('M_tool_bom_engin')) {
-                            $this->tool_bom_engin = new M_tool_bom_engin();
-                            if (method_exists($this->tool_bom_engin, 'get_all')) {
-                                $model_loaded = true;
-                                log_message('debug', '[Tool_bom_engin::__construct] Model loaded via direct include from: ' . $f);
-                                break;
-                            } else {
-                                unset($this->tool_bom_engin);
-                            }
-                        }
-                    } catch (Exception $e) {
-                        log_message('error', '[Tool_bom_engin::__construct] Direct include failed for ' . $f . ': ' . $e->getMessage());
-                        if (isset($this->tool_bom_engin)) {
-                            unset($this->tool_bom_engin);
-                        }
-                    }
-                }
-            }
-        }
-        
-        if ($model_loaded && isset($this->tool_bom_engin)) {
-            $this->tool_bom_engin->uid = $this->uid;
-            log_message('debug', '[Tool_bom_engin::__construct] model uid set to "' . $this->tool_bom_engin->uid . '"');
-        } else {
-            log_message('error', '[Tool_bom_engin::__construct] Failed to load model M_tool_bom_engin from all paths');
-        }
+        $this->load->model('M_tool_bom_engin', 'tool_bom_engin');
+        $this->tool_bom_engin->uid = $this->uid;
+        log_message('debug', '[Tool_bom_engin::__construct] model uid set to "' . $this->tool_bom_engin->uid . '"');
 
         $this->config->set_item('Blade_enable', FALSE);
     }
@@ -107,109 +43,15 @@ class Tool_bom_engin extends MY_Controller
      */
     public function submit_data()
     {
-        // Disable error display to prevent HTML in JSON response
-        @ini_set('display_errors', 0);
+        // Clear output buffers to ensure clean JSON response
+        if (ob_get_level()) ob_clean();
         
-        // Clear any previous output
-        while (ob_get_level() > 0) {
-            ob_end_clean();
-        }
-        
-        // Set content type first
         $this->output->set_content_type('application/json');
         $result = array('success' => false, 'message' => '');
-
-        // Log entry point
-        log_message('debug', '[submit_data] Method called');
-
-        // Check if model is loaded, try to load if not
-        if (!isset($this->tool_bom_engin) || !is_object($this->tool_bom_engin)) {
-            log_message('error', '[submit_data] Model not loaded, attempting to load...');
-            
-            // Try multiple paths
-            $candidates = array(
-                'tms_modules/Tool_engineering/models/M_tool_bom_engin',
-                'tms_modules/tool_engineering/models/M_tool_bom_engin',
-                'M_tool_bom_engin'
-            );
-            
-            $model_loaded = false;
-            foreach ($candidates as $c) {
-                $try = str_replace('.php', '', $c);
-                try {
-                    $this->load->model($try, 'tool_bom_engin');
-                    if (isset($this->tool_bom_engin) && is_object($this->tool_bom_engin) && method_exists($this->tool_bom_engin, 'get_all')) {
-                        $this->tool_bom_engin->uid = $this->uid;
-                        $model_loaded = true;
-                        log_message('debug', '[submit_data] Model loaded successfully from: ' . $try);
-                        break;
-                    } else {
-                        if (isset($this->tool_bom_engin)) {
-                            unset($this->tool_bom_engin);
-                        }
-                    }
-                } catch (Exception $e) {
-                    log_message('error', '[submit_data] Failed to load from ' . $try . ': ' . $e->getMessage());
-                    if (isset($this->tool_bom_engin)) {
-                        unset($this->tool_bom_engin);
-                    }
-                }
-            }
-            
-            // Fallback: try direct include
-            if (!$model_loaded) {
-                $possibleFiles = array(
-                    APPPATH . 'tms_modules/Tool_engineering/models/M_tool_bom_engin.php',
-                    APPPATH . 'tms_modules/tool_engineering/models/M_tool_bom_engin.php',
-                    APPPATH . 'models/M_tool_bom_engin.php'
-                );
-                
-                foreach ($possibleFiles as $f) {
-                    if (is_file($f) && is_readable($f)) {
-                        try {
-                            require_once($f);
-                            if (class_exists('M_tool_bom_engin')) {
-                                $this->tool_bom_engin = new M_tool_bom_engin();
-                                if (method_exists($this->tool_bom_engin, 'get_all')) {
-                                    $this->tool_bom_engin->uid = $this->uid;
-                                    $model_loaded = true;
-                                    log_message('debug', '[submit_data] Model loaded via direct include from: ' . $f);
-                                    break;
-                                } else {
-                                    unset($this->tool_bom_engin);
-                                }
-                            }
-                        } catch (Exception $e) {
-                            log_message('error', '[submit_data] Direct include failed for ' . $f . ': ' . $e->getMessage());
-                            if (isset($this->tool_bom_engin)) {
-                                unset($this->tool_bom_engin);
-                            }
-                        }
-                    }
-                }
-            }
-            
-            if (!$model_loaded) {
-                $error_msg = 'Model tidak dapat di-load dari semua path yang dicoba. File model mungkin tidak ditemukan atau ada error di constructor model.';
-                log_message('error', '[submit_data] ' . $error_msg);
-                $result['message'] = $error_msg . ' Cek log untuk detail.';
-                echo json_encode($result);
-                return;
-            }
-        }
-
+        
         try {
             $action = strtoupper($this->input->post('action', TRUE));
             $id     = (int)$this->input->post('ID', TRUE);
-            
-            log_message('debug', '[submit_data] action=' . $action . ', id=' . $id);
-            
-            // Validate action
-            if ($action !== 'ADD' && $action !== 'EDIT') {
-                $result['message'] = 'Action tidak valid. Harus ADD atau EDIT.';
-                echo json_encode($result);
-                return;
-            }
 
             // validation rules
             $this->form_validation->set_rules('TOOL_BOM', 'Tool BOM', 'required|trim');
@@ -250,9 +92,6 @@ class Tool_bom_engin extends MY_Controller
             
             $effective_date = trim($this->input->post('EFFECTIVE_DATE', TRUE));
             $change_summary = trim($this->input->post('CHANGE_SUMMARY', TRUE));
-            
-            // Log input for debugging
-            log_message('debug', '[submit_data] Input: tool_bom=' . $tool_bom . ', product_id=' . $product_id . ', process_id=' . $process_id . ', machine_group_id=' . $machine_group_id . ', revision=' . $revision . ', status=' . $status);
 
             // Handle file upload for drawing
             $drawing_filename = '';
@@ -260,17 +99,7 @@ class Tool_bom_engin extends MY_Controller
                 // save drawing under project/tool_engineering/img/
                 $uploadDir = FCPATH . 'tool_engineering/img/';
                 if (!is_dir($uploadDir)) {
-                    if (!@mkdir($uploadDir, 0755, true)) {
-                        $result['message'] = 'Gagal membuat direktori upload.';
-                        echo json_encode($result);
-                        return;
-                    }
-                }
-                // Check if directory is writable
-                if (!is_writable($uploadDir)) {
-                    $result['message'] = 'Direktori upload tidak dapat ditulis.';
-                    echo json_encode($result);
-                    return;
+                    @mkdir($uploadDir, 0755, true);
                 }
                 $origName = $_FILES['DRAWING_FILE']['name'];
                 $safeName = preg_replace('/[^A-Za-z0-9_\-\.]/', '_', basename($origName));
@@ -332,13 +161,12 @@ class Tool_bom_engin extends MY_Controller
             // log full context for debugging
             $ctx = array(
                 'msg' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
                 'post' => $_POST,
-                'files' => isset($_FILES) ? array_keys($_FILES) : array()
+                'files' => isset($_FILES) ? array_map(function($f){ return array('name'=>isset($f['name'])?$f['name']:null,'error'=>isset($f['error'])?$f['error']:null); }, $_FILES) : array()
             );
             log_message('error', '[Tool_bom_engin::submit_data] Exception: ' . $e->getMessage() . ' | Context: ' . json_encode($ctx));
             $result['success'] = false;
-            $result['message'] = 'Server error: ' . $e->getMessage() . '. Cek log untuk detail.';
+            $result['message'] = 'Server error. Cek log untuk detail.';
             echo json_encode($result);
             return;
         }
