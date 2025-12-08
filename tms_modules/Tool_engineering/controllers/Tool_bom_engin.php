@@ -56,11 +56,11 @@ class Tool_bom_engin extends MY_Controller
             // validation rules
             $this->form_validation->set_rules('TOOL_BOM', 'Tool BOM', 'required|trim');
             $this->form_validation->set_rules('DESCRIPTION', 'Description', 'trim');
-            $this->form_validation->set_rules('PRODUCT_ID', 'Product', 'integer');
-            $this->form_validation->set_rules('PROCESS_ID', 'Process', 'integer');
-            $this->form_validation->set_rules('MACHINE_GROUP_ID', 'Machine Group', 'integer');
-            $this->form_validation->set_rules('REVISION', 'Revision', 'integer');
-            $this->form_validation->set_rules('STATUS', 'Status', 'integer');
+            $this->form_validation->set_rules('PRODUCT_ID', 'Product', 'trim');
+            $this->form_validation->set_rules('PROCESS_ID', 'Process', 'trim');
+            $this->form_validation->set_rules('MACHINE_GROUP_ID', 'Machine Group', 'trim');
+            $this->form_validation->set_rules('REVISION', 'Revision', 'trim|numeric');
+            $this->form_validation->set_rules('STATUS', 'Status', 'trim|numeric');
             $this->form_validation->set_rules('EFFECTIVE_DATE', 'Effective Date', 'trim');
             $this->form_validation->set_rules('CHANGE_SUMMARY', 'Change Summary', 'trim');
 
@@ -73,13 +73,28 @@ class Tool_bom_engin extends MY_Controller
 
             $tool_bom = trim($this->input->post('TOOL_BOM', TRUE));
             $description = trim($this->input->post('DESCRIPTION', TRUE));
-            $product_id = (int)$this->input->post('PRODUCT_ID', TRUE);
-            $process_id = (int)$this->input->post('PROCESS_ID', TRUE);
-            $machine_group_id = (int)$this->input->post('MACHINE_GROUP_ID', TRUE);
-            $revision = (int)$this->input->post('REVISION', TRUE);
-            $status = (int)$this->input->post('STATUS', TRUE);
+            
+            // Handle optional integer fields
+            $product_id_raw = $this->input->post('PRODUCT_ID', TRUE);
+            $product_id = ($product_id_raw !== '' && $product_id_raw !== null) ? (int)$product_id_raw : 0;
+            
+            $process_id_raw = $this->input->post('PROCESS_ID', TRUE);
+            $process_id = ($process_id_raw !== '' && $process_id_raw !== null) ? (int)$process_id_raw : 0;
+            
+            $machine_group_id_raw = $this->input->post('MACHINE_GROUP_ID', TRUE);
+            $machine_group_id = ($machine_group_id_raw !== '' && $machine_group_id_raw !== null) ? (int)$machine_group_id_raw : 0;
+            
+            $revision_raw = $this->input->post('REVISION', TRUE);
+            $revision = ($revision_raw !== '' && $revision_raw !== null) ? (int)$revision_raw : 0;
+            
+            $status_raw = $this->input->post('STATUS', TRUE);
+            $status = ($status_raw !== '' && $status_raw !== null) ? (int)$status_raw : 1; // default to Active (1)
+            
             $effective_date = trim($this->input->post('EFFECTIVE_DATE', TRUE));
             $change_summary = trim($this->input->post('CHANGE_SUMMARY', TRUE));
+            
+            // Log input for debugging
+            log_message('debug', '[submit_data] Input: tool_bom=' . $tool_bom . ', product_id=' . $product_id . ', process_id=' . $process_id . ', machine_group_id=' . $machine_group_id . ', revision=' . $revision . ', status=' . $status);
 
             // Handle file upload for drawing
             $drawing_filename = '';
@@ -149,11 +164,20 @@ class Tool_bom_engin extends MY_Controller
             // log full context for debugging
             $ctx = array(
                 'msg' => $e->getMessage(),
-                'post' => $_POST
+                'trace' => $e->getTraceAsString(),
+                'post' => $_POST,
+                'files' => isset($_FILES) ? array_keys($_FILES) : array()
             );
             log_message('error', '[Tool_bom_engin::submit_data] Exception: ' . $e->getMessage() . ' | Context: ' . json_encode($ctx));
             $result['success'] = false;
-            $result['message'] = 'Server error. Cek log untuk detail.';
+            $result['message'] = 'Server error: ' . $e->getMessage() . '. Cek log untuk detail.';
+            echo json_encode($result);
+            return;
+        } catch (Error $e) {
+            // Catch PHP 7+ errors
+            log_message('error', '[Tool_bom_engin::submit_data] Fatal Error: ' . $e->getMessage() . ' | File: ' . $e->getFile() . ' | Line: ' . $e->getLine());
+            $result['success'] = false;
+            $result['message'] = 'Fatal error: ' . $e->getMessage();
             echo json_encode($result);
             return;
         }
