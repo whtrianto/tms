@@ -194,7 +194,8 @@ if (!class_exists('M_tool_bom_engin')) {
             $process_id = (int)$process_id;
             $machine_group_id = (int)$machine_group_id;
             $revision = (int)$revision;
-            $status = (int)$status;
+            // status now string enum: ACTIVE / INACTIVE / PENDING
+            $status = trim((string)$status);
             $effective_date = trim((string)$effective_date);
             $change_summary = trim((string)$change_summary);
             $drawing_filename = trim((string)$drawing_filename);
@@ -349,7 +350,8 @@ if (!class_exists('M_tool_bom_engin')) {
             $process_id = (int)$process_id;
             $machine_group_id = (int)$machine_group_id;
             $revision = (int)$revision;
-            $status = (int)$status;
+            // status now string enum: ACTIVE / INACTIVE / PENDING
+            $status = trim((string)$status);
             $effective_date = trim((string)$effective_date);
             $change_summary = trim((string)$change_summary);
             $drawing_filename = trim((string)$drawing_filename);

@@ -60,7 +60,7 @@ class Tool_bom_engin extends MY_Controller
             $this->form_validation->set_rules('PROCESS_ID', 'Process', 'trim');
             $this->form_validation->set_rules('MACHINE_GROUP_ID', 'Machine Group', 'trim');
             $this->form_validation->set_rules('REVISION', 'Revision', 'trim|numeric');
-            $this->form_validation->set_rules('STATUS', 'Status', 'trim|numeric');
+            $this->form_validation->set_rules('STATUS', 'Status', 'trim');
             $this->form_validation->set_rules('EFFECTIVE_DATE', 'Effective Date', 'trim');
             $this->form_validation->set_rules('CHANGE_SUMMARY', 'Change Summary', 'trim');
 
@@ -87,8 +87,16 @@ class Tool_bom_engin extends MY_Controller
             $revision_raw = $this->input->post('REVISION', TRUE);
             $revision = ($revision_raw !== '' && $revision_raw !== null) ? (int)$revision_raw : 0;
             
+            // Map status value from dropdown (numeric) to DB string enum
             $status_raw = $this->input->post('STATUS', TRUE);
-            $status = ($status_raw !== '' && $status_raw !== null) ? (int)$status_raw : 1; // default to Active (1)
+            $status = 'ACTIVE'; // default
+            if ($status_raw === '0' || $status_raw === 0) {
+                $status = 'INACTIVE';
+            } elseif ($status_raw === '2' || $status_raw === 2) {
+                $status = 'PENDING';
+            } elseif ($status_raw === '1' || $status_raw === 1 || $status_raw === '' || $status_raw === null) {
+                $status = 'ACTIVE';
+            }
             
             $effective_date = trim($this->input->post('EFFECTIVE_DATE', TRUE));
             $change_summary = trim($this->input->post('CHANGE_SUMMARY', TRUE));

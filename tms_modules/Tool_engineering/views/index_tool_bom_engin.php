@@ -123,9 +123,10 @@
                                         // Status badge
                                         $status_badge = '';
                                         if (isset($row['STATUS'])) {
-                                            if ($row['STATUS'] == 1) {
+                                            $st = strtoupper((string)$row['STATUS']);
+                                            if ($st === 'ACTIVE' || $st === '1') {
                                                 $status_badge = '<span class="badge badge-success">Active</span>';
-                                            } elseif ($row['STATUS'] == 2) {
+                                            } elseif ($st === 'PENDING' || $st === '2') {
                                                 $status_badge = '<span class="badge badge-warning">Pending</span>';
                                             } else {
                                                 $status_badge = '<span class="badge badge-secondary">Inactive</span>';
