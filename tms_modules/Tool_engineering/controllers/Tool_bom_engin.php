@@ -69,6 +69,14 @@ class Tool_bom_engin extends MY_Controller
      */
     public function submit_data()
     {
+        // Disable error display to prevent HTML in JSON response
+        @ini_set('display_errors', 0);
+        
+        // Clear any previous output
+        while (ob_get_level() > 0) {
+            ob_end_clean();
+        }
+        
         // Set content type first
         $this->output->set_content_type('application/json');
         $result = array('success' => false, 'message' => '');
@@ -78,7 +86,7 @@ class Tool_bom_engin extends MY_Controller
 
         // Check if model is loaded, try to load if not
         if (!isset($this->tool_bom_engin) || !is_object($this->tool_bom_engin)) {
-            log_message('warning', '[submit_data] Model not loaded, attempting to load...');
+            log_message('error', '[submit_data] Model not loaded, attempting to load...');
             // Try to load model
             $model_paths = array(
                 'tms_modules/Tool_engineering/models/M_tool_bom_engin',

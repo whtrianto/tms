@@ -294,7 +294,7 @@ if (!class_exists('M_tool_bom_engin')) {
                         try {
                             $this->tms_db->query("UPDATE {$this->table} SET EFFECTIVE_DATE = GETDATE() WHERE ID = ?", array($new_id));
                         } catch (Exception $e2) {
-                            log_message('warning', '[add_data] Exception updating EFFECTIVE_DATE: ' . $e2->getMessage());
+                            log_message('error', '[add_data] Exception updating EFFECTIVE_DATE: ' . $e2->getMessage());
                         }
                     }
                 }
@@ -422,7 +422,7 @@ if (!class_exists('M_tool_bom_engin')) {
                 try {
                     $this->tms_db->query("UPDATE {$this->table} SET MODIFIED_DATE = GETDATE() WHERE ID = ?", array($id));
                 } catch (Exception $e2) {
-                    log_message('warning', '[edit_data] Exception updating MODIFIED_DATE: ' . $e2->getMessage());
+                    log_message('error', '[edit_data] Exception updating MODIFIED_DATE: ' . $e2->getMessage());
                 }
             }
             
