@@ -55,6 +55,9 @@ class M_tool_draw_engin extends CI_Model
         if ($this->has_column('TD_DESCRIPTION')) {
             $selectCols .= ', TD_DESCRIPTION';
         }
+        if ($this->has_column('TD_SEQUENCE')) {
+            $selectCols .= ', TD_SEQUENCE';
+        }
 
         $result = $this->tms_db
             ->select($selectCols)
@@ -66,6 +69,30 @@ class M_tool_draw_engin extends CI_Model
             return $result->result_array();
         }
         return array();
+    }
+
+    /**
+     * Get data by product + process (best-effort filter for Additional Information section)
+     */
+    public function get_by_product_process($product_id = 0, $process_id = 0)
+    {
+        $product_id = (int)$product_id;
+        $process_id = (int)$process_id;
+
+        $all = $this->get_all();
+        if ($product_id <= 0 && $process_id <= 0) {
+            return $all;
+        }
+
+        $filtered = array();
+        foreach ($all as $row) {
+            $matchProduct = ($product_id <= 0) || ((int)$row['TD_PRODUCT_ID'] === $product_id);
+            $matchProcess = ($process_id <= 0) || ((int)$row['TD_PROCESS_ID'] === $process_id);
+            if ($matchProduct && $matchProcess) {
+                $filtered[] = $row;
+            }
+        }
+        return $filtered;
     }
 
     public function get_by_id($id)
@@ -207,7 +234,7 @@ class M_tool_draw_engin extends CI_Model
     }
     /* ========== MUTATORS ========== */
 
-    public function add_data($product_id, $process_id, $drawing_no, $tool_name, $revision, $status, $material_id)
+    public function add_data($product_id, $process_id, $drawing_no, $tool_name, $revision, $status, $material_id, $maker_id = 0, $min_qty = null, $replenish_qty = null, $price = null, $tool_life = null, $description = null, $sequence = null)
     {
         $product_id = (int)$product_id;
         $process_id = (int)$process_id;
@@ -216,6 +243,13 @@ class M_tool_draw_engin extends CI_Model
         $revision = (int)$revision;
         $status = (int)$status;
         $material_id = (int)$material_id;
+        $maker_id = (int)$maker_id;
+        $min_qty = ($min_qty === null || $min_qty === '') ? null : (int)$min_qty;
+        $replenish_qty = ($replenish_qty === null || $replenish_qty === '') ? null : (int)$replenish_qty;
+        $price = ($price === null || $price === '') ? null : (float)$price;
+        $tool_life = ($tool_life === null || $tool_life === '') ? null : (int)$tool_life;
+        $sequence = ($sequence === null || $sequence === '') ? null : (int)$sequence;
+        $description = trim((string)$description);
 
         if ($drawing_no === '') {
             $this->messages = 'Drawing No tidak boleh kosong.';
@@ -247,6 +281,27 @@ class M_tool_draw_engin extends CI_Model
             $insertData['TD_MATERIAL_ID'] = $material_id;
         } else {
             $insertData['TD_MATERIAL_ID'] = null;
+        }
+        if ($this->has_column('TD_MAKER_ID')) {
+            $insertData['TD_MAKER_ID'] = $maker_id > 0 ? $maker_id : null;
+        }
+        if ($this->has_column('TD_MIN_QTY')) {
+            $insertData['TD_MIN_QTY'] = $min_qty;
+        }
+        if ($this->has_column('TD_REPLENISH_QTY')) {
+            $insertData['TD_REPLENISH_QTY'] = $replenish_qty;
+        }
+        if ($this->has_column('TD_PRICE')) {
+            $insertData['TD_PRICE'] = $price;
+        }
+        if ($this->has_column('TD_TOOL_LIFE')) {
+            $insertData['TD_TOOL_LIFE'] = $tool_life;
+        }
+        if ($this->has_column('TD_DESCRIPTION')) {
+            $insertData['TD_DESCRIPTION'] = $description !== '' ? $description : null;
+        }
+        if ($this->has_column('TD_SEQUENCE')) {
+            $insertData['TD_SEQUENCE'] = $sequence;
         }
 
         // set TD_MODIFIED_BY to the username from controller ($this->uid) for audit trail
@@ -294,7 +349,7 @@ class M_tool_draw_engin extends CI_Model
         return false;
     }
 
-    public function edit_data($id, $product_id, $process_id, $drawing_no, $tool_name, $revision, $status, $material_id)
+    public function edit_data($id, $product_id, $process_id, $drawing_no, $tool_name, $revision, $status, $material_id, $maker_id = 0, $min_qty = null, $replenish_qty = null, $price = null, $tool_life = null, $description = null, $sequence = null)
     {
         $id = (int)$id;
         $product_id = (int)$product_id;
@@ -304,6 +359,13 @@ class M_tool_draw_engin extends CI_Model
         $revision = (int)$revision;
         $status = (int)$status;
         $material_id = (int)$material_id;
+        $maker_id = (int)$maker_id;
+        $min_qty = ($min_qty === null || $min_qty === '') ? null : (int)$min_qty;
+        $replenish_qty = ($replenish_qty === null || $replenish_qty === '') ? null : (int)$replenish_qty;
+        $price = ($price === null || $price === '') ? null : (float)$price;
+        $tool_life = ($tool_life === null || $tool_life === '') ? null : (int)$tool_life;
+        $sequence = ($sequence === null || $sequence === '') ? null : (int)$sequence;
+        $description = trim((string)$description);
 
         $current = $this->get_by_id($id);
         if (!$current) {
@@ -356,6 +418,27 @@ class M_tool_draw_engin extends CI_Model
         } else {
             $updateData['TD_MATERIAL_ID'] = null;
         }
+        if ($this->has_column('TD_MAKER_ID')) {
+            $updateData['TD_MAKER_ID'] = $maker_id > 0 ? $maker_id : null;
+        }
+        if ($this->has_column('TD_MIN_QTY')) {
+            $updateData['TD_MIN_QTY'] = $min_qty;
+        }
+        if ($this->has_column('TD_REPLENISH_QTY')) {
+            $updateData['TD_REPLENISH_QTY'] = $replenish_qty;
+        }
+        if ($this->has_column('TD_PRICE')) {
+            $updateData['TD_PRICE'] = $price;
+        }
+        if ($this->has_column('TD_TOOL_LIFE')) {
+            $updateData['TD_TOOL_LIFE'] = $tool_life;
+        }
+        if ($this->has_column('TD_DESCRIPTION')) {
+            $updateData['TD_DESCRIPTION'] = $description !== '' ? $description : null;
+        }
+        if ($this->has_column('TD_SEQUENCE')) {
+            $updateData['TD_SEQUENCE'] = $sequence;
+        }
 
         $ok = $this->tms_db->where('TD_ID', $id)->update($this->table, $updateData);
 
@@ -382,7 +465,7 @@ class M_tool_draw_engin extends CI_Model
      * edit_data_with_tooling: Edit engineering record with full tooling specs
      * Used when editing from Tooling UI which has tool/maker/price/qty/etc.
      */
-    public function edit_data_with_tooling($id, $product_id, $process_id, $drawing_no, $tool_name, $revision, $status, $material_id, $maker_id = 0, $min_qty = 0, $replenish_qty = 0, $price = 0.0, $tool_life = 0, $description = '')
+    public function edit_data_with_tooling($id, $product_id, $process_id, $drawing_no, $tool_name, $revision, $status, $material_id, $maker_id = 0, $min_qty = 0, $replenish_qty = 0, $price = 0.0, $tool_life = 0, $description = '', $sequence = null)
     {
         $id = (int)$id;
         $product_id = (int)$product_id;
@@ -397,6 +480,7 @@ class M_tool_draw_engin extends CI_Model
         $replenish_qty = (int)$replenish_qty;
         $price = (float)$price;
         $tool_life = (int)$tool_life;
+        $sequence = ($sequence === null || $sequence === '') ? null : (int)$sequence;
         $description = trim((string)$description);
 
         $current = $this->get_by_id($id);
@@ -470,6 +554,9 @@ class M_tool_draw_engin extends CI_Model
         }
         if ($this->has_column('TD_DESCRIPTION')) {
             $updateData['TD_DESCRIPTION'] = $description !== '' ? $description : null;
+        }
+        if ($this->has_column('TD_SEQUENCE')) {
+            $updateData['TD_SEQUENCE'] = $sequence;
         }
 
         $ok = $this->tms_db->where('TD_ID', $id)->update($this->table, $updateData);

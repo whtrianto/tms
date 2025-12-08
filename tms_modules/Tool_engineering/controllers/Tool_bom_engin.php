@@ -24,6 +24,10 @@ class Tool_bom_engin extends MY_Controller
         $this->tool_bom_engin->uid = $this->uid;
         log_message('debug', '[Tool_bom_engin::__construct] model uid set to "' . $this->tool_bom_engin->uid . '"');
 
+        // drawing model used on edit page for additional information section
+        $this->load->model('M_tool_draw_engin', 'tool_draw_engin');
+        $this->tool_draw_engin->uid = $this->uid;
+
         $this->config->set_item('Blade_enable', FALSE);
     }
 
@@ -36,6 +40,41 @@ class Tool_bom_engin extends MY_Controller
         $data['machine_groups'] = $this->tool_bom_engin->get_machine_groups();
 
         $this->view('index_tool_bom_engin', $data, FALSE);
+    }
+
+    /**
+     * Halaman edit Tool BOM Engineering + Additional Information (Tool Drawing Engin)
+     * @param int $id
+     */
+    public function edit_page($id = 0)
+    {
+        $id = (int)$id;
+        if ($id <= 0) {
+            show_404();
+            return;
+        }
+
+        $bom = $this->tool_bom_engin->get_by_id($id);
+        if (!$bom) {
+            show_404();
+            return;
+        }
+
+        $productId = isset($bom['PRODUCT_ID']) ? (int)$bom['PRODUCT_ID'] : 0;
+        $processId = isset($bom['PROCESS_ID']) ? (int)$bom['PROCESS_ID'] : 0;
+
+        $data = array();
+        $data['bom'] = $bom;
+        $data['products'] = $this->tool_bom_engin->get_products();
+        $data['operations'] = $this->tool_bom_engin->get_operations();
+        $data['machine_groups'] = $this->tool_bom_engin->get_machine_groups();
+
+        // Additional Information: Tool Drawing Engineering filtered by product/process (best-effort)
+        $data['additional_info'] = $this->tool_draw_engin->get_by_product_process($productId, $processId);
+        $data['materials'] = $this->tool_draw_engin->get_materials();
+        $data['makers'] = $this->tool_draw_engin->get_makers();
+
+        $this->view('edit_tool_bom_engin', $data, FALSE);
     }
 
     /**

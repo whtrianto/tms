@@ -93,6 +93,9 @@ class Tool_draw_engin extends MY_Controller
                 }
             } else {
                 $drawing_no = $this->input->post('TD_DRAWING_NO_OLD', TRUE);
+                if ($drawing_no === '' || $drawing_no === null) {
+                    $drawing_no = $this->input->post('TD_DRAWING_NO', TRUE);
+                }
             }
             // TD_TOOL_NAME from form now contains TOOL_ID (select). Resolve to tool name if possible.
             $tool_field = $this->input->post('TD_TOOL_NAME', TRUE);
@@ -106,6 +109,18 @@ class Tool_draw_engin extends MY_Controller
             $revision   = (int)$this->input->post('TD_REVISION', TRUE);
             $status     = (int)$this->input->post('TD_STATUS', TRUE);
             $material_id = (int)$this->input->post('TD_MATERIAL_ID', TRUE);
+            $maker_id   = (int)$this->input->post('TD_MAKER_ID', TRUE);
+            $min_qty    = $this->input->post('TD_MIN_QTY', TRUE);
+            $replenish_qty = $this->input->post('TD_REPLENISH_QTY', TRUE);
+            $price_val  = $this->input->post('TD_PRICE', TRUE);
+            $tool_life  = $this->input->post('TD_TOOL_LIFE', TRUE);
+            $sequence   = $this->input->post('TD_SEQUENCE', TRUE);
+            $description = $this->input->post('TD_DESCRIPTION', TRUE);
+            $min_qty = ($min_qty === '' || $min_qty === null) ? null : (int)$min_qty;
+            $replenish_qty = ($replenish_qty === '' || $replenish_qty === null) ? null : (int)$replenish_qty;
+            $price_val = ($price_val === '' || $price_val === null) ? null : (float)$price_val;
+            $tool_life = ($tool_life === '' || $tool_life === null) ? null : (int)$tool_life;
+            $sequence = ($sequence === '' || $sequence === null) ? null : (int)$sequence;
 
             if ($action === 'ADD') {
                 if (empty($drawing_no)) {
@@ -115,7 +130,7 @@ class Tool_draw_engin extends MY_Controller
                     echo $json;
                     return;
                 }
-                $ok = $this->tool_draw_engin->add_data($product_id, $process_id, $drawing_no, $tool_name, $revision, $status, $material_id);
+                $ok = $this->tool_draw_engin->add_data($product_id, $process_id, $drawing_no, $tool_name, $revision, $status, $material_id, $maker_id, $min_qty, $replenish_qty, $price_val, $tool_life, $description, $sequence);
                 if ($ok === true) {
                     $result['success'] = true;
                     $result['message'] = $this->tool_draw_engin->messages ?: 'Tool Drawing Engineering berhasil ditambahkan.';
@@ -147,7 +162,7 @@ class Tool_draw_engin extends MY_Controller
                     echo $json;
                     return;
                 }
-                $ok = $this->tool_draw_engin->edit_data($id, $product_id, $process_id, $drawing_no, $tool_name, $revision, $status, $material_id);
+                $ok = $this->tool_draw_engin->edit_data_with_tooling($id, $product_id, $process_id, $drawing_no, $tool_name, $revision, $status, $material_id, $maker_id, $min_qty, $replenish_qty, $price_val, $tool_life, $description, $sequence);
                 if ($ok === true) {
                     $result['success'] = true;
                     $result['message'] = $this->tool_draw_engin->messages ?: 'Tool Drawing Engineering berhasil diperbarui.';
@@ -184,7 +199,7 @@ class Tool_draw_engin extends MY_Controller
                     return;
                 }
 
-                $ok = $this->tool_draw_engin->edit_data($id, $product_id, $process_id, $drawing_no, $tool_name, $revision, $status, $material_id);
+                $ok = $this->tool_draw_engin->edit_data_with_tooling($id, $product_id, $process_id, $drawing_no, $tool_name, $revision, $status, $material_id, $maker_id, $min_qty, $replenish_qty, $price_val, $tool_life, $description, $sequence);
                 if ($ok === true) {
                     $result['success'] = true;
                     $result['message'] = $this->tool_draw_engin->messages ?: 'Revision berhasil ditambahkan (v' . $revision . ').';

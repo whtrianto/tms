@@ -151,6 +151,11 @@
                                                             title="Edit">
                                                         <i class="fas fa-edit"></i>
                                                     </button>
+                                                    <a class="btn btn-sm btn-info" 
+                                                       href="<?= base_url('Tool_engineering/tool_bom_engin/edit_page/' . (int)$row['ID']); ?>"
+                                                       title="Edit Page">
+                                                        <i class="fas fa-external-link-alt"></i>
+                                                    </a>
                                                     <button class="btn btn-sm btn-danger btn-delete" 
                                                             data-id="<?= (int)$row['ID']; ?>"
                                                             title="Delete">
