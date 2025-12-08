@@ -1,0 +1,406 @@
+﻿<?php
+defined('BASEPATH') or exit('No direct script access allowed');
+
+/**
+ * @property M_tool_draw_engin $tool_draw_engin
+ */
+class Tool_draw_engin extends MY_Controller
+{
+    public $uid = '';
+
+    public function __construct()
+    {
+        parent::__construct();
+
+        $this->load->library(array('form_validation', 'session'));
+        
+        // capture current user id/username for later use (fallback to SYSTEM)
+        $username_from_session = $this->session->userdata('username');
+        $this->uid = (string) ($username_from_session ?: 'SYSTEM');
+        log_message('debug', '[Tool_draw_engin::__construct] username_from_session=' . var_export($username_from_session, true) . ', uid="' . $this->uid . '"');
+        
+        // load model AFTER setting uid, then assign uid to model
+        $this->load->model('M_tool_draw_engin', 'tool_draw_engin');
+        $this->tool_draw_engin->uid = $this->uid;
+        log_message('debug', '[Tool_draw_engin::__construct] model uid set to "' . $this->tool_draw_engin->uid . '"');
+        
+        $this->config->set_item('Blade_enable', FALSE);
+    }
+
+    public function index()
+    {
+        $data = array();
+        $data['list_data'] = $this->tool_draw_engin->get_all();
+        $data['products'] = $this->tool_draw_engin->get_products();
+        $data['operations'] = $this->tool_draw_engin->get_operations();
+        $data['tools'] = $this->tool_draw_engin->get_tools();
+        $data['materials'] = $this->tool_draw_engin->get_materials();
+
+        $this->view('index_tool_draw_engin', $data, FALSE);
+    }
+
+    /**
+     * submit_data: ADD / EDIT Tool Drawing Engineering (AJAX)
+     */
+    public function submit_data()
+    {
+        // Clear output buffers to ensure clean JSON response
+        if (ob_get_level()) ob_clean();
+        
+        $this->output->set_content_type('application/json');
+        $result = array('success' => false, 'message' => '');
+        
+        try {
+            $action = strtoupper($this->input->post('action', TRUE));
+            $id     = (int)$this->input->post('TD_ID', TRUE);
+
+            // validation rules
+            $this->form_validation->set_rules('TD_PRODUCT_ID', 'Product ID', 'required|integer');
+            $this->form_validation->set_rules('TD_PROCESS_ID', 'Process ID', 'required|integer');
+            // Drawing now can be uploaded as an image file. We validate presence later (file or old filename).
+            $this->form_validation->set_rules('TD_TOOL_NAME', 'Tool Name', 'trim');
+            $this->form_validation->set_rules('TD_REVISION', 'Revision', 'integer');
+            $this->form_validation->set_rules('TD_STATUS', 'Status', 'integer');
+            $this->form_validation->set_rules('TD_MATERIAL_ID', 'Material ID', 'integer');
+
+            if ($this->form_validation->run() == FALSE) {
+                $this->form_validation->set_error_delimiters('', '');
+                $result['message'] = validation_errors() ?: 'Data tidak valid.';
+                echo json_encode($result);
+                return;
+            }
+
+            $product_id = (int)$this->input->post('TD_PRODUCT_ID', TRUE);
+            $process_id = (int)$this->input->post('TD_PROCESS_ID', TRUE);
+            // handle uploaded file (TD_DRAWING_FILE) or use old filename (TD_DRAWING_NO_OLD)
+            $drawing_no = '';
+            if (!empty($_FILES) && isset($_FILES['TD_DRAWING_FILE']) && !empty($_FILES['TD_DRAWING_FILE']['name'])) {
+                // save drawing under project/tool_engineering/img/
+                $uploadDir = FCPATH . 'tool_engineering/img/';
+                if (!is_dir($uploadDir)) {
+                    @mkdir($uploadDir, 0755, true);
+                }
+                $origName = $_FILES['TD_DRAWING_FILE']['name'];
+                $safeName = preg_replace('/[^A-Za-z0-9_\-\.]/', '_', basename($origName));
+                $fileName = 'TD_' . time() . '_' . $safeName;
+                $target = $uploadDir . $fileName;
+                if (move_uploaded_file($_FILES['TD_DRAWING_FILE']['tmp_name'], $target)) {
+                    $drawing_no = $fileName;
+                } else {
+                    $result['message'] = 'Gagal mengunggah file drawing.';
+                    echo json_encode($result);
+                    return;
+                }
+            } else {
+                $drawing_no = $this->input->post('TD_DRAWING_NO_OLD', TRUE);
+            }
+            // TD_TOOL_NAME from form now contains TOOL_ID (select). Resolve to tool name if possible.
+            $tool_field = $this->input->post('TD_TOOL_NAME', TRUE);
+            $tool_name = '';
+            if (is_numeric($tool_field) && (int)$tool_field > 0) {
+                $toolRow = $this->tool_draw_engin->get_tool_by_id((int)$tool_field);
+                if ($toolRow) $tool_name = $toolRow['TOOL_NAME'];
+            } else {
+                $tool_name = $tool_field;
+            }
+            $revision   = (int)$this->input->post('TD_REVISION', TRUE);
+            $status     = (int)$this->input->post('TD_STATUS', TRUE);
+            $material_id = (int)$this->input->post('TD_MATERIAL_ID', TRUE);
+
+            if ($action === 'ADD') {
+                if (empty($drawing_no)) {
+                    $result['message'] = 'Drawing wajib diunggah.';
+                    $json = json_encode($result);
+                    log_message('debug', '[submit_data ADD] response: ' . $json);
+                    echo $json;
+                    return;
+                }
+                $ok = $this->tool_draw_engin->add_data($product_id, $process_id, $drawing_no, $tool_name, $revision, $status, $material_id);
+                if ($ok === true) {
+                    $result['success'] = true;
+                    $result['message'] = $this->tool_draw_engin->messages ?: 'Tool Drawing Engineering berhasil ditambahkan.';
+                } else {
+                    $result['success'] = false;
+                    $result['message'] = $this->tool_draw_engin->messages ?: 'Gagal menambahkan tool drawing.';
+                }
+                $json = json_encode($result);
+                log_message('debug', '[submit_data ADD] response: ' . $json);
+                echo $json;
+                return;
+            }
+
+            if ($action === 'EDIT' && $id > 0) {
+                $current = $this->tool_draw_engin->get_by_id($id);
+                if (!$current) {
+                    $result['message'] = 'Data tidak ditemukan.';
+                    $json = json_encode($result);
+                    log_message('debug', '[submit_data EDIT] response: ' . $json);
+                    echo $json;
+                    return;
+                }
+
+                if (empty($drawing_no)) {
+                    // if no drawing provided and no old drawing, reject
+                    $result['message'] = 'Drawing wajib ada.';
+                    $json = json_encode($result);
+                    log_message('debug', '[submit_data EDIT] response: ' . $json);
+                    echo $json;
+                    return;
+                }
+                $ok = $this->tool_draw_engin->edit_data($id, $product_id, $process_id, $drawing_no, $tool_name, $revision, $status, $material_id);
+                if ($ok === true) {
+                    $result['success'] = true;
+                    $result['message'] = $this->tool_draw_engin->messages ?: 'Tool Drawing Engineering berhasil diperbarui.';
+                } else {
+                    $result['success'] = false;
+                    $result['message'] = $this->tool_draw_engin->messages ?: 'Gagal memperbarui tool drawing.';
+                }
+                $json = json_encode($result);
+                log_message('debug', '[submit_data EDIT] response: ' . $json);
+                echo $json;
+                return;
+            }
+
+            if ($action === 'REVISION' && $id > 0) {
+                $current = $this->tool_draw_engin->get_by_id($id);
+                if (!$current) {
+                    $result['message'] = 'Data tidak ditemukan.';
+                    $json = json_encode($result);
+                    log_message('debug', '[submit_data REVISION] response: ' . $json);
+                    echo $json;
+                    return;
+                }
+
+                // For REVISION: keep old drawing if no new file uploaded
+                if (empty($drawing_no)) {
+                    $drawing_no = $current['TD_DRAWING_NO'];
+                }
+
+                if (empty($drawing_no)) {
+                    $result['message'] = 'Drawing tidak ada untuk di-revisi.';
+                    $json = json_encode($result);
+                    log_message('debug', '[submit_data REVISION] response: ' . $json);
+                    echo $json;
+                    return;
+                }
+
+                $ok = $this->tool_draw_engin->edit_data($id, $product_id, $process_id, $drawing_no, $tool_name, $revision, $status, $material_id);
+                if ($ok === true) {
+                    $result['success'] = true;
+                    $result['message'] = $this->tool_draw_engin->messages ?: 'Revision berhasil ditambahkan (v' . $revision . ').';
+                } else {
+                    $result['success'] = false;
+                    $result['message'] = $this->tool_draw_engin->messages ?: 'Gagal menambahkan revision.';
+                }
+                $json = json_encode($result);
+                log_message('debug', '[submit_data REVISION] response: ' . $json);
+                echo $json;
+                return;
+            }
+
+            $result['message'] = 'Parameter action/ID tidak valid.';
+            $json = json_encode($result);
+            log_message('debug', '[submit_data] invalid action/id response: ' . $json);
+            echo $json;
+            return;
+            
+        } catch (Exception $e) {
+            // log full context for debugging
+            $ctx = array(
+                'msg' => $e->getMessage(),
+                'post' => $_POST,
+                'files' => isset($_FILES) ? array_map(function($f){ return array('name'=>isset($f['name'])?$f['name']:null,'error'=>isset($f['error'])?$f['error']:null); }, $_FILES) : array()
+            );
+            log_message('error', '[Tool_draw_engin::submit_data] Exception: ' . $e->getMessage() . ' | Context: ' . json_encode($ctx));
+            $result['success'] = false;
+            $result['message'] = 'Server error. Cek log untuk detail.';
+            echo json_encode($result);
+            return;
+        }
+    }
+
+    /**
+     * delete_data: delete tool drawing
+     */
+    public function delete_data()
+    {
+        $this->output->set_content_type('application/json');
+
+        $id = (int)$this->input->post('TD_ID', TRUE);
+        if ($id <= 0) {
+            echo json_encode(array('success' => false, 'message' => 'TD_ID tidak ditemukan.'));
+            return;
+        }
+
+        $ok = $this->tool_draw_engin->delete_data($id);
+        if ($ok) {
+            echo json_encode(array('success' => true, 'message' => $this->tool_draw_engin->messages ?: 'Tool Drawing Engineering berhasil dihapus.'));
+        } else {
+            echo json_encode(array('success' => false, 'message' => $this->tool_draw_engin->messages ?: 'Gagal menghapus tool drawing.'));
+        }
+    }
+
+    /**
+     * get_tool_draw_engin_detail: ambil data by id (AJAX)
+     */
+    public function get_tool_draw_engin_detail()
+    {
+        $this->output->set_content_type('application/json');
+
+        $id = (int)$this->input->post('TD_ID', TRUE);
+        if ($id <= 0) {
+            echo json_encode(array('success' => false, 'message' => 'TD_ID tidak ditemukan.'));
+            return;
+        }
+
+        $row = $this->tool_draw_engin->get_by_id($id);
+        if ($row) {
+            // try to resolve TD_TOOL_NAME to tool id if possible
+            $row['TD_TOOL_ID'] = null;
+            $tools = $this->tool_draw_engin->get_tools();
+            // if TD_TOOL_NAME is numeric and matches TOOL_ID
+            if (isset($row['TD_TOOL_NAME']) && is_numeric($row['TD_TOOL_NAME'])) {
+                $tid = (int)$row['TD_TOOL_NAME'];
+                foreach ($tools as $t) {
+                    if ((int)$t['TOOL_ID'] === $tid) {
+                        $row['TD_TOOL_ID'] = $tid;
+                        break;
+                    }
+                }
+            }
+            // else try match by name
+            if ($row['TD_TOOL_ID'] === null && isset($row['TD_TOOL_NAME'])) {
+                $name = trim($row['TD_TOOL_NAME']);
+                foreach ($tools as $t) {
+                    if (strcasecmp(trim($t['TOOL_NAME']), $name) === 0) {
+                        $row['TD_TOOL_ID'] = (int)$t['TOOL_ID'];
+                        break;
+                    }
+                }
+            }
+
+            // resolve product and operation names for convenience in detail response
+            $row['TD_PRODUCT_NAME'] = '';
+            $row['TD_OPERATION_NAME'] = '';
+            foreach ($this->tool_draw_engin->get_products() as $p) {
+                if (isset($row['TD_PRODUCT_ID']) && (int)$p['PRODUCT_ID'] === (int)$row['TD_PRODUCT_ID']) {
+                    $row['TD_PRODUCT_NAME'] = $p['PRODUCT_NAME'];
+                    break;
+                }
+            }
+            foreach ($this->tool_draw_engin->get_operations() as $o) {
+                if (isset($row['TD_PROCESS_ID']) && (int)$o['OPERATION_ID'] === (int)$row['TD_PROCESS_ID']) {
+                    $row['TD_OPERATION_NAME'] = $o['OPERATION_NAME'];
+                    break;
+                }
+            }
+            // resolve tool name
+            $row['TD_TOOL_RESOLVED_NAME'] = isset($row['TD_TOOL_NAME']) ? $row['TD_TOOL_NAME'] : '';
+            if ($row['TD_TOOL_ID'] !== null) {
+                $trow = $this->tool_draw_engin->get_tool_by_id($row['TD_TOOL_ID']);
+                if ($trow) $row['TD_TOOL_RESOLVED_NAME'] = $trow['TOOL_NAME'];
+            }
+
+            echo json_encode(array('success' => true, 'data' => $row));
+        } else {
+            echo json_encode(array('success' => false, 'message' => 'Data tidak ditemukan.'));
+        }
+    }
+
+    /**
+     * get_history_by_id: Get revision history for a specific tool drawing
+     */
+    public function get_history_by_id()
+    {
+        $this->output->set_content_type('application/json');
+
+        $id = (int)$this->input->post('TD_ID', TRUE);
+        log_message('debug', '[get_history_by_id] received TD_ID=' . var_export($id, true));
+        if ($id <= 0) {
+            echo json_encode(array('success' => false, 'message' => 'TD_ID tidak ditemukan.'));
+            return;
+        }
+
+        $history = $this->tool_draw_engin->get_history($id);
+        log_message('debug', '[get_history_by_id] model returned ' . var_export(is_array($history) ? count($history) : $history, true) . ' history rows');
+        if ($history && count($history) > 0) {
+            // Enrich history with resolved names (product, operation, tool, etc)
+            $products = $this->tool_draw_engin->get_products();
+            $operations = $this->tool_draw_engin->get_operations();
+            $tools = $this->tool_draw_engin->get_tools();
+            $materials = $this->tool_draw_engin->get_materials();
+            $makers = $this->tool_draw_engin->get_makers();
+
+            foreach ($history as &$h) {
+                // Resolve product name
+                $h['PRODUCT_NAME'] = '';
+                foreach ($products as $p) {
+                    if ((int)$p['PRODUCT_ID'] === (int)$h['TD_PRODUCT_ID']) {
+                        $h['PRODUCT_NAME'] = $p['PRODUCT_NAME'];
+                        break;
+                    }
+                }
+                
+                // Resolve operation name
+                $h['OPERATION_NAME'] = '';
+                foreach ($operations as $o) {
+                    if ((int)$o['OPERATION_ID'] === (int)$h['TD_PROCESS_ID']) {
+                        $h['OPERATION_NAME'] = $o['OPERATION_NAME'];
+                        break;
+                    }
+                }
+                
+                // Resolve tool name
+                $h['TOOL_RESOLVED_NAME'] = isset($h['TD_TOOL_NAME']) ? $h['TD_TOOL_NAME'] : '';
+                if (is_numeric($h['TD_TOOL_NAME'])) {
+                    $trow = $this->tool_draw_engin->get_tool_by_id((int)$h['TD_TOOL_NAME']);
+                    if ($trow) $h['TOOL_RESOLVED_NAME'] = $trow['TOOL_NAME'];
+                }
+
+                // Resolve material name
+                $h['MATERIAL_NAME'] = '';
+                foreach ($materials as $mat) {
+                    if ((int)$mat['MATERIAL_ID'] === (int)(isset($h['TD_MATERIAL_ID']) ? $h['TD_MATERIAL_ID'] : 0)) {
+                        $h['MATERIAL_NAME'] = $mat['MATERIAL_NAME'];
+                        break;
+                    }
+                }
+
+                // Resolve maker name
+                $h['MAKER_NAME'] = '';
+                foreach ($makers as $m) {
+                    if ((int)$m['MAKER_ID'] === (int)(isset($h['TD_MAKER_ID']) ? $h['TD_MAKER_ID'] : 0)) {
+                        $h['MAKER_NAME'] = $m['MAKER_NAME'];
+                        break;
+                    }
+                }
+
+                // Fallback: if still missing, try current TD record
+                if ((empty($h['PRODUCT_NAME']) || empty($h['MATERIAL_NAME']) || empty($h['MAKER_NAME'])) && isset($h['TD_ID']) && (int)$h['TD_ID'] > 0) {
+                    $current = $this->tool_draw_engin->get_by_id((int)$h['TD_ID']);
+                    if ($current) {
+                        if (empty($h['PRODUCT_NAME']) && isset($current['TD_PRODUCT_ID'])) {
+                            foreach ($products as $p) { if ((int)$p['PRODUCT_ID'] === (int)$current['TD_PRODUCT_ID']) { $h['PRODUCT_NAME'] = $p['PRODUCT_NAME']; break; } }
+                        }
+                        if (empty($h['MATERIAL_NAME']) && isset($current['TD_MATERIAL_ID'])) {
+                            foreach ($materials as $mat) { if ((int)$mat['MATERIAL_ID'] === (int)$current['TD_MATERIAL_ID']) { $h['MATERIAL_NAME'] = $mat['MATERIAL_NAME']; break; } }
+                        }
+                        // Also attempt to resolve operation name if missing in history
+                        if (empty($h['OPERATION_NAME']) && isset($current['TD_PROCESS_ID'])) {
+                            foreach ($operations as $op) { if ((int)$op['OPERATION_ID'] === (int)$current['TD_PROCESS_ID']) { $h['OPERATION_NAME'] = $op['OPERATION_NAME']; break; } }
+                        }
+                        if (empty($h['MAKER_NAME']) && isset($current['TD_MAKER_ID'])) {
+                            foreach ($makers as $m2) { if ((int)$m2['MAKER_ID'] === (int)$current['TD_MAKER_ID']) { $h['MAKER_NAME'] = $m2['MAKER_NAME']; break; } }
+                        }
+                    }
+                }
+            }
+            log_message('debug', '[get_history_by_id] returning history payload for TD_ID=' . $id);
+            echo json_encode(array('success' => true, 'data' => $history));
+        } else {
+            log_message('debug', '[get_history_by_id] no history for TD_ID=' . $id);
+            echo json_encode(array('success' => false, 'message' => 'Tidak ada history untuk record ini.'));
+        }
+    }
+}
+
