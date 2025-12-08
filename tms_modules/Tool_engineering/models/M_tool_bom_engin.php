@@ -44,6 +44,25 @@ if (!class_exists('M_tool_bom_engin')) {
             }
         }
 
+        /**
+         * Check if a column is an IDENTITY column (SQL Server)
+         * @param string $col
+         * @return bool
+         */
+        protected function is_identity($col)
+        {
+            $col = trim((string)$col);
+            if ($col === '') return false;
+            try {
+                $sql = "SELECT COLUMNPROPERTY(OBJECT_ID('TMS_DB.dbo.TMS_TC_TOOL_BOM_ENGIN'), ?, 'IsIdentity') AS is_identity";
+                $row = $this->tms_db->query($sql, array($col))->row_array();
+                return isset($row['is_identity']) ? ((int)$row['is_identity'] === 1) : false;
+            } catch (Exception $e) {
+                log_message('error', '[is_identity] Error checking identity for ' . $col . ': ' . $e->getMessage());
+                return false;
+            }
+        }
+
         public function get_all()
         {
             // Build select columns - include new columns if they exist
@@ -255,6 +274,11 @@ if (!class_exists('M_tool_bom_engin')) {
 
             if ($modifiedBy !== '') {
                 $insertData['MODIFIED_BY'] = $modifiedBy;
+            }
+
+            // Ensure ID is set when table is not identity
+            if ($this->has_column('ID') && !$this->is_identity('ID')) {
+                $insertData['ID'] = $this->get_new_sequence();
             }
 
             // Log insert data for debugging
