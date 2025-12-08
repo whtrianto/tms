@@ -12,7 +12,14 @@ if (!class_exists('M_tool_bom_engin')) {
         public function __construct()
         {
             parent::__construct();
-            $this->tms_db = $this->load->database('tms_db', TRUE);
+            try {
+                $this->tms_db = $this->load->database('tms_db', TRUE);
+                if (!$this->tms_db) {
+                    log_message('error', '[M_tool_bom_engin::__construct] Failed to load database tms_db');
+                }
+            } catch (Exception $e) {
+                log_message('error', '[M_tool_bom_engin::__construct] Exception loading database: ' . $e->getMessage());
+            }
         }
 
         /**

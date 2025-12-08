@@ -20,9 +20,35 @@ class Tool_bom_engin extends MY_Controller
         log_message('debug', '[Tool_bom_engin::__construct] username_from_session=' . var_export($username_from_session, true) . ', uid="' . $this->uid . '"');
 
         // load model AFTER setting uid, then assign uid to model
-        $this->load->model('M_tool_bom_engin', 'tool_bom_engin');
-        $this->tool_bom_engin->uid = $this->uid;
-        log_message('debug', '[Tool_bom_engin::__construct] model uid set to "' . $this->tool_bom_engin->uid . '"');
+        // Try loading with full path first, then fallback to simple name
+        $model_paths = array(
+            'tms_modules/Tool_engineering/models/M_tool_bom_engin',
+            'M_tool_bom_engin'
+        );
+        
+        $model_loaded = false;
+        foreach ($model_paths as $path) {
+            try {
+                $this->load->model($path, 'tool_bom_engin');
+                if (isset($this->tool_bom_engin) && is_object($this->tool_bom_engin) && method_exists($this->tool_bom_engin, 'get_all')) {
+                    $model_loaded = true;
+                    log_message('debug', '[Tool_bom_engin::__construct] Model loaded successfully from: ' . $path);
+                    break;
+                }
+            } catch (Exception $e) {
+                log_message('debug', '[Tool_bom_engin::__construct] Failed to load from ' . $path . ': ' . $e->getMessage());
+                if (isset($this->tool_bom_engin)) {
+                    unset($this->tool_bom_engin);
+                }
+            }
+        }
+        
+        if ($model_loaded && isset($this->tool_bom_engin)) {
+            $this->tool_bom_engin->uid = $this->uid;
+            log_message('debug', '[Tool_bom_engin::__construct] model uid set to "' . $this->tool_bom_engin->uid . '"');
+        } else {
+            log_message('error', '[Tool_bom_engin::__construct] Failed to load model M_tool_bom_engin from all paths');
+        }
 
         $this->config->set_item('Blade_enable', FALSE);
     }
@@ -50,12 +76,36 @@ class Tool_bom_engin extends MY_Controller
         // Log entry point
         log_message('debug', '[submit_data] Method called');
 
-        // Check if model is loaded
+        // Check if model is loaded, try to load if not
         if (!isset($this->tool_bom_engin) || !is_object($this->tool_bom_engin)) {
-            log_message('error', '[submit_data] Model tool_bom_engin not loaded');
-            $result['message'] = 'Model tidak ter-load.';
-            echo json_encode($result);
-            return;
+            log_message('warning', '[submit_data] Model not loaded, attempting to load...');
+            // Try to load model
+            $model_paths = array(
+                'tms_modules/Tool_engineering/models/M_tool_bom_engin',
+                'M_tool_bom_engin'
+            );
+            
+            $model_loaded = false;
+            foreach ($model_paths as $path) {
+                try {
+                    $this->load->model($path, 'tool_bom_engin');
+                    if (isset($this->tool_bom_engin) && is_object($this->tool_bom_engin)) {
+                        $this->tool_bom_engin->uid = $this->uid;
+                        $model_loaded = true;
+                        log_message('debug', '[submit_data] Model loaded successfully from: ' . $path);
+                        break;
+                    }
+                } catch (Exception $e) {
+                    log_message('error', '[submit_data] Failed to load model from ' . $path . ': ' . $e->getMessage());
+                }
+            }
+            
+            if (!$model_loaded) {
+                log_message('error', '[submit_data] Model tool_bom_engin could not be loaded');
+                $result['message'] = 'Model tidak dapat di-load. Cek log untuk detail.';
+                echo json_encode($result);
+                return;
+            }
         }
 
         try {
