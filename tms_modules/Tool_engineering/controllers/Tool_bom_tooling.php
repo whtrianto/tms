@@ -20,7 +20,8 @@ class Tool_bom_tooling extends MY_Controller
         $username_from_session = $this->session->userdata('username');
         $this->uid = (string)($username_from_session ?: 'SYSTEM');
 
-        $this->load->model('M_tool_bom_engin', 'tool_bom_engin');
+        // load model from Tool_engineering module explicitly
+        $this->load->model('Tool_engineering/M_tool_bom_engin', 'tool_bom_engin');
         $this->tool_bom_engin->uid = $this->uid;
 
         $this->config->set_item('Blade_enable', FALSE);
