@@ -275,6 +275,11 @@ class Tool_draw_tooling extends MY_Controller
             echo json_encode(array('success' => false, 'message' => 'TT_ID tidak ditemukan.'));
             return;
         }
+
+        // First, get current tooling record to extract tooling-specific data
+        $current_tooling = $this->tool_draw_tooling->get_by_id($id);
+        log_message('debug', '[get_history_by_id] current_tooling data: ' . ($current_tooling ? json_encode($current_tooling) : 'null'));
+
         // Fetch history from engineering model (history stored against TD_ID)
         $history = $this->tool_draw_engin->get_history($id);
         log_message('debug', '[get_history_by_id] engin model returned ' . var_export(is_array($history) ? count($history) : $history, true) . ' history rows');
@@ -287,6 +292,44 @@ class Tool_draw_tooling extends MY_Controller
             $makers = $this->tool_draw_engin->get_makers();
 
             foreach ($history as &$h) {
+                // Merge tooling data from current tooling record if available
+                // This ensures tooling fields are populated even if not in history
+                // Priority: use history data if exists, otherwise use current tooling data
+                if ($current_tooling) {
+                    // Only set if not already set in history (preserve history values, including 0)
+                    // Check if field is truly missing (not set or null), not if it's 0
+                    if ((!isset($h['TD_MIN_QTY']) || $h['TD_MIN_QTY'] === null) && isset($current_tooling['TT_MIN_QTY']) && $current_tooling['TT_MIN_QTY'] !== null) {
+                        $h['TD_MIN_QTY'] = (int)$current_tooling['TT_MIN_QTY'];
+                    }
+                    if ((!isset($h['TD_REPLENISH_QTY']) || $h['TD_REPLENISH_QTY'] === null) && isset($current_tooling['TT_REPLENISH_QTY']) && $current_tooling['TT_REPLENISH_QTY'] !== null) {
+                        $h['TD_REPLENISH_QTY'] = (int)$current_tooling['TT_REPLENISH_QTY'];
+                    }
+                    if ((!isset($h['TD_PRICE']) || $h['TD_PRICE'] === null) && isset($current_tooling['TT_PRICE']) && $current_tooling['TT_PRICE'] !== null) {
+                        $h['TD_PRICE'] = (float)$current_tooling['TT_PRICE'];
+                    }
+                    if ((!isset($h['TD_TOOL_LIFE']) || $h['TD_TOOL_LIFE'] === null) && isset($current_tooling['TT_TOOL_LIFE']) && $current_tooling['TT_TOOL_LIFE'] !== null) {
+                        $h['TD_TOOL_LIFE'] = (int)$current_tooling['TT_TOOL_LIFE'];
+                    }
+                    if ((!isset($h['TD_DESCRIPTION']) || $h['TD_DESCRIPTION'] === null || $h['TD_DESCRIPTION'] === '') && isset($current_tooling['TT_DESCRIPTION']) && $current_tooling['TT_DESCRIPTION'] !== null && $current_tooling['TT_DESCRIPTION'] !== '') {
+                        $h['TD_DESCRIPTION'] = $current_tooling['TT_DESCRIPTION'];
+                    }
+                    // Also add TT_* versions for compatibility (always set from current if not in history)
+                    if (!isset($h['TT_MIN_QTY']) && isset($current_tooling['TT_MIN_QTY'])) {
+                        $h['TT_MIN_QTY'] = (int)$current_tooling['TT_MIN_QTY'];
+                    }
+                    if (!isset($h['TT_REPLENISH_QTY']) && isset($current_tooling['TT_REPLENISH_QTY'])) {
+                        $h['TT_REPLENISH_QTY'] = (int)$current_tooling['TT_REPLENISH_QTY'];
+                    }
+                    if (!isset($h['TT_PRICE']) && isset($current_tooling['TT_PRICE'])) {
+                        $h['TT_PRICE'] = (float)$current_tooling['TT_PRICE'];
+                    }
+                    if (!isset($h['TT_TOOL_LIFE']) && isset($current_tooling['TT_TOOL_LIFE'])) {
+                        $h['TT_TOOL_LIFE'] = (int)$current_tooling['TT_TOOL_LIFE'];
+                    }
+                    if (!isset($h['TT_DESCRIPTION']) && isset($current_tooling['TT_DESCRIPTION'])) {
+                        $h['TT_DESCRIPTION'] = $current_tooling['TT_DESCRIPTION'];
+                    }
+                }
                 // Normalize common alternative column names into canonical TD_* keys so UI can rely on them
                 // Min quantity
                 if (!isset($h['TD_MIN_QTY']) || $h['TD_MIN_QTY'] === null) {
@@ -437,11 +480,30 @@ class Tool_draw_tooling extends MY_Controller
                     }
                 }
                 // Ensure tooling numeric fields are present and normalized (avoid empty/null in JSON)
-                $h['TD_MIN_QTY'] = (isset($h['TD_MIN_QTY']) && $h['TD_MIN_QTY'] !== null && $h['TD_MIN_QTY'] !== '') ? (int)$h['TD_MIN_QTY'] : 0;
-                $h['TD_REPLENISH_QTY'] = (isset($h['TD_REPLENISH_QTY']) && $h['TD_REPLENISH_QTY'] !== null && $h['TD_REPLENISH_QTY'] !== '') ? (int)$h['TD_REPLENISH_QTY'] : 0;
-                $h['TD_PRICE'] = (isset($h['TD_PRICE']) && $h['TD_PRICE'] !== null && $h['TD_PRICE'] !== '') ? (float)$h['TD_PRICE'] : 0.0;
-                $h['TD_TOOL_LIFE'] = (isset($h['TD_TOOL_LIFE']) && $h['TD_TOOL_LIFE'] !== null && $h['TD_TOOL_LIFE'] !== '') ? (int)$h['TD_TOOL_LIFE'] : 0;
-                $h['TD_DESCRIPTION'] = (isset($h['TD_DESCRIPTION']) && $h['TD_DESCRIPTION'] !== null) ? $h['TD_DESCRIPTION'] : '';
+                // Only set to 0 if truly null/empty, preserve existing values (including 0)
+                if (!isset($h['TD_MIN_QTY']) || $h['TD_MIN_QTY'] === null || $h['TD_MIN_QTY'] === '') {
+                    $h['TD_MIN_QTY'] = 0;
+                } else {
+                    $h['TD_MIN_QTY'] = (int)$h['TD_MIN_QTY'];
+                }
+                if (!isset($h['TD_REPLENISH_QTY']) || $h['TD_REPLENISH_QTY'] === null || $h['TD_REPLENISH_QTY'] === '') {
+                    $h['TD_REPLENISH_QTY'] = 0;
+                } else {
+                    $h['TD_REPLENISH_QTY'] = (int)$h['TD_REPLENISH_QTY'];
+                }
+                if (!isset($h['TD_PRICE']) || $h['TD_PRICE'] === null || $h['TD_PRICE'] === '') {
+                    $h['TD_PRICE'] = 0.0;
+                } else {
+                    $h['TD_PRICE'] = (float)$h['TD_PRICE'];
+                }
+                if (!isset($h['TD_TOOL_LIFE']) || $h['TD_TOOL_LIFE'] === null || $h['TD_TOOL_LIFE'] === '') {
+                    $h['TD_TOOL_LIFE'] = 0;
+                } else {
+                    $h['TD_TOOL_LIFE'] = (int)$h['TD_TOOL_LIFE'];
+                }
+                if (!isset($h['TD_DESCRIPTION']) || $h['TD_DESCRIPTION'] === null) {
+                    $h['TD_DESCRIPTION'] = '';
+                }
 
                 // If MAKER_NAME still missing but we have TD_MAKER_ID, resolve from masters
                 if ((empty($h['MAKER_NAME']) || $h['MAKER_NAME'] === null) && isset($h['TD_MAKER_ID']) && (int)$h['TD_MAKER_ID'] > 0) {
