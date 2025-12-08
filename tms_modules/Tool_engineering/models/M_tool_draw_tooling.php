@@ -1,8 +1,9 @@
 <?php
 defined('BASEPATH') or exit('No direct script access allowed');
 
-class M_tool_draw_tooling extends CI_Model
-{
+if (!class_exists('M_tool_draw_tooling')) {
+    class M_tool_draw_tooling extends CI_Model
+    {
     private $table = 'TMS_DB.dbo.TMS_TC_TOOL_DRAWING_TOOLING';
     public $tms_db;
     public $messages = '';
@@ -357,4 +358,5 @@ class M_tool_draw_tooling extends CI_Model
         log_message('debug', '[M_tool_draw_tooling::get_history] returning history count=' . count($history) . ' for id=' . $id);
         return $history;
     }
-}
+} // end class M_tool_draw_tooling
+} // end if !class_exists

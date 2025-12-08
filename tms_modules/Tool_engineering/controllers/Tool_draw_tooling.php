@@ -20,12 +20,13 @@ class Tool_draw_tooling extends MY_Controller
         log_message('debug', '[Tool_draw_tooling::__construct] username_from_session=' . var_export($username_from_session, true) . ', uid="' . $this->uid . '"');
 
         // load models AFTER setting uid
-        $this->load->model('M_tool_draw_tooling', 'tool_draw_tooling');
+        // Use explicit path to avoid class redeclaration issues
+        $this->load->model('tms_modules/Tool_engineering/models/M_tool_draw_tooling', 'tool_draw_tooling');
         $this->tool_draw_tooling->uid = $this->uid;
         log_message('debug', '[Tool_draw_tooling::__construct] tooling model uid set to "' . $this->tool_draw_tooling->uid . '"');
 
         // Also load the engineering model — we will use it as the data source for the tooling UI
-        $this->load->model('M_tool_draw_engin', 'tool_draw_engin');
+        $this->load->model('tms_modules/Tool_engineering/models/M_tool_draw_engin', 'tool_draw_engin');
         $this->tool_draw_engin->uid = $this->uid;
         log_message('debug', '[Tool_draw_tooling::__construct] engin model uid set to "' . $this->tool_draw_engin->uid . '"');
 
