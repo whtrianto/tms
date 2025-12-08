@@ -515,12 +515,24 @@ class Tool_draw_tooling extends MY_Controller
                     }
                 }
             }
+            unset($h); // Clean up reference after foreach loop
             log_message('debug', '[get_history_by_id] returning engin history payload for TD_ID=' . $id);
             // Debug: log the first history row to help troubleshoot
             if (isset($history[0])) {
-                log_message('debug', '[get_history_by_id] sample history row (first 500 chars): ' . substr(json_encode($history[0]), 0, 500));
+                $json_sample = json_encode($history[0]);
+                if ($json_sample !== false) {
+                    $sample_str = strlen($json_sample) > 500 ? substr($json_sample, 0, 500) : $json_sample;
+                    log_message('debug', '[get_history_by_id] sample history row (first 500 chars): ' . $sample_str);
+                }
             }
-            echo json_encode(array('success' => true, 'data' => $history));
+            $json_response = json_encode(array('success' => true, 'data' => $history));
+            if ($json_response === false) {
+                $error_msg = function_exists('json_last_error_msg') ? json_last_error_msg() : 'Unknown JSON error';
+                log_message('error', '[get_history_by_id] json_encode failed: ' . $error_msg);
+                echo json_encode(array('success' => false, 'message' => 'Error encoding response data.'));
+            } else {
+                echo $json_response;
+            }
         } else {
             log_message('debug', '[get_history_by_id] no engin history for TD_ID=' . $id);
             echo json_encode(array('success' => false, 'message' => 'Tidak ada history untuk record ini.'));
