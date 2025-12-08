@@ -602,7 +602,11 @@ class M_tool_draw_engin extends CI_Model
                         $h['TD_MATERIAL_ID'] = (int)$h['TD_MATERIAL_ID'];
                         // Ensure tooling fields exist and have proper types - preserve actual values from DB
                         // Log raw values for debugging
-                        log_message('debug', '[M_tool_draw_engin::get_history] Raw from DB - TD_MIN_QTY=' . var_export($h['TD_MIN_QTY'] ?? 'NOT_SET', true) . ', TD_REPLENISH_QTY=' . var_export($h['TD_REPLENISH_QTY'] ?? 'NOT_SET', true) . ', TD_PRICE=' . var_export($h['TD_PRICE'] ?? 'NOT_SET', true) . ', TD_TOOL_LIFE=' . var_export($h['TD_TOOL_LIFE'] ?? 'NOT_SET', true));
+                        $raw_min_qty = isset($h['TD_MIN_QTY']) ? $h['TD_MIN_QTY'] : 'NOT_SET';
+                        $raw_replenish_qty = isset($h['TD_REPLENISH_QTY']) ? $h['TD_REPLENISH_QTY'] : 'NOT_SET';
+                        $raw_price = isset($h['TD_PRICE']) ? $h['TD_PRICE'] : 'NOT_SET';
+                        $raw_tool_life = isset($h['TD_TOOL_LIFE']) ? $h['TD_TOOL_LIFE'] : 'NOT_SET';
+                        log_message('debug', '[M_tool_draw_engin::get_history] Raw from DB - TD_MIN_QTY=' . var_export($raw_min_qty, true) . ', TD_REPLENISH_QTY=' . var_export($raw_replenish_qty, true) . ', TD_PRICE=' . var_export($raw_price, true) . ', TD_TOOL_LIFE=' . var_export($raw_tool_life, true));
                         
                         $h['TD_MAKER_ID'] = isset($h['TD_MAKER_ID']) && $h['TD_MAKER_ID'] !== null && $h['TD_MAKER_ID'] !== '' ? (int)$h['TD_MAKER_ID'] : null;
                         // Preserve actual values from database - only convert null/empty to null (not 0), let controller handle default to 0

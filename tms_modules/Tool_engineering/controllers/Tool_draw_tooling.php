@@ -482,7 +482,11 @@ class Tool_draw_tooling extends MY_Controller
                 // Ensure tooling numeric fields are present and normalized (avoid empty/null in JSON)
                 // Preserve actual values from database - only convert null/empty to 0, but keep existing numeric values
                 // Log original values for debugging
-                log_message('debug', '[get_history_by_id] Raw TD_MIN_QTY=' . var_export($h['TD_MIN_QTY'] ?? 'NOT_SET', true) . ', TD_REPLENISH_QTY=' . var_export($h['TD_REPLENISH_QTY'] ?? 'NOT_SET', true) . ', TD_PRICE=' . var_export($h['TD_PRICE'] ?? 'NOT_SET', true) . ', TD_TOOL_LIFE=' . var_export($h['TD_TOOL_LIFE'] ?? 'NOT_SET', true));
+                $raw_min_qty = isset($h['TD_MIN_QTY']) ? $h['TD_MIN_QTY'] : 'NOT_SET';
+                $raw_replenish_qty = isset($h['TD_REPLENISH_QTY']) ? $h['TD_REPLENISH_QTY'] : 'NOT_SET';
+                $raw_price = isset($h['TD_PRICE']) ? $h['TD_PRICE'] : 'NOT_SET';
+                $raw_tool_life = isset($h['TD_TOOL_LIFE']) ? $h['TD_TOOL_LIFE'] : 'NOT_SET';
+                log_message('debug', '[get_history_by_id] Raw TD_MIN_QTY=' . var_export($raw_min_qty, true) . ', TD_REPLENISH_QTY=' . var_export($raw_replenish_qty, true) . ', TD_PRICE=' . var_export($raw_price, true) . ', TD_TOOL_LIFE=' . var_export($raw_tool_life, true));
                 
                 // Only convert to 0 if truly null/empty/not set - preserve actual values including 0
                 // Check if value exists and is not null/empty, then preserve it (including 0)
