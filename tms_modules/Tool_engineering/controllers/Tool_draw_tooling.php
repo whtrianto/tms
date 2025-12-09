@@ -312,23 +312,41 @@ class Tool_draw_tooling extends MY_Controller
             $row['TOOL_NAME'] = isset($row['TD_TOOL_NAME']) ? $row['TD_TOOL_NAME'] : '';
         }
 
-        // Enrich history records (similar to get_history_by_id logic)
+        // Enrich history records (similar to get_history_by_id logic with fallback to current record)
         foreach ($history as &$h) {
-            // Resolve product name
+            // Resolve product name - use history data first, fallback to current record
             $h['PRODUCT_NAME'] = '';
-            foreach ($products as $p) {
-                if ((int)$p['PRODUCT_ID'] === (int)$h['TD_PRODUCT_ID']) {
-                    $h['PRODUCT_NAME'] = $p['PRODUCT_NAME'];
-                    break;
+            $product_id_to_resolve = isset($h['TD_PRODUCT_ID']) ? (int)$h['TD_PRODUCT_ID'] : 0;
+            
+            // If history doesn't have valid product ID, use current record's product ID
+            if ($product_id_to_resolve <= 0 && isset($row['TD_PRODUCT_ID']) && (int)$row['TD_PRODUCT_ID'] > 0) {
+                $product_id_to_resolve = (int)$row['TD_PRODUCT_ID'];
+            }
+            
+            if ($product_id_to_resolve > 0) {
+                foreach ($products as $p) {
+                    if ((int)$p['PRODUCT_ID'] === $product_id_to_resolve) {
+                        $h['PRODUCT_NAME'] = $p['PRODUCT_NAME'];
+                        break;
+                    }
                 }
             }
             
-            // Resolve operation name
+            // Resolve operation/process name - use history data first, fallback to current record
             $h['OPERATION_NAME'] = '';
-            foreach ($operations as $o) {
-                if ((int)$o['OPERATION_ID'] === (int)$h['TD_PROCESS_ID']) {
-                    $h['OPERATION_NAME'] = $o['OPERATION_NAME'];
-                    break;
+            $process_id_to_resolve = isset($h['TD_PROCESS_ID']) ? (int)$h['TD_PROCESS_ID'] : 0;
+            
+            // If history doesn't have valid process ID, use current record's process ID
+            if ($process_id_to_resolve <= 0 && isset($row['TD_PROCESS_ID']) && (int)$row['TD_PROCESS_ID'] > 0) {
+                $process_id_to_resolve = (int)$row['TD_PROCESS_ID'];
+            }
+            
+            if ($process_id_to_resolve > 0) {
+                foreach ($operations as $o) {
+                    if ((int)$o['OPERATION_ID'] === $process_id_to_resolve) {
+                        $h['OPERATION_NAME'] = $o['OPERATION_NAME'];
+                        break;
+                    }
                 }
             }
             
@@ -344,43 +362,70 @@ class Tool_draw_tooling extends MY_Controller
                     }
                 }
             }
+            
+            // Fallback to current record's tool name if still empty
+            if (empty($h['TOOL_NAME']) && isset($row['TD_TOOL_NAME']) && $row['TD_TOOL_NAME'] !== '') {
+                $h['TOOL_NAME'] = $row['TD_TOOL_NAME'];
+                if (is_numeric($h['TOOL_NAME'])) {
+                    $trow = $this->tool_draw_engin->get_tool_by_id((int)$h['TOOL_NAME']);
+                    if ($trow) $h['TOOL_NAME'] = $trow['TOOL_NAME'];
+                }
+            }
 
-            // Resolve material name
+            // Resolve material name - use history data first, fallback to current record
             $h['MATERIAL_NAME'] = '';
-            foreach ($materials as $mat) {
-                if ((int)$mat['MATERIAL_ID'] === (int)$h['TD_MATERIAL_ID']) {
-                    $h['MATERIAL_NAME'] = $mat['MATERIAL_NAME'];
-                    break;
+            $material_id_to_resolve = isset($h['TD_MATERIAL_ID']) ? (int)$h['TD_MATERIAL_ID'] : 0;
+            
+            // If history doesn't have valid material ID, use current record's material ID
+            if ($material_id_to_resolve <= 0 && isset($row['TD_MATERIAL_ID']) && (int)$row['TD_MATERIAL_ID'] > 0) {
+                $material_id_to_resolve = (int)$row['TD_MATERIAL_ID'];
+            }
+            
+            if ($material_id_to_resolve > 0) {
+                foreach ($materials as $mat) {
+                    if ((int)$mat['MATERIAL_ID'] === $material_id_to_resolve) {
+                        $h['MATERIAL_NAME'] = $mat['MATERIAL_NAME'];
+                        break;
+                    }
                 }
             }
 
-            // Resolve maker name
+            // Resolve maker name - use history data first, fallback to current record
             $h['MAKER_NAME'] = '';
-            foreach ($makers as $m) {
-                $makerIdCandidate = (int)(isset($h['TD_MAKER_ID']) ? $h['TD_MAKER_ID'] : (isset($h['MAKER_ID']) ? $h['MAKER_ID'] : 0));
-                if ((int)$m['MAKER_ID'] === $makerIdCandidate) {
-                    $h['MAKER_NAME'] = $m['MAKER_NAME'];
-                    break;
+            $maker_id_to_resolve = isset($h['TD_MAKER_ID']) ? (int)$h['TD_MAKER_ID'] : (isset($h['MAKER_ID']) ? (int)$h['MAKER_ID'] : 0);
+            
+            // If history doesn't have valid maker ID, use current record's maker ID
+            if ($maker_id_to_resolve <= 0 && isset($row['TD_MAKER_ID']) && (int)$row['TD_MAKER_ID'] > 0) {
+                $maker_id_to_resolve = (int)$row['TD_MAKER_ID'];
+            }
+            
+            if ($maker_id_to_resolve > 0) {
+                foreach ($makers as $m) {
+                    if ((int)$m['MAKER_ID'] === $maker_id_to_resolve) {
+                        $h['MAKER_NAME'] = $m['MAKER_NAME'];
+                        break;
+                    }
                 }
             }
 
-            // Normalize tooling fields
+            // Normalize tooling fields with fallback to current record
             if (!isset($h['TD_MIN_QTY']) || $h['TD_MIN_QTY'] === null) {
-                $h['TD_MIN_QTY'] = isset($h['TT_MIN_QTY']) ? (int)$h['TT_MIN_QTY'] : (isset($h['MIN_QTY']) ? (int)$h['MIN_QTY'] : 0);
+                $h['TD_MIN_QTY'] = isset($h['TT_MIN_QTY']) ? (int)$h['TT_MIN_QTY'] : (isset($h['MIN_QTY']) ? (int)$h['MIN_QTY'] : (isset($row['TD_MIN_QTY']) ? (int)$row['TD_MIN_QTY'] : 0));
             }
             if (!isset($h['TD_REPLENISH_QTY']) || $h['TD_REPLENISH_QTY'] === null) {
-                $h['TD_REPLENISH_QTY'] = isset($h['TT_REPLENISH_QTY']) ? (int)$h['TT_REPLENISH_QTY'] : (isset($h['REPLENISH_QTY']) ? (int)$h['REPLENISH_QTY'] : 0);
+                $h['TD_REPLENISH_QTY'] = isset($h['TT_REPLENISH_QTY']) ? (int)$h['TT_REPLENISH_QTY'] : (isset($h['REPLENISH_QTY']) ? (int)$h['REPLENISH_QTY'] : (isset($row['TD_REPLENISH_QTY']) ? (int)$row['TD_REPLENISH_QTY'] : 0));
             }
             if (!isset($h['TD_PRICE']) || $h['TD_PRICE'] === null) {
-                $h['TD_PRICE'] = isset($h['TT_PRICE']) ? (float)$h['TT_PRICE'] : (isset($h['PRICE']) ? (float)$h['PRICE'] : 0.0);
+                $h['TD_PRICE'] = isset($h['TT_PRICE']) ? (float)$h['TT_PRICE'] : (isset($h['PRICE']) ? (float)$h['PRICE'] : (isset($row['TD_PRICE']) ? (float)$row['TD_PRICE'] : 0.0));
             }
             if (!isset($h['TD_TOOL_LIFE']) || $h['TD_TOOL_LIFE'] === null) {
-                $h['TD_TOOL_LIFE'] = isset($h['TT_TOOL_LIFE']) ? (int)$h['TT_TOOL_LIFE'] : (isset($h['TOOL_LIFE']) ? (int)$h['TOOL_LIFE'] : 0);
+                $h['TD_TOOL_LIFE'] = isset($h['TT_TOOL_LIFE']) ? (int)$h['TT_TOOL_LIFE'] : (isset($h['TOOL_LIFE']) ? (int)$h['TOOL_LIFE'] : (isset($row['TD_TOOL_LIFE']) ? (int)$row['TD_TOOL_LIFE'] : 0));
             }
-            if (!isset($h['TD_DESCRIPTION']) || $h['TD_DESCRIPTION'] === null) {
-                $h['TD_DESCRIPTION'] = isset($h['TT_DESCRIPTION']) ? $h['TT_DESCRIPTION'] : (isset($h['DESCRIPTION']) ? $h['DESCRIPTION'] : '');
+            if (!isset($h['TD_DESCRIPTION']) || $h['TD_DESCRIPTION'] === null || $h['TD_DESCRIPTION'] === '') {
+                $h['TD_DESCRIPTION'] = isset($h['TT_DESCRIPTION']) ? $h['TT_DESCRIPTION'] : (isset($h['DESCRIPTION']) ? $h['DESCRIPTION'] : (isset($row['TD_DESCRIPTION']) ? $row['TD_DESCRIPTION'] : ''));
             }
         }
+        unset($h); // Clean up reference
 
         $data = array();
         $data['drawing'] = $row;
