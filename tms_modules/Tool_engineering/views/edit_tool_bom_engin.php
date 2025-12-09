@@ -127,7 +127,7 @@
                             <div class="form-row">
                                 <div class="form-group col-md-6">
                                     <label>Drawing</label>
-                                    <input type="file" name="DRAWING_FILE" class="form-control" accept="image/*">
+                                    <input type="file" name="DRAWING_FILE" class="form-control" accept="*">
                                     <?php if (!empty($bom['DRAWING'])): ?>
                                         <div class="small-muted mt-1">Current: <?= htmlspecialchars($bom['DRAWING']); ?></div>
                                     <?php endif; ?>
@@ -317,7 +317,7 @@
                                     <div class="form-row">
                                         <div class="form-group col-md-12">
                                             <label>Drawing File</label>
-                                            <input type="file" name="TD_DRAWING_FILE" class="form-control" accept="image/*">
+                                            <input type="file" name="TD_DRAWING_FILE" class="form-control" accept="*">
                                             <small class="form-text text-muted">Wajib diunggah saat membuat data baru.</small>
                                         </div>
                                     </div>

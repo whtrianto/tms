@@ -327,12 +327,16 @@ class Tool_draw_engin extends MY_Controller
      */
     public function get_history_by_id()
     {
+        // Clear output buffers to ensure clean JSON response
+        if (ob_get_level()) ob_clean();
+        
         $this->output->set_content_type('application/json');
 
         $id = (int)$this->input->post('TD_ID', TRUE);
         log_message('debug', '[get_history_by_id] received TD_ID=' . var_export($id, true));
         if ($id <= 0) {
-            echo json_encode(array('success' => false, 'message' => 'TD_ID tidak ditemukan.'));
+            $result = array('success' => false, 'message' => 'TD_ID tidak ditemukan.');
+            $this->output->set_output(json_encode($result));
             return;
         }
 
@@ -411,10 +415,12 @@ class Tool_draw_engin extends MY_Controller
                 }
             }
             log_message('debug', '[get_history_by_id] returning history payload for TD_ID=' . $id);
-            echo json_encode(array('success' => true, 'data' => $history));
+            $result = array('success' => true, 'data' => $history);
+            $this->output->set_output(json_encode($result));
         } else {
             log_message('debug', '[get_history_by_id] no history for TD_ID=' . $id);
-            echo json_encode(array('success' => false, 'message' => 'Tidak ada history untuk record ini.'));
+            $result = array('success' => false, 'message' => 'Tidak ada history untuk record ini.');
+            $this->output->set_output(json_encode($result));
         }
     }
 }

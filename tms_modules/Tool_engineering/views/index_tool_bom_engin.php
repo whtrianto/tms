@@ -270,7 +270,7 @@
                                     <div class="form-row">
                                         <div class="form-group col-md-12">
                                             <label>Drawing</label>
-                                            <input type="file" name="DRAWING_FILE" class="form-control" accept="image/*">
+                                            <input type="file" name="DRAWING_FILE" class="form-control" accept="*">
                                             <small class="form-text text-muted">Upload file gambar untuk drawing.</small>
                                         </div>
                                     </div>

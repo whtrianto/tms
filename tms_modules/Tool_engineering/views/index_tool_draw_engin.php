@@ -263,10 +263,10 @@
 
                                     <div class="form-row">
                                         <div class="form-group col-md-6">
-                                            <label class="label-required">Drawing (upload image)</label>
-                                            <input type="file" name="TD_DRAWING_FILE" class="form-control" accept="image/*">
-                                            <small class="form-text text-muted">Upload file gambar untuk drawing. Jika tidak memilih file saat edit, gambar lama akan dipertahankan.</small>
-                                            <div class="invalid-feedback">Drawing wajib diisi (upload gambar).</div>
+                                            <label class="label-required">Drawing (upload file)</label>
+                                            <input type="file" name="TD_DRAWING_FILE" class="form-control" accept="*">
+                                            <small class="form-text text-muted">Upload file untuk drawing. Jika tidak memilih file saat edit, file lama akan dipertahankan.</small>
+                                            <div class="invalid-feedback">Drawing wajib diisi.</div>
                                         </div>
                                         <div class="form-group col-md-6">
                                             <label>Tool</label>
