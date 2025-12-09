@@ -151,9 +151,9 @@
                                                         // Prefer TD_ID (engineering) since data comes from engineering table
                                                         $edit_id = isset($row['TD_ID']) ? (int)$row['TD_ID'] : $row_id;
                                                         ?>
-                                                        <a href="<?= base_url('Tool_engineering/tool_draw_engin/edit_page/' . $edit_id); ?>" 
+                                                        <a href="<?= base_url('Tool_engineering/tool_draw_tooling/edit_page/' . $edit_id); ?>" 
                                                            class="btn btn-secondary btn-sm" title="Edit">Edit</a>
-                                                        <a href="<?= base_url('Tool_engineering/tool_draw_engin/history_page/' . $edit_id); ?>" 
+                                                        <a href="<?= base_url('Tool_engineering/tool_draw_tooling/history_page/' . $edit_id); ?>" 
                                                            class="btn btn-warning btn-sm" title="History">Hist</a>
                                                     </div>
                                                 </td>
