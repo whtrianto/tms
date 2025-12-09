@@ -260,11 +260,15 @@ class Tool_draw_engin extends MY_Controller
      */
     public function get_tool_draw_engin_detail()
     {
+        // Clear output buffers to ensure clean JSON response
+        if (ob_get_level()) ob_clean();
+        
         $this->output->set_content_type('application/json');
 
         $id = (int)$this->input->post('TD_ID', TRUE);
         if ($id <= 0) {
-            echo json_encode(array('success' => false, 'message' => 'TD_ID tidak ditemukan.'));
+            $result = array('success' => false, 'message' => 'TD_ID tidak ditemukan.');
+            $this->output->set_output(json_encode($result));
             return;
         }
 
@@ -316,9 +320,11 @@ class Tool_draw_engin extends MY_Controller
                 if ($trow) $row['TD_TOOL_RESOLVED_NAME'] = $trow['TOOL_NAME'];
             }
 
-            echo json_encode(array('success' => true, 'data' => $row));
+            $result = array('success' => true, 'data' => $row);
+            $this->output->set_output(json_encode($result));
         } else {
-            echo json_encode(array('success' => false, 'message' => 'Data tidak ditemukan.'));
+            $result = array('success' => false, 'message' => 'Data tidak ditemukan.');
+            $this->output->set_output(json_encode($result));
         }
     }
 
