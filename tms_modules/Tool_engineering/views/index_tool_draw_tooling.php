@@ -146,10 +146,15 @@
                                                 <td class="text-center"><?= isset($row['TT_TOOL_LIFE']) ? (int)$row['TT_TOOL_LIFE'] : (isset($row['TD_TOOL_LIFE']) ? (int)$row['TD_TOOL_LIFE'] : 0); ?></td>
                                                 <td>
                                                     <div class="action-buttons">
-                                                        <button class="btn btn-secondary btn-sm btn-edit"
-                                                            data-edit='<?= htmlspecialchars(json_encode($row), ENT_QUOTES, 'UTF-8') ?>'>Edit</button>
-                                                        <button class="btn btn-warning btn-sm btn-history"
-                                                            data-id="<?= $row_id; ?>">Hist</button>
+                                                        <?php 
+                                                        // Determine which ID to use for edit/history links
+                                                        // Prefer TD_ID (engineering) since data comes from engineering table
+                                                        $edit_id = isset($row['TD_ID']) ? (int)$row['TD_ID'] : $row_id;
+                                                        ?>
+                                                        <a href="<?= base_url('Tool_engineering/tool_draw_engin/edit_page/' . $edit_id); ?>" 
+                                                           class="btn btn-secondary btn-sm" title="Edit">Edit</a>
+                                                        <a href="<?= base_url('Tool_engineering/tool_draw_engin/history_page/' . $edit_id); ?>" 
+                                                           class="btn btn-warning btn-sm" title="History">Hist</a>
                                                     </div>
                                                 </td>
                                             </tr>
@@ -515,9 +520,6 @@
                     _search_data(table, '#table-tool-draw-tooling', false, false);
                 }
 
-                var historyCache = {};
-                var currentHistoryId = null;
-
                 // Map numeric/status values to human-readable labels
                 function mapStatus(val) {
                     if (val === undefined || val === null) return 'Inactive';
@@ -541,77 +543,7 @@
                     $('#modalForm').modal('show');
                 });
 
-                // Edit
-                $('#table-tool-draw-tooling').on('click', '.btn-edit', function() {
-                    var raw = $(this).data('edit');
-                    var d = raw;
-                    if (!d) {
-                        toastr.error('Data edit tidak valid.');
-                        return;
-                    }
-                    $('#formToolDrawing')[0].reset();
-                    $('input[name="action"]').val('EDIT');
-                    // Ensure we send an ID: prefer TT_ID (tooling), fallback to TD_ID (engineering)
-                    var sendId = d.TT_ID || d.TD_ID || '';
-                    $('input[name="TT_ID"]').val(sendId);
-
-                    // Populate fields from either tooling (TT_*) or engineering (TD_*) values
-                    // Ensure the tool select shows the previously saved selection.
-                    // Prefer numeric tool ID; if not present, try to find by tool name (case-insensitive),
-                    // otherwise append a custom option so the selection is visible.
-                    try {
-                        var $toolSel = $('[name="TT_TOOL_ID"]');
-                        var toolIdVal = d.TT_TOOL_ID || d.TD_TOOL_ID || '';
-                        if (toolIdVal) {
-                            // If ID present, set it. If option missing, append with a sensible label.
-                            if ($toolSel.find('option[value="' + toolIdVal + '"]').length === 0) {
-                                var toolLabel = (d.TOOL_NAME && String(d.TOOL_NAME).trim() !== '') ? d.TOOL_NAME : ((d.TD_TOOL_NAME && String(d.TD_TOOL_NAME).trim() !== '') ? d.TD_TOOL_NAME : ('Tool #' + toolIdVal));
-                                $toolSel.append($('<option>', {
-                                    value: toolIdVal,
-                                    text: toolLabel
-                                }));
-                            }
-                            $toolSel.val(toolIdVal);
-                        } else {
-                            // No numeric ID: try to match by tool name
-                            var toolName = (d.TOOL_NAME && String(d.TOOL_NAME).trim() !== '') ? d.TOOL_NAME : ((d.TD_TOOL_NAME && String(d.TD_TOOL_NAME).trim() !== '') ? d.TD_TOOL_NAME : '');
-                            if (toolName) {
-                                var foundVal = null;
-                                $toolSel.find('option').each(function() {
-                                    if (String($.trim($(this).text())).toLowerCase() === String(toolName).toLowerCase()) {
-                                        foundVal = $(this).val();
-                                        return false;
-                                    }
-                                });
-                                if (foundVal) {
-                                    $toolSel.val(foundVal);
-                                } else {
-                                    // append a stable custom value so selection persists while editing
-                                    var safeVal = 'custom_tool_' + String(Math.random()).slice(2, 8);
-                                    $toolSel.append($('<option>', {
-                                        value: safeVal,
-                                        text: toolName
-                                    }));
-                                    $toolSel.val(safeVal);
-                                }
-                            } else {
-                                // no data, leave empty
-                                $toolSel.val('');
-                            }
-                        }
-                    } catch (e) {
-                        console.warn('Could not ensure tool select option:', e);
-                    }
-                    $('[name="TT_MIN_QTY"]').val(d.TT_MIN_QTY || d.TD_MIN_QTY || 0);
-                    $('[name="TT_REPLENISH_QTY"]').val(d.TT_REPLENISH_QTY || d.TD_REPLENISH_QTY || 0);
-                    $('[name="TT_MAKER_ID"]').val(d.TT_MAKER_ID || d.TD_MAKER_ID || 0);
-                    $('[name="TT_PRICE"]').val(d.TT_PRICE || d.TD_PRICE || 0);
-                    $('[name="TT_DESCRIPTION"]').val(d.TT_DESCRIPTION || d.TD_DESCRIPTION || '');
-                    $('[name="TT_MATERIAL_ID"]').val(d.TT_MATERIAL_ID || d.TD_MATERIAL_ID || 0);
-                    $('[name="TT_TOOL_LIFE"]').val(d.TT_TOOL_LIFE || d.TD_TOOL_LIFE || 0);
-                    $('[name="TT_TOOL_ID"]').removeClass('is-invalid');
-                    $('#modalForm').modal('show');
-                });
+                // Edit - now handled by direct link, no popup needed
 
                 // Submit
                 $('#btn-submit').on('click', function(e) {
@@ -676,147 +608,7 @@
                     });
                 });
 
-                // History button
-                $('#table-tool-draw-tooling').on('click', '.btn-history', function() {
-                    var id = Number($(this).data('id')) || 0;
-                    if (id <= 0) {
-                        toastr.error('ID tidak valid');
-                        return;
-                    }
-
-                    currentHistoryId = id;
-                    $('#historyBody').html('<tr><td colspan="6" class="text-center">Loading...</td></tr>');
-
-                    $.ajax({
-                        url: '<?= base_url("tool_engineering/tool_draw_tooling/get_history_by_id"); ?>',
-                        type: 'POST',
-                        dataType: 'json',
-                        data: {
-                            TT_ID: id
-                        }
-                    }).done(function(res) {
-                        console.log('History response from tooling:', res);
-                        if (res && res.success && res.data && res.data.length > 0) {
-                            historyCache[id] = res.data;
-
-                            // Populate header info from first history record
-                            var firstRec = res.data[0];
-                            $('#historyProduct').text(firstRec.PRODUCT_NAME || '');
-                            $('#historyToolName').text(firstRec.TOOL_NAME || firstRec.TD_TOOL_NAME || '');
-                            $('#historyProcess').text(firstRec.OPERATION_NAME || '');
-                            $('#historyDrawingNo').text(firstRec.TD_DRAWING_NO || '');
-
-                            // Build table rows with only: ID, Revision, Status, Effective Date, Modified Date, Modified By
-                            var html = '';
-                            res.data.forEach(function(h, idx) {
-                                html += '<tr style="cursor:pointer;" class="history-row" data-index="' + idx + '">';
-                                html += '<td>' + (h.TD_ID || h.TT_ID || '') + '</td>';
-                                html += '<td>' + (h.TD_REVISION || h.TT_REVISION || 0) + '</td>';
-                                html += '<td>' + mapStatus(h.TD_STATUS || h.TT_STATUS) + '</td>';
-                                html += '<td>' + (h.TD_EFFECTIVE_DATE || h.TT_EFFECTIVE_DATE || '') + '</td>';
-                                html += '<td>' + (h.TD_MODIFIED_DATE || h.TT_MODIFIED_DATE || '') + '</td>';
-                                html += '<td>' + (h.TD_MODIFIED_BY || h.TT_MODIFIED_BY || '') + '</td>';
-                                html += '</tr>';
-                            });
-                            $('#historyBody').html(html);
-                        } else {
-                            $('#historyBody').html('<tr><td colspan="6" class="text-center text-muted">Tidak ada history</td></tr>');
-                        }
-                    }).fail(function(xhr, status, err) {
-                        $('#historyBody').html('<tr><td colspan="6" class="text-center text-danger">Gagal memuat history</td></tr>');
-                        console.error('History load failed:', status, err, xhr && xhr.responseText);
-                        toastr.error('Gagal memuat history');
-                    });
-
-                    $('#modalHistory').modal('show');
-                });
-
-                // History row click - show detail
-                $(document).on('click', '.history-row', function(e) {
-                    e.stopPropagation();
-                    var row = $(this).closest('.history-row');
-                    var idx = Number(row.data('index'));
-                    if (isNaN(idx)) return;
-                    if (!currentHistoryId || !historyCache[currentHistoryId]) return;
-
-                    var h = historyCache[currentHistoryId][idx];
-                    if (!h) return;
-
-                    // Populate detail modal with full information
-                    $('#detailHistProduct').text(h.PRODUCT_NAME || '');
-                    $('#detailHistToolName').text(h.TOOL_NAME || h.TD_TOOL_NAME || '');
-                    $('#detailHistDrawingNo').text(h.TD_DRAWING_NO || '');
-                    $('#detailHistRevision').text((typeof h.TD_REVISION !== 'undefined' && h.TD_REVISION !== null) ? h.TD_REVISION : (typeof h.TT_REVISION !== 'undefined' && h.TT_REVISION !== null) ? h.TT_REVISION : '');
-
-                    // Maker: prefer MAKER_NAME when available
-                    $('#detailHistMaker').text((typeof h.MAKER_NAME !== 'undefined' && h.MAKER_NAME !== null && h.MAKER_NAME !== '') ? h.MAKER_NAME : '');
-
-                    // Min Quantity: prefer TD_MIN_QTY, fallback TT_MIN_QTY, MIN_QTY, default to 0
-                    var minQtyVal = 0;
-                    if (typeof h.TD_MIN_QTY !== 'undefined' && h.TD_MIN_QTY !== null && h.TD_MIN_QTY !== '') {
-                        minQtyVal = parseInt(h.TD_MIN_QTY, 10) || 0;
-                    } else if (typeof h.TT_MIN_QTY !== 'undefined' && h.TT_MIN_QTY !== null && h.TT_MIN_QTY !== '') {
-                        minQtyVal = parseInt(h.TT_MIN_QTY, 10) || 0;
-                    } else if (typeof h.MIN_QTY !== 'undefined' && h.MIN_QTY !== null && h.MIN_QTY !== '') {
-                        minQtyVal = parseInt(h.MIN_QTY, 10) || 0;
-                    }
-                    $('#detailHistMinQty').text(minQtyVal);
-
-                    // Replenish Quantity: prefer TD_REPLENISH_QTY, fallback TT_REPLENISH_QTY, REPLENISH_QTY, default to 0
-                    var replenishQtyVal = 0;
-                    if (typeof h.TD_REPLENISH_QTY !== 'undefined' && h.TD_REPLENISH_QTY !== null && h.TD_REPLENISH_QTY !== '') {
-                        replenishQtyVal = parseInt(h.TD_REPLENISH_QTY, 10) || 0;
-                    } else if (typeof h.TT_REPLENISH_QTY !== 'undefined' && h.TT_REPLENISH_QTY !== null && h.TT_REPLENISH_QTY !== '') {
-                        replenishQtyVal = parseInt(h.TT_REPLENISH_QTY, 10) || 0;
-                    } else if (typeof h.REPLENISH_QTY !== 'undefined' && h.REPLENISH_QTY !== null && h.REPLENISH_QTY !== '') {
-                        replenishQtyVal = parseInt(h.REPLENISH_QTY, 10) || 0;
-                    }
-                    $('#detailHistReplenishQty').text(replenishQtyVal);
-
-                    $('#detailHistProcess').text(h.OPERATION_NAME || '');
-
-                    // Price: prefer TD_PRICE, fallback TT_PRICE, PRICE, default to 0.00
-                    var priceVal = 0.0;
-                    if (typeof h.TD_PRICE !== 'undefined' && h.TD_PRICE !== null && h.TD_PRICE !== '') {
-                        priceVal = parseFloat(h.TD_PRICE) || 0.0;
-                    } else if (typeof h.TT_PRICE !== 'undefined' && h.TT_PRICE !== null && h.TT_PRICE !== '') {
-                        priceVal = parseFloat(h.TT_PRICE) || 0.0;
-                    } else if (typeof h.PRICE !== 'undefined' && h.PRICE !== null && h.PRICE !== '') {
-                        priceVal = parseFloat(h.PRICE) || 0.0;
-                    }
-                    $('#detailHistPrice').text(isNaN(priceVal) ? '0.00' : parseFloat(priceVal).toFixed(2));
-
-                    // Tool Life: prefer TD_TOOL_LIFE, fallback TT_TOOL_LIFE, TOOL_LIFE, default to 0
-                    var toolLifeVal = 0;
-                    if (typeof h.TD_TOOL_LIFE !== 'undefined' && h.TD_TOOL_LIFE !== null && h.TD_TOOL_LIFE !== '') {
-                        toolLifeVal = parseInt(h.TD_TOOL_LIFE, 10) || 0;
-                    } else if (typeof h.TT_TOOL_LIFE !== 'undefined' && h.TT_TOOL_LIFE !== null && h.TT_TOOL_LIFE !== '') {
-                        toolLifeVal = parseInt(h.TT_TOOL_LIFE, 10) || 0;
-                    } else if (typeof h.TOOL_LIFE !== 'undefined' && h.TOOL_LIFE !== null && h.TOOL_LIFE !== '') {
-                        toolLifeVal = parseInt(h.TOOL_LIFE, 10) || 0;
-                    }
-                    $('#detailHistToolLife').text(toolLifeVal);
-
-                    // Description: prefer TD_DESCRIPTION, fallback TT_DESCRIPTION, DESCRIPTION, default to ''
-                    var descVal = '';
-                    if (typeof h.TD_DESCRIPTION !== 'undefined' && h.TD_DESCRIPTION !== null && h.TD_DESCRIPTION !== '') {
-                        descVal = String(h.TD_DESCRIPTION);
-                    } else if (typeof h.TT_DESCRIPTION !== 'undefined' && h.TT_DESCRIPTION !== null && h.TT_DESCRIPTION !== '') {
-                        descVal = String(h.TT_DESCRIPTION);
-                    } else if (typeof h.DESCRIPTION !== 'undefined' && h.DESCRIPTION !== null && h.DESCRIPTION !== '') {
-                        descVal = String(h.DESCRIPTION);
-                    }
-                    $('#detailHistDescription').text(descVal);
-
-                    $('#detailHistStatus').text(mapStatus(h.TD_STATUS || h.TT_STATUS));
-                    $('#detailHistEffective').text(h.TD_EFFECTIVE_DATE || h.TT_EFFECTIVE_DATE || '');
-                    $('#detailHistMaterial').text(h.MATERIAL_NAME || '');
-                    $('#detailHistDrawingFile').text(h.TD_DRAWING_NO || '');
-                    $('#detailHistModified').text(h.TD_MODIFIED_DATE || h.TT_MODIFIED_DATE || '');
-                    $('#detailHistModifiedBy').text(h.TD_MODIFIED_BY || h.TT_MODIFIED_BY || '');
-
-                    $('#modalHistoryDetail').modal('show');
-                });
+                // History - now handled by direct link, no popup needed
 
                 // Delete
                 $('#table-tool-draw-tooling').on('click', '.btn-delete', function() {
