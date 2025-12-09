@@ -355,17 +355,25 @@ class Tool_draw_engin extends MY_Controller
             $status     = (int)$this->input->post('TD_STATUS', TRUE);
             $material_id = (int)$this->input->post('TD_MATERIAL_ID', TRUE);
             $maker_id   = (int)$this->input->post('TD_MAKER_ID', TRUE);
-            $min_qty    = $this->input->post('TD_MIN_QTY', TRUE);
-            $replenish_qty = $this->input->post('TD_REPLENISH_QTY', TRUE);
-            $price_val  = $this->input->post('TD_PRICE', TRUE);
-            $tool_life  = $this->input->post('TD_TOOL_LIFE', TRUE);
-            $sequence   = $this->input->post('TD_SEQUENCE', TRUE);
-            $description = $this->input->post('TD_DESCRIPTION', TRUE);
-            $min_qty = ($min_qty === '' || $min_qty === null) ? null : (int)$min_qty;
-            $replenish_qty = ($replenish_qty === '' || $replenish_qty === null) ? null : (int)$replenish_qty;
-            $price_val = ($price_val === '' || $price_val === null) ? null : (float)$price_val;
-            $tool_life = ($tool_life === '' || $tool_life === null) ? null : (int)$tool_life;
-            $sequence = ($sequence === '' || $sequence === null) ? null : (int)$sequence;
+            // Kolom tooling (maker, qty, price, tool life, description, sequence) HANYA
+            // diisi dari UI Tooling (bukan dari UI Engineering).
+            // Di UI Engineering (edit_tool_draw_engin & revision_tool_draw_engin) kolom-kolom
+            // ini tidak ada di form, jadi di sini kita JANGAN pakai nilai POST-nya
+            // untuk action EDIT/REVISION agar tidak mengosongkan data lama.
+            //
+            // Untuk action ADD (tambah data baru) kita tetap baca dari POST
+            // jika memang dikirim (misalnya integrasi dari tooling).
+            $min_qty        = $this->input->post('TD_MIN_QTY', TRUE);
+            $replenish_qty  = $this->input->post('TD_REPLENISH_QTY', TRUE);
+            $price_val      = $this->input->post('TD_PRICE', TRUE);
+            $tool_life      = $this->input->post('TD_TOOL_LIFE', TRUE);
+            $sequence       = $this->input->post('TD_SEQUENCE', TRUE);
+            $description    = $this->input->post('TD_DESCRIPTION', TRUE);
+            $min_qty        = ($min_qty === '' || $min_qty === null) ? null : (int)$min_qty;
+            $replenish_qty  = ($replenish_qty === '' || $replenish_qty === null) ? null : (int)$replenish_qty;
+            $price_val      = ($price_val === '' || $price_val === null) ? null : (float)$price_val;
+            $tool_life      = ($tool_life === '' || $tool_life === null) ? null : (int)$tool_life;
+            $sequence       = ($sequence === '' || $sequence === null) ? null : (int)$sequence;
 
             if ($action === 'ADD') {
                 if (empty($drawing_no)) {
@@ -407,7 +415,19 @@ class Tool_draw_engin extends MY_Controller
                     echo $json;
                     return;
                 }
-                $ok = $this->tool_draw_engin->edit_data_with_tooling($id, $product_id, $process_id, $drawing_no, $tool_name, $revision, $status, $material_id, $maker_id, $min_qty, $replenish_qty, $price_val, $tool_life, $description, $sequence);
+
+                // EDIT dari layar Engineering:
+                // - hanya update kolom utama (product, process, drawing, tool, status, material)
+                // - kolom tooling (maker, qty, price, dll) tetap memakai nilai lama di DB
+                $ok = $this->tool_draw_engin->edit_data_engineering(
+                    $id,
+                    $product_id,
+                    $process_id,
+                    $drawing_no,
+                    $tool_name,
+                    $status,
+                    $material_id
+                );
                 if ($ok === true) {
                     $result['success'] = true;
                     $result['message'] = $this->tool_draw_engin->messages ?: 'Tool Drawing Engineering berhasil diperbarui.';
@@ -444,7 +464,18 @@ class Tool_draw_engin extends MY_Controller
                     return;
                 }
 
-                $ok = $this->tool_draw_engin->edit_data_with_tooling($id, $product_id, $process_id, $drawing_no, $tool_name, $revision, $status, $material_id, $maker_id, $min_qty, $replenish_qty, $price_val, $tool_life, $description, $sequence);
+                // REVISION dari layar Engineering:
+                // - sama seperti EDIT, hanya kolom utama yang di-update.
+                // - revision number akan otomatis naik di dalam model.
+                $ok = $this->tool_draw_engin->edit_data_engineering(
+                    $id,
+                    $product_id,
+                    $process_id,
+                    $drawing_no,
+                    $tool_name,
+                    $status,
+                    $material_id
+                );
                 if ($ok === true) {
                     $result['success'] = true;
                     $result['message'] = $this->tool_draw_engin->messages ?: 'Revision berhasil ditambahkan (v' . $revision . ').';

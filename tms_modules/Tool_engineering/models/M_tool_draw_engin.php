@@ -462,6 +462,106 @@ class M_tool_draw_engin extends CI_Model
     }
 
     /**
+     * edit_data_engineering: Edit dari layar Engineering saja.
+     * Hanya update kolom-kolom utama (product, process, drawing, tool_name,
+     * revision, status, material, modified_by/date) dan TIDAK menyentuh
+     * kolom tooling (maker, min qty, replenish qty, price, tool life, description, sequence).
+     *
+     * Dipakai oleh:
+     * - Tool_engineering/Tool_draw_engin::submit_data() untuk action EDIT/REVISION
+     *   dari view index/edit/revision engineering.
+     *
+     * Dengan cara ini, jika di form engineering tidak ada input untuk kolom tooling,
+     * nilainya di DB tidak akan berubah (tidak menjadi NULL/0).
+     */
+    public function edit_data_engineering($id, $product_id, $process_id, $drawing_no, $tool_name, $status, $material_id)
+    {
+        $id         = (int)$id;
+        $product_id = (int)$product_id;
+        $process_id = (int)$process_id;
+        $drawing_no = trim((string)$drawing_no);
+        $tool_name  = trim((string)$tool_name);
+        $status     = (int)$status;
+        $material_id = (int)$material_id;
+
+        $current = $this->get_by_id($id);
+        if (!$current) {
+            $this->messages = 'Data tidak ditemukan.';
+            return false;
+        }
+
+        if ($drawing_no === '') {
+            $this->messages = 'Drawing No tidak boleh kosong.';
+            return false;
+        }
+
+        if ($product_id <= 0) {
+            $this->messages = 'Product ID harus lebih dari 0.';
+            return false;
+        }
+
+        if ($process_id <= 0) {
+            $this->messages = 'Process ID harus lebih dari 0.';
+            return false;
+        }
+
+        // set TD_MODIFIED_BY to the username from controller ($this->uid) for audit trail
+        $modifiedBy = '';
+        if (isset($this->uid) && $this->uid !== '') {
+            $modifiedBy = (string)$this->uid;
+        }
+        log_message('debug', '[edit_data_engineering] id=' . $id . ', uid="' . var_export($this->uid, true) . '", modifiedBy="' . $modifiedBy . '"');
+
+        // Increment revision automatically (sama seperti edit_data/edit_data_with_tooling)
+        $oldRevision = isset($current['TD_REVISION']) ? (int)$current['TD_REVISION'] : 0;
+        $newRevision = $oldRevision + 1;
+
+        $updateData = array(
+            'TD_PRODUCT_ID' => $product_id,
+            'TD_PROCESS_ID' => $process_id,
+            'TD_DRAWING_NO' => $drawing_no,
+            'TD_TOOL_NAME'  => $tool_name,
+            'TD_REVISION'   => $newRevision,
+            'TD_STATUS'     => $status
+        );
+
+        // handle MATERIAL_ID properly
+        if ($material_id > 0) {
+            $updateData['TD_MATERIAL_ID'] = $material_id;
+        } else {
+            $updateData['TD_MATERIAL_ID'] = null;
+        }
+
+        // Only set TD_MODIFIED_BY if we have a valid value
+        if ($modifiedBy !== '') {
+            $updateData['TD_MODIFIED_BY'] = $modifiedBy;
+        }
+
+        // Penting: JANGAN set kolom tooling di sini (TD_MAKER_ID, TD_MIN_QTY, dll)
+        // supaya nilainya tetap seperti di database.
+
+        $ok = $this->tms_db->where('TD_ID', $id)->update($this->table, $updateData);
+
+        if ($ok) {
+            // update TD_MODIFIED_DATE if column exists
+            if ($this->has_column('TD_MODIFIED_DATE')) {
+                $this->tms_db->query("UPDATE {$this->table} SET TD_MODIFIED_DATE = GETDATE() WHERE TD_ID = ?", array($id));
+            }
+            // Insert history record for this update (best-effort)
+            try {
+                $this->_insert_history_record($id, 'UPDATE');
+            } catch (Exception $e) {
+                log_message('error', '[edit_data_engineering] history insert failed: ' . $e->getMessage());
+            }
+            $this->messages = 'Tool Drawing Engineering berhasil diubah.';
+            return true;
+        }
+        $err = $this->tms_db->error();
+        $this->messages = 'Gagal mengubah tool drawing. ' . (isset($err['message']) ? $err['message'] : '');
+        return false;
+    }
+
+    /**
      * edit_data_with_tooling: Edit engineering record with full tooling specs
      * Used when editing from Tooling UI which has tool/maker/price/qty/etc.
      */
