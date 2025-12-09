@@ -23,30 +23,45 @@ class Tool_bom_tooling extends MY_Controller
         log_message('debug', '[Tool_bom_tooling::__construct] username_from_session=' . var_export($username_from_session, true) . ', uid="' . $this->uid . '"');
 
         // load model AFTER setting uid, then assign uid to model
-        // Try multiple paths to ensure model loads correctly
-        $loaded = false;
-        $candidates = [
-            'M_tool_bom_engin',
-            'Tool_engineering/M_tool_bom_engin',
-            'tms_modules/Tool_engineering/models/M_tool_bom_engin'
-        ];
+        // Try standard load first (same as Tool_bom_engin)
+        $this->load->model('M_tool_bom_engin', 'tool_bom_engin');
         
-        foreach ($candidates as $candidate) {
-            if ($loaded) break;
-            try {
-                $this->load->model($candidate, 'tool_bom_engin');
-                if (isset($this->tool_bom_engin) && is_object($this->tool_bom_engin) && method_exists($this->tool_bom_engin, 'get_all')) {
-                    $loaded = true;
-                    break;
+        // Verify model loaded correctly
+        if (!isset($this->tool_bom_engin) || !is_object($this->tool_bom_engin) || !method_exists($this->tool_bom_engin, 'get_all')) {
+            log_message('debug', '[Tool_bom_tooling::__construct] Standard load failed, trying direct require');
+            
+            // Fallback: try direct require like Tool.php does
+            $possibleFiles = [
+                APPPATH . 'tms_modules/Tool_engineering/models/M_tool_bom_engin.php',
+                APPPATH . 'tms_modules/tool_engineering/models/M_tool_bom_engin.php'
+            ];
+            
+            $loaded = false;
+            foreach ($possibleFiles as $f) {
+                if (is_file($f) && is_readable($f)) {
+                    try {
+                        require_once($f);
+                        if (class_exists('M_tool_bom_engin')) {
+                            $this->tool_bom_engin = new M_tool_bom_engin();
+                            if (method_exists($this->tool_bom_engin, 'get_all')) {
+                                $loaded = true;
+                                log_message('debug', '[Tool_bom_tooling::__construct] Model loaded via direct require from: ' . $f);
+                                break;
+                            } else {
+                                unset($this->tool_bom_engin);
+                            }
+                        }
+                    } catch (Exception $e) {
+                        log_message('error', '[Tool_bom_tooling::__construct] Exception loading model from ' . $f . ': ' . $e->getMessage());
+                        if (isset($this->tool_bom_engin)) unset($this->tool_bom_engin);
+                    }
                 }
-            } catch (Exception $e) {
-                log_message('debug', '[Tool_bom_tooling::__construct] Failed to load model with path: ' . $candidate);
             }
-        }
-        
-        if (!$loaded || !isset($this->tool_bom_engin)) {
-            log_message('error', '[Tool_bom_tooling::__construct] Failed to load M_tool_bom_engin model with all candidate paths');
-            show_error('Failed to load required model M_tool_bom_engin. Please check your configuration.');
+            
+            if (!$loaded) {
+                log_message('error', '[Tool_bom_tooling::__construct] Failed to load M_tool_bom_engin model with all methods');
+                show_error('Failed to load required model M_tool_bom_engin. Please check your configuration.');
+            }
         }
         
         $this->tool_bom_engin->uid = $this->uid;
