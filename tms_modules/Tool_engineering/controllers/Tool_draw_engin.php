@@ -71,15 +71,27 @@ class Tool_draw_engin extends MY_Controller
             return;
         }
 
-        // Resolve tool ID if TD_TOOL_NAME is numeric
+        // Resolve tool ID from TD_TOOL_NAME (can be numeric ID or tool name)
         $row['TD_TOOL_ID'] = null;
         $tools = $this->tool_draw_engin->get_tools();
-        if (isset($row['TD_TOOL_NAME']) && is_numeric($row['TD_TOOL_NAME'])) {
-            $tid = (int)$row['TD_TOOL_NAME'];
-            foreach ($tools as $t) {
-                if ((int)$t['TOOL_ID'] === $tid) {
-                    $row['TD_TOOL_ID'] = $tid;
-                    break;
+        if (isset($row['TD_TOOL_NAME']) && $row['TD_TOOL_NAME'] !== '') {
+            // First try: if TD_TOOL_NAME is numeric, treat it as TOOL_ID
+            if (is_numeric($row['TD_TOOL_NAME'])) {
+                $tid = (int)$row['TD_TOOL_NAME'];
+                foreach ($tools as $t) {
+                    if ((int)$t['TOOL_ID'] === $tid) {
+                        $row['TD_TOOL_ID'] = $tid;
+                        break;
+                    }
+                }
+            } else {
+                // Second try: match by tool name
+                $tool_name = trim($row['TD_TOOL_NAME']);
+                foreach ($tools as $t) {
+                    if (strcasecmp(trim($t['TOOL_NAME']), $tool_name) === 0) {
+                        $row['TD_TOOL_ID'] = (int)$t['TOOL_ID'];
+                        break;
+                    }
                 }
             }
         }
@@ -112,15 +124,27 @@ class Tool_draw_engin extends MY_Controller
             return;
         }
 
-        // Resolve tool ID if TD_TOOL_NAME is numeric
+        // Resolve tool ID from TD_TOOL_NAME (can be numeric ID or tool name)
         $row['TD_TOOL_ID'] = null;
         $tools = $this->tool_draw_engin->get_tools();
-        if (isset($row['TD_TOOL_NAME']) && is_numeric($row['TD_TOOL_NAME'])) {
-            $tid = (int)$row['TD_TOOL_NAME'];
-            foreach ($tools as $t) {
-                if ((int)$t['TOOL_ID'] === $tid) {
-                    $row['TD_TOOL_ID'] = $tid;
-                    break;
+        if (isset($row['TD_TOOL_NAME']) && $row['TD_TOOL_NAME'] !== '') {
+            // First try: if TD_TOOL_NAME is numeric, treat it as TOOL_ID
+            if (is_numeric($row['TD_TOOL_NAME'])) {
+                $tid = (int)$row['TD_TOOL_NAME'];
+                foreach ($tools as $t) {
+                    if ((int)$t['TOOL_ID'] === $tid) {
+                        $row['TD_TOOL_ID'] = $tid;
+                        break;
+                    }
+                }
+            } else {
+                // Second try: match by tool name
+                $tool_name = trim($row['TD_TOOL_NAME']);
+                foreach ($tools as $t) {
+                    if (strcasecmp(trim($t['TOOL_NAME']), $tool_name) === 0) {
+                        $row['TD_TOOL_ID'] = (int)$t['TOOL_ID'];
+                        break;
+                    }
                 }
             }
         }
@@ -166,21 +190,39 @@ class Tool_draw_engin extends MY_Controller
         $makers = $this->tool_draw_engin->get_makers();
 
         foreach ($history as &$h) {
-            // Resolve product name
+            // Resolve product name - use history data first, fallback to current record
             $h['PRODUCT_NAME'] = '';
-            foreach ($products as $p) {
-                if ((int)$p['PRODUCT_ID'] === (int)$h['TD_PRODUCT_ID']) {
-                    $h['PRODUCT_NAME'] = $p['PRODUCT_NAME'];
-                    break;
+            $product_id_to_resolve = isset($h['TD_PRODUCT_ID']) ? (int)$h['TD_PRODUCT_ID'] : 0;
+            
+            // If history doesn't have valid product ID, use current record's product ID
+            if ($product_id_to_resolve <= 0 && isset($row['TD_PRODUCT_ID']) && (int)$row['TD_PRODUCT_ID'] > 0) {
+                $product_id_to_resolve = (int)$row['TD_PRODUCT_ID'];
+            }
+            
+            if ($product_id_to_resolve > 0) {
+                foreach ($products as $p) {
+                    if ((int)$p['PRODUCT_ID'] === $product_id_to_resolve) {
+                        $h['PRODUCT_NAME'] = $p['PRODUCT_NAME'];
+                        break;
+                    }
                 }
             }
             
-            // Resolve operation name
+            // Resolve operation/process name - use history data first, fallback to current record
             $h['OPERATION_NAME'] = '';
-            foreach ($operations as $o) {
-                if ((int)$o['OPERATION_ID'] === (int)$h['TD_PROCESS_ID']) {
-                    $h['OPERATION_NAME'] = $o['OPERATION_NAME'];
-                    break;
+            $process_id_to_resolve = isset($h['TD_PROCESS_ID']) ? (int)$h['TD_PROCESS_ID'] : 0;
+            
+            // If history doesn't have valid process ID, use current record's process ID
+            if ($process_id_to_resolve <= 0 && isset($row['TD_PROCESS_ID']) && (int)$row['TD_PROCESS_ID'] > 0) {
+                $process_id_to_resolve = (int)$row['TD_PROCESS_ID'];
+            }
+            
+            if ($process_id_to_resolve > 0) {
+                foreach ($operations as $o) {
+                    if ((int)$o['OPERATION_ID'] === $process_id_to_resolve) {
+                        $h['OPERATION_NAME'] = $o['OPERATION_NAME'];
+                        break;
+                    }
                 }
             }
             
@@ -189,23 +231,45 @@ class Tool_draw_engin extends MY_Controller
             if (is_numeric($h['TD_TOOL_NAME'])) {
                 $trow = $this->tool_draw_engin->get_tool_by_id((int)$h['TD_TOOL_NAME']);
                 if ($trow) $h['TOOL_RESOLVED_NAME'] = $trow['TOOL_NAME'];
+            } elseif (empty($h['TOOL_RESOLVED_NAME']) && isset($row['TD_TOOL_NAME']) && $row['TD_TOOL_NAME'] !== '') {
+                // Fallback to current record's tool name
+                $h['TOOL_RESOLVED_NAME'] = $row['TD_TOOL_NAME'];
+                if (is_numeric($h['TOOL_RESOLVED_NAME'])) {
+                    $trow = $this->tool_draw_engin->get_tool_by_id((int)$h['TOOL_RESOLVED_NAME']);
+                    if ($trow) $h['TOOL_RESOLVED_NAME'] = $trow['TOOL_NAME'];
+                }
             }
 
-            // Resolve material name
+            // Resolve material name - use history data first, fallback to current record
             $h['MATERIAL_NAME'] = '';
-            foreach ($materials as $mat) {
-                if ((int)$mat['MATERIAL_ID'] === (int)(isset($h['TD_MATERIAL_ID']) ? $h['TD_MATERIAL_ID'] : 0)) {
-                    $h['MATERIAL_NAME'] = $mat['MATERIAL_NAME'];
-                    break;
+            $material_id_to_resolve = isset($h['TD_MATERIAL_ID']) ? (int)$h['TD_MATERIAL_ID'] : 0;
+            
+            // If history doesn't have valid material ID, use current record's material ID
+            if ($material_id_to_resolve <= 0 && isset($row['TD_MATERIAL_ID']) && (int)$row['TD_MATERIAL_ID'] > 0) {
+                $material_id_to_resolve = (int)$row['TD_MATERIAL_ID'];
+            }
+            
+            if ($material_id_to_resolve > 0) {
+                foreach ($materials as $mat) {
+                    if ((int)$mat['MATERIAL_ID'] === $material_id_to_resolve) {
+                        $h['MATERIAL_NAME'] = $mat['MATERIAL_NAME'];
+                        break;
+                    }
                 }
             }
 
             // Resolve maker name
             $h['MAKER_NAME'] = '';
-            foreach ($makers as $m) {
-                if ((int)$m['MAKER_ID'] === (int)(isset($h['TD_MAKER_ID']) ? $h['TD_MAKER_ID'] : 0)) {
-                    $h['MAKER_NAME'] = $m['MAKER_NAME'];
-                    break;
+            $maker_id_to_resolve = isset($h['TD_MAKER_ID']) ? (int)$h['TD_MAKER_ID'] : 0;
+            if ($maker_id_to_resolve <= 0 && isset($row['TD_MAKER_ID']) && (int)$row['TD_MAKER_ID'] > 0) {
+                $maker_id_to_resolve = (int)$row['TD_MAKER_ID'];
+            }
+            if ($maker_id_to_resolve > 0) {
+                foreach ($makers as $m) {
+                    if ((int)$m['MAKER_ID'] === $maker_id_to_resolve) {
+                        $h['MAKER_NAME'] = $m['MAKER_NAME'];
+                        break;
+                    }
                 }
             }
         }

@@ -639,12 +639,33 @@ class M_tool_draw_engin extends CI_Model
                     }
                     $h['TD_EFFECTIVE_DATE'] = isset($r['EFFECTIVE_DATE']) ? $r['EFFECTIVE_DATE'] : (isset($r['TD_EFFECTIVE_DATE']) ? $r['TD_EFFECTIVE_DATE'] : '');
                     $h['TD_MODIFIED_DATE'] = isset($r['MODIFIED_DATE']) ? $r['MODIFIED_DATE'] : (isset($r['TD_MODIFIED_DATE']) ? $r['TD_MODIFIED_DATE'] : (isset($r['HISTORY_CREATED_DATE']) ? $r['HISTORY_CREATED_DATE'] : ''));
-                    $h['TD_MODIFIED_BY'] = isset($r['TD_MODIFIED_BY']) ? $r['TD_MODIFIED_BY'] : (isset($r['TD_MODIFIED_BY']) ? $r['TD_MODIFIED_BY'] : '');
-                    $h['TD_PRODUCT_ID'] = isset($r['TD_PRODUCT_ID']) ? (int)$r['TD_PRODUCT_ID'] : (isset($r['TD_PRODUCT_ID']) ? (int)$r['TD_PRODUCT_ID'] : 0);
-                    $h['TD_PROCESS_ID'] = isset($r['TD_PROCESS_ID']) ? (int)$r['TD_PROCESS_ID'] : (isset($r['TD_PROCESS_ID']) ? (int)$r['TD_PROCESS_ID'] : 0);
-                    $h['TD_DRAWING_NO'] = isset($r['TD_DRAWING_NO']) ? $r['TD_DRAWING_NO'] : (isset($r['TD_DRAWING_NO']) ? $r['TD_DRAWING_NO'] : '');
+                    $h['TD_MODIFIED_BY'] = isset($r['TD_MODIFIED_BY']) ? $r['TD_MODIFIED_BY'] : '';
+                    // Get IDs from stored procedure result - handle both direct field names and aliases
+                    $h['TD_PRODUCT_ID'] = 0;
+                    if (isset($r['TD_PRODUCT_ID']) && $r['TD_PRODUCT_ID'] !== null && $r['TD_PRODUCT_ID'] !== '') {
+                        $h['TD_PRODUCT_ID'] = (int)$r['TD_PRODUCT_ID'];
+                    } elseif (isset($r['PRODUCT_ID']) && $r['PRODUCT_ID'] !== null && $r['PRODUCT_ID'] !== '') {
+                        $h['TD_PRODUCT_ID'] = (int)$r['PRODUCT_ID'];
+                    }
+                    
+                    $h['TD_PROCESS_ID'] = 0;
+                    if (isset($r['TD_PROCESS_ID']) && $r['TD_PROCESS_ID'] !== null && $r['TD_PROCESS_ID'] !== '') {
+                        $h['TD_PROCESS_ID'] = (int)$r['TD_PROCESS_ID'];
+                    } elseif (isset($r['PROCESS_ID']) && $r['PROCESS_ID'] !== null && $r['PROCESS_ID'] !== '') {
+                        $h['TD_PROCESS_ID'] = (int)$r['PROCESS_ID'];
+                    } elseif (isset($r['OPERATION_ID']) && $r['OPERATION_ID'] !== null && $r['OPERATION_ID'] !== '') {
+                        $h['TD_PROCESS_ID'] = (int)$r['OPERATION_ID'];
+                    }
+                    
+                    $h['TD_DRAWING_NO'] = isset($r['TD_DRAWING_NO']) ? $r['TD_DRAWING_NO'] : (isset($r['DRAWING_NO']) ? $r['DRAWING_NO'] : '');
                     $h['TD_TOOL_NAME'] = isset($r['TOOL_NAME']) ? $r['TOOL_NAME'] : (isset($r['TD_TOOL_NAME']) ? $r['TD_TOOL_NAME'] : '');
-                    $h['TD_MATERIAL_ID'] = isset($r['TD_MATERIAL_ID']) ? (int)$r['TD_MATERIAL_ID'] : (isset($r['TD_MATERIAL_ID']) ? (int)$r['TD_MATERIAL_ID'] : 0);
+                    
+                    $h['TD_MATERIAL_ID'] = 0;
+                    if (isset($r['TD_MATERIAL_ID']) && $r['TD_MATERIAL_ID'] !== null && $r['TD_MATERIAL_ID'] !== '') {
+                        $h['TD_MATERIAL_ID'] = (int)$r['TD_MATERIAL_ID'];
+                    } elseif (isset($r['MATERIAL_ID']) && $r['MATERIAL_ID'] !== null && $r['MATERIAL_ID'] !== '') {
+                        $h['TD_MATERIAL_ID'] = (int)$r['MATERIAL_ID'];
+                    }
                     // tooling fields from SP result (if SP returns them)
                     // Preserve actual values from database - don't default to 0 if value exists
                     $h['TD_MAKER_ID'] = isset($r['TD_MAKER_ID']) && $r['TD_MAKER_ID'] !== null && $r['TD_MAKER_ID'] !== '' ? (int)$r['TD_MAKER_ID'] : (isset($r['MAKER_ID']) && $r['MAKER_ID'] !== null && $r['MAKER_ID'] !== '' ? (int)$r['MAKER_ID'] : null);

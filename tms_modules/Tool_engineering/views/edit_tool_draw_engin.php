@@ -78,8 +78,28 @@
                                     <label>Tool</label>
                                     <select name="TD_TOOL_NAME" class="form-control">
                                         <option value="">-- Select Tool --</option>
-                                        <?php foreach ($tools as $t): ?>
-                                            <option value="<?= (int)$t['TOOL_ID']; ?>" <?= (isset($drawing['TD_TOOL_ID']) && (int)$drawing['TD_TOOL_ID'] === (int)$t['TOOL_ID']) ? 'selected' : ''; ?>>
+                                        <?php 
+                                        // Determine which tool should be selected
+                                        $selected_tool_id = null;
+                                        if (isset($drawing['TD_TOOL_ID']) && (int)$drawing['TD_TOOL_ID'] > 0) {
+                                            $selected_tool_id = (int)$drawing['TD_TOOL_ID'];
+                                        } elseif (isset($drawing['TD_TOOL_NAME']) && $drawing['TD_TOOL_NAME'] !== '') {
+                                            // Fallback: try to match by TD_TOOL_NAME
+                                            if (is_numeric($drawing['TD_TOOL_NAME'])) {
+                                                $selected_tool_id = (int)$drawing['TD_TOOL_NAME'];
+                                            } else {
+                                                // Match by name
+                                                $tool_name = trim($drawing['TD_TOOL_NAME']);
+                                                foreach ($tools as $t) {
+                                                    if (strcasecmp(trim($t['TOOL_NAME']), $tool_name) === 0) {
+                                                        $selected_tool_id = (int)$t['TOOL_ID'];
+                                                        break;
+                                                    }
+                                                }
+                                            }
+                                        }
+                                        foreach ($tools as $t): ?>
+                                            <option value="<?= (int)$t['TOOL_ID']; ?>" <?= ($selected_tool_id !== null && (int)$t['TOOL_ID'] === $selected_tool_id) ? 'selected' : ''; ?>>
                                                 <?= htmlspecialchars($t['TOOL_NAME'], ENT_QUOTES, 'UTF-8'); ?>
                                             </option>
                                         <?php endforeach; ?>
@@ -97,7 +117,7 @@
                                     <select name="TD_STATUS" class="form-control">
                                         <option value="1" <?= (isset($drawing['TD_STATUS']) && (int)$drawing['TD_STATUS'] === 1) ? 'selected' : ''; ?>>Active</option>
                                         <option value="0" <?= (isset($drawing['TD_STATUS']) && (int)$drawing['TD_STATUS'] === 0) ? 'selected' : ''; ?>>Inactive</option>
-                                        <option value="2" <?= (isset($drawing['TD_STATUS']) && (int)$drawing['TD_STATUS'] === 2) ? 'selected' : ''; ?>>Pending</option>
+                                        <!-- <option value="2" <?= (isset($drawing['TD_STATUS']) && (int)$drawing['TD_STATUS'] === 2) ? 'selected' : ''; ?>>Pending</option> -->
                                     </select>
                                 </div>
                                 <div class="form-group col-md-4">
