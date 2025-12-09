@@ -135,7 +135,14 @@
                                     ?>
                                         <tr>
                                             <td><?= htmlspecialchars($row['ID'], ENT_QUOTES, 'UTF-8'); ?></td>
-                                            <td><?= htmlspecialchars($row['TOOL_BOM'], ENT_QUOTES, 'UTF-8'); ?></td>
+                                            <td>
+                                                <a href="<?= base_url('Tool_engineering/tool_bom_engin/detail_page/' . (int)$row['ID']); ?>" 
+                                                   class="text-primary" 
+                                                   style="text-decoration: underline; cursor: pointer;"
+                                                   title="View Detail">
+                                                    <?= htmlspecialchars($row['TOOL_BOM'], ENT_QUOTES, 'UTF-8'); ?>
+                                                </a>
+                                            </td>
                                             <td><?= htmlspecialchars($row['DESCRIPTION'] ?: '', ENT_QUOTES, 'UTF-8'); ?></td>
                                             <td><?= htmlspecialchars($product_name, ENT_QUOTES, 'UTF-8'); ?></td>
                                             <td><?= htmlspecialchars($process_name, ENT_QUOTES, 'UTF-8'); ?></td>
