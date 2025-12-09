@@ -40,6 +40,184 @@ class Tool_draw_engin extends MY_Controller
     }
 
     /**
+     * Halaman add Tool Drawing Engineering
+     */
+    public function add_page()
+    {
+        $data = array();
+        $data['products'] = $this->tool_draw_engin->get_products();
+        $data['operations'] = $this->tool_draw_engin->get_operations();
+        $data['tools'] = $this->tool_draw_engin->get_tools();
+        $data['materials'] = $this->tool_draw_engin->get_materials();
+
+        $this->view('add_tool_draw_engin', $data, FALSE);
+    }
+
+    /**
+     * Halaman edit Tool Drawing Engineering
+     * @param int $id
+     */
+    public function edit_page($id = 0)
+    {
+        $id = (int)$id;
+        if ($id <= 0) {
+            show_404();
+            return;
+        }
+
+        $row = $this->tool_draw_engin->get_by_id($id);
+        if (!$row) {
+            show_404();
+            return;
+        }
+
+        // Resolve tool ID if TD_TOOL_NAME is numeric
+        $row['TD_TOOL_ID'] = null;
+        $tools = $this->tool_draw_engin->get_tools();
+        if (isset($row['TD_TOOL_NAME']) && is_numeric($row['TD_TOOL_NAME'])) {
+            $tid = (int)$row['TD_TOOL_NAME'];
+            foreach ($tools as $t) {
+                if ((int)$t['TOOL_ID'] === $tid) {
+                    $row['TD_TOOL_ID'] = $tid;
+                    break;
+                }
+            }
+        }
+
+        $data = array();
+        $data['drawing'] = $row;
+        $data['products'] = $this->tool_draw_engin->get_products();
+        $data['operations'] = $this->tool_draw_engin->get_operations();
+        $data['tools'] = $tools;
+        $data['materials'] = $this->tool_draw_engin->get_materials();
+
+        $this->view('edit_tool_draw_engin', $data, FALSE);
+    }
+
+    /**
+     * Halaman revision Tool Drawing Engineering
+     * @param int $id
+     */
+    public function revision_page($id = 0)
+    {
+        $id = (int)$id;
+        if ($id <= 0) {
+            show_404();
+            return;
+        }
+
+        $row = $this->tool_draw_engin->get_by_id($id);
+        if (!$row) {
+            show_404();
+            return;
+        }
+
+        // Resolve tool ID if TD_TOOL_NAME is numeric
+        $row['TD_TOOL_ID'] = null;
+        $tools = $this->tool_draw_engin->get_tools();
+        if (isset($row['TD_TOOL_NAME']) && is_numeric($row['TD_TOOL_NAME'])) {
+            $tid = (int)$row['TD_TOOL_NAME'];
+            foreach ($tools as $t) {
+                if ((int)$t['TOOL_ID'] === $tid) {
+                    $row['TD_TOOL_ID'] = $tid;
+                    break;
+                }
+            }
+        }
+
+        // Increment revision
+        $row['TD_REVISION'] = (isset($row['TD_REVISION']) ? (int)$row['TD_REVISION'] : 0) + 1;
+
+        $data = array();
+        $data['drawing'] = $row;
+        $data['products'] = $this->tool_draw_engin->get_products();
+        $data['operations'] = $this->tool_draw_engin->get_operations();
+        $data['tools'] = $tools;
+        $data['materials'] = $this->tool_draw_engin->get_materials();
+
+        $this->view('revision_tool_draw_engin', $data, FALSE);
+    }
+
+    /**
+     * Halaman history Tool Drawing Engineering
+     * @param int $id
+     */
+    public function history_page($id = 0)
+    {
+        $id = (int)$id;
+        if ($id <= 0) {
+            show_404();
+            return;
+        }
+
+        $row = $this->tool_draw_engin->get_by_id($id);
+        if (!$row) {
+            show_404();
+            return;
+        }
+
+        $history = $this->tool_draw_engin->get_history($id);
+        
+        // Enrich history with resolved names
+        $products = $this->tool_draw_engin->get_products();
+        $operations = $this->tool_draw_engin->get_operations();
+        $tools = $this->tool_draw_engin->get_tools();
+        $materials = $this->tool_draw_engin->get_materials();
+        $makers = $this->tool_draw_engin->get_makers();
+
+        foreach ($history as &$h) {
+            // Resolve product name
+            $h['PRODUCT_NAME'] = '';
+            foreach ($products as $p) {
+                if ((int)$p['PRODUCT_ID'] === (int)$h['TD_PRODUCT_ID']) {
+                    $h['PRODUCT_NAME'] = $p['PRODUCT_NAME'];
+                    break;
+                }
+            }
+            
+            // Resolve operation name
+            $h['OPERATION_NAME'] = '';
+            foreach ($operations as $o) {
+                if ((int)$o['OPERATION_ID'] === (int)$h['TD_PROCESS_ID']) {
+                    $h['OPERATION_NAME'] = $o['OPERATION_NAME'];
+                    break;
+                }
+            }
+            
+            // Resolve tool name
+            $h['TOOL_RESOLVED_NAME'] = isset($h['TD_TOOL_NAME']) ? $h['TD_TOOL_NAME'] : '';
+            if (is_numeric($h['TD_TOOL_NAME'])) {
+                $trow = $this->tool_draw_engin->get_tool_by_id((int)$h['TD_TOOL_NAME']);
+                if ($trow) $h['TOOL_RESOLVED_NAME'] = $trow['TOOL_NAME'];
+            }
+
+            // Resolve material name
+            $h['MATERIAL_NAME'] = '';
+            foreach ($materials as $mat) {
+                if ((int)$mat['MATERIAL_ID'] === (int)(isset($h['TD_MATERIAL_ID']) ? $h['TD_MATERIAL_ID'] : 0)) {
+                    $h['MATERIAL_NAME'] = $mat['MATERIAL_NAME'];
+                    break;
+                }
+            }
+
+            // Resolve maker name
+            $h['MAKER_NAME'] = '';
+            foreach ($makers as $m) {
+                if ((int)$m['MAKER_ID'] === (int)(isset($h['TD_MAKER_ID']) ? $h['TD_MAKER_ID'] : 0)) {
+                    $h['MAKER_NAME'] = $m['MAKER_NAME'];
+                    break;
+                }
+            }
+        }
+
+        $data = array();
+        $data['drawing'] = $row;
+        $data['history'] = $history;
+
+        $this->view('history_tool_draw_engin', $data, FALSE);
+    }
+
+    /**
      * submit_data: ADD / EDIT Tool Drawing Engineering (AJAX)
      */
     public function submit_data()
