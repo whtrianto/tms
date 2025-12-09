@@ -108,6 +108,7 @@ class Tool_bom_engin extends MY_Controller
         $data['additional_info'] = $this->tool_draw_engin->get_by_product_process($productId, $processId);
         $data['materials'] = $this->tool_draw_engin->get_materials();
         $data['makers'] = $this->tool_draw_engin->get_makers();
+        $data['tools'] = $this->tool_draw_engin->get_tools();
 
         $this->view('edit_tool_bom_engin', $data, FALSE);
     }

@@ -252,7 +252,41 @@
                                         </div>
                                         <div class="form-group col-md-6">
                                             <label>Tool Name</label>
-                                            <input type="text" class="form-control" name="TD_TOOL_NAME" placeholder="Tool name">
+                                            <select name="TD_TOOL_NAME" class="form-control">
+                                                <option value="">-- Select Tool --</option>
+                                                <?php 
+                                                // Determine which tool should be selected
+                                                $selected_tool_id = null;
+                                                $selected_tool_name = '';
+                                                
+                                                // Check if bom has tool data
+                                                if (isset($bom['TD_TOOL_NAME']) && $bom['TD_TOOL_NAME'] !== '') {
+                                                    // If TD_TOOL_NAME is numeric, treat as TOOL_ID
+                                                    if (is_numeric($bom['TD_TOOL_NAME'])) {
+                                                        $selected_tool_id = (int)$bom['TD_TOOL_NAME'];
+                                                    } else {
+                                                        // It's a tool name string, try to match
+                                                        $selected_tool_name = trim($bom['TD_TOOL_NAME']);
+                                                    }
+                                                }
+                                                
+                                                foreach ($tools as $t): 
+                                                    $tool_id = (int)$t['TOOL_ID'];
+                                                    $tool_name = $t['TOOL_NAME'];
+                                                    
+                                                    // Determine if this option should be selected
+                                                    $is_selected = false;
+                                                    if ($selected_tool_id !== null && $tool_id === $selected_tool_id) {
+                                                        $is_selected = true;
+                                                    } elseif ($selected_tool_name !== '' && strcasecmp(trim($tool_name), $selected_tool_name) === 0) {
+                                                        $is_selected = true;
+                                                    }
+                                                ?>
+                                                    <option value="<?= $tool_id; ?>" <?= $is_selected ? 'selected' : ''; ?>>
+                                                        <?= htmlspecialchars($tool_name, ENT_QUOTES, 'UTF-8'); ?>
+                                                    </option>
+                                                <?php endforeach; ?>
+                                            </select>
                                         </div>
                                     </div>
 
