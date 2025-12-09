@@ -53,7 +53,6 @@
                                 </thead>
                                 <tbody>
                                     <?php 
-                                    <?php 
                                     $historyIndex = 0;
                                     foreach ($history as $h): 
                                         // Map status
