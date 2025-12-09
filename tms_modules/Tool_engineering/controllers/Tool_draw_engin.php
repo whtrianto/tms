@@ -213,6 +213,9 @@ class Tool_draw_engin extends MY_Controller
         $data = array();
         $data['drawing'] = $row;
         $data['history'] = $history;
+        $data['products'] = $products;
+        $data['operations'] = $operations;
+        $data['materials'] = $materials;
 
         $this->view('history_tool_draw_engin', $data, FALSE);
     }
