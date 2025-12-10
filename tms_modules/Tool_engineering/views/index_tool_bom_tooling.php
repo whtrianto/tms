@@ -22,22 +22,6 @@
             gap: 6px;
             flex-wrap: wrap;
         }
-        .search-row th {
-            padding: 0.25rem 0.3rem !important;
-            background-color: #f8f9fa;
-        }
-        .search-input {
-            width: 100%;
-            padding: 0.2rem 0.4rem;
-            font-size: 0.8rem;
-            border: 1px solid #ced4da;
-            border-radius: 0.25rem;
-        }
-        .search-input:focus {
-            border-color: #80bdff;
-            outline: 0;
-            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
-        }
     </style>
 </head>
 <body id="page-top">
@@ -69,19 +53,6 @@
                                         <th>Modified Date</th>
                                         <th>Modified By</th>
                                         <th>Type Action</th>
-                                    </tr>
-                                    <tr class="search-row">
-                                        <th><input type="text" class="form-control form-control-sm search-input" placeholder="Search ID" /></th>
-                                        <th><input type="text" class="form-control form-control-sm search-input" placeholder="Search Product" /></th>
-                                        <th><input type="text" class="form-control form-control-sm search-input" placeholder="Search Tool BOM" /></th>
-                                        <th><input type="text" class="form-control form-control-sm search-input" placeholder="Search Process" /></th>
-                                        <th><input type="text" class="form-control form-control-sm search-input" placeholder="Search Machine Group" /></th>
-                                        <th><input type="text" class="form-control form-control-sm search-input" placeholder="Search Revision" /></th>
-                                        <th><input type="text" class="form-control form-control-sm search-input" placeholder="Search Status" /></th>
-                                        <th><input type="text" class="form-control form-control-sm search-input" placeholder="Search Effective Date" /></th>
-                                        <th><input type="text" class="form-control form-control-sm search-input" placeholder="Search Modified Date" /></th>
-                                        <th><input type="text" class="form-control form-control-sm search-input" placeholder="Search Modified By" /></th>
-                                        <th></th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -204,18 +175,44 @@
                 { width:'120px', targets:8 },
                 { width:'110px', targets:9 },
                 { width:'120px', targets:10 }
-            ]
-        });
-
-        // Individual column search
-        $('#table-tool-bom-tooling thead .search-input').on('keyup change', function () {
-            var columnIndex = $(this).parent().index();
-            table.column(columnIndex).search(this.value).draw();
-        });
-
-        // Clear search inputs when table is redrawn
-        table.on('draw', function () {
-            // Optional: keep search values after redraw
+            ],
+            initComplete: function() {
+                // Add search row dynamically after DataTables initialization
+                var thead = $('#table-tool-bom-tooling thead');
+                var searchRow = $('<tr></tr>');
+                
+                this.api().columns().every(function(index) {
+                    var column = this;
+                    var th = $('<th></th>');
+                    
+                    // Skip search for action column (index 10)
+                    if (index !== 10) {
+                        var $input = $('<input>')
+                            .attr('type', 'text')
+                            .attr('class', 'form-control form-control-sm')
+                            .attr('placeholder', 'Search...')
+                            .css({
+                                'width': '100%',
+                                'padding': '0.2rem 0.4rem',
+                                'font-size': '0.8rem',
+                                'border': '1px solid #ced4da',
+                                'border-radius': '0.25rem'
+                            });
+                        
+                        th.append($input);
+                        
+                        $input.on('keyup change', function() {
+                            if (column.search() !== this.value) {
+                                column.search(this.value).draw();
+                            }
+                        });
+                    }
+                    
+                    searchRow.append(th);
+                });
+                
+                thead.append(searchRow);
+            }
         });
 
         // Try to use _search_data function if available (for compatibility)
