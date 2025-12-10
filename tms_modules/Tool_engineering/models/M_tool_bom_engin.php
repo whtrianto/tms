@@ -508,48 +508,60 @@ if (!class_exists('M_tool_bom_engin')) {
 
             // First try stored procedure sp_GetToolBomEnginHistory
             try {
-                $sql = "EXEC sp_GetToolBomEnginHistory @ID = ?";
-                $q = $this->tms_db->query($sql, array($id));
-                if ($q && $q->num_rows() > 0) {
-                    $rows = $q->result_array();
-                    $history = array();
-                    foreach ($rows as $r) {
-                        $h = array();
-                        $h['HISTORY_ID'] = isset($r['HISTORY_ID']) ? $r['HISTORY_ID'] : null;
-                        $h['ID'] = isset($r['ID']) ? (int)$r['ID'] : $id;
-                        $h['REVISION'] = isset($r['REVISION']) ? (int)$r['REVISION'] : 0;
-                        // Map status
-                        if (isset($r['STATUS'])) {
-                            $st = $r['STATUS'];
-                            if (is_string($st)) {
-                                $h['STATUS'] = strtoupper($st);
-                            } else {
-                                $stInt = (int)$st;
-                                if ($stInt === 1) {
-                                    $h['STATUS'] = 'ACTIVE';
-                                } elseif ($stInt === 2) {
-                                    $h['STATUS'] = 'PENDING';
+                // Check if stored procedure exists first
+                $spCheck = $this->tms_db->query("SELECT 1 FROM INFORMATION_SCHEMA.ROUTINES WHERE ROUTINE_NAME = 'sp_GetToolBomEnginHistory' AND ROUTINE_SCHEMA = 'dbo'");
+                if ($spCheck && $spCheck->num_rows() > 0) {
+                    $sql = "EXEC sp_GetToolBomEnginHistory @ID = ?";
+                    $q = $this->tms_db->query($sql, array($id));
+                    // Check for database errors
+                    $db_error = $this->tms_db->error();
+                    if (empty($db_error) || (isset($db_error['code']) && $db_error['code'] == 0)) {
+                        if ($q && $q->num_rows() > 0) {
+                            $rows = $q->result_array();
+                            $history = array();
+                            foreach ($rows as $r) {
+                                $h = array();
+                                $h['HISTORY_ID'] = isset($r['HISTORY_ID']) ? $r['HISTORY_ID'] : null;
+                                $h['ID'] = isset($r['ID']) ? (int)$r['ID'] : $id;
+                                $h['REVISION'] = isset($r['REVISION']) ? (int)$r['REVISION'] : 0;
+                                // Map status
+                                if (isset($r['STATUS'])) {
+                                    $st = $r['STATUS'];
+                                    if (is_string($st)) {
+                                        $h['STATUS'] = strtoupper($st);
+                                    } else {
+                                        $stInt = (int)$st;
+                                        if ($stInt === 1) {
+                                            $h['STATUS'] = 'ACTIVE';
+                                        } elseif ($stInt === 2) {
+                                            $h['STATUS'] = 'PENDING';
+                                        } else {
+                                            $h['STATUS'] = 'INACTIVE';
+                                        }
+                                    }
                                 } else {
                                     $h['STATUS'] = 'INACTIVE';
                                 }
+                                $h['EFFECTIVE_DATE'] = isset($r['EFFECTIVE_DATE']) ? $r['EFFECTIVE_DATE'] : '';
+                                $h['MODIFIED_DATE'] = isset($r['MODIFIED_DATE']) ? $r['MODIFIED_DATE'] : '';
+                                $h['MODIFIED_BY'] = isset($r['MODIFIED_BY']) ? $r['MODIFIED_BY'] : '';
+                                $h['TOOL_BOM'] = isset($r['TOOL_BOM']) ? $r['TOOL_BOM'] : '';
+                                $h['PRODUCT_ID'] = isset($r['PRODUCT_ID']) ? (int)$r['PRODUCT_ID'] : 0;
+                                $h['PROCESS_ID'] = isset($r['PROCESS_ID']) ? (int)$r['PROCESS_ID'] : 0;
+                                $h['MACHINE_GROUP_ID'] = isset($r['MACHINE_GROUP_ID']) ? (int)$r['MACHINE_GROUP_ID'] : 0;
+                                $h['PRODUCT_NAME'] = isset($r['PRODUCT_NAME']) ? $r['PRODUCT_NAME'] : '';
+                                $h['OPERATION_NAME'] = isset($r['OPERATION_NAME']) ? $r['OPERATION_NAME'] : '';
+                                $h['MACHINE_NAME'] = isset($r['MACHINE_NAME']) ? $r['MACHINE_NAME'] : '';
+                                $history[] = $h;
                             }
-                        } else {
-                            $h['STATUS'] = 'INACTIVE';
+                            log_message('debug', '[M_tool_bom_engin::get_history] returning ' . count($history) . ' rows from sp_GetToolBomEnginHistory for id=' . $id);
+                            return $history;
                         }
-                        $h['EFFECTIVE_DATE'] = isset($r['EFFECTIVE_DATE']) ? $r['EFFECTIVE_DATE'] : '';
-                        $h['MODIFIED_DATE'] = isset($r['MODIFIED_DATE']) ? $r['MODIFIED_DATE'] : '';
-                        $h['MODIFIED_BY'] = isset($r['MODIFIED_BY']) ? $r['MODIFIED_BY'] : '';
-                        $h['TOOL_BOM'] = isset($r['TOOL_BOM']) ? $r['TOOL_BOM'] : '';
-                        $h['PRODUCT_ID'] = isset($r['PRODUCT_ID']) ? (int)$r['PRODUCT_ID'] : 0;
-                        $h['PROCESS_ID'] = isset($r['PROCESS_ID']) ? (int)$r['PROCESS_ID'] : 0;
-                        $h['MACHINE_GROUP_ID'] = isset($r['MACHINE_GROUP_ID']) ? (int)$r['MACHINE_GROUP_ID'] : 0;
-                        $h['PRODUCT_NAME'] = isset($r['PRODUCT_NAME']) ? $r['PRODUCT_NAME'] : '';
-                        $h['OPERATION_NAME'] = isset($r['OPERATION_NAME']) ? $r['OPERATION_NAME'] : '';
-                        $h['MACHINE_NAME'] = isset($r['MACHINE_NAME']) ? $r['MACHINE_NAME'] : '';
-                        $history[] = $h;
+                    } else {
+                        log_message('warning', '[M_tool_bom_engin::get_history] sp_GetToolBomEnginHistory call failed: ' . (isset($db_error['message']) ? $db_error['message'] : 'Unknown error'));
                     }
-                    log_message('debug', '[M_tool_bom_engin::get_history] returning ' . count($history) . ' rows from sp_GetToolBomEnginHistory for id=' . $id);
-                    return $history;
+                } else {
+                    log_message('debug', '[M_tool_bom_engin::get_history] stored procedure sp_GetToolBomEnginHistory does not exist');
                 }
             } catch (Exception $e) {
                 log_message('warning', '[M_tool_bom_engin::get_history] sp_GetToolBomEnginHistory call failed: ' . $e->getMessage());
