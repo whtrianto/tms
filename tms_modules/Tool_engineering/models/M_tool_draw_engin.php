@@ -774,15 +774,35 @@ class M_tool_draw_engin extends CI_Model
             return false;
         }
 
-        $ok = $this->tms_db->delete($this->table, array('TD_ID' => $id));
+        try {
+            $this->tms_db->trans_start();
 
-        if ($ok) {
-            $this->messages = 'Tool Drawing Engineering berhasil dihapus.';
-            return true;
+            // Best-effort: delete related history rows first to avoid FK conflicts
+            $histTableExists = $this->tms_db
+                ->query("SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'TMS_TC_TOOL_DRAWING_ENGIN_HISTORY' AND TABLE_SCHEMA = 'dbo'")
+                ->num_rows() > 0;
+            if ($histTableExists) {
+                $this->tms_db->where('TD_ID', $id)->delete('TMS_DB.dbo.TMS_TC_TOOL_DRAWING_ENGIN_HISTORY');
+            }
+
+            // Delete main record
+            $ok = $this->tms_db->delete($this->table, array('TD_ID' => $id));
+
+            $this->tms_db->trans_complete();
+
+            if ($this->tms_db->trans_status() && $ok) {
+                $this->messages = 'Tool Drawing Engineering berhasil dihapus.';
+                return true;
+            }
+            $err = $this->tms_db->error();
+            $this->messages = 'Gagal menghapus tool drawing. ' . (isset($err['message']) ? $err['message'] : 'Transaksi gagal.');
+            return false;
+        } catch (Exception $e) {
+            $this->tms_db->trans_rollback();
+            log_message('error', '[delete_data] Exception: ' . $e->getMessage());
+            $this->messages = 'Gagal menghapus tool drawing. ' . $e->getMessage();
+            return false;
         }
-        $err = $this->tms_db->error();
-        $this->messages = 'Gagal menghapus tool drawing. ' . (isset($err['message']) ? $err['message'] : '');
-        return false;
     }
 
     /**
