@@ -18,6 +18,13 @@
     min-height: 100vh;
 }
 
+/* Keep topbar/navbar stuck to the very top (consistent with other index pages) */
+.navbar {
+    position: sticky;
+    top: 0;
+    z-index: 1030;
+}
+
         /* improved table layout: fixed widths with ellipsis and optional horizontal scrolling */
         .table-fixed {
             table-layout: fixed;
