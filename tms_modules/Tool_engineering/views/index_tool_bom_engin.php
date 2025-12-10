@@ -191,6 +191,18 @@
                                     <input type="hidden" name="action" value="">
                                     <input type="hidden" name="ID" value="">
 
+                                    <!-- Trial BOM Checkbox -->
+                                    <div class="form-row">
+                                        <div class="form-group col-md-12">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" name="IS_TRIAL_BOM" id="isTrialBomModal" value="1">
+                                                <label class="form-check-label" for="isTrialBomModal">
+                                                    <strong>Trial BOM</strong>
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+
                                     <div class="form-row">
                                         <div class="form-group col-md-12">
                                             <label class="label-required">Product</label>
@@ -343,6 +355,7 @@
                     $('[name="TOOL_BOM"]').removeClass('is-invalid');
                     $('[name="REVISION"]').val(0);
                     $('[name="STATUS"]').val(1);
+                    $('[name="IS_TRIAL_BOM"]').prop('checked', false);
                     // Set default effective date to today
                     var today = new Date().toISOString().split('T')[0];
                     $('[name="EFFECTIVE_DATE"]').val(today);
@@ -369,6 +382,12 @@
                     $('[name="STATUS"]').val(d.STATUS !== undefined ? d.STATUS : 1);
                     $('[name="EFFECTIVE_DATE"]').val(d.EFFECTIVE_DATE || '');
                     $('[name="CHANGE_SUMMARY"]').val(d.CHANGE_SUMMARY || '');
+                    // Handle IS_TRIAL_BOM checkbox
+                    if (d.IS_TRIAL_BOM !== undefined && (d.IS_TRIAL_BOM === 1 || d.IS_TRIAL_BOM === true || d.IS_TRIAL_BOM === '1')) {
+                        $('[name="IS_TRIAL_BOM"]').prop('checked', true);
+                    } else {
+                        $('[name="IS_TRIAL_BOM"]').prop('checked', false);
+                    }
                     $('[name="TOOL_BOM"]').removeClass('is-invalid');
                     $('#modalForm').modal('show');
                 });

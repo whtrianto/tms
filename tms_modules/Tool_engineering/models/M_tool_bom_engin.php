@@ -95,6 +95,9 @@ if (!class_exists('M_tool_bom_engin')) {
             if ($this->has_column('DRAWING')) {
                 $selectCols .= ', DRAWING';
             }
+            if ($this->has_column('IS_TRIAL_BOM')) {
+                $selectCols .= ', IS_TRIAL_BOM';
+            }
 
             $result = $this->tms_db
                 ->select($selectCols)
@@ -186,7 +189,7 @@ if (!class_exists('M_tool_bom_engin')) {
 
         /* ========== MUTATORS ========== */
 
-        public function add_data($tool_bom, $description, $product_id, $process_id, $machine_group_id, $revision, $status, $effective_date, $change_summary, $drawing_filename)
+        public function add_data($tool_bom, $description, $product_id, $process_id, $machine_group_id, $revision, $status, $effective_date, $change_summary, $drawing_filename, $is_trial_bom = 0)
         {
             $tool_bom = trim((string)$tool_bom);
             $description = trim((string)$description);
@@ -272,6 +275,10 @@ if (!class_exists('M_tool_bom_engin')) {
             if ($this->has_column('DRAWING')) {
                 $insertData['DRAWING'] = $drawing_filename !== '' ? $drawing_filename : null;
             }
+            if ($this->has_column('IS_TRIAL_BOM')) {
+                $is_trial_bom = (int)$is_trial_bom;
+                $insertData['IS_TRIAL_BOM'] = ($is_trial_bom === 1) ? 1 : 0;
+            }
 
             if ($modifiedBy !== '') {
                 $insertData['MODIFIED_BY'] = $modifiedBy;
@@ -341,7 +348,7 @@ if (!class_exists('M_tool_bom_engin')) {
             }
         }
 
-        public function edit_data($id, $tool_bom, $description, $product_id, $process_id, $machine_group_id, $revision, $status, $effective_date, $change_summary, $drawing_filename)
+        public function edit_data($id, $tool_bom, $description, $product_id, $process_id, $machine_group_id, $revision, $status, $effective_date, $change_summary, $drawing_filename, $is_trial_bom = 0)
         {
             $id = (int)$id;
             $tool_bom = trim((string)$tool_bom);
@@ -434,6 +441,10 @@ if (!class_exists('M_tool_bom_engin')) {
             // Only update drawing if new file is provided
             if ($this->has_column('DRAWING') && $drawing_filename !== '') {
                 $updateData['DRAWING'] = $drawing_filename;
+            }
+            if ($this->has_column('IS_TRIAL_BOM')) {
+                $is_trial_bom = (int)$is_trial_bom;
+                $updateData['IS_TRIAL_BOM'] = ($is_trial_bom === 1) ? 1 : 0;
             }
 
             // Only set MODIFIED_BY if we have a valid value

@@ -175,6 +175,10 @@ class Tool_bom_engin extends MY_Controller
             
             $effective_date = trim($this->input->post('EFFECTIVE_DATE', TRUE));
             $change_summary = trim($this->input->post('CHANGE_SUMMARY', TRUE));
+            
+            // Handle Trial BOM checkbox
+            $is_trial_bom = $this->input->post('IS_TRIAL_BOM', TRUE);
+            $is_trial_bom = ($is_trial_bom === '1' || $is_trial_bom === 1 || $is_trial_bom === 'on') ? 1 : 0;
 
             // Handle file upload for drawing
             $drawing_filename = '';
@@ -206,7 +210,7 @@ class Tool_bom_engin extends MY_Controller
             }
 
             if ($action === 'ADD') {
-                $ok = $this->tool_bom_engin->add_data($tool_bom, $description, $product_id, $process_id, $machine_group_id, $revision, $status, $effective_date, $change_summary, $drawing_filename);
+                $ok = $this->tool_bom_engin->add_data($tool_bom, $description, $product_id, $process_id, $machine_group_id, $revision, $status, $effective_date, $change_summary, $drawing_filename, $is_trial_bom);
                 if ($ok === true) {
                     $result['success'] = true;
                     $result['message'] = $this->tool_bom_engin->messages ?: 'Tool BOM Engineering berhasil ditambahkan.';
@@ -221,7 +225,7 @@ class Tool_bom_engin extends MY_Controller
             }
 
             if ($action === 'EDIT' && $id > 0) {
-                $ok = $this->tool_bom_engin->edit_data($id, $tool_bom, $description, $product_id, $process_id, $machine_group_id, $revision, $status, $effective_date, $change_summary, $drawing_filename);
+                $ok = $this->tool_bom_engin->edit_data($id, $tool_bom, $description, $product_id, $process_id, $machine_group_id, $revision, $status, $effective_date, $change_summary, $drawing_filename, $is_trial_bom);
                 if ($ok === true) {
                     $result['success'] = true;
                     $result['message'] = $this->tool_bom_engin->messages ?: 'Tool BOM Engineering berhasil diperbarui.';

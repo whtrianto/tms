@@ -97,6 +97,17 @@ BEGIN
 END
 GO
 
+-- Cek dan tambah kolom IS_TRIAL_BOM
+IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS 
+               WHERE TABLE_SCHEMA = 'dbo' 
+               AND TABLE_NAME = 'TMS_TC_TOOL_BOM_ENGIN' 
+               AND COLUMN_NAME = 'IS_TRIAL_BOM')
+BEGIN
+    ALTER TABLE TMS_TC_TOOL_BOM_ENGIN
+    ADD IS_TRIAL_BOM BIT NULL DEFAULT 0;
+END
+GO
+
 PRINT 'Script selesai. Kolom baru telah ditambahkan ke TMS_TC_TOOL_BOM_ENGIN jika belum ada.';
 GO
 

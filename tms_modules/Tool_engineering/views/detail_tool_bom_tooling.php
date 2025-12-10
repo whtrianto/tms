@@ -35,7 +35,7 @@
                 <div class="card mb-3">
                     <div class="card-header d-flex align-items-center justify-content-between">
                         <div>
-                            <h4 class="m-0 font-weight-bold text-primary">Detail Tool BOM Tooling</h4>
+                            <h4 class="m-0 font-weight-bold text-primary">Detail Tool BOM</h4>
                             <div class="small text-muted">ID: <?= htmlspecialchars($bom['ID']); ?></div>
                         </div>
                         <div>
@@ -45,6 +45,17 @@
                         </div>
                     </div>
                     <div class="card-body">
+                         <!-- Trial BOM Checkbox -->
+                         <div class="form-row">
+                                <div class="form-group col-md-12">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="IS_TRIAL_BOM" id="isTrialBom" value="1" <?= (isset($bom['IS_TRIAL_BOM']) && ((int)$bom['IS_TRIAL_BOM'] === 1 || $bom['IS_TRIAL_BOM'] === true)) ? 'checked' : ''; ?>>
+                                        <label class="form-check-label" for="isTrialBom">
+                                            <strong>Trial BOM</strong>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
                         <!-- BOM Information (Read-only) -->
                         <div class="form-row">
                             <div class="form-group col-md-6">
