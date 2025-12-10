@@ -22,6 +22,22 @@
             gap: 6px;
             flex-wrap: wrap;
         }
+        .search-row th {
+            padding: 0.25rem 0.3rem !important;
+            background-color: #f8f9fa;
+        }
+        .search-input {
+            width: 100%;
+            padding: 0.2rem 0.4rem;
+            font-size: 0.8rem;
+            border: 1px solid #ced4da;
+            border-radius: 0.25rem;
+        }
+        .search-input:focus {
+            border-color: #80bdff;
+            outline: 0;
+            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+        }
     </style>
 </head>
 <body id="page-top">
@@ -53,6 +69,19 @@
                                         <th>Modified Date</th>
                                         <th>Modified By</th>
                                         <th>Type Action</th>
+                                    </tr>
+                                    <tr class="search-row">
+                                        <th><input type="text" class="form-control form-control-sm search-input" placeholder="Search ID" /></th>
+                                        <th><input type="text" class="form-control form-control-sm search-input" placeholder="Search Product" /></th>
+                                        <th><input type="text" class="form-control form-control-sm search-input" placeholder="Search Tool BOM" /></th>
+                                        <th><input type="text" class="form-control form-control-sm search-input" placeholder="Search Process" /></th>
+                                        <th><input type="text" class="form-control form-control-sm search-input" placeholder="Search Machine Group" /></th>
+                                        <th><input type="text" class="form-control form-control-sm search-input" placeholder="Search Revision" /></th>
+                                        <th><input type="text" class="form-control form-control-sm search-input" placeholder="Search Status" /></th>
+                                        <th><input type="text" class="form-control form-control-sm search-input" placeholder="Search Effective Date" /></th>
+                                        <th><input type="text" class="form-control form-control-sm search-input" placeholder="Search Modified Date" /></th>
+                                        <th><input type="text" class="form-control form-control-sm search-input" placeholder="Search Modified By" /></th>
+                                        <th></th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -157,7 +186,7 @@
 <script>
 (function($){
     $(function(){
-        $('#table-tool-bom-tooling').DataTable({
+        var table = $('#table-tool-bom-tooling').DataTable({
             lengthMenu: [[10,25,50,-1],[10,25,50,"ALL"]],
             pageLength: 25,
             order: [[0,'desc']],
@@ -177,6 +206,22 @@
                 { width:'120px', targets:10 }
             ]
         });
+
+        // Individual column search
+        $('#table-tool-bom-tooling thead .search-input').on('keyup change', function () {
+            var columnIndex = $(this).parent().index();
+            table.column(columnIndex).search(this.value).draw();
+        });
+
+        // Clear search inputs when table is redrawn
+        table.on('draw', function () {
+            // Optional: keep search values after redraw
+        });
+
+        // Try to use _search_data function if available (for compatibility)
+        if (typeof _search_data === 'function') {
+            _search_data(table, '#table-tool-bom-tooling', false, false);
+        }
 
         $('#table-tool-bom-tooling').on('click', '.btn-history', function(){
             var id = Number($(this).data('id')) || 0;
