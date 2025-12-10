@@ -192,16 +192,22 @@
                                     <input type="hidden" name="ID" value="">
 
                                     <!-- Trial BOM Checkbox -->
-                                    <div class="form-row">
+                                   <div class="form-row">
                                         <div class="form-group col-md-12">
-                                            <div class="form-check">
-                                                <input class="form-check-input" type="checkbox" name="IS_TRIAL_BOM" id="isTrialBomModal" value="1">
-                                                <label class="form-check-label" for="isTrialBomModal">
+                                            <div class="d-flex align-items-center">
+                                                <label class="mb-0 mr-2" for="isTrialBomModal">
                                                     <strong>Trial BOM</strong>
                                                 </label>
+                                                <input 
+                                                    type="checkbox" 
+                                                    name="IS_TRIAL_BOM" 
+                                                    id="isTrialBomModal" 
+                                                    value="1"
+                                                >
                                             </div>
                                         </div>
                                     </div>
+
 
                                     <div class="form-row">
                                         <div class="form-group col-md-12">
@@ -486,4 +492,3 @@
 </body>
 
 </html>
-

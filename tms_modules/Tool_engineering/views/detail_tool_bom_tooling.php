@@ -46,16 +46,27 @@
                     </div>
                     <div class="card-body">
                          <!-- Trial BOM Checkbox -->
-                         <div class="form-row">
+                            <div class="form-row">
                                 <div class="form-group col-md-12">
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" name="IS_TRIAL_BOM" id="isTrialBom" value="1" <?= (isset($bom['IS_TRIAL_BOM']) && ((int)$bom['IS_TRIAL_BOM'] === 1 || $bom['IS_TRIAL_BOM'] === true)) ? 'checked' : ''; ?>>
-                                        <label class="form-check-label" for="isTrialBom">
+                                    <div class="form-check d-flex align-items-center">
+                                        
+                                        <label class="form-check-label mb-0 mr-4 mt-1" for="isTrialBom">
                                             <strong>Trial BOM</strong>
                                         </label>
+
+                                        <input
+                                            class="form-check-input position-static"
+                                            type="checkbox"
+                                            name="IS_TRIAL_BOM"
+                                            id="isTrialBom"
+                                            value="1"
+                                            disabled
+                                            <?= (isset($bom['IS_TRIAL_BOM']) && ((int)$bom['IS_TRIAL_BOM'] === 1 || $bom['IS_TRIAL_BOM'] === true)) ? 'checked' : ''; ?>
+                                        >
                                     </div>
                                 </div>
                             </div>
+
                         <!-- BOM Information (Read-only) -->
                         <div class="form-row">
                             <div class="form-group col-md-6">
@@ -315,4 +326,3 @@
 </script>
 </body>
 </html>
-
