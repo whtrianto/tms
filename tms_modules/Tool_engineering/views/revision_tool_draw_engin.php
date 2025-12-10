@@ -188,7 +188,7 @@
                 </div>
             </div>
             <?= isset($modal_logout) ? $modal_logout : ''; ?>
-        </div>
+        </div><br><br><br><br><br><br>
         <?= isset($footer) ? $footer : ''; ?>
     </div>
 </div>
