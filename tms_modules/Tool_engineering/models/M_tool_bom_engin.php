@@ -491,6 +491,110 @@ if (!class_exists('M_tool_bom_engin')) {
             $this->messages = 'Gagal menghapus tool BOM engineering. ' . (isset($err['message']) ? $err['message'] : '');
             return false;
         }
+
+        /**
+         * Get revision history for a specific Tool BOM record
+         * Tries stored procedure first, then history table, then returns current record as pseudo-history
+         * @param int $id
+         * @return array
+         */
+        public function get_history($id)
+        {
+            $id = (int)$id;
+            if ($id <= 0) {
+                log_message('debug', '[M_tool_bom_engin::get_history] invalid id=' . var_export($id, true));
+                return array();
+            }
+
+            // First try stored procedure sp_GetToolBomEnginHistory
+            try {
+                $sql = "EXEC sp_GetToolBomEnginHistory @ID = ?";
+                $q = $this->tms_db->query($sql, array($id));
+                if ($q && $q->num_rows() > 0) {
+                    $rows = $q->result_array();
+                    $history = array();
+                    foreach ($rows as $r) {
+                        $h = array();
+                        $h['HISTORY_ID'] = isset($r['HISTORY_ID']) ? $r['HISTORY_ID'] : null;
+                        $h['ID'] = isset($r['ID']) ? (int)$r['ID'] : $id;
+                        $h['REVISION'] = isset($r['REVISION']) ? (int)$r['REVISION'] : 0;
+                        // Map status
+                        if (isset($r['STATUS'])) {
+                            $st = $r['STATUS'];
+                            if (is_string($st)) {
+                                $h['STATUS'] = strtoupper($st);
+                            } else {
+                                $h['STATUS'] = ((int)$st === 1) ? 'ACTIVE' : ((int)$st === 2) ? 'PENDING' : 'INACTIVE');
+                            }
+                        } else {
+                            $h['STATUS'] = isset($r['STATUS']) ? $r['STATUS'] : 'INACTIVE';
+                        }
+                        $h['EFFECTIVE_DATE'] = isset($r['EFFECTIVE_DATE']) ? $r['EFFECTIVE_DATE'] : '';
+                        $h['MODIFIED_DATE'] = isset($r['MODIFIED_DATE']) ? $r['MODIFIED_DATE'] : '';
+                        $h['MODIFIED_BY'] = isset($r['MODIFIED_BY']) ? $r['MODIFIED_BY'] : '';
+                        $h['TOOL_BOM'] = isset($r['TOOL_BOM']) ? $r['TOOL_BOM'] : '';
+                        $h['PRODUCT_ID'] = isset($r['PRODUCT_ID']) ? (int)$r['PRODUCT_ID'] : 0;
+                        $h['PROCESS_ID'] = isset($r['PROCESS_ID']) ? (int)$r['PROCESS_ID'] : 0;
+                        $h['MACHINE_GROUP_ID'] = isset($r['MACHINE_GROUP_ID']) ? (int)$r['MACHINE_GROUP_ID'] : 0;
+                        $h['PRODUCT_NAME'] = isset($r['PRODUCT_NAME']) ? $r['PRODUCT_NAME'] : '';
+                        $h['OPERATION_NAME'] = isset($r['OPERATION_NAME']) ? $r['OPERATION_NAME'] : '';
+                        $h['MACHINE_NAME'] = isset($r['MACHINE_NAME']) ? $r['MACHINE_NAME'] : '';
+                        $history[] = $h;
+                    }
+                    log_message('debug', '[M_tool_bom_engin::get_history] returning ' . count($history) . ' rows from sp_GetToolBomEnginHistory for id=' . $id);
+                    return $history;
+                }
+            } catch (Exception $e) {
+                log_message('warning', '[M_tool_bom_engin::get_history] sp_GetToolBomEnginHistory call failed: ' . $e->getMessage());
+            }
+
+            // Fallback: read directly from history table if exists
+            try {
+                $tblCheck = $this->tms_db->query("SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'TMS_TC_TOOL_BOM_ENGIN_HISTORY' AND TABLE_SCHEMA = 'dbo'");
+                if ($tblCheck && $tblCheck->num_rows() > 0) {
+                    $q2 = $this->tms_db->select('*')->from('TMS_DB.dbo.TMS_TC_TOOL_BOM_ENGIN_HISTORY')->where('ID', $id)->order_by('REVISION', 'DESC')->get();
+                    if ($q2 && $q2->num_rows() > 0) {
+                        $rows = $q2->result_array();
+                        $history = array();
+                        foreach ($rows as $r) {
+                            $h = $r;
+                            $h['ID'] = (int)$h['ID'];
+                            $h['REVISION'] = (int)$h['REVISION'];
+                            $history[] = $h;
+                        }
+                        log_message('debug', '[M_tool_bom_engin::get_history] returning ' . count($history) . ' rows from history table for id=' . $id);
+                        return $history;
+                    }
+                }
+            } catch (Exception $e) {
+                log_message('warning', '[M_tool_bom_engin::get_history] direct history table read failed: ' . $e->getMessage());
+            }
+
+            // If no history table or SP available, return current record as pseudo-history
+            $row = $this->get_by_id($id);
+            if (!$row) {
+                log_message('debug', '[M_tool_bom_engin::get_history] no record found for id=' . $id);
+                return array();
+            }
+
+            $history = array(
+                array(
+                    'HISTORY_ID' => 1,
+                    'ID' => (int)$row['ID'],
+                    'REVISION' => isset($row['REVISION']) ? (int)$row['REVISION'] : 0,
+                    'STATUS' => isset($row['STATUS']) ? $row['STATUS'] : 'INACTIVE',
+                    'EFFECTIVE_DATE' => isset($row['EFFECTIVE_DATE']) ? $row['EFFECTIVE_DATE'] : '',
+                    'MODIFIED_DATE' => isset($row['MODIFIED_DATE']) ? $row['MODIFIED_DATE'] : '',
+                    'MODIFIED_BY' => isset($row['MODIFIED_BY']) ? $row['MODIFIED_BY'] : '',
+                    'TOOL_BOM' => isset($row['TOOL_BOM']) ? $row['TOOL_BOM'] : '',
+                    'PRODUCT_ID' => isset($row['PRODUCT_ID']) ? (int)$row['PRODUCT_ID'] : 0,
+                    'PROCESS_ID' => isset($row['PROCESS_ID']) ? (int)$row['PROCESS_ID'] : 0,
+                    'MACHINE_GROUP_ID' => isset($row['MACHINE_GROUP_ID']) ? (int)$row['MACHINE_GROUP_ID'] : 0
+                )
+            );
+            log_message('debug', '[M_tool_bom_engin::get_history] returning pseudo-history count=' . count($history) . ' for id=' . $id);
+            return $history;
+        }
     }
 }
 

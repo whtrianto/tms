@@ -184,7 +184,7 @@
                 toastr.error('ID tidak valid');
                 return;
             }
-            toastr.info('History belum tersedia untuk BOM ini.');
+            window.location.href = '<?= base_url('Tool_engineering/tool_bom_tooling/history_page/'); ?>' + id;
         });
     });
 })(jQuery);

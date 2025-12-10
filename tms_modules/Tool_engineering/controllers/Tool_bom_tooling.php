@@ -120,6 +120,141 @@ class Tool_bom_tooling extends MY_Controller
 
         $this->view('detail_tool_bom_tooling', $data, FALSE);
     }
+
+    /**
+     * Halaman history Tool BOM Tooling
+     * @param int $id
+     */
+    public function history_page($id = 0)
+    {
+        $id = (int)$id;
+        if ($id <= 0) {
+            show_404();
+            return;
+        }
+
+        $bom = $this->tool_bom_engin->get_by_id($id);
+        if (!$bom) {
+            show_404();
+            return;
+        }
+
+        $history = $this->tool_bom_engin->get_history($id);
+        
+        // Enrich history with resolved names
+        $products = $this->tool_bom_engin->get_products();
+        $operations = $this->tool_bom_engin->get_operations();
+        $machine_groups = $this->tool_bom_engin->get_machine_groups();
+
+        // Resolve product name for current record
+        $product_name = '';
+        if (isset($bom['PRODUCT_ID']) && (int)$bom['PRODUCT_ID'] > 0) {
+            foreach ($products as $p) {
+                if ((int)$p['PRODUCT_ID'] === (int)$bom['PRODUCT_ID']) {
+                    $product_name = $p['PRODUCT_NAME'];
+                    break;
+                }
+            }
+        }
+        if ($product_name === '' && isset($bom['PRODUCT'])) {
+            $product_name = $bom['PRODUCT'];
+        }
+
+        // Resolve process name for current record
+        $process_name = '';
+        if (isset($bom['PROCESS_ID']) && (int)$bom['PROCESS_ID'] > 0) {
+            foreach ($operations as $o) {
+                if ((int)$o['OPERATION_ID'] === (int)$bom['PROCESS_ID']) {
+                    $process_name = $o['OPERATION_NAME'];
+                    break;
+                }
+            }
+        }
+
+        // Resolve machine group name for current record
+        $machine_group_name = '';
+        if (isset($bom['MACHINE_GROUP_ID']) && (int)$bom['MACHINE_GROUP_ID'] > 0) {
+            foreach ($machine_groups as $mg) {
+                if ((int)$mg['MACHINE_ID'] === (int)$bom['MACHINE_GROUP_ID']) {
+                    $machine_group_name = $mg['MACHINE_NAME'];
+                    break;
+                }
+            }
+        }
+        if ($machine_group_name === '' && isset($bom['MACHINE_GROUP'])) {
+            $machine_group_name = $bom['MACHINE_GROUP'];
+        }
+
+        // Enrich history records with resolved names
+        foreach ($history as &$h) {
+            // Resolve product name
+            $h['PRODUCT_NAME'] = '';
+            $product_id_to_resolve = isset($h['PRODUCT_ID']) ? (int)$h['PRODUCT_ID'] : 0;
+            if ($product_id_to_resolve <= 0 && isset($bom['PRODUCT_ID']) && (int)$bom['PRODUCT_ID'] > 0) {
+                $product_id_to_resolve = (int)$bom['PRODUCT_ID'];
+            }
+            if ($product_id_to_resolve > 0) {
+                foreach ($products as $p) {
+                    if ((int)$p['PRODUCT_ID'] === $product_id_to_resolve) {
+                        $h['PRODUCT_NAME'] = $p['PRODUCT_NAME'];
+                        break;
+                    }
+                }
+            }
+            if ($h['PRODUCT_NAME'] === '' && isset($h['PRODUCT'])) {
+                $h['PRODUCT_NAME'] = $h['PRODUCT'];
+            }
+
+            // Resolve process/operation name
+            $h['OPERATION_NAME'] = '';
+            $process_id_to_resolve = isset($h['PROCESS_ID']) ? (int)$h['PROCESS_ID'] : 0;
+            if ($process_id_to_resolve <= 0 && isset($bom['PROCESS_ID']) && (int)$bom['PROCESS_ID'] > 0) {
+                $process_id_to_resolve = (int)$bom['PROCESS_ID'];
+            }
+            if ($process_id_to_resolve > 0) {
+                foreach ($operations as $o) {
+                    if ((int)$o['OPERATION_ID'] === $process_id_to_resolve) {
+                        $h['OPERATION_NAME'] = $o['OPERATION_NAME'];
+                        break;
+                    }
+                }
+            }
+
+            // Resolve machine group name
+            $h['MACHINE_NAME'] = '';
+            $machine_group_id_to_resolve = isset($h['MACHINE_GROUP_ID']) ? (int)$h['MACHINE_GROUP_ID'] : 0;
+            if ($machine_group_id_to_resolve <= 0 && isset($bom['MACHINE_GROUP_ID']) && (int)$bom['MACHINE_GROUP_ID'] > 0) {
+                $machine_group_id_to_resolve = (int)$bom['MACHINE_GROUP_ID'];
+            }
+            if ($machine_group_id_to_resolve > 0) {
+                foreach ($machine_groups as $mg) {
+                    if ((int)$mg['MACHINE_ID'] === $machine_group_id_to_resolve) {
+                        $h['MACHINE_NAME'] = $mg['MACHINE_NAME'];
+                        break;
+                    }
+                }
+            }
+            if ($h['MACHINE_NAME'] === '' && isset($h['MACHINE_GROUP'])) {
+                $h['MACHINE_NAME'] = $h['MACHINE_GROUP'];
+            }
+
+            // Ensure TOOL_BOM is set
+            if (!isset($h['TOOL_BOM']) || $h['TOOL_BOM'] === '') {
+                $h['TOOL_BOM'] = isset($bom['TOOL_BOM']) ? $bom['TOOL_BOM'] : '';
+            }
+        }
+        unset($h);
+
+        $data = array();
+        $data['bom'] = $bom;
+        $data['history'] = $history;
+        $data['product_name'] = $product_name;
+        $data['process_name'] = $process_name;
+        $data['machine_group_name'] = $machine_group_name;
+        $data['tool_bom'] = isset($bom['TOOL_BOM']) ? $bom['TOOL_BOM'] : '';
+
+        $this->view('history_tool_bom_tooling', $data, FALSE);
+    }
 }
 
 
