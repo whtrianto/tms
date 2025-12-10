@@ -524,10 +524,17 @@ if (!class_exists('M_tool_bom_engin')) {
                             if (is_string($st)) {
                                 $h['STATUS'] = strtoupper($st);
                             } else {
-                                $h['STATUS'] = ((int)$st === 1) ? 'ACTIVE' : ((int)$st === 2) ? 'PENDING' : 'INACTIVE');
+                                $stInt = (int)$st;
+                                if ($stInt === 1) {
+                                    $h['STATUS'] = 'ACTIVE';
+                                } elseif ($stInt === 2) {
+                                    $h['STATUS'] = 'PENDING';
+                                } else {
+                                    $h['STATUS'] = 'INACTIVE';
+                                }
                             }
                         } else {
-                            $h['STATUS'] = isset($r['STATUS']) ? $r['STATUS'] : 'INACTIVE';
+                            $h['STATUS'] = 'INACTIVE';
                         }
                         $h['EFFECTIVE_DATE'] = isset($r['EFFECTIVE_DATE']) ? $r['EFFECTIVE_DATE'] : '';
                         $h['MODIFIED_DATE'] = isset($r['MODIFIED_DATE']) ? $r['MODIFIED_DATE'] : '';
