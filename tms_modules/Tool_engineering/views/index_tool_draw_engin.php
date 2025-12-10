@@ -13,6 +13,11 @@
             font-size: 0.85rem;
         }
 
+/* Ensure content takes full height and does not overlap footer on resize/sidebar toggle */
+#content-wrapper {
+    min-height: 100vh;
+}
+
         /* improved table layout: fixed widths with ellipsis and optional horizontal scrolling */
         .table-fixed {
             table-layout: fixed;
@@ -247,7 +252,7 @@
                         [0, 'desc']
                     ],
                     autoWidth: false,
-                    scrollX: false,
+                    scrollX: true, // allow horizontal scroll to avoid layout overlap with footer/sidebar
                     columnDefs: [
                         { orderable: false, targets: [10] },
                         { width: '40px', targets: 0 },      // ID
