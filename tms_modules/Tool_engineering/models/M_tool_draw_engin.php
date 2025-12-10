@@ -232,6 +232,91 @@ class M_tool_draw_engin extends CI_Model
         if ($result && $result->num_rows() > 0) return $result->row_array();
         return null;
     }
+
+    /**
+     * Get Tool BOM by Product ID from TMS_TC_TOOL_BOM_ENGIN
+     * Returns array of tool BOM records that match the product
+     * @param int $product_id
+     * @return array
+     */
+    public function get_tool_bom_by_product_id($product_id)
+    {
+        $product_id = (int)$product_id;
+        if ($product_id <= 0) return array();
+
+        $table = 'TMS_DB.dbo.TMS_TC_TOOL_BOM_ENGIN';
+        
+        // Check if PRODUCT_ID column exists (new FK column)
+        $has_product_id_col = false;
+        try {
+            $sql = "SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS
+                    WHERE TABLE_SCHEMA = 'dbo' AND TABLE_NAME = 'TMS_TC_TOOL_BOM_ENGIN' AND COLUMN_NAME = 'PRODUCT_ID'";
+            $q = $this->tms_db->query($sql);
+            $has_product_id_col = ($q && $q->num_rows() > 0);
+        } catch (Exception $e) {
+            log_message('error', '[get_tool_bom_by_product_id] Error checking PRODUCT_ID column: ' . $e->getMessage());
+        }
+
+        // Check if PRODUCT column exists (old text column)
+        $has_product_col = false;
+        try {
+            $sql = "SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS
+                    WHERE TABLE_SCHEMA = 'dbo' AND TABLE_NAME = 'TMS_TC_TOOL_BOM_ENGIN' AND COLUMN_NAME = 'PRODUCT'";
+            $q = $this->tms_db->query($sql);
+            $has_product_col = ($q && $q->num_rows() > 0);
+        } catch (Exception $e) {
+            log_message('error', '[get_tool_bom_by_product_id] Error checking PRODUCT column: ' . $e->getMessage());
+        }
+
+        // Get product name for matching with old PRODUCT column
+        $product_name = '';
+        if ($has_product_col) {
+            try {
+                $product_row = $this->tms_db->select('PRODUCT_NAME')
+                    ->from('TMS_DB.dbo.TMS_M_PRODUCT')
+                    ->where('PRODUCT_ID', $product_id)
+                    ->where('IS_DELETED', 0)
+                    ->limit(1)
+                    ->get();
+                if ($product_row && $product_row->num_rows() > 0) {
+                    $product_name = $product_row->row()->PRODUCT_NAME;
+                }
+            } catch (Exception $e) {
+                log_message('error', '[get_tool_bom_by_product_id] Error getting product name: ' . $e->getMessage());
+            }
+        }
+
+        // Build query
+        $this->tms_db->select('ID, TOOL_BOM');
+        
+        // Add PRODUCT or PRODUCT_ID to select if exists
+        if ($has_product_id_col) {
+            $this->tms_db->select('PRODUCT_ID');
+        }
+        if ($has_product_col) {
+            $this->tms_db->select('PRODUCT');
+        }
+
+        $this->tms_db->from($table);
+
+        // Build where clause - match by PRODUCT_ID if exists, otherwise match by PRODUCT text
+        if ($has_product_id_col) {
+            $this->tms_db->where('PRODUCT_ID', $product_id);
+        } elseif ($has_product_col && $product_name !== '') {
+            $this->tms_db->where('PRODUCT', $product_name);
+        } else {
+            // No matching column found, return empty array
+            return array();
+        }
+
+        $result = $this->tms_db->order_by('ID', 'DESC')->get();
+
+        if ($result && $result->num_rows() > 0) {
+            return $result->result_array();
+        }
+        return array();
+    }
+
     /* ========== MUTATORS ========== */
 
     public function add_data($product_id, $process_id, $drawing_no, $tool_name, $revision, $status, $material_id, $maker_id = 0, $min_qty = null, $replenish_qty = null, $price = null, $tool_life = null, $description = null, $sequence = null)

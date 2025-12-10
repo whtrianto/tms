@@ -139,6 +139,53 @@
                         </form>
                     </div>
                 </div>
+
+                <!-- Shared Tool Section -->
+                <div class="card mb-3 mt-3">
+                    <div class="card-header">
+                        <h5 class="m-0 font-weight-bold text-primary">Shared Tool</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-striped table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Product</th>
+                                        <th>Tool BOM</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php if (!empty($tool_bom_list)): ?>
+                                        <?php 
+                                        // Get product name for display
+                                        $current_product_name = '';
+                                        if (isset($drawing['TD_PRODUCT_ID']) && (int)$drawing['TD_PRODUCT_ID'] > 0) {
+                                            foreach ($products as $p) {
+                                                if ((int)$p['PRODUCT_ID'] === (int)$drawing['TD_PRODUCT_ID']) {
+                                                    $current_product_name = $p['PRODUCT_NAME'];
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                        ?>
+                                        <?php foreach ($tool_bom_list as $bom): ?>
+                                            <tr>
+                                                <td class="text-center"><?= htmlspecialchars(isset($bom['ID']) ? (int)$bom['ID'] : '', ENT_QUOTES, 'UTF-8'); ?></td>
+                                                <td><?= htmlspecialchars($current_product_name !== '' ? $current_product_name : (isset($bom['PRODUCT']) ? $bom['PRODUCT'] : ''), ENT_QUOTES, 'UTF-8'); ?></td>
+                                                <td><?= htmlspecialchars(isset($bom['TOOL_BOM']) ? $bom['TOOL_BOM'] : '', ENT_QUOTES, 'UTF-8'); ?></td>
+                                            </tr>
+                                        <?php endforeach; ?>
+                                    <?php else: ?>
+                                        <tr>
+                                            <td colspan="3" class="text-center text-muted">No shared tool BOM found for this product.</td>
+                                        </tr>
+                                    <?php endif; ?>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
             </div>
             <?= isset($modal_logout) ? $modal_logout : ''; ?>
         </div>
@@ -202,6 +249,43 @@
             }).fail(function(xhr, status){
                 toastr.error('Gagal menyimpan: ' + status);
             });
+        });
+
+        // Update Shared Tool table when Product changes
+        $('[name="TD_PRODUCT_ID"]').on('change', function(){
+            var productId = $(this).val();
+            if (productId && productId > 0) {
+                // Reload shared tool BOM via AJAX
+                $.ajax({
+                    url: '<?= base_url("tool_engineering/tool_draw_engin/get_tool_bom_by_product"); ?>',
+                    type: 'POST',
+                    dataType: 'json',
+                    data: { PRODUCT_ID: productId }
+                }).done(function(res){
+                    if (res && res.success && res.data) {
+                        var tbody = $('.card.mb-3.mt-3 table tbody');
+                        tbody.empty();
+                        if (res.data.length > 0) {
+                            var productName = res.product_name || '';
+                            res.data.forEach(function(bom){
+                                var row = '<tr>' +
+                                    '<td class="text-center">' + (bom.ID || '') + '</td>' +
+                                    '<td>' + (productName || bom.PRODUCT || '') + '</td>' +
+                                    '<td>' + (bom.TOOL_BOM || '') + '</td>' +
+                                    '</tr>';
+                                tbody.append(row);
+                            });
+                        } else {
+                            tbody.append('<tr><td colspan="3" class="text-center text-muted">No shared tool BOM found for this product.</td></tr>');
+                        }
+                    }
+                }).fail(function(){
+                    // Silently fail - keep existing data
+                });
+            } else {
+                // Clear table if no product selected
+                $('.card.mb-3.mt-3 table tbody').html('<tr><td colspan="3" class="text-center text-muted">Please select a product to view shared tools.</td></tr>');
+            }
         });
     });
 })(jQuery);

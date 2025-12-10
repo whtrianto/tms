@@ -96,12 +96,19 @@ class Tool_draw_engin extends MY_Controller
             }
         }
 
+        // Get Tool BOM by Product ID
+        $tool_bom_list = array();
+        if (isset($row['TD_PRODUCT_ID']) && (int)$row['TD_PRODUCT_ID'] > 0) {
+            $tool_bom_list = $this->tool_draw_engin->get_tool_bom_by_product_id((int)$row['TD_PRODUCT_ID']);
+        }
+
         $data = array();
         $data['drawing'] = $row;
         $data['products'] = $this->tool_draw_engin->get_products();
         $data['operations'] = $this->tool_draw_engin->get_operations();
         $data['tools'] = $tools;
         $data['materials'] = $this->tool_draw_engin->get_materials();
+        $data['tool_bom_list'] = $tool_bom_list;
 
         $this->view('edit_tool_draw_engin', $data, FALSE);
     }
@@ -152,12 +159,19 @@ class Tool_draw_engin extends MY_Controller
         // Increment revision
         $row['TD_REVISION'] = (isset($row['TD_REVISION']) ? (int)$row['TD_REVISION'] : 0) + 1;
 
+        // Get Tool BOM by Product ID
+        $tool_bom_list = array();
+        if (isset($row['TD_PRODUCT_ID']) && (int)$row['TD_PRODUCT_ID'] > 0) {
+            $tool_bom_list = $this->tool_draw_engin->get_tool_bom_by_product_id((int)$row['TD_PRODUCT_ID']);
+        }
+
         $data = array();
         $data['drawing'] = $row;
         $data['products'] = $this->tool_draw_engin->get_products();
         $data['operations'] = $this->tool_draw_engin->get_operations();
         $data['tools'] = $tools;
         $data['materials'] = $this->tool_draw_engin->get_materials();
+        $data['tool_bom_list'] = $tool_bom_list;
 
         $this->view('revision_tool_draw_engin', $data, FALSE);
     }
@@ -602,6 +616,43 @@ class Tool_draw_engin extends MY_Controller
             $result = array('success' => false, 'message' => 'Data tidak ditemukan.');
             $this->output->set_output(json_encode($result));
         }
+    }
+
+    /**
+     * get_tool_bom_by_product: Get Tool BOM by Product ID (AJAX)
+     */
+    public function get_tool_bom_by_product()
+    {
+        // Clear output buffers to ensure clean JSON response
+        if (ob_get_level()) ob_clean();
+        
+        $this->output->set_content_type('application/json');
+
+        $product_id = (int)$this->input->post('PRODUCT_ID', TRUE);
+        if ($product_id <= 0) {
+            $result = array('success' => false, 'message' => 'PRODUCT_ID tidak ditemukan.');
+            $this->output->set_output(json_encode($result));
+            return;
+        }
+
+        $tool_bom_list = $this->tool_draw_engin->get_tool_bom_by_product_id($product_id);
+        
+        // Get product name for display
+        $product_name = '';
+        $products = $this->tool_draw_engin->get_products();
+        foreach ($products as $p) {
+            if ((int)$p['PRODUCT_ID'] === $product_id) {
+                $product_name = $p['PRODUCT_NAME'];
+                break;
+            }
+        }
+
+        $result = array(
+            'success' => true,
+            'data' => $tool_bom_list,
+            'product_name' => $product_name
+        );
+        $this->output->set_output(json_encode($result));
     }
 
     /**
