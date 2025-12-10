@@ -11,7 +11,16 @@
         .action-buttons { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
         .small-muted { font-size: 0.82rem; color: #6c757d; }
         .info-label { font-weight: 600; color: #495057; }
-        .info-value { color: #212529; }
+        .info-value { 
+            color: #212529; 
+            padding: 0.375rem 0.75rem;
+            border: 1px solid #ced4da;
+            border-radius: 0.25rem;
+            background-color: #f8f9fa;
+            min-height: 38px;
+            display: flex;
+            align-items: center;
+        }
     </style>
 </head>
 <body id="page-top">
