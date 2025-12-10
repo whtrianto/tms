@@ -175,47 +175,9 @@
                 { width:'120px', targets:8 },
                 { width:'110px', targets:9 },
                 { width:'120px', targets:10 }
-            ],
-            initComplete: function() {
-                // Add search row dynamically after DataTables initialization
-                var thead = $('#table-tool-bom-tooling thead');
-                var searchRow = $('<tr></tr>');
-                
-                this.api().columns().every(function(index) {
-                    var column = this;
-                    var th = $('<th></th>');
-                    
-                    // Skip search for action column (index 10)
-                    if (index !== 10) {
-                        var $input = $('<input>')
-                            .attr('type', 'text')
-                            .attr('class', 'form-control form-control-sm')
-                            .attr('placeholder', 'Search...')
-                            .css({
-                                'width': '100%',
-                                'padding': '0.2rem 0.4rem',
-                                'font-size': '0.8rem',
-                                'border': '1px solid #ced4da',
-                                'border-radius': '0.25rem'
-                            });
-                        
-                        th.append($input);
-                        
-                        $input.on('keyup change', function() {
-                            if (column.search() !== this.value) {
-                                column.search(this.value).draw();
-                            }
-                        });
-                    }
-                    
-                    searchRow.append(th);
-                });
-                
-                thead.append(searchRow);
-            }
+            ]
         });
 
-        // Try to use _search_data function if available (for compatibility)
         if (typeof _search_data === 'function') {
             _search_data(table, '#table-tool-bom-tooling', false, false);
         }
