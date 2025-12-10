@@ -72,28 +72,6 @@ class M_tool_draw_engin extends CI_Model
     }
 
     /**
-     * Get first Tool Drawing Engineering by Product ID
-     * @param int $product_id
-     * @return array|null
-     */
-    public function get_first_by_product_id($product_id)
-    {
-        $product_id = (int)$product_id;
-        if ($product_id <= 0) return null;
-
-        $result = $this->tms_db
-            ->where('TD_PRODUCT_ID', $product_id)
-            ->order_by('TD_ID', 'DESC')
-            ->limit(1)
-            ->get($this->table);
-
-        if ($result && $result->num_rows() > 0) {
-            return $result->row_array();
-        }
-        return null;
-    }
-
-    /**
      * Get data by product + process (best-effort filter for Additional Information section)
      */
     public function get_by_product_process($product_id = 0, $process_id = 0)

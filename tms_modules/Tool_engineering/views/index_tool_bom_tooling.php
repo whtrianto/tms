@@ -128,22 +128,9 @@
                                         <td><?= htmlspecialchars(isset($row['MODIFIED_BY']) ? $row['MODIFIED_BY'] : '', ENT_QUOTES, 'UTF-8'); ?></td>
                                         <td>
                                             <div class="action-buttons">
-                                                <?php 
-                                                // Get Product ID from Tool BOM
-                                                $bom_product_id = 0;
-                                                if (isset($row['PRODUCT_ID']) && (int)$row['PRODUCT_ID'] > 0) {
-                                                    $bom_product_id = (int)$row['PRODUCT_ID'];
-                                                }
-                                                ?>
-                                                <?php if ($bom_product_id > 0): ?>
-                                                    <a class="btn btn-sm btn-warning" href="<?= base_url('Tool_engineering/tool_draw_engin/detail_by_product_page/' . $bom_product_id); ?>" title="View Tool Drawing Detail">
-                                                        <i class="fas fa-edit"></i>
-                                                    </a>
-                                                <?php else: ?>
-                                                    <a class="btn btn-sm btn-warning disabled" href="#" title="No Product ID" onclick="return false;">
-                                                        <i class="fas fa-edit"></i>
-                                                    </a>
-                                                <?php endif; ?>
+                                                <a class="btn btn-sm btn-warning" href="<?= base_url('Tool_engineering/tool_bom_tooling/detail_page/' . (int)$row['ID']); ?>" title="View Detail">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
                                                 <button class="btn btn-sm btn-info btn-history" data-id="<?= (int)$row['ID']; ?>" title="History">
                                                     <i class="fas fa-history"></i>
                                                 </button>
