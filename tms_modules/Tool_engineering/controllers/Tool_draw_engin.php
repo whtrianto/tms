@@ -50,6 +50,7 @@ class Tool_draw_engin extends MY_Controller
             $length = (int)$this->input->post('length');
             $search = $this->input->post('search');
             $search_value = isset($search['value']) ? trim($search['value']) : '';
+            $columns = $this->input->post('columns');
             $order = $this->input->post('order');
             $order_column = isset($order[0]['column']) ? (int)$order[0]['column'] : 0;
             $order_dir = isset($order[0]['dir']) ? strtoupper($order[0]['dir']) : 'DESC';
@@ -62,23 +63,82 @@ class Tool_draw_engin extends MY_Controller
                 $all_data = array();
             }
 
-            // Apply search filter
-            if ($search_value !== '') {
+            // Column mapping for search
+            $column_map = array(
+                0 => 'TD_ID',
+                1 => 'TD_PRODUCT_NAME',
+                2 => 'TD_OPERATION_NAME',
+                3 => 'TD_DRAWING_NO',
+                4 => 'TD_TOOL_NAME',
+                5 => 'TD_REVISION',
+                6 => 'TD_STATUS',
+                7 => 'TD_EFFECTIVE_DATE',
+                8 => 'TD_MODIFIED_DATE',
+                9 => 'TD_MODIFIED_BY'
+            );
+
+            // Apply per-column search filters
+            $has_column_search = false;
+            $column_searches = array();
+            if (is_array($columns)) {
+                foreach ($columns as $idx => $col) {
+                    $col_idx = (int)$idx;
+                    if (isset($column_map[$col_idx])) {
+                        $col_search = isset($col['search']['value']) ? trim($col['search']['value']) : '';
+                        if ($col_search !== '') {
+                            $has_column_search = true;
+                            $column_searches[$column_map[$col_idx]] = strtolower($col_search);
+                        }
+                    }
+                }
+            }
+
+            // Apply search filter (global search or per-column search)
+            if ($search_value !== '' || $has_column_search) {
                 $filtered_data = array();
                 foreach ($all_data as $row) {
-                    $match = false;
-                    $search_lower = strtolower($search_value);
+                    $match = true;
                     
-                    // Search in all visible columns
-                    if (stripos(strtolower(isset($row['TD_ID']) ? (string)$row['TD_ID'] : ''), $search_lower) !== false) $match = true;
-                    if (stripos(strtolower(isset($row['TD_PRODUCT_NAME']) ? $row['TD_PRODUCT_NAME'] : ''), $search_lower) !== false) $match = true;
-                    if (stripos(strtolower(isset($row['TD_OPERATION_NAME']) ? $row['TD_OPERATION_NAME'] : ''), $search_lower) !== false) $match = true;
-                    if (stripos(strtolower(isset($row['TD_DRAWING_NO']) ? $row['TD_DRAWING_NO'] : ''), $search_lower) !== false) $match = true;
-                    if (stripos(strtolower(isset($row['TD_TOOL_NAME']) ? $row['TD_TOOL_NAME'] : ''), $search_lower) !== false) $match = true;
-                    if (stripos(strtolower(isset($row['TD_REVISION']) ? (string)$row['TD_REVISION'] : ''), $search_lower) !== false) $match = true;
-                    if (stripos(strtolower(isset($row['TD_EFFECTIVE_DATE']) ? $row['TD_EFFECTIVE_DATE'] : ''), $search_lower) !== false) $match = true;
-                    if (stripos(strtolower(isset($row['TD_MODIFIED_DATE']) ? $row['TD_MODIFIED_DATE'] : ''), $search_lower) !== false) $match = true;
-                    if (stripos(strtolower(isset($row['TD_MODIFIED_BY']) ? $row['TD_MODIFIED_BY'] : ''), $search_lower) !== false) $match = true;
+                    // Global search
+                    if ($search_value !== '') {
+                        $match_global = false;
+                        $search_lower = strtolower($search_value);
+                        
+                        // Search in all visible columns
+                        if (stripos(strtolower(isset($row['TD_ID']) ? (string)$row['TD_ID'] : ''), $search_lower) !== false) $match_global = true;
+                        if (stripos(strtolower(isset($row['TD_PRODUCT_NAME']) ? $row['TD_PRODUCT_NAME'] : ''), $search_lower) !== false) $match_global = true;
+                        if (stripos(strtolower(isset($row['TD_OPERATION_NAME']) ? $row['TD_OPERATION_NAME'] : ''), $search_lower) !== false) $match_global = true;
+                        if (stripos(strtolower(isset($row['TD_DRAWING_NO']) ? $row['TD_DRAWING_NO'] : ''), $search_lower) !== false) $match_global = true;
+                        if (stripos(strtolower(isset($row['TD_TOOL_NAME']) ? $row['TD_TOOL_NAME'] : ''), $search_lower) !== false) $match_global = true;
+                        if (stripos(strtolower(isset($row['TD_REVISION']) ? (string)$row['TD_REVISION'] : ''), $search_lower) !== false) $match_global = true;
+                        if (stripos(strtolower(isset($row['TD_EFFECTIVE_DATE']) ? $row['TD_EFFECTIVE_DATE'] : ''), $search_lower) !== false) $match_global = true;
+                        if (stripos(strtolower(isset($row['TD_MODIFIED_DATE']) ? $row['TD_MODIFIED_DATE'] : ''), $search_lower) !== false) $match_global = true;
+                        if (stripos(strtolower(isset($row['TD_MODIFIED_BY']) ? $row['TD_MODIFIED_BY'] : ''), $search_lower) !== false) $match_global = true;
+                        
+                        $match = $match && $match_global;
+                    }
+                    
+                    // Per-column search
+                    if ($has_column_search && $match) {
+                        foreach ($column_searches as $col_name => $col_search_value) {
+                            $row_value = '';
+                            if (isset($row[$col_name])) {
+                                if ($col_name === 'TD_STATUS') {
+                                    // Special handling for status
+                                    $st = (int)$row[$col_name];
+                                    if ($st === 2) $row_value = 'active';
+                                    elseif ($st === 1) $row_value = 'pending';
+                                    else $row_value = 'inactive';
+                                } else {
+                                    $row_value = strtolower((string)$row[$col_name]);
+                                }
+                            }
+                            if (stripos($row_value, $col_search_value) === false) {
+                                $match = false;
+                                break;
+                            }
+                        }
+                    }
                     
                     if ($match) {
                         $filtered_data[] = $row;

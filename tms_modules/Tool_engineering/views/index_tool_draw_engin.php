@@ -56,6 +56,14 @@
         #content {
             padding-bottom: 4rem;
         }
+        /* Search row styling */
+        .search-row th {
+            padding: 0.25rem !important;
+        }
+        .search-row input {
+            width: 100%;
+            font-size: 0.8rem;
+        }
     </style>
 </head>
 <body id="page-top">
@@ -90,6 +98,19 @@
                                         <th>Modified Date</th>
                                         <th>Modified By</th>
                                         <th>Action</th>
+                                    </tr>
+                                    <tr class="search-row">
+                                        <th></th>
+                                        <th><input type="text" class="form-control form-control-sm column-search" placeholder="Search..." data-column="1" /></th>
+                                        <th><input type="text" class="form-control form-control-sm column-search" placeholder="Search..." data-column="2" /></th>
+                                        <th><input type="text" class="form-control form-control-sm column-search" placeholder="Search..." data-column="3" /></th>
+                                        <th><input type="text" class="form-control form-control-sm column-search" placeholder="Search..." data-column="4" /></th>
+                                        <th><input type="text" class="form-control form-control-sm column-search" placeholder="Search..." data-column="5" /></th>
+                                        <th><input type="text" class="form-control form-control-sm column-search" placeholder="Search..." data-column="6" /></th>
+                                        <th><input type="text" class="form-control form-control-sm column-search" placeholder="Search..." data-column="7" /></th>
+                                        <th><input type="text" class="form-control form-control-sm column-search" placeholder="Search..." data-column="8" /></th>
+                                        <th><input type="text" class="form-control form-control-sm column-search" placeholder="Search..." data-column="9" /></th>
+                                        <th></th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -146,11 +167,39 @@
             drawCallback: function(settings) {
                 // Re-attach delete handler after table redraw
                 attachDeleteHandler();
+            },
+            initComplete: function() {
+                // Setup per-column search after table initialization
+                setupColumnSearch();
             }
         });
 
-        if (typeof _search_data === 'function') {
-            _search_data(table, '#table-tool-draw-sql', false, false);
+        // Per-column search with debounce
+        var searchTimeout = {};
+        function setupColumnSearch() {
+            $('.column-search').off('keyup change').on('keyup change', function() {
+                var column = $(this).data('column');
+                var value = $(this).val();
+                
+                // Clear previous timeout
+                if (searchTimeout[column]) {
+                    clearTimeout(searchTimeout[column]);
+                }
+                
+                // Set new timeout for debounce
+                searchTimeout[column] = setTimeout(function() {
+                    table.column(column).search(value).draw();
+                }, 500);
+            });
+
+            // Clear search on escape
+            $('.column-search').off('keydown').on('keydown', function(e) {
+                if (e.keyCode === 27) { // ESC key
+                    $(this).val('');
+                    var column = $(this).data('column');
+                    table.column(column).search('').draw();
+                }
+            });
         }
 
         // Delete handler function
