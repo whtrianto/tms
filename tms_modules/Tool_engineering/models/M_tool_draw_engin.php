@@ -48,9 +48,11 @@ class M_tool_draw_engin extends CI_Model
             ";
 
         // Query lengkap dengan JOIN
+        // Use subquery to get first product name to avoid duplicate rows
         $sql = "
             SELECT
                 rev.MLR_ID          AS TD_ID,
+                ml.ML_ID            AS TD_ML_ID,
                 ml.ML_TOOL_DRAW_NO  AS TD_DRAWING_NO,
                 rev.MLR_REV         AS TD_REVISION,
                 rev.MLR_STATUS      AS TD_STATUS,
@@ -62,7 +64,11 @@ class M_tool_draw_engin extends CI_Model
                 mac.MAC_NAME        AS TD_MAC_NAME,
                 maker.MAKER_NAME    AS TD_MAKER_NAME,
                 mat.MAT_NAME        AS TD_MATERIAL_NAME,
-                part.PART_NAME      AS TD_PRODUCT_NAME
+                (SELECT TOP 1 part2.PART_NAME 
+                 FROM TMS_DB.dbo.TMS_TOOL_MASTER_LIST_PARTS mlparts2
+                 INNER JOIN TMS_DB.dbo.MS_PARTS part2 ON part2.PART_ID = mlparts2.TMLP_PART_ID
+                 WHERE mlparts2.TMLP_ML_ID = ml.ML_ID
+                 ORDER BY part2.PART_NAME) AS TD_PRODUCT_NAME
             FROM TMS_DB.dbo.TMS_TOOL_MASTER_LIST_REV rev
             INNER JOIN TMS_DB.dbo.TMS_TOOL_MASTER_LIST ml
                 ON ml.ML_ID = rev.MLR_ML_ID
@@ -76,10 +82,6 @@ class M_tool_draw_engin extends CI_Model
                 ON mat.MAT_ID = rev.MLR_MAT_ID
             LEFT JOIN TMS_DB.dbo.MS_MACHINES mac
                 ON mac.MAC_ID = rev.MLR_MACG_ID
-            LEFT JOIN TMS_DB.dbo.TMS_TOOL_MASTER_LIST_PARTS mlparts
-                ON mlparts.TMLP_ML_ID = ml.ML_ID
-            LEFT JOIN TMS_DB.dbo.MS_PARTS part
-                ON part.PART_ID = mlparts.TMLP_PART_ID
             WHERE ml.ML_TYPE = 1
             ORDER BY rev.MLR_ID DESC
         ";
