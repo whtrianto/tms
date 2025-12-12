@@ -48,21 +48,30 @@ class M_tool_draw_engin extends CI_Model
             ";
 
         // Query lengkap dengan JOIN
+        // Menggunakan fnGetToolMasterListParts untuk Product Name (seperti di VW_TOOL_MASTER_LIST)
+        // JOIN dengan MS_USERS untuk mendapatkan nama user dari MLR_MODIFIED_BY
+        // Format tanggal untuk konsistensi tampilan
         $sql = "
             SELECT
                 rev.MLR_ID          AS TD_ID,
                 ml.ML_TOOL_DRAW_NO  AS TD_DRAWING_NO,
                 rev.MLR_REV         AS TD_REVISION,
                 rev.MLR_STATUS      AS TD_STATUS,
-                rev.MLR_EFFECTIVE_DATE AS TD_EFFECTIVE_DATE,
-                rev.MLR_MODIFIED_DATE  AS TD_MODIFIED_DATE,
-                rev.MLR_MODIFIED_BY    AS TD_MODIFIED_BY,
-                op.OP_NAME          AS TD_OPERATION_NAME,
-                tc.TC_NAME          AS TD_TOOL_NAME,
-                mac.MAC_NAME        AS TD_MAC_NAME,
-                maker.MAKER_NAME    AS TD_MAKER_NAME,
-                mat.MAT_NAME        AS TD_MATERIAL_NAME,
-                part.PART_NAME      AS TD_PRODUCT_NAME
+                CASE 
+                    WHEN rev.MLR_EFFECTIVE_DATE IS NULL THEN ''
+                    ELSE CONVERT(VARCHAR(19), rev.MLR_EFFECTIVE_DATE, 120)
+                END AS TD_EFFECTIVE_DATE,
+                CASE 
+                    WHEN rev.MLR_MODIFIED_DATE IS NULL THEN ''
+                    ELSE CONVERT(VARCHAR(19), rev.MLR_MODIFIED_DATE, 120)
+                END AS TD_MODIFIED_DATE,
+                ISNULL(usr.USR_NAME, '') AS TD_MODIFIED_BY,
+                ISNULL(op.OP_NAME, '') AS TD_OPERATION_NAME,
+                ISNULL(tc.TC_NAME, '') AS TD_TOOL_NAME,
+                ISNULL(mac.MAC_NAME, '') AS TD_MAC_NAME,
+                ISNULL(maker.MAKER_NAME, '') AS TD_MAKER_NAME,
+                ISNULL(mat.MAT_NAME, '') AS TD_MATERIAL_NAME,
+                ISNULL(dbo.fnGetToolMasterListParts(ml.ML_ID), '') AS TD_PRODUCT_NAME
             FROM TMS_DB.dbo.TMS_TOOL_MASTER_LIST_REV rev
             INNER JOIN TMS_DB.dbo.TMS_TOOL_MASTER_LIST ml
                 ON ml.ML_ID = rev.MLR_ML_ID
@@ -76,10 +85,8 @@ class M_tool_draw_engin extends CI_Model
                 ON mat.MAT_ID = rev.MLR_MAT_ID
             LEFT JOIN TMS_DB.dbo.MS_MACHINES mac
                 ON mac.MAC_ID = rev.MLR_MACG_ID
-            LEFT JOIN TMS_DB.dbo.TMS_TOOL_MASTER_LIST_PARTS mlparts
-                ON mlparts.TMLP_ML_ID = ml.ML_ID
-            LEFT JOIN TMS_DB.dbo.MS_PARTS part
-                ON part.PART_ID = mlparts.TMLP_PART_ID
+            LEFT JOIN TMS_DB.dbo.MS_USERS usr
+                ON usr.USR_ID = rev.MLR_MODIFIED_BY
             WHERE ml.ML_TYPE = 1
             ORDER BY rev.MLR_ID DESC
         ";
