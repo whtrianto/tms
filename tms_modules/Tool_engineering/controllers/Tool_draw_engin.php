@@ -145,17 +145,27 @@ class Tool_draw_engin extends MY_Controller
                     '<button class="btn btn-danger btn-sm btn-delete" data-id="' . (int)$row['TD_ID'] . '" data-name="' . $drawing_no_escaped . '">Del</button>' .
                     '</div>';
 
+                // Ensure all fields are properly set
+                $product_name = isset($row['TD_PRODUCT_NAME']) ? trim((string)$row['TD_PRODUCT_NAME']) : '';
+                $operation_name = isset($row['TD_OPERATION_NAME']) ? trim((string)$row['TD_OPERATION_NAME']) : '';
+                $drawing_no = isset($row['TD_DRAWING_NO']) ? trim((string)$row['TD_DRAWING_NO']) : '';
+                $tool_name = isset($row['TD_TOOL_NAME']) ? trim((string)$row['TD_TOOL_NAME']) : '';
+                $revision = isset($row['TD_REVISION']) ? (string)$row['TD_REVISION'] : '0';
+                $effective_date = isset($row['TD_EFFECTIVE_DATE']) ? (string)$row['TD_EFFECTIVE_DATE'] : '';
+                $modified_date = isset($row['TD_MODIFIED_DATE']) ? (string)$row['TD_MODIFIED_DATE'] : '';
+                $modified_by = isset($row['TD_MODIFIED_BY']) ? (string)$row['TD_MODIFIED_BY'] : '';
+
                 $formatted_data[] = array(
                     (int)$row['TD_ID'],
-                    htmlspecialchars(isset($row['TD_PRODUCT_NAME']) ? $row['TD_PRODUCT_NAME'] : '', ENT_QUOTES, 'UTF-8'),
-                    htmlspecialchars(isset($row['TD_OPERATION_NAME']) ? $row['TD_OPERATION_NAME'] : '', ENT_QUOTES, 'UTF-8'),
-                    htmlspecialchars(isset($row['TD_DRAWING_NO']) ? $row['TD_DRAWING_NO'] : '', ENT_QUOTES, 'UTF-8'),
-                    htmlspecialchars(isset($row['TD_TOOL_NAME']) ? $row['TD_TOOL_NAME'] : '', ENT_QUOTES, 'UTF-8'),
-                    htmlspecialchars(isset($row['TD_REVISION']) ? (string)$row['TD_REVISION'] : '0', ENT_QUOTES, 'UTF-8'),
+                    htmlspecialchars($product_name, ENT_QUOTES, 'UTF-8'),
+                    htmlspecialchars($operation_name, ENT_QUOTES, 'UTF-8'),
+                    htmlspecialchars($drawing_no, ENT_QUOTES, 'UTF-8'),
+                    htmlspecialchars($tool_name, ENT_QUOTES, 'UTF-8'),
+                    htmlspecialchars($revision, ENT_QUOTES, 'UTF-8'),
                     $status_badge,
-                    htmlspecialchars(isset($row['TD_EFFECTIVE_DATE']) ? $row['TD_EFFECTIVE_DATE'] : '', ENT_QUOTES, 'UTF-8'),
-                    htmlspecialchars(isset($row['TD_MODIFIED_DATE']) ? $row['TD_MODIFIED_DATE'] : '', ENT_QUOTES, 'UTF-8'),
-                    htmlspecialchars(isset($row['TD_MODIFIED_BY']) ? $row['TD_MODIFIED_BY'] : '', ENT_QUOTES, 'UTF-8'),
+                    htmlspecialchars($effective_date, ENT_QUOTES, 'UTF-8'),
+                    htmlspecialchars($modified_date, ENT_QUOTES, 'UTF-8'),
+                    htmlspecialchars($modified_by, ENT_QUOTES, 'UTF-8'),
                     $action_html
                 );
             }
