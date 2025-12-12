@@ -48,19 +48,9 @@ class M_tool_draw_engin extends CI_Model
             ";
 
         // Query lengkap dengan JOIN
-        // Use CTE with ROW_NUMBER to get first product name per ML_ID to avoid duplicate rows
         $sql = "
-            WITH ProductCTE AS (
-                SELECT 
-                    mlparts.TMLP_ML_ID,
-                    part.PART_NAME,
-                    ROW_NUMBER() OVER (PARTITION BY mlparts.TMLP_ML_ID ORDER BY part.PART_NAME) AS rn
-                FROM TMS_DB.dbo.TMS_TOOL_MASTER_LIST_PARTS mlparts
-                INNER JOIN TMS_DB.dbo.MS_PARTS part ON part.PART_ID = mlparts.TMLP_PART_ID
-            )
             SELECT
                 rev.MLR_ID          AS TD_ID,
-                ml.ML_ID            AS TD_ML_ID,
                 ml.ML_TOOL_DRAW_NO  AS TD_DRAWING_NO,
                 rev.MLR_REV         AS TD_REVISION,
                 rev.MLR_STATUS      AS TD_STATUS,
@@ -72,7 +62,7 @@ class M_tool_draw_engin extends CI_Model
                 mac.MAC_NAME        AS TD_MAC_NAME,
                 maker.MAKER_NAME    AS TD_MAKER_NAME,
                 mat.MAT_NAME        AS TD_MATERIAL_NAME,
-                COALESCE(pcte.PART_NAME, '') AS TD_PRODUCT_NAME
+                part.PART_NAME      AS TD_PRODUCT_NAME
             FROM TMS_DB.dbo.TMS_TOOL_MASTER_LIST_REV rev
             INNER JOIN TMS_DB.dbo.TMS_TOOL_MASTER_LIST ml
                 ON ml.ML_ID = rev.MLR_ML_ID
@@ -86,27 +76,17 @@ class M_tool_draw_engin extends CI_Model
                 ON mat.MAT_ID = rev.MLR_MAT_ID
             LEFT JOIN TMS_DB.dbo.MS_MACHINES mac
                 ON mac.MAC_ID = rev.MLR_MACG_ID
-            LEFT JOIN ProductCTE pcte
-                ON pcte.TMLP_ML_ID = ml.ML_ID AND pcte.rn = 1
+            LEFT JOIN TMS_DB.dbo.TMS_TOOL_MASTER_LIST_PARTS mlparts
+                ON mlparts.TMLP_ML_ID = ml.ML_ID
+            LEFT JOIN TMS_DB.dbo.MS_PARTS part
+                ON part.PART_ID = mlparts.TMLP_PART_ID
             WHERE ml.ML_TYPE = 1
             ORDER BY rev.MLR_ID DESC
         ";
 
         $q = $this->db_tms->query($sql);
-        if (!$q) {
-            log_message('error', '[M_tool_draw_engin::get_all] Query failed');
-            return array();
-        }
-        $result = $q->result_array();
-        
-        // Debug: log if any record has empty product name
-        foreach ($result as $idx => $row) {
-            if (empty($row['TD_PRODUCT_NAME']) || trim($row['TD_PRODUCT_NAME']) === '') {
-                log_message('debug', '[M_tool_draw_engin::get_all] Record TD_ID=' . (isset($row['TD_ID']) ? $row['TD_ID'] : 'N/A') . ' has empty product name');
-            }
-        }
-        
-        return $result;
+        if (!$q) return array();
+        return $q->result_array();
     }
 
     /**
