@@ -169,7 +169,13 @@ class Tool_draw_engin extends MY_Controller
                 $val_a = isset($a[$sort_column]) ? $a[$sort_column] : '';
                 $val_b = isset($b[$sort_column]) ? $b[$sort_column] : '';
                 
-                if (is_numeric($val_a) && is_numeric($val_b)) {
+                // Special handling for date columns
+                if (in_array($sort_column, array('TD_EFFECTIVE_DATE', 'TD_MODIFIED_DATE'))) {
+                    // Convert date strings to timestamps for proper comparison
+                    $time_a = !empty($val_a) ? strtotime($val_a) : 0;
+                    $time_b = !empty($val_b) ? strtotime($val_b) : 0;
+                    $result = $time_a - $time_b;
+                } elseif (is_numeric($val_a) && is_numeric($val_b)) {
                     $result = (int)$val_a - (int)$val_b;
                 } else {
                     $result = strcmp((string)$val_a, (string)$val_b);
