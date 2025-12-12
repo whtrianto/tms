@@ -31,6 +31,10 @@
         }
         /* Keep navbar pinned */
         .navbar { position: sticky; top: 0; z-index: 1030; }
+        /* Fix footer spacing */
+        #content-wrapper { min-height: calc(100vh - 56px); }
+        #container-wrapper { padding-bottom: 2rem; margin-bottom: 2rem; }
+        .card { margin-bottom: 2rem; }
     </style>
 </head>
 <body id="page-top">
@@ -68,41 +72,7 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <?php foreach ($list_data as $row):
-                                        $status_badge = '<span class="badge badge-secondary">Inactive</span>';
-                                        if (isset($row['TD_STATUS'])) {
-                                            $st = (int)$row['TD_STATUS'];
-                                            if ($st === 2 || strtoupper((string)$row['TD_STATUS']) === 'ACTIVE') {
-                                                $status_badge = '<span class="badge badge-success">Active</span>';
-                                            } elseif ($st === 1) {
-                                                $status_badge = '<span class="badge badge-warning">Pending</span>';
-                                            }
-                                        }
-                                    ?>
-                                        <tr>
-                                            <td class="text-center"><?= (int)$row['TD_ID']; ?></td>
-                                            <td class="text-left"><span class="cell-ellipsis"><?= htmlspecialchars(isset($row['TD_PRODUCT_NAME']) ? $row['TD_PRODUCT_NAME'] : '', ENT_QUOTES, 'UTF-8'); ?></span></td>
-                                            <td class="text-left"><span class="cell-ellipsis"><?= htmlspecialchars(isset($row['TD_OPERATION_NAME']) ? $row['TD_OPERATION_NAME'] : '', ENT_QUOTES, 'UTF-8'); ?></span></td>
-                                            <td class="text-left"><span class="cell-ellipsis"><?= htmlspecialchars(isset($row['TD_DRAWING_NO']) ? $row['TD_DRAWING_NO'] : '', ENT_QUOTES, 'UTF-8'); ?></span></td>
-                                            <td class="text-left"><span class="cell-ellipsis"><?= htmlspecialchars(isset($row['TD_TOOL_NAME']) ? $row['TD_TOOL_NAME'] : '', ENT_QUOTES, 'UTF-8'); ?></span></td>
-                                            <td class="text-center"><?= htmlspecialchars(isset($row['TD_REVISION']) ? $row['TD_REVISION'] : 0, ENT_QUOTES, 'UTF-8'); ?></td>
-                                            <td><?= $status_badge; ?></td>
-                                            <td><span class="cell-ellipsis"><?= htmlspecialchars(isset($row['TD_EFFECTIVE_DATE']) ? $row['TD_EFFECTIVE_DATE'] : '', ENT_QUOTES, 'UTF-8'); ?></span></td>
-                                            <td><span class="cell-ellipsis"><?= htmlspecialchars(isset($row['TD_MODIFIED_DATE']) ? $row['TD_MODIFIED_DATE'] : '', ENT_QUOTES, 'UTF-8'); ?></span></td>
-                                            <td><span class="cell-ellipsis"><?= htmlspecialchars(isset($row['TD_MODIFIED_BY']) ? $row['TD_MODIFIED_BY'] : '', ENT_QUOTES, 'UTF-8'); ?></span></td>
-                                            <td>
-                                                <div class="action-buttons">
-                                                    <a href="<?= base_url('Tool_engineering/tool_draw_engin/edit_page/' . (int)$row['TD_ID']); ?>" 
-                                                       class="btn btn-secondary btn-sm" title="Edit">Edit</a>
-                                                    <a href="<?= base_url('Tool_engineering/tool_draw_engin/history_page/' . (int)$row['TD_ID']); ?>" 
-                                                       class="btn btn-warning btn-sm" title="History">Hist</a>
-                                                    <button class="btn btn-danger btn-sm btn-delete"
-                                                        data-id="<?= (int)$row['TD_ID']; ?>"
-                                                        data-name="<?= htmlspecialchars(isset($row['TD_DRAWING_NO']) ? $row['TD_DRAWING_NO'] : '', ENT_QUOTES, 'UTF-8'); ?>">Del</button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    <?php endforeach; ?>
+                                    <!-- Data will be loaded via AJAX -->
                                 </tbody>
                             </table>
                         </div>
@@ -122,7 +92,13 @@
 (function($){
     $(function(){
         var table = $('#table-tool-draw-sql').DataTable({
-            lengthMenu: [[10,25,50,-1],[10,25,50,"ALL"]],
+            processing: true,
+            serverSide: true,
+            ajax: {
+                url: '<?= base_url("Tool_engineering/tool_draw_engin/get_data"); ?>',
+                type: 'POST'
+            },
+            lengthMenu: [[10,25,50,100],[10,25,50,100]],
             pageLength: 25,
             order: [[0,'desc']],
             autoWidth: false,
@@ -140,58 +116,71 @@
                 { width:'120px', targets:8 },     // Modified Date
                 { width:'110px', targets:9 },     // Modified By
                 { width:'115px', targets:10 }     // Action
-            ]
+            ],
+            language: {
+                processing: '<div class="spinner-border spinner-border-sm" role="status"><span class="sr-only">Loading...</span></div> Processing...',
+                emptyTable: 'No data available',
+                zeroRecords: 'No matching records found'
+            },
+            drawCallback: function(settings) {
+                // Re-attach delete handler after table redraw
+                attachDeleteHandler();
+            }
         });
 
         if (typeof _search_data === 'function') {
             _search_data(table, '#table-tool-draw-sql', false, false);
         }
 
-        // Delete handler
-        $('#table-tool-draw-sql').on('click', '.btn-delete', function() {
-            var id = Number($(this).data('id')) || 0;
-            var name = $(this).data('name') || '';
-            if (id <= 0) {
-                if (typeof toastr !== 'undefined') {
-                    toastr.error('ID tidak valid');
-                } else {
-                    alert('ID tidak valid');
-                }
-                return;
-            }
-            if (!confirm('Hapus Tool Drawing "' + name + '"?')) return;
-            $.ajax({
-                url: '<?= base_url("Tool_engineering/tool_draw_engin/delete_data"); ?>',
-                type: 'POST',
-                dataType: 'json',
-                data: {
-                    TD_ID: id
-                }
-            }).done(function(res) {
-                if (res && res.success) {
+        // Delete handler function
+        function attachDeleteHandler() {
+            $('#table-tool-draw-sql').off('click', '.btn-delete').on('click', '.btn-delete', function() {
+                var id = Number($(this).data('id')) || 0;
+                var name = $(this).data('name') || '';
+                if (id <= 0) {
                     if (typeof toastr !== 'undefined') {
-                        toastr.success(res.message || 'Terhapus');
+                        toastr.error('ID tidak valid');
                     } else {
-                        alert(res.message || 'Data berhasil dihapus');
+                        alert('ID tidak valid');
                     }
-                    setTimeout(function() {
-                        location.reload();
-                    }, 400);
-                } else {
+                    return;
+                }
+                if (!confirm('Hapus Tool Drawing "' + name + '"?')) return;
+                $.ajax({
+                    url: '<?= base_url("Tool_engineering/tool_draw_engin/delete_data"); ?>',
+                    type: 'POST',
+                    dataType: 'json',
+                    data: {
+                        TD_ID: id
+                    }
+                }).done(function(res) {
+                    if (res && res.success) {
+                        if (typeof toastr !== 'undefined') {
+                            toastr.success(res.message || 'Terhapus');
+                        } else {
+                            alert(res.message || 'Data berhasil dihapus');
+                        }
+                        // Reload table data instead of full page reload
+                        table.ajax.reload(null, false);
+                    } else {
+                        if (typeof toastr !== 'undefined') {
+                            toastr.error(res && res.message ? res.message : 'Gagal menghapus');
+                        } else {
+                            alert(res && res.message ? res.message : 'Gagal menghapus');
+                        }
+                    }
+                }).fail(function() {
                     if (typeof toastr !== 'undefined') {
-                        toastr.error(res && res.message ? res.message : 'Gagal menghapus');
+                        toastr.error('Terjadi kesalahan');
                     } else {
-                        alert(res && res.message ? res.message : 'Gagal menghapus');
+                        alert('Terjadi kesalahan');
                     }
-                }
-            }).fail(function() {
-                if (typeof toastr !== 'undefined') {
-                    toastr.error('Terjadi kesalahan');
-                } else {
-                    alert('Terjadi kesalahan');
-                }
+                });
             });
-        });
+        }
+
+        // Initial attach
+        attachDeleteHandler();
     });
 })(jQuery);
 </script>
