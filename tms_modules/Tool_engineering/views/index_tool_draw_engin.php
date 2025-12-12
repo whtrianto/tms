@@ -33,8 +33,29 @@
         .navbar { position: sticky; top: 0; z-index: 1030; }
         /* Fix footer spacing */
         #content-wrapper { min-height: calc(100vh - 56px); }
-        #container-wrapper { padding-bottom: 2rem; margin-bottom: 2rem; }
+        #container-wrapper { padding-bottom: 4rem; margin-bottom: 2rem; }
         .card { margin-bottom: 2rem; }
+        /* Fix DataTables pagination spacing */
+        .dataTables_wrapper { 
+            padding-bottom: 4rem !important; 
+            margin-bottom: 2rem !important; 
+        }
+        .dataTables_paginate {
+            margin-top: 1rem;
+            margin-bottom: 2rem !important;
+            padding-bottom: 1rem;
+        }
+        .dataTables_info {
+            margin-top: 1rem;
+            margin-bottom: 1rem;
+        }
+        .card-body {
+            padding-bottom: 3rem !important;
+        }
+        /* Ensure footer doesn't overlap */
+        #content {
+            padding-bottom: 4rem;
+        }
     </style>
 </head>
 <body id="page-top">
