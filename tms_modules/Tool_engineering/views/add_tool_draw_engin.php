@@ -25,7 +25,7 @@
                             <h4 class="m-0 font-weight-bold text-primary">Add Tool Drawing Engineering</h4>
                         </div>
                         <div>
-                            <a href="<?= base_url('tool_engineering/tool_draw_engin'); ?>" class="btn btn-sm btn-outline-primary shadow-sm">
+                            <a href="<?= base_url('Tool_engineering/tool_draw_engin'); ?>" class="btn btn-sm btn-outline-primary shadow-sm">
                                 <i class="fa fa-arrow-left"></i> Back
                             </a>
                         </div>
@@ -161,7 +161,7 @@
                 if (res && res.success) {
                     toastr.success(res.message || 'Tool Drawing berhasil ditambahkan');
                     setTimeout(function(){
-                        window.location.href = '<?= base_url("tool_engineering/tool_draw_engin"); ?>';
+                        window.location.href = '<?= base_url("Tool_engineering/tool_draw_engin"); ?>';
                     }, 600);
                 } else {
                     toastr.warning(res && res.message ? res.message : 'Gagal menyimpan data');

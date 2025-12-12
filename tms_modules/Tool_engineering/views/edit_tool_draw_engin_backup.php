@@ -26,7 +26,7 @@
                             <div class="small text-muted">ID: <?= htmlspecialchars($drawing['TD_ID']); ?></div>
                         </div>
                         <div>
-                            <a href="<?= base_url('Tool_engineering/tool_draw_engin'); ?>" class="btn btn-sm btn-outline-primary shadow-sm">
+                            <a href="<?= base_url('tool_engineering/tool_draw_engin'); ?>" class="btn btn-sm btn-outline-primary shadow-sm">
                                 <i class="fa fa-arrow-left"></i> Back
                             </a>
                         </div>
@@ -241,7 +241,7 @@
                 if (res && res.success) {
                     toastr.success(res.message || 'Tool Drawing berhasil diperbarui');
                     setTimeout(function(){
-                        window.location.href = '<?= base_url("Tool_engineering/tool_draw_engin"); ?>';
+                        window.location.href = '<?= base_url("tool_engineering/tool_draw_engin"); ?>';
                     }, 600);
                 } else {
                     toastr.warning(res && res.message ? res.message : 'Gagal menyimpan data');
@@ -257,7 +257,7 @@
             if (productId && productId > 0) {
                 // Reload shared tool BOM via AJAX
                 $.ajax({
-                    url: '<?= base_url("Tool_engineering/tool_draw_engin/get_tool_bom_by_product"); ?>',
+                    url: '<?= base_url("tool_engineering/tool_draw_engin/get_tool_bom_by_product"); ?>',
                     type: 'POST',
                     dataType: 'json',
                     data: { PRODUCT_ID: productId }
