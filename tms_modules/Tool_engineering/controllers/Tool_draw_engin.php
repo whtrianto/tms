@@ -554,9 +554,17 @@ class Tool_draw_engin extends MY_Controller
             return $fileIdentifier;
         }
         
-        // Use local endpoint to serve file from database
-        // Format: base_url('Tool_drawing/tool_draw_engin/serve_file')?id={identifier}&type={drawing|sketch}
-        $fileUrl = base_url('Tool_drawing/tool_draw_engin/serve_file') . '?id=' . urlencode($fileIdentifier) . '&type=' . urlencode($module);
+        // Use local endpoint to serve file from filesystem
+        // Format: base_url('Tool_engineering/tool_draw_engin/serve_file')?id={identifier}&type={drawing|sketch}
+        $fileUrl = base_url('Tool_engineering/tool_draw_engin/serve_file') . '?id=' . urlencode($fileIdentifier);
+        
+        // Add type parameter based on module
+        // 'sketch' or contains 'sketch' -> type=sketch, otherwise type=drawing
+        if (strpos(strtolower($module), 'sketch') !== false) {
+            $fileUrl .= '&type=sketch';
+        } else {
+            $fileUrl .= '&type=drawing';
+        }
         
         return $fileUrl;
     }
@@ -586,14 +594,19 @@ class Tool_draw_engin extends MY_Controller
         
         // Determine which column to query based on file type
         $column_name = 'MLR_DRAWING';
+        $folder_name = 'Drawing';
         if ($file_type === 'sketch' || strpos(strtolower($file_type), 'sketch') !== false) {
             $column_name = 'MLR_SKETCH';
+            $folder_name = 'Drawing_Sketch';
         }
         
-        // Get filename from database
+        // Get MLR_ID, MLR_REV, and filename from database
         // MLR_DRAWING and MLR_SKETCH store filename (varchar(50)), not BLOB
+        // File structure: Attachment_TMS/{Drawing|Drawing_Sketch}/{MLR_ID}/{MLR_REV}/{filename}
         $sql = "
             SELECT TOP 1
+                rev.MLR_ID,
+                rev.MLR_REV,
                 rev." . $column_name . " AS FILE_NAME
             FROM TMS_NEW.dbo.TMS_TOOL_MASTER_LIST_REV rev
             WHERE rev." . $column_name . " = ?
@@ -606,9 +619,11 @@ class Tool_draw_engin extends MY_Controller
         }
         
         $row = $q->row_array();
+        $mlr_id = isset($row['MLR_ID']) ? (int)$row['MLR_ID'] : 0;
+        $mlr_rev = isset($row['MLR_REV']) ? (int)$row['MLR_REV'] : 0;
         $file_name = isset($row['FILE_NAME']) ? trim($row['FILE_NAME']) : '';
         
-        if (empty($file_name)) {
+        if (empty($file_name) || $mlr_id <= 0) {
             show_404();
             return;
         }
@@ -616,11 +631,11 @@ class Tool_draw_engin extends MY_Controller
         // Clean filename to prevent directory traversal
         $file_name = basename($file_name);
         
-        // File location: tool_drawing/img/ (current upload directory)
-        $file_path = FCPATH . 'tool_drawing/img/' . $file_name;
+        // File location: Attachment_TMS/{Drawing|Drawing_Sketch}/{MLR_ID}/{MLR_REV}/{filename}
+        $file_path = FCPATH . 'tms_modules/Attachment_TMS/' . $folder_name . '/' . $mlr_id . '/' . $mlr_rev . '/' . $file_name;
         
         if (file_exists($file_path) && is_file($file_path)) {
-            // Serve file from filesystem
+            // Serve file from Attachment_TMS folder
             $this->_output_file($file_path);
             return;
         }
@@ -736,8 +751,8 @@ class Tool_draw_engin extends MY_Controller
         $drawing_file_id = isset($row['TD_DRAWING_FILE']) ? $row['TD_DRAWING_FILE'] : '';
         $sketch_file_id = isset($row['TD_SKETCH_FILE']) ? $row['TD_SKETCH_FILE'] : '';
         
-        $drawing_file_url = $this->build_file_url($drawing_file_id, 'ToolDrawing');
-        $sketch_file_url = $this->build_file_url($sketch_file_id, 'ToolDrawing');
+        $drawing_file_url = $this->build_file_url($drawing_file_id, 'drawing');
+        $sketch_file_url = $this->build_file_url($sketch_file_id, 'sketch');
 
         // Prepare response data
         $result = array(
@@ -821,8 +836,8 @@ class Tool_draw_engin extends MY_Controller
                 $sketch_id = isset($row['Sketch_File_Identifier']) ? $row['Sketch_File_Identifier'] : '';
                 
                 // Build URLs for testing
-                $drawing_url = $this->build_file_url($drawing_id, 'ToolDrawing');
-                $sketch_url = $this->build_file_url($sketch_id, 'ToolDrawing');
+                $drawing_url = $this->build_file_url($drawing_id, 'drawing');
+                $sketch_url = $this->build_file_url($sketch_id, 'sketch');
                 
                 $data[] = array(
                     'MLR_ID' => (int)$row['MLR_ID'],
