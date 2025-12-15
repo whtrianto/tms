@@ -586,9 +586,16 @@ class Tool_draw_engin extends MY_Controller
         }
         
         // URL decode the file identifier (handle + as space and % encoding)
+        // Note: CodeIgniter's input->get() already does urldecode, but we do it again to be sure
+        $file_id_original = $file_id;
         $file_id = urldecode($file_id);
         $file_id = str_replace('+', ' ', $file_id); // Handle + as space
         $file_id = trim($file_id);
+        
+        // Log for debugging
+        log_message('debug', '[serve_file] Original file_id: ' . $file_id_original);
+        log_message('debug', '[serve_file] Decoded file_id: ' . $file_id);
+        log_message('debug', '[serve_file] File type: ' . $file_type);
         
         // Load database connection
         $db_tms = $this->load->database('tms_NEW', true);
@@ -608,7 +615,7 @@ class Tool_draw_engin extends MY_Controller
         // Get MLR_ID, MLR_REV, and filename from database
         // MLR_DRAWING and MLR_SKETCH store filename (varchar(50)), not BLOB
         // File structure: Attachment_TMS/{Drawing|Drawing_Sketch}/{MLR_ID}/{MLR_REV}/{filename}
-        // Use exact match first, if not found try with trimmed comparison
+        // Try exact match first (case sensitive)
         $sql = "
             SELECT TOP 1
                 rev.MLR_ID,
@@ -619,7 +626,23 @@ class Tool_draw_engin extends MY_Controller
         ";
         
         $q = $db_tms->query($sql, array($file_id));
+        
+        // If not found, try case-insensitive search
         if (!$q || $q->num_rows() == 0) {
+            $sql = "
+                SELECT TOP 1
+                    rev.MLR_ID,
+                    rev.MLR_REV,
+                    rev." . $column_name . " AS FILE_NAME
+                FROM TMS_NEW.dbo.TMS_TOOL_MASTER_LIST_REV rev
+                WHERE LOWER(LTRIM(RTRIM(rev." . $column_name . "))) = LOWER(?)
+            ";
+            $q = $db_tms->query($sql, array($file_id));
+        }
+        
+        if (!$q || $q->num_rows() == 0) {
+            // Log for debugging
+            log_message('error', '[serve_file] File identifier not found in database: ' . $file_id . ' (type: ' . $file_type . ')');
             show_404();
             return;
         }
@@ -652,7 +675,18 @@ class Tool_draw_engin extends MY_Controller
         }
         
         // If file not found, log and return 404
-        log_message('error', '[serve_file] File NOT found: ' . $file_path);
+        log_message('error', '[serve_file] File NOT found at path: ' . $file_path);
+        log_message('error', '[serve_file] Searched for: MLR_ID=' . $mlr_id . ', MLR_REV=' . $mlr_rev . ', File=' . $file_name);
+        log_message('error', '[serve_file] Folder structure: Attachment_TMS/' . $folder_name . '/' . $mlr_id . '/' . $mlr_rev . '/');
+        
+        // Check if directory exists
+        $dir_path = FCPATH . 'tms_modules/Attachment_TMS/' . $folder_name . '/' . $mlr_id . '/' . $mlr_rev . '/';
+        if (!is_dir($dir_path)) {
+            log_message('error', '[serve_file] Directory does not exist: ' . $dir_path);
+        } else {
+            log_message('error', '[serve_file] Directory exists but file not found. Files in directory: ' . implode(', ', scandir($dir_path)));
+        }
+        
         show_404();
     }
     
