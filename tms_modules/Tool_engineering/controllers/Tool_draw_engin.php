@@ -640,13 +640,19 @@ class Tool_draw_engin extends MY_Controller
         // File location: Attachment_TMS/{Drawing|Drawing_Sketch}/{MLR_ID}/{MLR_REV}/{filename}
         $file_path = FCPATH . 'tms_modules/Attachment_TMS/' . $folder_name . '/' . $mlr_id . '/' . $mlr_rev . '/' . $file_name;
         
+        // Log for debugging (can be removed in production)
+        log_message('debug', '[serve_file] Looking for file: ' . $file_path);
+        log_message('debug', '[serve_file] MLR_ID: ' . $mlr_id . ', MLR_REV: ' . $mlr_rev . ', File: ' . $file_name);
+        
         if (file_exists($file_path) && is_file($file_path)) {
             // Serve file from Attachment_TMS folder
+            log_message('debug', '[serve_file] File found, serving: ' . $file_path);
             $this->_output_file($file_path);
             return;
         }
         
-        // If file not found, return 404
+        // If file not found, log and return 404
+        log_message('error', '[serve_file] File NOT found: ' . $file_path);
         show_404();
     }
     
