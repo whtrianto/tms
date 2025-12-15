@@ -434,10 +434,18 @@
                             $(containerId).html(html);
                         }
                         
+                        // Debug: Log URLs to console
+                        console.log('Drawing File URL:', d.TD_DRAWING_FILE_URL);
+                        console.log('Drawing File ID:', d.TD_DRAWING_FILE);
+                        console.log('Sketch File URL:', d.TD_SKETCH_FILE_URL);
+                        console.log('Sketch File ID:', d.TD_SKETCH_FILE);
+                        
                         // Render Drawing File from server URL
+                        // URL akan mengarah ke endpoint serve_file yang mencari file di Attachment_TMS/Drawing/{MLR_ID}/{MLR_REV}/{filename}
                         renderFileFromUrl(d.TD_DRAWING_FILE_URL, d.TD_DRAWING_FILE, '#drawingFileContainer', 'Drawing File');
                         
                         // Render Sketch File from server URL
+                        // URL akan mengarah ke endpoint serve_file yang mencari file di Attachment_TMS/Drawing_Sketch/{MLR_ID}/{MLR_REV}/{filename}
                         renderFileFromUrl(d.TD_SKETCH_FILE_URL, d.TD_SKETCH_FILE, '#sketchFileContainer', 'Sketch File');
                         
                         // Set detail fields
