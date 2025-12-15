@@ -585,6 +585,11 @@ class Tool_draw_engin extends MY_Controller
             return;
         }
         
+        // URL decode the file identifier (handle + as space and % encoding)
+        $file_id = urldecode($file_id);
+        $file_id = str_replace('+', ' ', $file_id); // Handle + as space
+        $file_id = trim($file_id);
+        
         // Load database connection
         $db_tms = $this->load->database('tms_NEW', true);
         if (!$db_tms) {
@@ -603,13 +608,14 @@ class Tool_draw_engin extends MY_Controller
         // Get MLR_ID, MLR_REV, and filename from database
         // MLR_DRAWING and MLR_SKETCH store filename (varchar(50)), not BLOB
         // File structure: Attachment_TMS/{Drawing|Drawing_Sketch}/{MLR_ID}/{MLR_REV}/{filename}
+        // Use exact match first, if not found try with trimmed comparison
         $sql = "
             SELECT TOP 1
                 rev.MLR_ID,
                 rev.MLR_REV,
                 rev." . $column_name . " AS FILE_NAME
             FROM TMS_NEW.dbo.TMS_TOOL_MASTER_LIST_REV rev
-            WHERE rev." . $column_name . " = ?
+            WHERE LTRIM(RTRIM(rev." . $column_name . ")) = ?
         ";
         
         $q = $db_tms->query($sql, array($file_id));
