@@ -666,6 +666,18 @@ class Tool_draw_engin extends MY_Controller
         
         $this->output->set_content_type('application/json', 'UTF-8');
 
+        // Load database connection
+        $db_tms = $this->load->database('tms_NEW', true);
+        if (!$db_tms) {
+            $result = array(
+                'success' => false,
+                'message' => 'Failed to connect to database',
+                'data' => array()
+            );
+            $this->output->set_output(json_encode($result, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
+            return;
+        }
+
         // Get sample data with file identifiers
         $sql = "
             SELECT TOP 20
@@ -687,7 +699,7 @@ class Tool_draw_engin extends MY_Controller
             ORDER BY rev.MLR_ID DESC
         ";
 
-        $q = $this->db_tms->query($sql);
+        $q = $db_tms->query($sql);
         $data = array();
         
         if ($q) {
