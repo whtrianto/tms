@@ -201,8 +201,8 @@ class Tool_draw_engin extends MY_Controller
                 }
 
                 // Build action buttons HTML
-                $edit_url = base_url('Tool_engineering/tool_draw_engin/edit_page/' . (int)$row['TD_ID']);
-                $history_url = base_url('Tool_engineering/tool_draw_engin/history_page/' . (int)$row['TD_ID']);
+                $edit_url = base_url('Tool_drawing/tool_draw_engin/edit_page/' . (int)$row['TD_ID']);
+                $history_url = base_url('Tool_drawing/tool_draw_engin/history_page/' . (int)$row['TD_ID']);
                 $drawing_no_escaped = htmlspecialchars(isset($row['TD_DRAWING_NO']) ? $row['TD_DRAWING_NO'] : '', ENT_QUOTES, 'UTF-8');
                 
                 $action_html = '<div class="action-buttons">' .
@@ -386,7 +386,7 @@ class Tool_draw_engin extends MY_Controller
             // Handle uploaded file (TD_DRAWING_FILE) or use old filename (TD_DRAWING_NO_OLD)
             $drawing_no = '';
             if (!empty($_FILES) && isset($_FILES['TD_DRAWING_FILE']) && !empty($_FILES['TD_DRAWING_FILE']['name'])) {
-                $uploadDir = FCPATH . 'tool_engineering/img/';
+                $uploadDir = FCPATH . 'tool_drawing/img/';
                 if (!is_dir($uploadDir)) {
                     @mkdir($uploadDir, 0755, true);
                 }
@@ -555,16 +555,16 @@ class Tool_draw_engin extends MY_Controller
         }
         
         // Use local endpoint to serve file from database
-        // Format: base_url('Tool_engineering/tool_draw_engin/serve_file')?id={identifier}&type={drawing|sketch}
-        $fileUrl = base_url('Tool_engineering/tool_draw_engin/serve_file') . '?id=' . urlencode($fileIdentifier) . '&type=' . urlencode($module);
+        // Format: base_url('Tool_drawing/tool_draw_engin/serve_file')?id={identifier}&type={drawing|sketch}
+        $fileUrl = base_url('Tool_drawing/tool_draw_engin/serve_file') . '?id=' . urlencode($fileIdentifier) . '&type=' . urlencode($module);
         
         return $fileUrl;
     }
 
     /**
-     * serve_file: Serve file from database TMS_NEW as BLOB
-     * This method retrieves file BLOB from database and outputs it with proper headers
-     * @param string $id File identifier from MLR_DRAWING or MLR_SKETCH
+     * serve_file: Serve file from filesystem based on filename stored in database
+     * This method retrieves filename from database and serves file from filesystem
+     * @param string $id File identifier/name from MLR_DRAWING or MLR_SKETCH
      * @param string $type File type (drawing or sketch)
      */
     public function serve_file()
@@ -590,155 +590,69 @@ class Tool_draw_engin extends MY_Controller
             $column_name = 'MLR_SKETCH';
         }
         
-        // Try multiple approaches to get file from database
-        // Approach 1: Check if file is stored as BLOB/VARBINARY/IMAGE in the same table
-        // First, let's check what columns exist in the table
-        $check_sql = "
-            SELECT COLUMN_NAME, DATA_TYPE 
-            FROM INFORMATION_SCHEMA.COLUMNS 
-            WHERE TABLE_SCHEMA = 'dbo' 
-            AND TABLE_NAME = 'TMS_TOOL_MASTER_LIST_REV'
-            AND (COLUMN_NAME LIKE '%DRAWING%' OR COLUMN_NAME LIKE '%SKETCH%' OR COLUMN_NAME LIKE '%FILE%' OR COLUMN_NAME LIKE '%BLOB%' OR COLUMN_NAME LIKE '%BINARY%' OR COLUMN_NAME LIKE '%IMAGE%')
-        ";
-        
-        $col_check = $db_tms->query($check_sql);
-        $has_blob_column = false;
-        $blob_column_name = null;
-        
-        if ($col_check && $col_check->num_rows() > 0) {
-            foreach ($col_check->result_array() as $col) {
-                $data_type = strtoupper($col['DATA_TYPE']);
-                if (in_array($data_type, array('IMAGE', 'VARBINARY', 'VARBINARY(MAX)', 'BINARY'))) {
-                    $has_blob_column = true;
-                    $blob_column_name = $col['COLUMN_NAME'];
-                    break;
-                }
-            }
-        }
-        
-        // Approach 2: Try to get file from a separate file storage table
-        // Check if there's a file storage table
-        $file_storage_sql = "
-            SELECT TOP 1 
-                FILE_CONTENT,
-                FILE_NAME,
-                FILE_TYPE,
-                FILE_SIZE
-            FROM TMS_NEW.dbo.TMS_FILE_STORAGE
-            WHERE FILE_ID = ? OR FILE_NAME = ?
-        ";
-        
-        $file_storage_q = @$db_tms->query($file_storage_sql, array($file_id, $file_id));
-        
-        if ($file_storage_q && $file_storage_q->num_rows() > 0) {
-            // File found in file storage table
-            $file_row = $file_storage_q->row_array();
-            $file_content = isset($file_row['FILE_CONTENT']) ? $file_row['FILE_CONTENT'] : null;
-            $file_name = isset($file_row['FILE_NAME']) ? $file_row['FILE_NAME'] : 'file';
-            $file_mime = isset($file_row['FILE_TYPE']) ? $file_row['FILE_TYPE'] : 'application/octet-stream';
-            
-            if ($file_content !== null) {
-                $this->_output_blob($file_content, $file_name, $file_mime);
-                return;
-            }
-        }
-        
-        // Approach 3: Try to get BLOB directly from TMS_TOOL_MASTER_LIST_REV
-        // First, check if MLR_DRAWING/MLR_SKETCH is actually a BLOB column
-        // If it's VARCHAR, it might contain a reference to another table
-        
-        // Get the record first to see what we have
-        $record_sql = "
+        // Get filename from database
+        // MLR_DRAWING and MLR_SKETCH store filename (varchar(50)), not BLOB
+        $sql = "
             SELECT TOP 1
-                rev.MLR_ID,
-                rev." . $column_name . " AS FILE_REFERENCE
+                rev." . $column_name . " AS FILE_NAME
             FROM TMS_NEW.dbo.TMS_TOOL_MASTER_LIST_REV rev
             WHERE rev." . $column_name . " = ?
         ";
         
-        $record_q = $db_tms->query($record_sql, array($file_id));
-        if ($record_q && $record_q->num_rows() > 0) {
-            $record = $record_q->row_array();
-            $file_reference = isset($record['FILE_REFERENCE']) ? $record['FILE_REFERENCE'] : null;
-            $mlr_id = isset($record['MLR_ID']) ? (int)$record['MLR_ID'] : 0;
-            
-            if ($file_reference) {
-                // Try to find file in various possible file storage tables
-                // Common table names for file storage
-                $possible_tables = array(
-                    'TMS_FILES',
-                    'TMS_FILE_STORAGE',
-                    'TMS_DRAWING_FILES',
-                    'TMS_SKETCH_FILES',
-                    'TMS_ATTACHMENTS',
-                    'TMS_DOCUMENTS'
-                );
-                
-                foreach ($possible_tables as $table_name) {
-                    // Try different column name combinations
-                    $possible_queries = array(
-                        // Query 1: FILE_ID matches reference
-                        "SELECT TOP 1 FILE_DATA AS FILE_CONTENT, FILE_NAME, FILE_TYPE AS FILE_MIME_TYPE 
-                         FROM TMS_NEW.dbo.{$table_name} 
-                         WHERE FILE_ID = ?",
-                        // Query 2: FILE_NAME matches reference
-                        "SELECT TOP 1 FILE_DATA AS FILE_CONTENT, FILE_NAME, FILE_TYPE AS FILE_MIME_TYPE 
-                         FROM TMS_NEW.dbo.{$table_name} 
-                         WHERE FILE_NAME = ?",
-                        // Query 3: ID matches reference
-                        "SELECT TOP 1 FILE_DATA AS FILE_CONTENT, FILE_NAME, FILE_TYPE AS FILE_MIME_TYPE 
-                         FROM TMS_NEW.dbo.{$table_name} 
-                         WHERE ID = ?",
-                        // Query 4: MLR_ID matches and column matches
-                        "SELECT TOP 1 FILE_DATA AS FILE_CONTENT, FILE_NAME, FILE_TYPE AS FILE_MIME_TYPE 
-                         FROM TMS_NEW.dbo.{$table_name} 
-                         WHERE MLR_ID = ?"
-                    );
-                    
-                    foreach ($possible_queries as $query_sql) {
-                        $params = array();
-                        if (strpos($query_sql, 'MLR_ID') !== false) {
-                            $params = array($mlr_id);
-                        } else {
-                            $params = array($file_reference);
-                        }
-                        
-                        $file_q = @$db_tms->query($query_sql, $params);
-                        if ($file_q && $file_q->num_rows() > 0) {
-                            $file_row = $file_q->row_array();
-                            $file_content = isset($file_row['FILE_CONTENT']) ? $file_row['FILE_CONTENT'] : null;
-                            $file_name = isset($file_row['FILE_NAME']) ? $file_row['FILE_NAME'] : $file_reference;
-                            $file_mime = isset($file_row['FILE_MIME_TYPE']) ? $file_row['FILE_MIME_TYPE'] : $this->_get_mime_type_from_filename($file_name);
-                            
-                            if ($file_content !== null && !empty($file_content)) {
-                                $this->_output_blob($file_content, $file_name, $file_mime);
-                                return;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        
-        // If all approaches fail, return 404
-        show_404();
-    }
-    
-    /**
-     * Output BLOB data from database with proper headers
-     * @param string|resource $blob_data Binary file data from database
-     * @param string $file_name Filename for download
-     * @param string $mime_type MIME type of the file
-     */
-    private function _output_blob($blob_data, $file_name, $mime_type = 'application/octet-stream')
-    {
-        if (empty($blob_data)) {
+        $q = $db_tms->query($sql, array($file_id));
+        if (!$q || $q->num_rows() == 0) {
             show_404();
             return;
         }
         
-        // Get file size
-        $file_size = strlen($blob_data);
+        $row = $q->row_array();
+        $file_name = isset($row['FILE_NAME']) ? trim($row['FILE_NAME']) : '';
+        
+        if (empty($file_name)) {
+            show_404();
+            return;
+        }
+        
+        // Clean filename to prevent directory traversal
+        $file_name = basename($file_name);
+        
+        // File location: tool_drawing/img/ (current upload directory)
+        $file_path = FCPATH . 'tool_drawing/img/' . $file_name;
+        
+        if (file_exists($file_path) && is_file($file_path)) {
+            // Serve file from filesystem
+            $this->_output_file($file_path);
+            return;
+        }
+        
+        // If file not found, return 404
+        show_404();
+    }
+    
+    /**
+     * Output file from filesystem with proper headers
+     * @param string $file_path Full path to file
+     */
+    private function _output_file($file_path)
+    {
+        if (!file_exists($file_path) || !is_file($file_path)) {
+            show_404();
+            return;
+        }
+        
+        // Get MIME type
+        $mime_type = $this->_get_mime_type_from_filename($file_path);
+        
+        // Try to detect MIME type from file content if available
+        if (function_exists('mime_content_type')) {
+            $detected_mime = @mime_content_type($file_path);
+            if ($detected_mime) {
+                $mime_type = $detected_mime;
+            }
+        }
+        
+        $file_size = filesize($file_path);
+        $file_name = basename($file_path);
         
         // Clean output buffer
         if (ob_get_level()) {
@@ -748,13 +662,13 @@ class Tool_draw_engin extends MY_Controller
         // Set headers
         header('Content-Type: ' . $mime_type);
         header('Content-Length: ' . $file_size);
-        header('Content-Disposition: inline; filename="' . basename($file_name) . '"');
+        header('Content-Disposition: inline; filename="' . $file_name . '"');
         header('Cache-Control: private, max-age=3600');
         header('Pragma: cache');
         header('Expires: ' . gmdate('D, d M Y H:i:s', time() + 3600) . ' GMT');
         
-        // Output binary data
-        echo $blob_data;
+        // Output file
+        readfile($file_path);
         exit;
     }
     
