@@ -100,15 +100,33 @@ JavaScript sudah diperbarui untuk:
 2. Menampilkan gambar sebagai thumbnail
 3. Menampilkan tombol untuk PDF dan file lainnya
 
+## Hasil Analisis Query
+
+Berdasarkan hasil query:
+- **Query 1-4**: ✅ Berhasil - Ada data file identifier di database
+- **Query 5**: ❌ Kosong - Tidak ada tabel dengan kolom BLOB/IMAGE (file tidak disimpan di database)
+- **Query 6**: ❌ Kosong - Tidak ada stored procedure/function khusus untuk file
+- **Query 7**: ❌ Kosong - Tidak ada view khusus untuk file
+
+**Kesimpulan**: File **pasti disimpan di filesystem server**, bukan di database.
+
 ## Langkah Selanjutnya
 
-1. **Jalankan script SQL** di file `check_file_data.sql` untuk melihat data aktual
-2. **Verifikasi format identifier** yang tersimpan di database:
-   - Apakah sudah dalam format encoded?
-   - Apakah perlu di-encode lagi?
-   - Atau sudah dalam format path/filename?
-3. **Test URL** dengan data aktual dari database
-4. **Sesuaikan encoding** jika diperlukan
+1. **Lihat hasil Query 1** untuk melihat format identifier yang sebenarnya:
+   - Apakah identifier sudah dalam format encoded (mengandung `%`)?
+   - Apakah identifier adalah filename biasa?
+   - Apakah identifier adalah path?
+
+2. **Lihat hasil Query 8 dan 9** (query baru yang ditambahkan):
+   - Query 8: Analisa format identifier (Full URL, Filename, atau Encoded)
+   - Query 9: Cek apakah identifier sudah URL-encoded
+
+3. **Test URL** menggunakan tombol "Debug File Data" di aplikasi:
+   - Klik tombol "Debug File Data" di halaman Tool Drawing
+   - Lihat sample data dan URL yang dibangun
+   - Klik "Test URL" untuk menguji apakah file dapat diakses
+
+4. **Sesuaikan encoding** di method `build_file_url()` jika diperlukan berdasarkan format identifier yang ditemukan
 
 ## Catatan
 

@@ -115,3 +115,51 @@ WHERE (
 ORDER BY v.name;
 GO
 
+-- 8. Analisa detail format file identifier (untuk memahami apakah perlu encoding)
+SELECT TOP 10
+    rev.MLR_ID,
+    ml.ML_TOOL_DRAW_NO AS Drawing_No,
+    rev.MLR_DRAWING AS Drawing_Identifier,
+    rev.MLR_SKETCH AS Sketch_Identifier,
+    -- Cek apakah identifier sudah mengandung karakter khusus yang biasanya di-encode
+    CASE 
+        WHEN rev.MLR_DRAWING LIKE '%+%' OR rev.MLR_DRAWING LIKE '%/%' OR rev.MLR_DRAWING LIKE '%=%' THEN 'Contains special chars (may need encoding)'
+        WHEN rev.MLR_DRAWING LIKE 'http%' THEN 'Full URL'
+        WHEN rev.MLR_DRAWING LIKE '%.%' THEN 'Filename with extension'
+        ELSE 'Plain identifier'
+    END AS Drawing_Format,
+    CASE 
+        WHEN rev.MLR_SKETCH LIKE '%+%' OR rev.MLR_SKETCH LIKE '%/%' OR rev.MLR_SKETCH LIKE '%=%' THEN 'Contains special chars (may need encoding)'
+        WHEN rev.MLR_SKETCH LIKE 'http%' THEN 'Full URL'
+        WHEN rev.MLR_SKETCH LIKE '%.%' THEN 'Filename with extension'
+        ELSE 'Plain identifier'
+    END AS Sketch_Format
+FROM TMS_NEW.dbo.TMS_TOOL_MASTER_LIST_REV rev
+INNER JOIN TMS_NEW.dbo.TMS_TOOL_MASTER_LIST ml
+    ON ml.ML_ID = rev.MLR_ML_ID
+WHERE ml.ML_TYPE = 1
+    AND rev.MLR_DRAWING IS NOT NULL 
+    AND rev.MLR_DRAWING <> ''
+ORDER BY rev.MLR_ID DESC;
+GO
+
+-- 9. Cek apakah identifier sudah dalam format URL encoded (mengandung %)
+SELECT TOP 10
+    rev.MLR_ID,
+    ml.ML_TOOL_DRAW_NO AS Drawing_No,
+    rev.MLR_DRAWING AS Drawing_Identifier,
+    -- Cek apakah sudah mengandung % (tanda URL encoding)
+    CASE 
+        WHEN rev.MLR_DRAWING LIKE '%\%%' ESCAPE '\' THEN 'Already URL encoded'
+        ELSE 'Not encoded (needs encoding)'
+    END AS Encoding_Status,
+    -- Cek panjang identifier
+    LEN(rev.MLR_DRAWING) AS Identifier_Length
+FROM TMS_NEW.dbo.TMS_TOOL_MASTER_LIST_REV rev
+INNER JOIN TMS_NEW.dbo.TMS_TOOL_MASTER_LIST ml
+    ON ml.ML_ID = rev.MLR_ML_ID
+WHERE ml.ML_TYPE = 1
+    AND rev.MLR_DRAWING IS NOT NULL 
+    AND rev.MLR_DRAWING <> ''
+ORDER BY rev.MLR_ID DESC;
+GO

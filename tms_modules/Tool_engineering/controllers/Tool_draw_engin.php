@@ -559,8 +559,26 @@ class Tool_draw_engin extends MY_Controller
         }
         
         // Build URL with parameters
-        // Parameter 'f' should be URL-encoded
-        $encodedFileId = urlencode($fileIdentifier);
+        // Note: urlencode() will handle encoding correctly
+        // If identifier is already encoded, urlencode will encode the % signs too
+        // But based on the example URL, it seems the identifier might already be in encoded format
+        // So we check: if it contains % and looks like it's already encoded, use as-is
+        // Otherwise, encode it
+        
+        $encodedFileId = $fileIdentifier;
+        
+        // Check if identifier looks like it's already URL-encoded
+        // (contains % and follows URL-encoded pattern)
+        if (strpos($fileIdentifier, '%') !== false && preg_match('/^[A-Za-z0-9%+\/=_-]+$/', $fileIdentifier)) {
+            // Looks like already encoded, use as-is
+            // But we might need to double-check - let's see the actual data first
+            $encodedFileId = $fileIdentifier;
+        } else {
+            // Not encoded or doesn't look encoded, encode it
+            $encodedFileId = urlencode($fileIdentifier);
+        }
+        
+        // Build URL with parameters
         $fileUrl = $serverBaseUrl . '?m=' . urlencode($module) . '&f=' . $encodedFileId;
         
         return $fileUrl;
