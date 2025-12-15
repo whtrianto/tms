@@ -92,6 +92,9 @@
                         <a href="<?= base_url('Tool_engineering/tool_draw_engin/add_page'); ?>" class="btn btn-sm btn-primary shadow-sm">
                             <i class="fa fa-plus"></i> Add New
                         </a>
+                        <button type="button" id="btnDebugFile" class="btn btn-sm btn-info shadow-sm ml-2" title="Debug: Lihat data file identifier dari database">
+                            <i class="fas fa-search fa-sm"></i> Debug File Data
+                        </button>
                     </div>
                     <div class="card-body">
                         <div class="table-responsive">
@@ -381,45 +384,51 @@
                     if (res && res.success && res.data) {
                         var d = res.data;
                         
-                        // Base path for files
-                        var basePath = '<?= base_url("tool_engineering/img/"); ?>';
-                        
-                        // Function to check if file is image
-                        function isImageFile(filename) {
-                            if (!filename) return false;
-                            var ext = filename.split('.').pop().toLowerCase();
-                            return ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].indexOf(ext) !== -1;
+                        // Function to check if file URL is for image (based on URL pattern or extension)
+                        function isImageUrl(url) {
+                            if (!url) return false;
+                            // Check if URL contains image extensions
+                            var imagePattern = /\.(jpg|jpeg|png|gif|bmp|webp)(\?|$)/i;
+                            return imagePattern.test(url);
                         }
                         
-                        // Function to check if file is PDF
-                        function isPdfFile(filename) {
-                            if (!filename) return false;
-                            var ext = filename.split('.').pop().toLowerCase();
-                            return ext === 'pdf';
+                        // Function to check if file URL is for PDF
+                        function isPdfUrl(url) {
+                            if (!url) return false;
+                            var pdfPattern = /\.pdf(\?|$)/i;
+                            return pdfPattern.test(url);
                         }
                         
-                        // Function to render file display
-                        function renderFile(filename, containerId, label) {
+                        // Function to render file display from server URL
+                        function renderFileFromUrl(fileUrl, fileId, containerId, label) {
                             var html = '';
-                            if (filename && filename.trim() !== '') {
-                                var fileUrl = basePath + filename;
-                                if (isImageFile(filename)) {
+                            if (fileUrl && fileUrl.trim() !== '') {
+                                // Use file identifier for display if available, otherwise use URL
+                                var displayName = fileId || 'File';
+                                
+                                if (isImageUrl(fileUrl)) {
                                     html = '<div style="margin-bottom:8px;"><strong>' + label + ':</strong></div>' +
                                            '<div style="text-align:center; border:1px solid #ddd; padding:8px; background:#f9f9f9;">' +
                                            '<a href="' + fileUrl + '" target="_blank" title="Click to view full size">' +
-                                           '<img src="' + fileUrl + '" style="max-width:100%; height:auto; cursor:pointer;" ' +
-                                           'onerror="this.parentElement.innerHTML=\'<div style=\\\'padding:20px; color:#999;\\\'>File not found: ' + filename + '</div>\';" />' +
+                                           '<img src="' + fileUrl + '" style="max-width:100%; height:auto; cursor:pointer; border:1px solid #ccc;" ' +
+                                           'onerror="this.style.display=\'none\'; this.nextElementSibling.style.display=\'block\';" />' +
+                                           '<div style="display:none; padding:20px; color:#999; border:1px solid #ddd; background:#f5f5f5;">' +
+                                           'Image not available. <a href="' + fileUrl + '" target="_blank">Click to open</a></div>' +
                                            '</a></div>';
-                                } else if (isPdfFile(filename)) {
+                                } else if (isPdfUrl(fileUrl)) {
                                     html = '<div style="margin-bottom:8px;"><strong>' + label + ':</strong></div>' +
                                            '<div style="text-align:center; border:1px solid #ddd; padding:8px; background:#f9f9f9;">' +
                                            '<a href="' + fileUrl + '" target="_blank" class="btn btn-primary btn-sm" style="display:inline-block;">' +
-                                           '<i class="fa fa-file-pdf"></i> View PDF: ' + filename + '</a></div>';
+                                           '<i class="fa fa-file-pdf"></i> View PDF</a>' +
+                                           '<div class="small text-muted mt-2">' + displayName + '</div>' +
+                                           '</div>';
                                 } else {
                                     html = '<div style="margin-bottom:8px;"><strong>' + label + ':</strong></div>' +
                                            '<div style="text-align:center; border:1px solid #ddd; padding:8px; background:#f9f9f9;">' +
                                            '<a href="' + fileUrl + '" target="_blank" class="btn btn-secondary btn-sm" style="display:inline-block;">' +
-                                           '<i class="fa fa-file"></i> Download: ' + filename + '</a></div>';
+                                           '<i class="fa fa-file"></i> Download File</a>' +
+                                           '<div class="small text-muted mt-2">' + displayName + '</div>' +
+                                           '</div>';
                                 }
                             } else {
                                 html = '<div style="margin-bottom:8px;"><strong>' + label + ':</strong></div>' +
@@ -428,11 +437,11 @@
                             $(containerId).html(html);
                         }
                         
-                        // Render Drawing File
-                        renderFile(d.TD_DRAWING_FILE, '#drawingFileContainer', 'Drawing File');
+                        // Render Drawing File from server URL
+                        renderFileFromUrl(d.TD_DRAWING_FILE_URL, d.TD_DRAWING_FILE, '#drawingFileContainer', 'Drawing File');
                         
-                        // Render Sketch File
-                        renderFile(d.TD_SKETCH_FILE, '#sketchFileContainer', 'Sketch File');
+                        // Render Sketch File from server URL
+                        renderFileFromUrl(d.TD_SKETCH_FILE_URL, d.TD_SKETCH_FILE, '#sketchFileContainer', 'Sketch File');
                         
                         // Set detail fields
                         $('#detailProduct').text(d.TD_PRODUCT_NAME || '-');
@@ -470,6 +479,80 @@
         // Initial attach
         attachDeleteHandler();
         attachDrawingNoHandler();
+        
+        // Debug file data button
+        $('#btnDebugFile').on('click', function() {
+            $.ajax({
+                url: '<?= base_url("Tool_engineering/tool_draw_engin/debug_file_data"); ?>',
+                type: 'GET',
+                dataType: 'json'
+            }).done(function(res) {
+                if (res && res.success) {
+                    var html = '<div class="table-responsive" style="max-height:600px; overflow-y:auto;">';
+                    html += '<table class="table table-bordered table-sm table-hover">';
+                    html += '<thead class="thead-light"><tr>';
+                    html += '<th>MLR_ID</th><th>Drawing No</th><th>Rev</th>';
+                    html += '<th>Drawing Identifier</th><th>Drawing URL</th>';
+                    html += '<th>Sketch Identifier</th><th>Sketch URL</th>';
+                    html += '<th>Type</th>';
+                    html += '</tr></thead><tbody>';
+                    
+                    if (res.data && res.data.length > 0) {
+                        res.data.forEach(function(item) {
+                            html += '<tr>';
+                            html += '<td>' + item.MLR_ID + '</td>';
+                            html += '<td>' + (item.Drawing_No || '-') + '</td>';
+                            html += '<td>' + item.Revision + '</td>';
+                            html += '<td><small>' + (item.Drawing_Identifier || '-') + '</small></td>';
+                            html += '<td>';
+                            if (item.Drawing_URL) {
+                                html += '<a href="' + item.Drawing_URL + '" target="_blank" class="btn btn-xs btn-primary">Test URL</a>';
+                            } else {
+                                html += '-';
+                            }
+                            html += '</td>';
+                            html += '<td><small>' + (item.Sketch_Identifier || '-') + '</small></td>';
+                            html += '<td>';
+                            if (item.Sketch_URL) {
+                                html += '<a href="' + item.Sketch_URL + '" target="_blank" class="btn btn-xs btn-primary">Test URL</a>';
+                            } else {
+                                html += '-';
+                            }
+                            html += '</td>';
+                            html += '<td><small>D: ' + item.Drawing_Type + '<br>S: ' + item.Sketch_Type + '</small></td>';
+                            html += '</tr>';
+                        });
+                    } else {
+                        html += '<tr><td colspan="8" class="text-center">No data found</td></tr>';
+                    }
+                    
+                    html += '</tbody></table>';
+                    html += '<div class="alert alert-info mt-2">';
+                    html += '<strong>Total:</strong> ' + res.count + ' records<br>';
+                    html += '<small>Gunakan data ini untuk memahami format file identifier yang tersimpan di database.</small>';
+                    html += '</div>';
+                    html += '</div>';
+                    
+                    // Show in modal
+                    $('#modalDetailDrawing .modal-title').text('Debug: File Data dari Database');
+                    $('#drawingDetailContent').html(html);
+                    $('#drawingFileContainer, #sketchFileContainer').html('');
+                    $('#modalDetailDrawing').modal('show');
+                } else {
+                    if (typeof toastr !== 'undefined') {
+                        toastr.error(res && res.message ? res.message : 'Gagal mengambil data');
+                    } else {
+                        alert(res && res.message ? res.message : 'Gagal mengambil data');
+                    }
+                }
+            }).fail(function() {
+                if (typeof toastr !== 'undefined') {
+                    toastr.error('Terjadi kesalahan saat mengambil data');
+                } else {
+                    alert('Terjadi kesalahan saat mengambil data');
+                }
+            });
+        });
     });
 })(jQuery);
 </script>

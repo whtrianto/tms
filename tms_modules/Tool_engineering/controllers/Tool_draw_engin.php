@@ -538,6 +538,35 @@ class Tool_draw_engin extends MY_Controller
     }
 
     /**
+     * Helper function to build file URL from server
+     * @param string $fileIdentifier File identifier from database (MLR_DRAWING or MLR_SKETCH)
+     * @param string $module Module name (default: 'ToolDrawing')
+     * @return string Full URL to access the file
+     */
+    private function build_file_url($fileIdentifier, $module = 'ToolDrawing')
+    {
+        if (empty($fileIdentifier) || trim($fileIdentifier) === '') {
+            return '';
+        }
+        
+        // Server file URL configuration
+        // TODO: Move this to config file if needed
+        $serverBaseUrl = 'http://10.82.101.79/FexTMS/Shared/GetFile.aspx';
+        
+        // If fileIdentifier already contains full URL, return as is
+        if (strpos($fileIdentifier, 'http://') === 0 || strpos($fileIdentifier, 'https://') === 0) {
+            return $fileIdentifier;
+        }
+        
+        // Build URL with parameters
+        // Parameter 'f' should be URL-encoded
+        $encodedFileId = urlencode($fileIdentifier);
+        $fileUrl = $serverBaseUrl . '?m=' . urlencode($module) . '&f=' . $encodedFileId;
+        
+        return $fileUrl;
+    }
+
+    /**
      * get_detail: Get drawing detail by ID (AJAX) for modal popup
      */
     public function get_detail()
@@ -573,6 +602,13 @@ class Tool_draw_engin extends MY_Controller
             }
         }
 
+        // Build file URLs from server
+        $drawing_file_id = isset($row['TD_DRAWING_FILE']) ? $row['TD_DRAWING_FILE'] : '';
+        $sketch_file_id = isset($row['TD_SKETCH_FILE']) ? $row['TD_SKETCH_FILE'] : '';
+        
+        $drawing_file_url = $this->build_file_url($drawing_file_id, 'ToolDrawing');
+        $sketch_file_url = $this->build_file_url($sketch_file_id, 'ToolDrawing');
+
         // Prepare response data
         $result = array(
             'success' => true,
@@ -590,12 +626,115 @@ class Tool_draw_engin extends MY_Controller
                 'TD_MATERIAL_NAME' => isset($row['TD_MATERIAL_NAME']) ? $row['TD_MATERIAL_NAME'] : '',
                 'TD_MAKER_NAME' => isset($row['TD_MAKER_NAME']) ? $row['TD_MAKER_NAME'] : '',
                 'TD_MAC_NAME' => isset($row['TD_MAC_NAME']) ? $row['TD_MAC_NAME'] : '',
-                'TD_DRAWING_FILE' => isset($row['TD_DRAWING_FILE']) ? $row['TD_DRAWING_FILE'] : '',
-                'TD_SKETCH_FILE' => isset($row['TD_SKETCH_FILE']) ? $row['TD_SKETCH_FILE'] : ''
+                'TD_DRAWING_FILE' => $drawing_file_id,
+                'TD_DRAWING_FILE_URL' => $drawing_file_url,
+                'TD_SKETCH_FILE' => $sketch_file_id,
+                'TD_SKETCH_FILE_URL' => $sketch_file_url
             )
         );
 
         $this->output->set_output(json_encode($result, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
+    }
+
+    /**
+     * debug_file_data: Debug endpoint to see file identifiers from database
+     * This helps understand the format of MLR_DRAWING and MLR_SKETCH data
+     */
+    public function debug_file_data()
+    {
+        if (ob_get_level()) {
+            ob_clean();
+        }
+        
+        $this->output->set_content_type('application/json', 'UTF-8');
+
+        // Get sample data with file identifiers
+        $sql = "
+            SELECT TOP 20
+                rev.MLR_ID,
+                ml.ML_TOOL_DRAW_NO AS Drawing_No,
+                rev.MLR_REV AS Revision,
+                rev.MLR_DRAWING AS Drawing_File_Identifier,
+                rev.MLR_SKETCH AS Sketch_File_Identifier,
+                LEN(rev.MLR_DRAWING) AS Drawing_Length,
+                LEN(rev.MLR_SKETCH) AS Sketch_Length
+            FROM TMS_NEW.dbo.TMS_TOOL_MASTER_LIST_REV rev
+            INNER JOIN TMS_NEW.dbo.TMS_TOOL_MASTER_LIST ml
+                ON ml.ML_ID = rev.MLR_ML_ID
+            WHERE ml.ML_TYPE = 1
+                AND (
+                    (rev.MLR_DRAWING IS NOT NULL AND rev.MLR_DRAWING <> '')
+                    OR (rev.MLR_SKETCH IS NOT NULL AND rev.MLR_SKETCH <> '')
+                )
+            ORDER BY rev.MLR_ID DESC
+        ";
+
+        $q = $this->db_tms->query($sql);
+        $data = array();
+        
+        if ($q) {
+            $rows = $q->result_array();
+            foreach ($rows as $row) {
+                $drawing_id = isset($row['Drawing_File_Identifier']) ? $row['Drawing_File_Identifier'] : '';
+                $sketch_id = isset($row['Sketch_File_Identifier']) ? $row['Sketch_File_Identifier'] : '';
+                
+                // Build URLs for testing
+                $drawing_url = $this->build_file_url($drawing_id, 'ToolDrawing');
+                $sketch_url = $this->build_file_url($sketch_id, 'ToolDrawing');
+                
+                $data[] = array(
+                    'MLR_ID' => (int)$row['MLR_ID'],
+                    'Drawing_No' => isset($row['Drawing_No']) ? $row['Drawing_No'] : '',
+                    'Revision' => isset($row['Revision']) ? (int)$row['Revision'] : 0,
+                    'Drawing_Identifier' => $drawing_id,
+                    'Drawing_Length' => isset($row['Drawing_Length']) ? (int)$row['Drawing_Length'] : 0,
+                    'Drawing_URL' => $drawing_url,
+                    'Sketch_Identifier' => $sketch_id,
+                    'Sketch_Length' => isset($row['Sketch_Length']) ? (int)$row['Sketch_Length'] : 0,
+                    'Sketch_URL' => $sketch_url,
+                    'Drawing_Type' => $this->detect_file_identifier_type($drawing_id),
+                    'Sketch_Type' => $this->detect_file_identifier_type($sketch_id)
+                );
+            }
+        }
+
+        $result = array(
+            'success' => true,
+            'count' => count($data),
+            'data' => $data,
+            'note' => 'Ini adalah sample data file identifier dari database. Gunakan untuk memahami format data yang tersimpan.'
+        );
+
+        $this->output->set_output(json_encode($result, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
+        return;
+    }
+
+    /**
+     * Helper to detect file identifier type
+     */
+    private function detect_file_identifier_type($identifier)
+    {
+        if (empty($identifier)) {
+            return 'Empty';
+        }
+        
+        if (strpos($identifier, 'http://') === 0 || strpos($identifier, 'https://') === 0) {
+            return 'Full URL';
+        }
+        
+        if (preg_match('/\.(jpg|jpeg|png|gif|bmp|pdf|doc|docx)$/i', $identifier)) {
+            return 'Filename with Extension';
+        }
+        
+        if (strpos($identifier, '/') !== false || strpos($identifier, '\\') !== false) {
+            return 'Path';
+        }
+        
+        if (preg_match('/[+\/=]/', $identifier)) {
+            return 'Encoded/Base64-like';
+        }
+        
+        return 'Plain Identifier';
     }
 }
 
