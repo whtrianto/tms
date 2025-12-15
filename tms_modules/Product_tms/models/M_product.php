@@ -3,7 +3,7 @@ defined('BASEPATH') or exit('No direct script access allowed');
 
 class M_product extends CI_Model
 {
-    private $table = 'TMS_DB.dbo.TMS_M_PRODUCT';
+    private $table = 'TMS_NEW.dbo.TMS_M_PRODUCT';
 
     /** @var CI_DB_sqlsrv_driver */
     public $tms_db;
@@ -39,10 +39,10 @@ class M_product extends CI_Model
                 U.UOM_NAME,
                 C.CUSTOMER_NAME
             FROM {$this->table} P
-            LEFT JOIN TMS_DB.dbo.TMS_M_UOM U
+            LEFT JOIN TMS_NEW.dbo.TMS_M_UOM U
                    ON U.UOM_ID = P.UOM_ID
                   AND U.IS_DELETED = 0
-            LEFT JOIN TMS_DB.dbo.TMS_M_CUSTOMER C
+            LEFT JOIN TMS_NEW.dbo.TMS_M_CUSTOMER C
                    ON C.CUSTOMER_ID = P.CUSTOMER_ID
                   AND C.IS_DELETED = 0
             WHERE P.IS_DELETED = 0
@@ -76,7 +76,7 @@ class M_product extends CI_Model
     public function get_groups()
     {
         $sql = "SELECT PRODUCT_ID, PRODUCT_NAME, PRODUCT_DESC, PRODUCT_IS_GROUP
-            FROM TMS_DB.dbo.TMS_M_PRODUCT
+            FROM TMS_NEW.dbo.TMS_M_PRODUCT
             WHERE IS_DELETED = 0 AND PRODUCT_IS_GROUP = 1
             ORDER BY PRODUCT_NAME";
         return $this->tms_db->query($sql)->result_array();
@@ -95,8 +95,8 @@ class M_product extends CI_Model
                 p.PRODUCT_DESC, 
                 p.PRODUCT_IS_GROUP,
                 pg.PRODUCT_GROUP_PARENT_ID
-            FROM TMS_DB.dbo.TMS_M_PRODUCT_GROUP pg
-            JOIN TMS_DB.dbo.TMS_M_PRODUCT p 
+            FROM TMS_NEW.dbo.TMS_M_PRODUCT_GROUP pg
+            JOIN TMS_NEW.dbo.TMS_M_PRODUCT p 
                 ON pg.PRODUCT_GROUP_CHILD_ID = p.PRODUCT_ID
             WHERE p.IS_DELETED = 0
             ORDER BY p.PRODUCT_NAME
@@ -111,8 +111,8 @@ class M_product extends CI_Model
             p.PRODUCT_DESC, 
             p.PRODUCT_IS_GROUP,
             pg.PRODUCT_GROUP_PARENT_ID
-        FROM TMS_DB.dbo.TMS_M_PRODUCT_GROUP pg
-        JOIN TMS_DB.dbo.TMS_M_PRODUCT p 
+        FROM TMS_NEW.dbo.TMS_M_PRODUCT_GROUP pg
+        JOIN TMS_NEW.dbo.TMS_M_PRODUCT p 
             ON pg.PRODUCT_GROUP_CHILD_ID = p.PRODUCT_ID
         WHERE pg.PRODUCT_GROUP_PARENT_ID = ?
           AND p.IS_DELETED = 0

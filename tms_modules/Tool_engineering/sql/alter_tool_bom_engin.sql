@@ -1,7 +1,7 @@
 -- Script untuk menambahkan kolom baru ke tabel TMS_TC_TOOL_BOM_ENGIN
 -- Jalankan script ini jika kolom-kolom berikut belum ada di database
 
-USE TMS_DB;
+USE TMS_NEW;
 GO
 
 -- Cek dan tambah kolom PRODUCT_ID (FK ke TMS_M_PRODUCT)

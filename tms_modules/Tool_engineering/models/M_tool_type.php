@@ -3,7 +3,7 @@ defined('BASEPATH') or exit('No direct script access allowed');
 
 class M_tool_type extends CI_Model
 {
-    private $table = 'TMS_DB.dbo.TMS_M_TOOL_TYPE';
+    private $table = 'TMS_NEW.dbo.TMS_M_TOOL_TYPE';
     public $tms_db;
     public $messages = '';
 

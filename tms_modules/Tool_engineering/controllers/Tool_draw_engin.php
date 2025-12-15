@@ -211,11 +211,21 @@ class Tool_draw_engin extends MY_Controller
                     '<button class="btn btn-danger btn-sm btn-delete" data-id="' . (int)$row['TD_ID'] . '" data-name="' . $drawing_no_escaped . '">Del</button>' .
                     '</div>';
 
+                // Make Drawing No clickable
+                $drawing_no = isset($row['TD_DRAWING_NO']) ? $row['TD_DRAWING_NO'] : '';
+                $drawing_no_escaped = htmlspecialchars($drawing_no, ENT_QUOTES, 'UTF-8');
+                $drawing_no_html = '';
+                if ($drawing_no !== '') {
+                    $drawing_no_html = '<a href="javascript:void(0);" class="drawing-no-link" data-id="' . (int)$row['TD_ID'] . '" style="color: #007bff; text-decoration: underline; cursor: pointer;" title="Click to view details">' . $drawing_no_escaped . '</a>';
+                } else {
+                    $drawing_no_html = $drawing_no_escaped;
+                }
+
                 $formatted_data[] = array(
                     (int)$row['TD_ID'],
                     htmlspecialchars(isset($row['TD_PRODUCT_NAME']) ? $row['TD_PRODUCT_NAME'] : '', ENT_QUOTES, 'UTF-8'),
                     htmlspecialchars(isset($row['TD_OPERATION_NAME']) ? $row['TD_OPERATION_NAME'] : '', ENT_QUOTES, 'UTF-8'),
-                    htmlspecialchars(isset($row['TD_DRAWING_NO']) ? $row['TD_DRAWING_NO'] : '', ENT_QUOTES, 'UTF-8'),
+                    $drawing_no_html,
                     htmlspecialchars(isset($row['TD_TOOL_NAME']) ? $row['TD_TOOL_NAME'] : '', ENT_QUOTES, 'UTF-8'),
                     htmlspecialchars(isset($row['TD_REVISION']) ? (string)$row['TD_REVISION'] : '0', ENT_QUOTES, 'UTF-8'),
                     $status_badge,
@@ -525,6 +535,65 @@ class Tool_draw_engin extends MY_Controller
             'product_name' => $product_name
         );
         $this->output->set_output(json_encode($result));
+    }
+
+    /**
+     * get_detail: Get drawing detail by ID (AJAX) for modal popup
+     */
+    public function get_detail()
+    {
+        if (ob_get_level()) {
+            ob_clean();
+        }
+        
+        $this->output->set_content_type('application/json', 'UTF-8');
+
+        $id = (int)$this->input->post('TD_ID', TRUE);
+        if ($id <= 0) {
+            $result = array('success' => false, 'message' => 'TD_ID tidak ditemukan.');
+            $this->output->set_output(json_encode($result));
+            return;
+        }
+
+        $row = $this->tool_draw_engin->get_by_id($id);
+        if (!$row) {
+            $result = array('success' => false, 'message' => 'Data tidak ditemukan.');
+            $this->output->set_output(json_encode($result));
+            return;
+        }
+
+        // Format status
+        $status_text = 'Inactive';
+        if (isset($row['TD_STATUS'])) {
+            $st = (int)$row['TD_STATUS'];
+            if ($st === 2 || strtoupper((string)$row['TD_STATUS']) === 'ACTIVE') {
+                $status_text = 'Active';
+            } elseif ($st === 1) {
+                $status_text = 'Pending';
+            }
+        }
+
+        // Prepare response data
+        $result = array(
+            'success' => true,
+            'data' => array(
+                'TD_ID' => isset($row['TD_ID']) ? (int)$row['TD_ID'] : 0,
+                'TD_DRAWING_NO' => isset($row['TD_DRAWING_NO']) ? $row['TD_DRAWING_NO'] : '',
+                'TD_PRODUCT_NAME' => isset($row['TD_PRODUCT_NAME']) ? $row['TD_PRODUCT_NAME'] : '',
+                'TD_OPERATION_NAME' => isset($row['TD_OPERATION_NAME']) ? $row['TD_OPERATION_NAME'] : '',
+                'TD_TOOL_NAME' => isset($row['TD_TOOL_NAME']) ? $row['TD_TOOL_NAME'] : '',
+                'TD_REVISION' => isset($row['TD_REVISION']) ? (string)$row['TD_REVISION'] : '0',
+                'TD_STATUS' => $status_text,
+                'TD_EFFECTIVE_DATE' => isset($row['TD_EFFECTIVE_DATE']) ? $row['TD_EFFECTIVE_DATE'] : '',
+                'TD_MODIFIED_DATE' => isset($row['TD_MODIFIED_DATE']) ? $row['TD_MODIFIED_DATE'] : '',
+                'TD_MODIFIED_BY' => isset($row['TD_MODIFIED_BY']) ? $row['TD_MODIFIED_BY'] : '',
+                'TD_MATERIAL_NAME' => isset($row['TD_MATERIAL_NAME']) ? $row['TD_MATERIAL_NAME'] : '',
+                'TD_MAKER_NAME' => isset($row['TD_MAKER_NAME']) ? $row['TD_MAKER_NAME'] : '',
+                'TD_MAC_NAME' => isset($row['TD_MAC_NAME']) ? $row['TD_MAC_NAME'] : ''
+            )
+        );
+
+        $this->output->set_output(json_encode($result, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
     }
 }
 

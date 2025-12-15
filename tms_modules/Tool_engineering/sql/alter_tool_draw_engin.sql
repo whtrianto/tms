@@ -1,7 +1,7 @@
 -- Script untuk menambahkan kolom yang dibutuhkan halaman Additional Information
--- Jalankan jika kolom-kolom berikut belum ada di TMS_DB.dbo.TMS_TC_TOOL_DRAWING_ENGIN
+-- Jalankan jika kolom-kolom berikut belum ada di TMS_NEW.dbo.TMS_TC_TOOL_DRAWING_ENGIN
 
-USE TMS_DB;
+USE TMS_NEW;
 GO
 
 -- Tambah kolom MATERIAL_ID (FK ke TMS_M_MATERIAL)

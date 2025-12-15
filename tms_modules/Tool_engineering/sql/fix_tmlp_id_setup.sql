@@ -3,7 +3,7 @@
 -- Setelah diubah dari uniqueidentifier ke bigint
 -- =============================================
 
-USE TMS_DB;
+USE TMS_NEW;
 GO
 
 -- 1. Cek struktur tabel saat ini

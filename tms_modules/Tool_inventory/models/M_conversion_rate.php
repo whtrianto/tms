@@ -3,7 +3,7 @@ defined('BASEPATH') or exit('No direct script access allowed');
 
 class M_conversion_rate extends CI_Model
 {
-    private $table = 'TMS_DB.dbo.TMS_M_CONVERSION_RATE';
+    private $table = 'TMS_NEW.dbo.TMS_M_CONVERSION_RATE';
     public $tms_db;
     public $messages = '';
 

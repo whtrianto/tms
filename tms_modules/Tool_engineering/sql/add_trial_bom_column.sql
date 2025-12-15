@@ -1,7 +1,7 @@
 -- Script untuk menambahkan kolom IS_TRIAL_BOM ke tabel TMS_TC_TOOL_BOM_ENGIN
 -- Jalankan script ini untuk menambahkan kolom Trial BOM
 
-USE TMS_DB;
+USE TMS_NEW;
 GO
 
 -- Cek dan tambah kolom IS_TRIAL_BOM

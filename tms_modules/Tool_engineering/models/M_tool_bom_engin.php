@@ -4,7 +4,7 @@ defined('BASEPATH') or exit('No direct script access allowed');
 if (!class_exists('M_tool_bom_engin')) {
     class M_tool_bom_engin extends CI_Model
     {
-        private $table = 'TMS_DB.dbo.TMS_TC_TOOL_BOM_ENGIN';
+        private $table = 'TMS_NEW.dbo.TMS_TC_TOOL_BOM_ENGIN';
         public $tms_db;
         public $messages = '';
         public $uid = ''; // will receive username from controller
@@ -54,7 +54,7 @@ if (!class_exists('M_tool_bom_engin')) {
             $col = trim((string)$col);
             if ($col === '') return false;
             try {
-                $sql = "SELECT COLUMNPROPERTY(OBJECT_ID('TMS_DB.dbo.TMS_TC_TOOL_BOM_ENGIN'), ?, 'IsIdentity') AS is_identity";
+                $sql = "SELECT COLUMNPROPERTY(OBJECT_ID('TMS_NEW.dbo.TMS_TC_TOOL_BOM_ENGIN'), ?, 'IsIdentity') AS is_identity";
                 $row = $this->tms_db->query($sql, array($col))->row_array();
                 return isset($row['is_identity']) ? ((int)$row['is_identity'] === 1) : false;
             } catch (Exception $e) {
@@ -134,7 +134,7 @@ if (!class_exists('M_tool_bom_engin')) {
          */
         public function get_products()
         {
-            $table = 'TMS_DB.dbo.TMS_M_PRODUCT';
+            $table = 'TMS_NEW.dbo.TMS_M_PRODUCT';
             $result = $this->tms_db
                 ->select('PRODUCT_ID, PRODUCT_NAME')
                 ->from($table)
@@ -153,7 +153,7 @@ if (!class_exists('M_tool_bom_engin')) {
          */
         public function get_operations()
         {
-            $table = 'TMS_DB.dbo.TMS_M_OPERATION';
+            $table = 'TMS_NEW.dbo.TMS_M_OPERATION';
             $result = $this->tms_db
                 ->select('OPERATION_ID, OPERATION_NAME')
                 ->from($table)
@@ -172,7 +172,7 @@ if (!class_exists('M_tool_bom_engin')) {
          */
         public function get_machine_groups()
         {
-            $table = 'TMS_DB.dbo.TMS_M_MACHINES';
+            $table = 'TMS_NEW.dbo.TMS_M_MACHINES';
             $result = $this->tms_db
                 ->select('MACHINE_ID, MACHINE_NAME')
                 ->from($table)
@@ -236,7 +236,7 @@ if (!class_exists('M_tool_bom_engin')) {
             if ($product_id > 0) {
                 try {
                     if ($this->has_column('PRODUCT')) {
-                        $product = $this->tms_db->select('PRODUCT_NAME')->from('TMS_DB.dbo.TMS_M_PRODUCT')->where('PRODUCT_ID', $product_id)->limit(1)->get()->row_array();
+                        $product = $this->tms_db->select('PRODUCT_NAME')->from('TMS_NEW.dbo.TMS_M_PRODUCT')->where('PRODUCT_ID', $product_id)->limit(1)->get()->row_array();
                         $insertData['PRODUCT'] = $product && isset($product['PRODUCT_NAME']) ? $product['PRODUCT_NAME'] : null;
                     }
                 } catch (Exception $e) {
@@ -247,7 +247,7 @@ if (!class_exists('M_tool_bom_engin')) {
             if ($machine_group_id > 0) {
                 try {
                     if ($this->has_column('MACHINE_GROUP')) {
-                        $mg = $this->tms_db->select('MACHINE_NAME')->from('TMS_DB.dbo.TMS_M_MACHINES')->where('MACHINE_ID', $machine_group_id)->limit(1)->get()->row_array();
+                        $mg = $this->tms_db->select('MACHINE_NAME')->from('TMS_NEW.dbo.TMS_M_MACHINES')->where('MACHINE_ID', $machine_group_id)->limit(1)->get()->row_array();
                         $insertData['MACHINE_GROUP'] = $mg && isset($mg['MACHINE_NAME']) ? $mg['MACHINE_NAME'] : null;
                     }
                 } catch (Exception $e) {
@@ -402,7 +402,7 @@ if (!class_exists('M_tool_bom_engin')) {
             if ($product_id > 0) {
                 try {
                     if ($this->has_column('PRODUCT')) {
-                        $product = $this->tms_db->select('PRODUCT_NAME')->from('TMS_DB.dbo.TMS_M_PRODUCT')->where('PRODUCT_ID', $product_id)->limit(1)->get()->row_array();
+                        $product = $this->tms_db->select('PRODUCT_NAME')->from('TMS_NEW.dbo.TMS_M_PRODUCT')->where('PRODUCT_ID', $product_id)->limit(1)->get()->row_array();
                         $updateData['PRODUCT'] = $product && isset($product['PRODUCT_NAME']) ? $product['PRODUCT_NAME'] : null;
                     }
                 } catch (Exception $e) {
@@ -413,7 +413,7 @@ if (!class_exists('M_tool_bom_engin')) {
             if ($machine_group_id > 0) {
                 try {
                     if ($this->has_column('MACHINE_GROUP')) {
-                        $mg = $this->tms_db->select('MACHINE_NAME')->from('TMS_DB.dbo.TMS_M_MACHINES')->where('MACHINE_ID', $machine_group_id)->limit(1)->get()->row_array();
+                        $mg = $this->tms_db->select('MACHINE_NAME')->from('TMS_NEW.dbo.TMS_M_MACHINES')->where('MACHINE_ID', $machine_group_id)->limit(1)->get()->row_array();
                         $updateData['MACHINE_GROUP'] = $mg && isset($mg['MACHINE_NAME']) ? $mg['MACHINE_NAME'] : null;
                     }
                 } catch (Exception $e) {
@@ -571,7 +571,7 @@ if (!class_exists('M_tool_bom_engin')) {
             try {
                 $tblCheck = $this->tms_db->query("SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'TMS_TC_TOOL_BOM_ENGIN_HISTORY' AND TABLE_SCHEMA = 'dbo'");
                 if ($tblCheck && $tblCheck->num_rows() > 0) {
-                    $q2 = $this->tms_db->select('*')->from('TMS_DB.dbo.TMS_TC_TOOL_BOM_ENGIN_HISTORY')->where('ID', $id)->order_by('REVISION', 'DESC')->get();
+                    $q2 = $this->tms_db->select('*')->from('TMS_NEW.dbo.TMS_TC_TOOL_BOM_ENGIN_HISTORY')->where('ID', $id)->order_by('REVISION', 'DESC')->get();
                     if ($q2 && $q2->num_rows() > 0) {
                         $rows = $q2->result_array();
                         $history = array();

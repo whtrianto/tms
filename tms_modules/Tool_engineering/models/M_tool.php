@@ -3,7 +3,7 @@ defined('BASEPATH') or exit('No direct script access allowed');
 
 class M_tool extends CI_Model
 {
-    private $table = 'TMS_DB.dbo.TMS_M_TOOL';
+    private $table = 'TMS_NEW.dbo.TMS_M_TOOL';
     public $tms_db;
     public $messages = '';
 
@@ -50,7 +50,7 @@ class M_tool extends CI_Model
                 T.TOOL_TYPE,
                 TT.TOOL_TYPE_NAME
             FROM {$this->table} T
-            LEFT JOIN TMS_DB.dbo.TMS_M_TOOL_TYPE TT
+            LEFT JOIN TMS_NEW.dbo.TMS_M_TOOL_TYPE TT
                 ON TT.TOOL_TYPE_ID = T.TOOL_TYPE
                 AND TT.IS_DELETED = 0
             WHERE T.IS_DELETED = 0

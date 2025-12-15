@@ -64,6 +64,17 @@
             width: 100%;
             font-size: 0.8rem;
         }
+        /* Drawing No link styling */
+        .drawing-no-link {
+            color: #007bff !important;
+            text-decoration: underline !important;
+            cursor: pointer !important;
+            font-weight: 500;
+        }
+        .drawing-no-link:hover {
+            color: #0056b3 !important;
+            text-decoration: underline !important;
+        }
     </style>
 </head>
 <body id="page-top">
@@ -122,6 +133,44 @@
                 </div>
             </div>
             <?= isset($modal_logout) ? $modal_logout : ''; ?>
+            
+            <!-- Detail modal for drawing (opened when clicking Drawing No) -->
+            <div class="modal fade" id="modalDetailDrawing" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Drawing Detail</h5>
+                            <button type="button" class="close" data-dismiss="modal">&times;</button>
+                        </div>
+                        <div class="modal-body">
+                            <div id="drawingDetailContent">
+                                <div style="display:flex; gap:16px; align-items:flex-start;">
+                                    <div id="drawingDetailImage" style="flex:0 0 220px;"></div>
+                                    <div style="flex:1 1 auto;">
+                                        <table class="table table-bordered table-sm">
+                                            <tr><th style="width:160px">Product</th><td id="detailProduct"></td></tr>
+                                            <tr><th>Process</th><td id="detailProcess"></td></tr>
+                                            <tr><th>Tool</th><td id="detailTool"></td></tr>
+                                            <tr><th>Drawing No</th><td id="detailDrawingNo"></td></tr>
+                                            <tr><th>Revision</th><td id="detailRevision"></td></tr>
+                                            <tr><th>Status</th><td id="detailStatus"></td></tr>
+                                            <tr><th>Material</th><td id="detailMaterial"></td></tr>
+                                            <tr><th>Maker</th><td id="detailMaker"></td></tr>
+                                            <tr><th>Machine Group</th><td id="detailMachineGroup"></td></tr>
+                                            <tr><th>Effective Date</th><td id="detailEffective"></td></tr>
+                                            <tr><th>Modified Date</th><td id="detailModified"></td></tr>
+                                            <tr><th>Modified By</th><td id="detailModifiedBy"></td></tr>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button class="btn btn-secondary" data-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
         <?= isset($footer) ? $footer : ''; ?>
     </div>
@@ -165,8 +214,9 @@
                 zeroRecords: 'No matching records found'
             },
             drawCallback: function(settings) {
-                // Re-attach delete handler after table redraw
+                // Re-attach handlers after table redraw
                 attachDeleteHandler();
+                attachDrawingNoHandler();
             },
             initComplete: function() {
                 // Setup per-column search after table initialization
@@ -297,8 +347,88 @@
             });
         }
 
+        // Drawing No click handler - show detail modal
+        function attachDrawingNoHandler() {
+            $('#table-tool-draw-sql').off('click', '.drawing-no-link').on('click', '.drawing-no-link', function(e) {
+                e.preventDefault();
+                var id = Number($(this).data('id')) || 0;
+                if (id <= 0) {
+                    if (typeof toastr !== 'undefined') {
+                        toastr.error('ID tidak valid');
+                    } else {
+                        alert('ID tidak valid');
+                    }
+                    return;
+                }
+
+                // Show loading state
+                $('#drawingDetailImage').html('<div class="text-center"><i class="fa fa-spinner fa-spin"></i> Loading...</div>');
+                $('#detailProduct, #detailProcess, #detailTool, #detailDrawingNo, #detailRevision, #detailStatus, #detailMaterial, #detailMaker, #detailMachineGroup, #detailEffective, #detailModified, #detailModifiedBy').text('');
+
+                // Fetch detail data
+                $.ajax({
+                    url: '<?= base_url("Tool_engineering/tool_draw_engin/get_detail"); ?>',
+                    type: 'POST',
+                    dataType: 'json',
+                    data: {
+                        TD_ID: id
+                    }
+                }).done(function(res) {
+                    if (res && res.success && res.data) {
+                        var d = res.data;
+                        
+                        // Set image (if drawing file exists)
+                        var imgHtml = '';
+                        if (d.TD_DRAWING_NO) {
+                            // Try to load image from common paths
+                            var imgPaths = [
+                                '<?= base_url("assets/uploads/drawings/"); ?>',
+                                '<?= base_url("uploads/drawings/"); ?>',
+                                '<?= base_url("tool_engineering/img/"); ?>'
+                            ];
+                            var imgUrl = imgPaths[0] + d.TD_DRAWING_NO;
+                            imgHtml = '<div style="text-align:center;"><a href="' + imgUrl + '" target="_blank"><img src="' + imgUrl + '" style="max-width:100%; height:auto; border:1px solid #ddd;" onerror="this.style.display=\'none\'; this.nextElementSibling.style.display=\'block\';"><div style="display:none; padding:10px; border:1px solid #ddd; background:#f5f5f5;">Image not available</div></a></div>';
+                        } else {
+                            imgHtml = '<div style="text-align:center; padding:10px; border:1px solid #ddd; background:#f5f5f5;">No image available</div>';
+                        }
+                        $('#drawingDetailImage').html(imgHtml);
+                        
+                        // Set detail fields
+                        $('#detailProduct').text(d.TD_PRODUCT_NAME || '-');
+                        $('#detailProcess').text(d.TD_OPERATION_NAME || '-');
+                        $('#detailTool').text(d.TD_TOOL_NAME || '-');
+                        $('#detailDrawingNo').text(d.TD_DRAWING_NO || '-');
+                        $('#detailRevision').text(d.TD_REVISION || '0');
+                        $('#detailStatus').text(d.TD_STATUS || 'Inactive');
+                        $('#detailMaterial').text(d.TD_MATERIAL_NAME || '-');
+                        $('#detailMaker').text(d.TD_MAKER_NAME || '-');
+                        $('#detailMachineGroup').text(d.TD_MAC_NAME || '-');
+                        $('#detailEffective').text(d.TD_EFFECTIVE_DATE || '-');
+                        $('#detailModified').text(d.TD_MODIFIED_DATE || '-');
+                        $('#detailModifiedBy').text(d.TD_MODIFIED_BY || '-');
+                        
+                        // Show modal
+                        $('#modalDetailDrawing').modal('show');
+                    } else {
+                        if (typeof toastr !== 'undefined') {
+                            toastr.error(res && res.message ? res.message : 'Tidak dapat mengambil detail');
+                        } else {
+                            alert(res && res.message ? res.message : 'Tidak dapat mengambil detail');
+                        }
+                    }
+                }).fail(function() {
+                    if (typeof toastr !== 'undefined') {
+                        toastr.error('Terjadi kesalahan saat mengambil detail');
+                    } else {
+                        alert('Terjadi kesalahan saat mengambil detail');
+                    }
+                });
+            });
+        }
+
         // Initial attach
         attachDeleteHandler();
+        attachDrawingNoHandler();
     });
 })(jQuery);
 </script>

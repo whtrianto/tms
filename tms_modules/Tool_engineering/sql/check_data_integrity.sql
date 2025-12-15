@@ -3,7 +3,7 @@
 -- Jalankan query ini untuk memastikan semua ID relasi sudah benar
 -- =============================================
 
-USE TMS_DB;
+USE TMS_NEW;
 GO
 
 -- 1. Cek Tool Drawing yang tidak punya Master List

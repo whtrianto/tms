@@ -139,7 +139,7 @@ class Product extends MY_Controller
                 } else {
                     // cek apakah relasi aktif sudah ada?
                     $chk = $db->query(
-                        "SELECT COUNT(1) AS CNT FROM TMS_DB.dbo.TMS_M_PRODUCT_GROUP
+                        "SELECT COUNT(1) AS CNT FROM TMS_NEW.dbo.TMS_M_PRODUCT_GROUP
                      WHERE PRODUCT_GROUP_PARENT_ID = ? AND PRODUCT_GROUP_CHILD_ID = ? AND PRODUCT_GROUP_END_DATE IS NULL",
                         array($selected_parent, $new_id)
                     )->row();
@@ -152,7 +152,7 @@ class Product extends MY_Controller
                     }
 
                     // hitung explicit PRODUCT_GROUP_ID untuk table yang tidak auto-increment
-                    $nextQ = $db->query("SELECT ISNULL(MAX(PRODUCT_GROUP_ID),0) + 1 AS next_id FROM TMS_DB.dbo.TMS_M_PRODUCT_GROUP WITH (TABLOCKX)");
+                    $nextQ = $db->query("SELECT ISNULL(MAX(PRODUCT_GROUP_ID),0) + 1 AS next_id FROM TMS_NEW.dbo.TMS_M_PRODUCT_GROUP WITH (TABLOCKX)");
                     if (!$nextQ) {
                         $this->product->tms_db->trans_rollback();
                         echo json_encode(array('success' => false, 'message' => 'Gagal menghitung PRODUCT_GROUP_ID.'));
@@ -168,7 +168,7 @@ class Product extends MY_Controller
 
                     // insert explicit PRODUCT_GROUP_ID
                     $insSql = "
-                    INSERT INTO TMS_DB.dbo.TMS_M_PRODUCT_GROUP
+                    INSERT INTO TMS_NEW.dbo.TMS_M_PRODUCT_GROUP
                     (PRODUCT_GROUP_ID, PRODUCT_GROUP_PARENT_ID, PRODUCT_GROUP_CHILD_ID, PRODUCT_GROUP_START_DATE, PRODUCT_GROUP_END_DATE)
                     VALUES (?, ?, ?, GETDATE(), NULL)
                 ";
@@ -231,7 +231,7 @@ class Product extends MY_Controller
             } else {
                 // ambil existing relation aktif (child = current product id)
                 $existingRow = $db->query(
-                    "SELECT PRODUCT_GROUP_ID, PRODUCT_GROUP_PARENT_ID FROM TMS_DB.dbo.TMS_M_PRODUCT_GROUP
+                    "SELECT PRODUCT_GROUP_ID, PRODUCT_GROUP_PARENT_ID FROM TMS_NEW.dbo.TMS_M_PRODUCT_GROUP
                  WHERE PRODUCT_GROUP_CHILD_ID = ? AND PRODUCT_GROUP_END_DATE IS NULL",
                     array((int)$id)
                 )->row_array();
@@ -250,7 +250,7 @@ class Product extends MY_Controller
                         if ((int)$existingRow['PRODUCT_GROUP_PARENT_ID'] !== (int)$selected_parent) {
                             // 1) akhiri relasi lama (set end date)
                             $ok1 = $db->query(
-                                "UPDATE TMS_DB.dbo.TMS_M_PRODUCT_GROUP SET PRODUCT_GROUP_END_DATE = GETDATE() WHERE PRODUCT_GROUP_ID = ?",
+                                "UPDATE TMS_NEW.dbo.TMS_M_PRODUCT_GROUP SET PRODUCT_GROUP_END_DATE = GETDATE() WHERE PRODUCT_GROUP_ID = ?",
                                 array((int)$existingRow['PRODUCT_GROUP_ID'])
                             );
 
@@ -261,7 +261,7 @@ class Product extends MY_Controller
                             }
 
                             // 2) insert relasi baru (hitung next id)
-                            $nextRow = $db->query("SELECT ISNULL(MAX(PRODUCT_GROUP_ID),0) + 1 AS next_id FROM TMS_DB.dbo.TMS_M_PRODUCT_GROUP WITH (TABLOCKX)")->row_array();
+                            $nextRow = $db->query("SELECT ISNULL(MAX(PRODUCT_GROUP_ID),0) + 1 AS next_id FROM TMS_NEW.dbo.TMS_M_PRODUCT_GROUP WITH (TABLOCKX)")->row_array();
                             $next_id = isset($nextRow['next_id']) ? (int)$nextRow['next_id'] : 0;
                             if ($next_id <= 0) {
                                 $this->product->tms_db->trans_rollback();
@@ -270,7 +270,7 @@ class Product extends MY_Controller
                             }
 
                             $ins = $db->query(
-                                "INSERT INTO TMS_DB.dbo.TMS_M_PRODUCT_GROUP (PRODUCT_GROUP_ID, PRODUCT_GROUP_PARENT_ID, PRODUCT_GROUP_CHILD_ID, PRODUCT_GROUP_START_DATE, PRODUCT_GROUP_END_DATE)
+                                "INSERT INTO TMS_NEW.dbo.TMS_M_PRODUCT_GROUP (PRODUCT_GROUP_ID, PRODUCT_GROUP_PARENT_ID, PRODUCT_GROUP_CHILD_ID, PRODUCT_GROUP_START_DATE, PRODUCT_GROUP_END_DATE)
                              VALUES (?, ?, ?, GETDATE(), NULL)",
                                 array($next_id, (int)$selected_parent, (int)$id)
                             );
@@ -284,7 +284,7 @@ class Product extends MY_Controller
                         // jika parent sama, tidak perlu apa-apa
                     } else {
                         // tidak ada existing -> buat relasi baru langsung
-                        $nextRow = $db->query("SELECT ISNULL(MAX(PRODUCT_GROUP_ID),0) + 1 AS next_id FROM TMS_DB.dbo.TMS_M_PRODUCT_GROUP WITH (TABLOCKX)")->row_array();
+                        $nextRow = $db->query("SELECT ISNULL(MAX(PRODUCT_GROUP_ID),0) + 1 AS next_id FROM TMS_NEW.dbo.TMS_M_PRODUCT_GROUP WITH (TABLOCKX)")->row_array();
                         $next_id = isset($nextRow['next_id']) ? (int)$nextRow['next_id'] : 0;
                         if ($next_id <= 0) {
                             $this->product->tms_db->trans_rollback();
@@ -293,7 +293,7 @@ class Product extends MY_Controller
                         }
 
                         $ins = $db->query(
-                            "INSERT INTO TMS_DB.dbo.TMS_M_PRODUCT_GROUP (PRODUCT_GROUP_ID, PRODUCT_GROUP_PARENT_ID, PRODUCT_GROUP_CHILD_ID, PRODUCT_GROUP_START_DATE, PRODUCT_GROUP_END_DATE)
+                            "INSERT INTO TMS_NEW.dbo.TMS_M_PRODUCT_GROUP (PRODUCT_GROUP_ID, PRODUCT_GROUP_PARENT_ID, PRODUCT_GROUP_CHILD_ID, PRODUCT_GROUP_START_DATE, PRODUCT_GROUP_END_DATE)
                          VALUES (?, ?, ?, GETDATE(), NULL)",
                             array($next_id, (int)$selected_parent, (int)$id)
                         );
@@ -308,7 +308,7 @@ class Product extends MY_Controller
                     // selected_parent == 0 -> akhiri relasi lama jika ada
                     if ($existingRow) {
                         $ok = $db->query(
-                            "UPDATE TMS_DB.dbo.TMS_M_PRODUCT_GROUP SET PRODUCT_GROUP_END_DATE = GETDATE() WHERE PRODUCT_GROUP_ID = ?",
+                            "UPDATE TMS_NEW.dbo.TMS_M_PRODUCT_GROUP SET PRODUCT_GROUP_END_DATE = GETDATE() WHERE PRODUCT_GROUP_ID = ?",
                             array((int)$existingRow['PRODUCT_GROUP_ID'])
                         );
                         if ($ok === false) {

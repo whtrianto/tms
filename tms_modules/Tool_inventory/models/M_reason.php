@@ -3,7 +3,7 @@ defined('BASEPATH') or exit('No direct script access allowed');
 
 class M_reason extends CI_Model
 {
-    private $table = 'TMS_DB.dbo.TMS_M_REASON';
+    private $table = 'TMS_NEW.dbo.TMS_M_REASON';
     public $tms_db;
     public $messages = '';
 

@@ -3,8 +3,8 @@ defined('BASEPATH') or exit('No direct script access allowed');
 
 class M_product_group extends CI_Model
 {
-    private $table = 'TMS_DB.dbo.TMS_M_PRODUCT_GROUP';
-    private $product_table = 'TMS_DB.dbo.TMS_M_PRODUCT';
+    private $table = 'TMS_NEW.dbo.TMS_M_PRODUCT_GROUP';
+    private $product_table = 'TMS_NEW.dbo.TMS_M_PRODUCT';
 
     /** @var CI_DB_sqlsrv_driver */
     public $tms_db;
@@ -191,8 +191,8 @@ class M_product_group extends CI_Model
     public function get_child($group_id)
     {
         $sql = "SELECT p.PRODUCT_ID, p.PRODUCT_NAME, p.PRODUCT_DESC, p.PRODUCT_IS_GROUP
-            FROM TMS_DB.dbo.TMS_M_PRODUCT_GROUP pg
-            JOIN TMS_DB.dbo.TMS_M_PRODUCT p 
+            FROM TMS_NEW.dbo.TMS_M_PRODUCT_GROUP pg
+            JOIN TMS_NEW.dbo.TMS_M_PRODUCT p 
               ON pg.PRODUCT_GROUP_CHILD_ID = p.PRODUCT_ID
             WHERE pg.PRODUCT_GROUP_PARENT_ID = ?
               AND p.IS_DELETED = 0

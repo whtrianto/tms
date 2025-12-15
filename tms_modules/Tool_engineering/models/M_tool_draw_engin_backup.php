@@ -3,7 +3,7 @@ defined('BASEPATH') or exit('No direct script access allowed');
 
 class M_tool_draw_engin extends CI_Model
 {
-    private $table = 'TMS_DB.dbo.TMS_TC_TOOL_DRAWING_ENGIN';
+    private $table = 'TMS_NEW.dbo.TMS_TC_TOOL_DRAWING_ENGIN';
     public $tms_db;
     public $messages = '';
     public $uid = ''; // will receive username from controller
@@ -119,7 +119,7 @@ class M_tool_draw_engin extends CI_Model
      */
     public function get_products()
     {
-        $table = 'TMS_DB.dbo.TMS_M_PRODUCT';
+        $table = 'TMS_NEW.dbo.TMS_M_PRODUCT';
         $result = $this->tms_db
             ->select('PRODUCT_ID, PRODUCT_NAME')
             ->from($table)
@@ -138,7 +138,7 @@ class M_tool_draw_engin extends CI_Model
      */
     public function get_operations()
     {
-        $table = 'TMS_DB.dbo.TMS_M_OPERATION';
+        $table = 'TMS_NEW.dbo.TMS_M_OPERATION';
         $result = $this->tms_db
             ->select('OPERATION_ID, OPERATION_NAME')
             ->from($table)
@@ -157,7 +157,7 @@ class M_tool_draw_engin extends CI_Model
      */
     public function get_tools()
     {
-        $table = 'TMS_DB.dbo.TMS_M_TOOL';
+        $table = 'TMS_NEW.dbo.TMS_M_TOOL';
         $result = $this->tms_db
             ->select('TOOL_ID, TOOL_NAME')
             ->from($table)
@@ -176,7 +176,7 @@ class M_tool_draw_engin extends CI_Model
      */
     public function get_makers()
     {
-        $table = 'TMS_DB.dbo.TMS_M_MAKER';
+        $table = 'TMS_NEW.dbo.TMS_M_MAKER';
         $result = $this->tms_db
             ->select('MAKER_ID, MAKER_NAME')
             ->from($table)
@@ -194,7 +194,7 @@ class M_tool_draw_engin extends CI_Model
     {
         $id = (int)$id;
         if ($id <= 0) return null;
-        $table = 'TMS_DB.dbo.TMS_M_TOOL';
+        $table = 'TMS_NEW.dbo.TMS_M_TOOL';
         $result = $this->tms_db->select('TOOL_ID, TOOL_NAME')->from($table)->where('TOOL_ID', $id)->where('IS_DELETED', 0)->limit(1)->get();
         if ($result && $result->num_rows() > 0) return $result->row_array();
         return null;
@@ -206,7 +206,7 @@ class M_tool_draw_engin extends CI_Model
      */
     public function get_materials()
     {
-        $table = 'TMS_DB.dbo.TMS_M_MATERIAL';
+        $table = 'TMS_NEW.dbo.TMS_M_MATERIAL';
         $result = $this->tms_db
             ->select('MATERIAL_ID, MATERIAL_NAME')
             ->from($table)
@@ -227,7 +227,7 @@ class M_tool_draw_engin extends CI_Model
     {
         $id = (int)$id;
         if ($id <= 0) return null;
-        $table = 'TMS_DB.dbo.TMS_M_MATERIAL';
+        $table = 'TMS_NEW.dbo.TMS_M_MATERIAL';
         $result = $this->tms_db->select('MATERIAL_ID, MATERIAL_NAME')->from($table)->where('MATERIAL_ID', $id)->where('IS_DELETED', 0)->limit(1)->get();
         if ($result && $result->num_rows() > 0) return $result->row_array();
         return null;
@@ -244,7 +244,7 @@ class M_tool_draw_engin extends CI_Model
         $product_id = (int)$product_id;
         if ($product_id <= 0) return array();
 
-        $table = 'TMS_DB.dbo.TMS_TC_TOOL_BOM_ENGIN';
+        $table = 'TMS_NEW.dbo.TMS_TC_TOOL_BOM_ENGIN';
         
         // Check if PRODUCT_ID column exists (new FK column)
         $has_product_id_col = false;
@@ -273,7 +273,7 @@ class M_tool_draw_engin extends CI_Model
         if ($has_product_col) {
             try {
                 $product_row = $this->tms_db->select('PRODUCT_NAME')
-                    ->from('TMS_DB.dbo.TMS_M_PRODUCT')
+                    ->from('TMS_NEW.dbo.TMS_M_PRODUCT')
                     ->where('PRODUCT_ID', $product_id)
                     ->where('IS_DELETED', 0)
                     ->limit(1)
@@ -782,7 +782,7 @@ class M_tool_draw_engin extends CI_Model
                 ->query("SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'TMS_TC_TOOL_DRAWING_ENGIN_HISTORY' AND TABLE_SCHEMA = 'dbo'")
                 ->num_rows() > 0;
             if ($histTableExists) {
-                $this->tms_db->where('TD_ID', $id)->delete('TMS_DB.dbo.TMS_TC_TOOL_DRAWING_ENGIN_HISTORY');
+                $this->tms_db->where('TD_ID', $id)->delete('TMS_NEW.dbo.TMS_TC_TOOL_DRAWING_ENGIN_HISTORY');
             }
 
             // Delete main record
@@ -899,7 +899,7 @@ class M_tool_draw_engin extends CI_Model
         try {
             $tblCheck = $this->tms_db->query("SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'TMS_TC_TOOL_DRAWING_ENGIN_HISTORY' AND TABLE_SCHEMA = 'dbo'");
             if ($tblCheck && $tblCheck->num_rows() > 0) {
-                $q2 = $this->tms_db->select('*')->from('TMS_DB.dbo.TMS_TC_TOOL_DRAWING_ENGIN_HISTORY')->where('TD_ID', $id)->order_by('HISTORY_SEQUENCE', 'DESC')->get();
+                $q2 = $this->tms_db->select('*')->from('TMS_NEW.dbo.TMS_TC_TOOL_DRAWING_ENGIN_HISTORY')->where('TD_ID', $id)->order_by('HISTORY_SEQUENCE', 'DESC')->get();
                 if ($q2 && $q2->num_rows() > 0) {
                     $rows = $q2->result_array();
                     $history = array();
@@ -1009,19 +1009,19 @@ class M_tool_draw_engin extends CI_Model
         // Resolve master names (best-effort)
         $product_name = '';
         if (isset($row['TD_PRODUCT_ID']) && (int)$row['TD_PRODUCT_ID'] > 0) {
-            $q = $this->tms_db->select('PRODUCT_NAME')->from('TMS_DB.dbo.TMS_M_PRODUCT')->where('PRODUCT_ID', (int)$row['TD_PRODUCT_ID'])->limit(1)->get();
+            $q = $this->tms_db->select('PRODUCT_NAME')->from('TMS_NEW.dbo.TMS_M_PRODUCT')->where('PRODUCT_ID', (int)$row['TD_PRODUCT_ID'])->limit(1)->get();
             if ($q && $q->num_rows() > 0) $product_name = $q->row()->PRODUCT_NAME;
         }
 
         $operation_name = '';
         if (isset($row['TD_PROCESS_ID']) && (int)$row['TD_PROCESS_ID'] > 0) {
-            $q = $this->tms_db->select('OPERATION_NAME')->from('TMS_DB.dbo.TMS_M_OPERATION')->where('OPERATION_ID', (int)$row['TD_PROCESS_ID'])->limit(1)->get();
+            $q = $this->tms_db->select('OPERATION_NAME')->from('TMS_NEW.dbo.TMS_M_OPERATION')->where('OPERATION_ID', (int)$row['TD_PROCESS_ID'])->limit(1)->get();
             if ($q && $q->num_rows() > 0) $operation_name = $q->row()->OPERATION_NAME;
         }
 
         $material_name = '';
         if (isset($row['TD_MATERIAL_ID']) && (int)$row['TD_MATERIAL_ID'] > 0) {
-            $q = $this->tms_db->select('MATERIAL_NAME')->from('TMS_DB.dbo.TMS_M_MATERIAL')->where('MATERIAL_ID', (int)$row['TD_MATERIAL_ID'])->limit(1)->get();
+            $q = $this->tms_db->select('MATERIAL_NAME')->from('TMS_NEW.dbo.TMS_M_MATERIAL')->where('MATERIAL_ID', (int)$row['TD_MATERIAL_ID'])->limit(1)->get();
             if ($q && $q->num_rows() > 0) $material_name = $q->row()->MATERIAL_NAME;
         }
 
@@ -1030,7 +1030,7 @@ class M_tool_draw_engin extends CI_Model
         if (isset($row['TD_TOOL_NAME']) && $row['TD_TOOL_NAME'] !== '') {
             $maybe = trim((string)$row['TD_TOOL_NAME']);
             if (ctype_digit($maybe)) {
-                $q = $this->tms_db->select('TOOL_NAME')->from('TMS_DB.dbo.TMS_M_TOOL')->where('TOOL_ID', (int)$maybe)->limit(1)->get();
+                $q = $this->tms_db->select('TOOL_NAME')->from('TMS_NEW.dbo.TMS_M_TOOL')->where('TOOL_ID', (int)$maybe)->limit(1)->get();
                 if ($q && $q->num_rows() > 0) $tool_resolved = $q->row()->TOOL_NAME;
             }
             if ($tool_resolved === '') $tool_resolved = $row['TD_TOOL_NAME'];
@@ -1040,7 +1040,7 @@ class M_tool_draw_engin extends CI_Model
         $maker_id = isset($row['TD_MAKER_ID']) ? (int)$row['TD_MAKER_ID'] : (isset($row['MAKER_ID']) ? (int)$row['MAKER_ID'] : null);
         $maker_name = '';
         if ($maker_id && $maker_id > 0) {
-            $q = $this->tms_db->select('MAKER_NAME')->from('TMS_DB.dbo.TMS_M_MAKER')->where('MAKER_ID', $maker_id)->limit(1)->get();
+            $q = $this->tms_db->select('MAKER_NAME')->from('TMS_NEW.dbo.TMS_M_MAKER')->where('MAKER_ID', $maker_id)->limit(1)->get();
             if ($q && $q->num_rows() > 0) $maker_name = $q->row()->MAKER_NAME;
         } elseif (isset($row['MAKER_NAME'])) {
             $maker_name = $row['MAKER_NAME'];

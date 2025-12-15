@@ -4,7 +4,7 @@ defined('BASEPATH') or exit('No direct script access allowed');
 if (!class_exists('M_tool_draw_tooling')) {
     class M_tool_draw_tooling extends CI_Model
     {
-    private $table = 'TMS_DB.dbo.TMS_TC_TOOL_DRAWING_TOOLING';
+    private $table = 'TMS_NEW.dbo.TMS_TC_TOOL_DRAWING_TOOLING';
     public $tms_db;
     public $messages = '';
     public $uid = ''; // will receive username from controller
@@ -65,7 +65,7 @@ if (!class_exists('M_tool_draw_tooling')) {
      */
     public function get_tools()
     {
-        $table = 'TMS_DB.dbo.TMS_M_TOOL';
+        $table = 'TMS_NEW.dbo.TMS_M_TOOL';
         $result = $this->tms_db
             ->select('TOOL_ID, TOOL_NAME')
             ->from($table)
@@ -83,7 +83,7 @@ if (!class_exists('M_tool_draw_tooling')) {
     {
         $id = (int)$id;
         if ($id <= 0) return null;
-        $table = 'TMS_DB.dbo.TMS_M_TOOL';
+        $table = 'TMS_NEW.dbo.TMS_M_TOOL';
         $result = $this->tms_db->select('TOOL_ID, TOOL_NAME')->from($table)->where('TOOL_ID', $id)->where('IS_DELETED', 0)->limit(1)->get();
         if ($result && $result->num_rows() > 0) return $result->row_array();
         return null;
@@ -94,7 +94,7 @@ if (!class_exists('M_tool_draw_tooling')) {
      */
     public function get_makers()
     {
-        $table = 'TMS_DB.dbo.TMS_M_MAKER';
+        $table = 'TMS_NEW.dbo.TMS_M_MAKER';
         $result = $this->tms_db
             ->select('MAKER_ID, MAKER_NAME')
             ->from($table)
@@ -112,7 +112,7 @@ if (!class_exists('M_tool_draw_tooling')) {
     {
         $id = (int)$id;
         if ($id <= 0) return null;
-        $table = 'TMS_DB.dbo.TMS_M_MAKER';
+        $table = 'TMS_NEW.dbo.TMS_M_MAKER';
         $result = $this->tms_db->select('MAKER_ID, MAKER_NAME')->from($table)->where('MAKER_ID', $id)->where('IS_DELETED', 0)->limit(1)->get();
         if ($result && $result->num_rows() > 0) return $result->row_array();
         return null;
@@ -123,7 +123,7 @@ if (!class_exists('M_tool_draw_tooling')) {
      */
     public function get_materials()
     {
-        $table = 'TMS_DB.dbo.TMS_M_MATERIAL';
+        $table = 'TMS_NEW.dbo.TMS_M_MATERIAL';
         $result = $this->tms_db
             ->select('MATERIAL_ID, MATERIAL_NAME')
             ->from($table)
@@ -141,7 +141,7 @@ if (!class_exists('M_tool_draw_tooling')) {
     {
         $id = (int)$id;
         if ($id <= 0) return null;
-        $table = 'TMS_DB.dbo.TMS_M_MATERIAL';
+        $table = 'TMS_NEW.dbo.TMS_M_MATERIAL';
         $result = $this->tms_db->select('MATERIAL_ID, MATERIAL_NAME')->from($table)->where('MATERIAL_ID', $id)->where('IS_DELETED', 0)->limit(1)->get();
         if ($result && $result->num_rows() > 0) return $result->row_array();
         return null;

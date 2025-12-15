@@ -3,7 +3,7 @@ defined('BASEPATH') or exit('No direct script access allowed');
 
 class M_customer extends CI_Model
 {
-    private $table = 'TMS_DB.dbo.TMS_M_CUSTOMER';
+    private $table = 'TMS_NEW.dbo.TMS_M_CUSTOMER';
     private $primary_key = 'CUSTOMER_ID';
     /** @var CI_DB_sqlsrv_driver */
     public $tms_db;
