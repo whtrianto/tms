@@ -538,7 +538,36 @@ class Tool_draw_engin extends MY_Controller
     }
 
     /**
-     * Helper function to build file URL from database/local
+     * Helper function to build file URL using MLR_ID and MLR_REV (preferred method)
+     * @param int $mlr_id MLR_ID from database
+     * @param int $mlr_rev MLR_REV from database
+     * @param string $fileIdentifier File identifier from database (MLR_DRAWING or MLR_SKETCH)
+     * @param string $type File type ('drawing' or 'sketch')
+     * @return string Full URL to access the file
+     */
+    private function build_file_url_by_mlr($mlr_id, $mlr_rev, $fileIdentifier, $type = 'drawing')
+    {
+        if (empty($fileIdentifier) || trim($fileIdentifier) === '' || $mlr_id <= 0) {
+            return '';
+        }
+        
+        // If fileIdentifier already contains full URL, return as is
+        if (strpos($fileIdentifier, 'http://') === 0 || strpos($fileIdentifier, 'https://') === 0) {
+            return $fileIdentifier;
+        }
+        
+        // Use MLR_ID and MLR_REV to build URL directly
+        // This is more reliable than searching by file identifier
+        $fileUrl = base_url('Tool_engineering/tool_draw_engin/serve_file_by_mlr') . 
+                   '?mlr_id=' . (int)$mlr_id . 
+                   '&mlr_rev=' . (int)$mlr_rev . 
+                   '&type=' . urlencode($type);
+        
+        return $fileUrl;
+    }
+    
+    /**
+     * Helper function to build file URL from database/local (legacy method, uses file identifier)
      * @param string $fileIdentifier File identifier from database (MLR_DRAWING or MLR_SKETCH)
      * @param string $module Module name (default: 'ToolDrawing')
      * @return string Full URL to access the file
@@ -575,8 +604,114 @@ class Tool_draw_engin extends MY_Controller
      * @param string $id File identifier/name from MLR_DRAWING or MLR_SKETCH
      * @param string $type File type (drawing or sketch)
      */
+    /**
+     * Serve file using MLR_ID and MLR_REV directly (preferred method)
+     * This is more reliable than searching by file identifier
+     */
+    public function serve_file_by_mlr()
+    {
+        if (ob_get_level()) {
+            ob_clean();
+        }
+        
+        $this->output->set_content_type('application/octet-stream'); // Default MIME type
+        
+        $mlr_id = (int)$this->input->get('mlr_id', TRUE);
+        $mlr_rev = (int)$this->input->get('mlr_rev', TRUE);
+        $file_type = $this->input->get('type', TRUE);
+        
+        if ($mlr_id <= 0) {
+            log_message('error', '[serve_file_by_mlr] Invalid MLR_ID: ' . $mlr_id);
+            show_404();
+            return;
+        }
+        
+        // Load database connection
+        $db_tms = $this->load->database('tms_NEW', true);
+        if (!$db_tms) {
+            log_message('error', '[serve_file_by_mlr] Failed to load database tms_NEW');
+            show_404();
+            return;
+        }
+        
+        // Determine which column to query based on file type
+        $column_name = 'MLR_DRAWING';
+        $folder_name = 'Drawing';
+        if ($file_type === 'sketch' || strpos(strtolower($file_type), 'sketch') !== false) {
+            $column_name = 'MLR_SKETCH';
+            $folder_name = 'Drawing_Sketch';
+        }
+        
+        // Get filename from database using MLR_ID and MLR_REV
+        $sql = "
+            SELECT TOP 1
+                rev." . $column_name . " AS FILE_NAME
+            FROM TMS_NEW.dbo.TMS_TOOL_MASTER_LIST_REV rev
+            WHERE rev.MLR_ID = ? AND rev.MLR_REV = ?
+        ";
+        
+        $q = $db_tms->query($sql, array($mlr_id, $mlr_rev));
+        
+        if (!$q || $q->num_rows() == 0) {
+            log_message('error', '[serve_file_by_mlr] Record not found: MLR_ID=' . $mlr_id . ', MLR_REV=' . $mlr_rev);
+            show_404();
+            return;
+        }
+        
+        $row = $q->row_array();
+        $file_name = isset($row['FILE_NAME']) ? trim($row['FILE_NAME']) : '';
+        
+        if (empty($file_name)) {
+            log_message('error', '[serve_file_by_mlr] File name is empty for MLR_ID=' . $mlr_id . ', MLR_REV=' . $mlr_rev);
+            show_404();
+            return;
+        }
+        
+        // Clean filename to prevent directory traversal
+        $file_name = basename($file_name);
+        
+        // Construct the full path
+        // Note: tms_modules is inside application folder, so use APPPATH
+        $file_path = APPPATH . 'tms_modules/Attachment_TMS/' . $folder_name . '/' . $mlr_id . '/' . $mlr_rev . '/' . $file_name;
+        
+        log_message('debug', '[serve_file_by_mlr] Looking for file: ' . $file_path);
+        
+        if (file_exists($file_path) && is_file($file_path)) {
+            log_message('debug', '[serve_file_by_mlr] File found, serving: ' . $file_path);
+            $this->_output_file($file_path);
+            return;
+        }
+        
+        // If file not found, log and return 404
+        log_message('error', '[serve_file_by_mlr] File NOT found at path: ' . $file_path);
+        log_message('error', '[serve_file_by_mlr] MLR_ID=' . $mlr_id . ', MLR_REV=' . $mlr_rev . ', File=' . $file_name);
+        
+        // Check if directory exists
+        $dir_path = APPPATH . 'tms_modules/Attachment_TMS/' . $folder_name . '/' . $mlr_id . '/' . $mlr_rev . '/';
+        if (!is_dir($dir_path)) {
+            log_message('error', '[serve_file_by_mlr] Directory does not exist: ' . $dir_path);
+        } else {
+            $files = @scandir($dir_path);
+            if ($files) {
+                log_message('error', '[serve_file_by_mlr] Directory exists but file not found. Files in directory: ' . implode(', ', $files));
+            }
+        }
+        
+        show_404();
+    }
+    
+    /**
+     * Serve file using file identifier (legacy method)
+     * This method searches database by filename, which can be unreliable
+     */
     public function serve_file()
     {
+        if (ob_get_level()) {
+            ob_clean();
+        }
+        
+        $this->output->set_content_type('application/octet-stream'); // Default MIME type
+        
         $file_id = $this->input->get('id', TRUE);
         $file_type = $this->input->get('type', TRUE);
         
@@ -615,7 +750,15 @@ class Tool_draw_engin extends MY_Controller
         // Get MLR_ID, MLR_REV, and filename from database
         // MLR_DRAWING and MLR_SKETCH store filename (varchar(50)), not BLOB
         // File structure: Attachment_TMS/{Drawing|Drawing_Sketch}/{MLR_ID}/{MLR_REV}/{filename}
-        // Try exact match first (case sensitive)
+        
+        // Get basename for partial matching
+        $file_basename = basename($file_id);
+        
+        // Try multiple search strategies
+        $found = false;
+        $row = null;
+        
+        // Strategy 1: Exact match (trimmed, case sensitive)
         $sql = "
             SELECT TOP 1
                 rev.MLR_ID,
@@ -624,11 +767,14 @@ class Tool_draw_engin extends MY_Controller
             FROM TMS_NEW.dbo.TMS_TOOL_MASTER_LIST_REV rev
             WHERE LTRIM(RTRIM(rev." . $column_name . ")) = ?
         ";
-        
         $q = $db_tms->query($sql, array($file_id));
+        if ($q && $q->num_rows() > 0) {
+            $found = true;
+            $row = $q->row_array();
+        }
         
-        // If not found, try case-insensitive search
-        if (!$q || $q->num_rows() == 0) {
+        // Strategy 2: Case-insensitive match
+        if (!$found) {
             $sql = "
                 SELECT TOP 1
                     rev.MLR_ID,
@@ -638,21 +784,63 @@ class Tool_draw_engin extends MY_Controller
                 WHERE LOWER(LTRIM(RTRIM(rev." . $column_name . "))) = LOWER(?)
             ";
             $q = $db_tms->query($sql, array($file_id));
+            if ($q && $q->num_rows() > 0) {
+                $found = true;
+                $row = $q->row_array();
+            }
         }
         
-        if (!$q || $q->num_rows() == 0) {
-            // Log for debugging
+        // Strategy 3: Partial match (filename only, ignore path if any)
+        if (!$found) {
+            $sql = "
+                SELECT TOP 1
+                    rev.MLR_ID,
+                    rev.MLR_REV,
+                    rev." . $column_name . " AS FILE_NAME
+                FROM TMS_NEW.dbo.TMS_TOOL_MASTER_LIST_REV rev
+                WHERE LOWER(LTRIM(RTRIM(rev." . $column_name . "))) = LOWER(?)
+            ";
+            $q = $db_tms->query($sql, array($file_basename));
+            if ($q && $q->num_rows() > 0) {
+                $found = true;
+                $row = $q->row_array();
+            }
+        }
+        
+        if (!$found || !$row) {
+            // Log for debugging - also try to find similar filenames
             log_message('error', '[serve_file] File identifier not found in database: ' . $file_id . ' (type: ' . $file_type . ')');
+            
+            // Try to find similar filenames for debugging
+            $debug_sql = "
+                SELECT TOP 5
+                    rev.MLR_ID,
+                    rev.MLR_REV,
+                    rev." . $column_name . " AS FILE_NAME,
+                    LEN(rev." . $column_name . ") AS FILE_NAME_LENGTH
+                FROM TMS_NEW.dbo.TMS_TOOL_MASTER_LIST_REV rev
+                WHERE rev." . $column_name . " IS NOT NULL 
+                    AND rev." . $column_name . " <> ''
+                    AND rev." . $column_name . " LIKE ?
+                ORDER BY rev.MLR_ID DESC
+            ";
+            $debug_q = $db_tms->query($debug_sql, array('%' . $file_basename . '%'));
+            if ($debug_q && $debug_q->num_rows() > 0) {
+                $similar = $debug_q->result_array();
+                log_message('error', '[serve_file] Similar filenames found: ' . json_encode($similar));
+            }
+            
             show_404();
             return;
         }
         
-        $row = $q->row_array();
+        // $row already set from successful query above
         $mlr_id = isset($row['MLR_ID']) ? (int)$row['MLR_ID'] : 0;
         $mlr_rev = isset($row['MLR_REV']) ? (int)$row['MLR_REV'] : 0;
         $file_name = isset($row['FILE_NAME']) ? trim($row['FILE_NAME']) : '';
         
         if (empty($file_name) || $mlr_id <= 0) {
+            log_message('error', '[serve_file] Empty file_name or invalid MLR_ID. MLR_ID: ' . $mlr_id . ', FILE_NAME: ' . $file_name);
             show_404();
             return;
         }
@@ -660,8 +848,11 @@ class Tool_draw_engin extends MY_Controller
         // Clean filename to prevent directory traversal
         $file_name = basename($file_name);
         
+        // Log successful database lookup
+        log_message('debug', '[serve_file] Found in database - MLR_ID: ' . $mlr_id . ', MLR_REV: ' . $mlr_rev . ', FILE_NAME: ' . $file_name);
+        
         // File location: Attachment_TMS/{Drawing|Drawing_Sketch}/{MLR_ID}/{MLR_REV}/{filename}
-        $file_path = FCPATH . 'tms_modules/Attachment_TMS/' . $folder_name . '/' . $mlr_id . '/' . $mlr_rev . '/' . $file_name;
+        $file_path = APPPATH . 'tms_modules/Attachment_TMS/' . $folder_name . '/' . $mlr_id . '/' . $mlr_rev . '/' . $file_name;
         
         // Log for debugging (can be removed in production)
         log_message('debug', '[serve_file] Looking for file: ' . $file_path);
@@ -680,7 +871,7 @@ class Tool_draw_engin extends MY_Controller
         log_message('error', '[serve_file] Folder structure: Attachment_TMS/' . $folder_name . '/' . $mlr_id . '/' . $mlr_rev . '/');
         
         // Check if directory exists
-        $dir_path = FCPATH . 'tms_modules/Attachment_TMS/' . $folder_name . '/' . $mlr_id . '/' . $mlr_rev . '/';
+        $dir_path = APPPATH . 'tms_modules/Attachment_TMS/' . $folder_name . '/' . $mlr_id . '/' . $mlr_rev . '/';
         if (!is_dir($dir_path)) {
             log_message('error', '[serve_file] Directory does not exist: ' . $dir_path);
         } else {
@@ -793,12 +984,15 @@ class Tool_draw_engin extends MY_Controller
             }
         }
 
-        // Build file URLs from server
+        // Build file URLs using MLR_ID and MLR_REV directly (more reliable)
+        $mlr_id = isset($row['TD_ID']) ? (int)$row['TD_ID'] : 0;
+        $mlr_rev = isset($row['TD_REVISION']) ? (int)$row['TD_REVISION'] : 0;
         $drawing_file_id = isset($row['TD_DRAWING_FILE']) ? $row['TD_DRAWING_FILE'] : '';
         $sketch_file_id = isset($row['TD_SKETCH_FILE']) ? $row['TD_SKETCH_FILE'] : '';
         
-        $drawing_file_url = $this->build_file_url($drawing_file_id, 'drawing');
-        $sketch_file_url = $this->build_file_url($sketch_file_id, 'sketch');
+        // Use MLR_ID and MLR_REV to build URL directly (more reliable than file identifier)
+        $drawing_file_url = $this->build_file_url_by_mlr($mlr_id, $mlr_rev, $drawing_file_id, 'drawing');
+        $sketch_file_url = $this->build_file_url_by_mlr($mlr_id, $mlr_rev, $sketch_file_id, 'sketch');
 
         // Prepare response data
         $result = array(
@@ -825,6 +1019,128 @@ class Tool_draw_engin extends MY_Controller
         );
 
         $this->output->set_output(json_encode($result, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
+    }
+
+    /**
+     * test_serve_file: Test endpoint to check if serve_file can find a specific file
+     * Usage: Tool_engineering/tool_draw_engin/test_serve_file?id=Screenshot (2).png&type=drawing
+     */
+    public function test_serve_file()
+    {
+        $file_id = $this->input->get('id', TRUE);
+        $file_type = $this->input->get('type', TRUE);
+        
+        if (empty($file_id)) {
+            echo "Error: No file ID provided. Usage: ?id=filename&type=drawing<br>";
+            return;
+        }
+        
+        echo "<h3>Testing serve_file for: " . htmlspecialchars($file_id) . " (type: " . htmlspecialchars($file_type) . ")</h3>";
+        
+        // Load database connection
+        $db_tms = $this->load->database('tms_NEW', true);
+        if (!$db_tms) {
+            echo "Error: Database connection failed<br>";
+            return;
+        }
+        
+        // Determine column
+        $column_name = 'MLR_DRAWING';
+        $folder_name = 'Drawing';
+        if ($file_type === 'sketch' || strpos(strtolower($file_type), 'sketch') !== false) {
+            $column_name = 'MLR_SKETCH';
+            $folder_name = 'Drawing_Sketch';
+        }
+        
+        // URL decode
+        $file_id_decoded = urldecode($file_id);
+        $file_id_decoded = str_replace('+', ' ', $file_id_decoded);
+        $file_id_decoded = trim($file_id_decoded);
+        
+        echo "<strong>Original:</strong> " . htmlspecialchars($file_id) . "<br>";
+        echo "<strong>Decoded:</strong> " . htmlspecialchars($file_id_decoded) . "<br><br>";
+        
+        // Query database
+        $sql = "
+            SELECT TOP 5
+                rev.MLR_ID,
+                rev.MLR_REV,
+                rev." . $column_name . " AS FILE_NAME,
+                LEN(rev." . $column_name . ") AS FILE_NAME_LENGTH
+            FROM TMS_NEW.dbo.TMS_TOOL_MASTER_LIST_REV rev
+            WHERE LTRIM(RTRIM(rev." . $column_name . ")) = ?
+        ";
+        
+        $q = $db_tms->query($sql, array($file_id_decoded));
+        
+        echo "<h4>Query Result (Exact Match):</h4>";
+        if ($q && $q->num_rows() > 0) {
+            echo "<table border='1' cellpadding='5'>";
+            echo "<tr><th>MLR_ID</th><th>MLR_REV</th><th>FILE_NAME</th><th>Length</th><th>Expected Path</th></tr>";
+            foreach ($q->result_array() as $r) {
+                $mlr_id = (int)$r['MLR_ID'];
+                $mlr_rev = (int)$r['MLR_REV'];
+                $fname = $r['FILE_NAME'];
+                $expected_path = APPPATH . 'tms_modules/Attachment_TMS/' . $folder_name . '/' . $mlr_id . '/' . $mlr_rev . '/' . basename($fname);
+                $exists = file_exists($expected_path) ? 'YES' : 'NO';
+                echo "<tr>";
+                echo "<td>" . $mlr_id . "</td>";
+                echo "<td>" . $mlr_rev . "</td>";
+                echo "<td>" . htmlspecialchars($fname) . "</td>";
+                echo "<td>" . $r['FILE_NAME_LENGTH'] . "</td>";
+                echo "<td>" . htmlspecialchars($expected_path) . " <strong>(" . $exists . ")</strong></td>";
+                echo "</tr>";
+            }
+            echo "</table>";
+        } else {
+            echo "No exact match found.<br>";
+            
+            // Try case-insensitive
+            $sql2 = "
+                SELECT TOP 5
+                    rev.MLR_ID,
+                    rev.MLR_REV,
+                    rev." . $column_name . " AS FILE_NAME
+                FROM TMS_NEW.dbo.TMS_TOOL_MASTER_LIST_REV rev
+                WHERE LOWER(LTRIM(RTRIM(rev." . $column_name . "))) = LOWER(?)
+            ";
+            $q2 = $db_tms->query($sql2, array($file_id_decoded));
+            if ($q2 && $q2->num_rows() > 0) {
+                echo "<h4>Query Result (Case-Insensitive):</h4>";
+                echo "<table border='1' cellpadding='5'>";
+                echo "<tr><th>MLR_ID</th><th>MLR_REV</th><th>FILE_NAME</th></tr>";
+                foreach ($q2->result_array() as $r) {
+                    echo "<tr><td>" . $r['MLR_ID'] . "</td><td>" . $r['MLR_REV'] . "</td><td>" . htmlspecialchars($r['FILE_NAME']) . "</td></tr>";
+                }
+                echo "</table>";
+            } else {
+                echo "No case-insensitive match found either.<br>";
+            }
+        }
+        
+        // Show similar filenames
+        $basename = basename($file_id_decoded);
+        $sql3 = "
+            SELECT TOP 10
+                rev.MLR_ID,
+                rev.MLR_REV,
+                rev." . $column_name . " AS FILE_NAME
+            FROM TMS_NEW.dbo.TMS_TOOL_MASTER_LIST_REV rev
+            WHERE rev." . $column_name . " IS NOT NULL 
+                AND rev." . $column_name . " <> ''
+                AND rev." . $column_name . " LIKE ?
+            ORDER BY rev.MLR_ID DESC
+        ";
+        $q3 = $db_tms->query($sql3, array('%' . $basename . '%'));
+        if ($q3 && $q3->num_rows() > 0) {
+            echo "<h4>Similar Filenames (contains '" . htmlspecialchars($basename) . "'):</h4>";
+            echo "<table border='1' cellpadding='5'>";
+            echo "<tr><th>MLR_ID</th><th>MLR_REV</th><th>FILE_NAME</th></tr>";
+            foreach ($q3->result_array() as $r) {
+                echo "<tr><td>" . $r['MLR_ID'] . "</td><td>" . $r['MLR_REV'] . "</td><td>" . htmlspecialchars($r['FILE_NAME']) . "</td></tr>";
+            }
+            echo "</table>";
+        }
     }
 
     /**
