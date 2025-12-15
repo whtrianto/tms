@@ -589,7 +589,9 @@ class Tool_draw_engin extends MY_Controller
                 'TD_MODIFIED_BY' => isset($row['TD_MODIFIED_BY']) ? $row['TD_MODIFIED_BY'] : '',
                 'TD_MATERIAL_NAME' => isset($row['TD_MATERIAL_NAME']) ? $row['TD_MATERIAL_NAME'] : '',
                 'TD_MAKER_NAME' => isset($row['TD_MAKER_NAME']) ? $row['TD_MAKER_NAME'] : '',
-                'TD_MAC_NAME' => isset($row['TD_MAC_NAME']) ? $row['TD_MAC_NAME'] : ''
+                'TD_MAC_NAME' => isset($row['TD_MAC_NAME']) ? $row['TD_MAC_NAME'] : '',
+                'TD_DRAWING_FILE' => isset($row['TD_DRAWING_FILE']) ? $row['TD_DRAWING_FILE'] : '',
+                'TD_SKETCH_FILE' => isset($row['TD_SKETCH_FILE']) ? $row['TD_SKETCH_FILE'] : ''
             )
         );
 

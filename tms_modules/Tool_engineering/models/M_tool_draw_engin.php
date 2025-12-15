@@ -20,7 +20,7 @@ class M_tool_draw_engin extends CI_Model
     public function __construct()
     {
         parent::__construct();
-        $this->db_tms = $this->load->database('tms_db', true);
+        $this->db_tms = $this->load->database('tms_NEW', true);
     }
 
     /**
@@ -71,7 +71,9 @@ class M_tool_draw_engin extends CI_Model
                 ISNULL(mac.MAC_NAME, '') AS TD_MAC_NAME,
                 ISNULL(maker.MAKER_NAME, '') AS TD_MAKER_NAME,
                 ISNULL(mat.MAT_NAME, '') AS TD_MATERIAL_NAME,
-                ISNULL(dbo.fnGetToolMasterListParts(ml.ML_ID), '') AS TD_PRODUCT_NAME
+                ISNULL(dbo.fnGetToolMasterListParts(ml.ML_ID), '') AS TD_PRODUCT_NAME,
+                ISNULL(rev.MLR_DRAWING, '') AS TD_DRAWING_FILE,
+                ISNULL(rev.MLR_SKETCH, '') AS TD_SKETCH_FILE
             FROM TMS_NEW.dbo.TMS_TOOL_MASTER_LIST_REV rev
             INNER JOIN TMS_NEW.dbo.TMS_TOOL_MASTER_LIST ml
                 ON ml.ML_ID = rev.MLR_ML_ID
@@ -125,7 +127,9 @@ class M_tool_draw_engin extends CI_Model
                 rev.MLR_MACG_ID     AS TD_MACG_ID,
                 mac.MAC_NAME        AS TD_MAC_NAME,
                 part.PART_ID        AS TD_PRODUCT_ID,
-                part.PART_NAME      AS TD_PRODUCT_NAME
+                part.PART_NAME      AS TD_PRODUCT_NAME,
+                ISNULL(rev.MLR_DRAWING, '') AS TD_DRAWING_FILE,
+                ISNULL(rev.MLR_SKETCH, '') AS TD_SKETCH_FILE
             FROM TMS_NEW.dbo.TMS_TOOL_MASTER_LIST_REV rev
             INNER JOIN TMS_NEW.dbo.TMS_TOOL_MASTER_LIST ml
                 ON ml.ML_ID = rev.MLR_ML_ID

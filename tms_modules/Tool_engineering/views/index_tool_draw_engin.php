@@ -145,7 +145,10 @@
                         <div class="modal-body">
                             <div id="drawingDetailContent">
                                 <div style="display:flex; gap:16px; align-items:flex-start;">
-                                    <div id="drawingDetailImage" style="flex:0 0 220px;"></div>
+                                    <div id="drawingDetailImage" style="flex:0 0 300px; max-width:300px;">
+                                        <div id="drawingFileContainer" style="margin-bottom:16px;"></div>
+                                        <div id="sketchFileContainer"></div>
+                                    </div>
                                     <div style="flex:1 1 auto;">
                                         <table class="table table-bordered table-sm">
                                             <tr><th style="width:160px">Product</th><td id="detailProduct"></td></tr>
@@ -362,7 +365,8 @@
                 }
 
                 // Show loading state
-                $('#drawingDetailImage').html('<div class="text-center"><i class="fa fa-spinner fa-spin"></i> Loading...</div>');
+                $('#drawingFileContainer').html('<div class="text-center"><i class="fa fa-spinner fa-spin"></i> Loading...</div>');
+                $('#sketchFileContainer').html('');
                 $('#detailProduct, #detailProcess, #detailTool, #detailDrawingNo, #detailRevision, #detailStatus, #detailMaterial, #detailMaker, #detailMachineGroup, #detailEffective, #detailModified, #detailModifiedBy').text('');
 
                 // Fetch detail data
@@ -377,21 +381,58 @@
                     if (res && res.success && res.data) {
                         var d = res.data;
                         
-                        // Set image (if drawing file exists)
-                        var imgHtml = '';
-                        if (d.TD_DRAWING_NO) {
-                            // Try to load image from common paths
-                            var imgPaths = [
-                                '<?= base_url("assets/uploads/drawings/"); ?>',
-                                '<?= base_url("uploads/drawings/"); ?>',
-                                '<?= base_url("tool_engineering/img/"); ?>'
-                            ];
-                            var imgUrl = imgPaths[0] + d.TD_DRAWING_NO;
-                            imgHtml = '<div style="text-align:center;"><a href="' + imgUrl + '" target="_blank"><img src="' + imgUrl + '" style="max-width:100%; height:auto; border:1px solid #ddd;" onerror="this.style.display=\'none\'; this.nextElementSibling.style.display=\'block\';"><div style="display:none; padding:10px; border:1px solid #ddd; background:#f5f5f5;">Image not available</div></a></div>';
-                        } else {
-                            imgHtml = '<div style="text-align:center; padding:10px; border:1px solid #ddd; background:#f5f5f5;">No image available</div>';
+                        // Base path for files
+                        var basePath = '<?= base_url("tool_engineering/img/"); ?>';
+                        
+                        // Function to check if file is image
+                        function isImageFile(filename) {
+                            if (!filename) return false;
+                            var ext = filename.split('.').pop().toLowerCase();
+                            return ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].indexOf(ext) !== -1;
                         }
-                        $('#drawingDetailImage').html(imgHtml);
+                        
+                        // Function to check if file is PDF
+                        function isPdfFile(filename) {
+                            if (!filename) return false;
+                            var ext = filename.split('.').pop().toLowerCase();
+                            return ext === 'pdf';
+                        }
+                        
+                        // Function to render file display
+                        function renderFile(filename, containerId, label) {
+                            var html = '';
+                            if (filename && filename.trim() !== '') {
+                                var fileUrl = basePath + filename;
+                                if (isImageFile(filename)) {
+                                    html = '<div style="margin-bottom:8px;"><strong>' + label + ':</strong></div>' +
+                                           '<div style="text-align:center; border:1px solid #ddd; padding:8px; background:#f9f9f9;">' +
+                                           '<a href="' + fileUrl + '" target="_blank" title="Click to view full size">' +
+                                           '<img src="' + fileUrl + '" style="max-width:100%; height:auto; cursor:pointer;" ' +
+                                           'onerror="this.parentElement.innerHTML=\'<div style=\\\'padding:20px; color:#999;\\\'>File not found: ' + filename + '</div>\';" />' +
+                                           '</a></div>';
+                                } else if (isPdfFile(filename)) {
+                                    html = '<div style="margin-bottom:8px;"><strong>' + label + ':</strong></div>' +
+                                           '<div style="text-align:center; border:1px solid #ddd; padding:8px; background:#f9f9f9;">' +
+                                           '<a href="' + fileUrl + '" target="_blank" class="btn btn-primary btn-sm" style="display:inline-block;">' +
+                                           '<i class="fa fa-file-pdf"></i> View PDF: ' + filename + '</a></div>';
+                                } else {
+                                    html = '<div style="margin-bottom:8px;"><strong>' + label + ':</strong></div>' +
+                                           '<div style="text-align:center; border:1px solid #ddd; padding:8px; background:#f9f9f9;">' +
+                                           '<a href="' + fileUrl + '" target="_blank" class="btn btn-secondary btn-sm" style="display:inline-block;">' +
+                                           '<i class="fa fa-file"></i> Download: ' + filename + '</a></div>';
+                                }
+                            } else {
+                                html = '<div style="margin-bottom:8px;"><strong>' + label + ':</strong></div>' +
+                                       '<div style="text-align:center; padding:8px; border:1px solid #ddd; background:#f5f5f5; color:#999;">No file available</div>';
+                            }
+                            $(containerId).html(html);
+                        }
+                        
+                        // Render Drawing File
+                        renderFile(d.TD_DRAWING_FILE, '#drawingFileContainer', 'Drawing File');
+                        
+                        // Render Sketch File
+                        renderFile(d.TD_SKETCH_FILE, '#sketchFileContainer', 'Sketch File');
                         
                         // Set detail fields
                         $('#detailProduct').text(d.TD_PRODUCT_NAME || '-');
