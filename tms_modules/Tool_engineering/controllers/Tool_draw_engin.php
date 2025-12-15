@@ -538,7 +538,7 @@ class Tool_draw_engin extends MY_Controller
     }
 
     /**
-     * Helper function to build file URL from server
+     * Helper function to build file URL from database/local
      * @param string $fileIdentifier File identifier from database (MLR_DRAWING or MLR_SKETCH)
      * @param string $module Module name (default: 'ToolDrawing')
      * @return string Full URL to access the file
@@ -549,39 +549,237 @@ class Tool_draw_engin extends MY_Controller
             return '';
         }
         
-        // Server file URL configuration
-        // TODO: Move this to config file if needed
-        $serverBaseUrl = 'http://10.82.101.79/FexTMS/Shared/GetFile.aspx';
-        
         // If fileIdentifier already contains full URL, return as is
         if (strpos($fileIdentifier, 'http://') === 0 || strpos($fileIdentifier, 'https://') === 0) {
             return $fileIdentifier;
         }
         
-        // Build URL with parameters
-        // Note: urlencode() will handle encoding correctly
-        // If identifier is already encoded, urlencode will encode the % signs too
-        // But based on the example URL, it seems the identifier might already be in encoded format
-        // So we check: if it contains % and looks like it's already encoded, use as-is
-        // Otherwise, encode it
-        
-        $encodedFileId = $fileIdentifier;
-        
-        // Check if identifier looks like it's already URL-encoded
-        // (contains % and follows URL-encoded pattern)
-        if (strpos($fileIdentifier, '%') !== false && preg_match('/^[A-Za-z0-9%+\/=_-]+$/', $fileIdentifier)) {
-            // Looks like already encoded, use as-is
-            // But we might need to double-check - let's see the actual data first
-            $encodedFileId = $fileIdentifier;
-        } else {
-            // Not encoded or doesn't look encoded, encode it
-            $encodedFileId = urlencode($fileIdentifier);
-        }
-        
-        // Build URL with parameters
-        $fileUrl = $serverBaseUrl . '?m=' . urlencode($module) . '&f=' . $encodedFileId;
+        // Use local endpoint to serve file from database
+        // Format: base_url('Tool_engineering/tool_draw_engin/serve_file')?id={identifier}&type={drawing|sketch}
+        $fileUrl = base_url('Tool_engineering/tool_draw_engin/serve_file') . '?id=' . urlencode($fileIdentifier) . '&type=' . urlencode($module);
         
         return $fileUrl;
+    }
+
+    /**
+     * serve_file: Serve file from database TMS_NEW as BLOB
+     * This method retrieves file BLOB from database and outputs it with proper headers
+     * @param string $id File identifier from MLR_DRAWING or MLR_SKETCH
+     * @param string $type File type (drawing or sketch)
+     */
+    public function serve_file()
+    {
+        $file_id = $this->input->get('id', TRUE);
+        $file_type = $this->input->get('type', TRUE);
+        
+        if (empty($file_id)) {
+            show_404();
+            return;
+        }
+        
+        // Load database connection
+        $db_tms = $this->load->database('tms_NEW', true);
+        if (!$db_tms) {
+            show_404();
+            return;
+        }
+        
+        // Determine which column to query based on file type
+        $column_name = 'MLR_DRAWING';
+        if ($file_type === 'sketch' || strpos(strtolower($file_type), 'sketch') !== false) {
+            $column_name = 'MLR_SKETCH';
+        }
+        
+        // Try multiple approaches to get file from database
+        // Approach 1: Check if file is stored as BLOB/VARBINARY/IMAGE in the same table
+        // First, let's check what columns exist in the table
+        $check_sql = "
+            SELECT COLUMN_NAME, DATA_TYPE 
+            FROM INFORMATION_SCHEMA.COLUMNS 
+            WHERE TABLE_SCHEMA = 'dbo' 
+            AND TABLE_NAME = 'TMS_TOOL_MASTER_LIST_REV'
+            AND (COLUMN_NAME LIKE '%DRAWING%' OR COLUMN_NAME LIKE '%SKETCH%' OR COLUMN_NAME LIKE '%FILE%' OR COLUMN_NAME LIKE '%BLOB%' OR COLUMN_NAME LIKE '%BINARY%' OR COLUMN_NAME LIKE '%IMAGE%')
+        ";
+        
+        $col_check = $db_tms->query($check_sql);
+        $has_blob_column = false;
+        $blob_column_name = null;
+        
+        if ($col_check && $col_check->num_rows() > 0) {
+            foreach ($col_check->result_array() as $col) {
+                $data_type = strtoupper($col['DATA_TYPE']);
+                if (in_array($data_type, array('IMAGE', 'VARBINARY', 'VARBINARY(MAX)', 'BINARY'))) {
+                    $has_blob_column = true;
+                    $blob_column_name = $col['COLUMN_NAME'];
+                    break;
+                }
+            }
+        }
+        
+        // Approach 2: Try to get file from a separate file storage table
+        // Check if there's a file storage table
+        $file_storage_sql = "
+            SELECT TOP 1 
+                FILE_CONTENT,
+                FILE_NAME,
+                FILE_TYPE,
+                FILE_SIZE
+            FROM TMS_NEW.dbo.TMS_FILE_STORAGE
+            WHERE FILE_ID = ? OR FILE_NAME = ?
+        ";
+        
+        $file_storage_q = @$db_tms->query($file_storage_sql, array($file_id, $file_id));
+        
+        if ($file_storage_q && $file_storage_q->num_rows() > 0) {
+            // File found in file storage table
+            $file_row = $file_storage_q->row_array();
+            $file_content = isset($file_row['FILE_CONTENT']) ? $file_row['FILE_CONTENT'] : null;
+            $file_name = isset($file_row['FILE_NAME']) ? $file_row['FILE_NAME'] : 'file';
+            $file_mime = isset($file_row['FILE_TYPE']) ? $file_row['FILE_TYPE'] : 'application/octet-stream';
+            
+            if ($file_content !== null) {
+                $this->_output_blob($file_content, $file_name, $file_mime);
+                return;
+            }
+        }
+        
+        // Approach 3: Try to get BLOB directly from TMS_TOOL_MASTER_LIST_REV
+        // First, check if MLR_DRAWING/MLR_SKETCH is actually a BLOB column
+        // If it's VARCHAR, it might contain a reference to another table
+        
+        // Get the record first to see what we have
+        $record_sql = "
+            SELECT TOP 1
+                rev.MLR_ID,
+                rev." . $column_name . " AS FILE_REFERENCE
+            FROM TMS_NEW.dbo.TMS_TOOL_MASTER_LIST_REV rev
+            WHERE rev." . $column_name . " = ?
+        ";
+        
+        $record_q = $db_tms->query($record_sql, array($file_id));
+        if ($record_q && $record_q->num_rows() > 0) {
+            $record = $record_q->row_array();
+            $file_reference = isset($record['FILE_REFERENCE']) ? $record['FILE_REFERENCE'] : null;
+            $mlr_id = isset($record['MLR_ID']) ? (int)$record['MLR_ID'] : 0;
+            
+            if ($file_reference) {
+                // Try to find file in various possible file storage tables
+                // Common table names for file storage
+                $possible_tables = array(
+                    'TMS_FILES',
+                    'TMS_FILE_STORAGE',
+                    'TMS_DRAWING_FILES',
+                    'TMS_SKETCH_FILES',
+                    'TMS_ATTACHMENTS',
+                    'TMS_DOCUMENTS'
+                );
+                
+                foreach ($possible_tables as $table_name) {
+                    // Try different column name combinations
+                    $possible_queries = array(
+                        // Query 1: FILE_ID matches reference
+                        "SELECT TOP 1 FILE_DATA AS FILE_CONTENT, FILE_NAME, FILE_TYPE AS FILE_MIME_TYPE 
+                         FROM TMS_NEW.dbo.{$table_name} 
+                         WHERE FILE_ID = ?",
+                        // Query 2: FILE_NAME matches reference
+                        "SELECT TOP 1 FILE_DATA AS FILE_CONTENT, FILE_NAME, FILE_TYPE AS FILE_MIME_TYPE 
+                         FROM TMS_NEW.dbo.{$table_name} 
+                         WHERE FILE_NAME = ?",
+                        // Query 3: ID matches reference
+                        "SELECT TOP 1 FILE_DATA AS FILE_CONTENT, FILE_NAME, FILE_TYPE AS FILE_MIME_TYPE 
+                         FROM TMS_NEW.dbo.{$table_name} 
+                         WHERE ID = ?",
+                        // Query 4: MLR_ID matches and column matches
+                        "SELECT TOP 1 FILE_DATA AS FILE_CONTENT, FILE_NAME, FILE_TYPE AS FILE_MIME_TYPE 
+                         FROM TMS_NEW.dbo.{$table_name} 
+                         WHERE MLR_ID = ?"
+                    );
+                    
+                    foreach ($possible_queries as $query_sql) {
+                        $params = array();
+                        if (strpos($query_sql, 'MLR_ID') !== false) {
+                            $params = array($mlr_id);
+                        } else {
+                            $params = array($file_reference);
+                        }
+                        
+                        $file_q = @$db_tms->query($query_sql, $params);
+                        if ($file_q && $file_q->num_rows() > 0) {
+                            $file_row = $file_q->row_array();
+                            $file_content = isset($file_row['FILE_CONTENT']) ? $file_row['FILE_CONTENT'] : null;
+                            $file_name = isset($file_row['FILE_NAME']) ? $file_row['FILE_NAME'] : $file_reference;
+                            $file_mime = isset($file_row['FILE_MIME_TYPE']) ? $file_row['FILE_MIME_TYPE'] : $this->_get_mime_type_from_filename($file_name);
+                            
+                            if ($file_content !== null && !empty($file_content)) {
+                                $this->_output_blob($file_content, $file_name, $file_mime);
+                                return;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        // If all approaches fail, return 404
+        show_404();
+    }
+    
+    /**
+     * Output BLOB data from database with proper headers
+     * @param string|resource $blob_data Binary file data from database
+     * @param string $file_name Filename for download
+     * @param string $mime_type MIME type of the file
+     */
+    private function _output_blob($blob_data, $file_name, $mime_type = 'application/octet-stream')
+    {
+        if (empty($blob_data)) {
+            show_404();
+            return;
+        }
+        
+        // Get file size
+        $file_size = strlen($blob_data);
+        
+        // Clean output buffer
+        if (ob_get_level()) {
+            ob_clean();
+        }
+        
+        // Set headers
+        header('Content-Type: ' . $mime_type);
+        header('Content-Length: ' . $file_size);
+        header('Content-Disposition: inline; filename="' . basename($file_name) . '"');
+        header('Cache-Control: private, max-age=3600');
+        header('Pragma: cache');
+        header('Expires: ' . gmdate('D, d M Y H:i:s', time() + 3600) . ' GMT');
+        
+        // Output binary data
+        echo $blob_data;
+        exit;
+    }
+    
+    /**
+     * Get MIME type from filename
+     * @param string $filename
+     * @return string MIME type
+     */
+    private function _get_mime_type_from_filename($filename)
+    {
+        $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+        $mime_types = array(
+            'jpg' => 'image/jpeg',
+            'jpeg' => 'image/jpeg',
+            'png' => 'image/png',
+            'gif' => 'image/gif',
+            'bmp' => 'image/bmp',
+            'webp' => 'image/webp',
+            'pdf' => 'application/pdf',
+            'doc' => 'application/msword',
+            'docx' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'xls' => 'application/vnd.ms-excel',
+            'xlsx' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        );
+        return isset($mime_types[$ext]) ? $mime_types[$ext] : 'application/octet-stream';
     }
 
     /**
