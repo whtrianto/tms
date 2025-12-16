@@ -455,10 +455,9 @@ class Tool_draw_engin extends MY_Controller
                         // Move file to proper folder: Attachment_TMS/Drawing/{ML_ID}/{REVISION}/
                         $moved = $this->_move_file_to_attachment_folder($uploaded_file_path, $ml_id, $revision, $target_filename);
                         if ($moved) {
-                            // Verify file was moved
-                            $expected_path_1 = FCPATH . 'Attachment_TMS/Drawing/' . (int)$ml_id . '/' . (int)$revision . '/' . $target_filename;
-                            $expected_path_2 = APPPATH . 'tms_modules/Attachment_TMS/Drawing/' . (int)$ml_id . '/' . (int)$revision . '/' . $target_filename;
-                            $file_exists = file_exists($expected_path_1) || file_exists($expected_path_2);
+                            // Verify file was moved (only check application folder)
+                            $expected_path = APPPATH . 'tms_modules/Attachment_TMS/Drawing/' . (int)$ml_id . '/' . (int)$revision . '/' . $target_filename;
+                            $file_exists = file_exists($expected_path);
                             
                             error_log('[Tool_draw_engin::submit_data] File move result: ' . ($moved ? 'SUCCESS' : 'FAILED') . ', File exists at target: ' . ($file_exists ? 'YES' : 'NO'));
                             log_message('info', '[Tool_draw_engin::submit_data] File successfully moved to Attachment_TMS folder. ML_ID: ' . $ml_id . ', Revision: ' . $revision . ', File: ' . $target_filename);
@@ -1706,8 +1705,8 @@ class Tool_draw_engin extends MY_Controller
             $safe_filename = 'file_' . time();
         }
         
-        // Try web root first (preferred for direct access)
-        $target_dir = FCPATH . 'Attachment_TMS/Drawing/' . (int)$ml_id . '/' . (int)$revision . '/';
+        // Use application folder: application/tms_modules/Attachment_TMS/Drawing/{ML_ID}/{REVISION}/
+        $target_dir = APPPATH . 'tms_modules/Attachment_TMS/Drawing/' . (int)$ml_id . '/' . (int)$revision . '/';
         
         error_log('[Tool_draw_engin::_move_file_to_attachment_folder] Attempting to create/move to: ' . $target_dir);
         log_message('debug', '[Tool_draw_engin::_move_file_to_attachment_folder] Attempting to create/move to: ' . $target_dir);
@@ -1717,26 +1716,11 @@ class Tool_draw_engin extends MY_Controller
             $created = @mkdir($target_dir, 0755, true);
             if (!$created) {
                 $error = error_get_last();
-                error_log('[Tool_draw_engin::_move_file_to_attachment_folder] Failed to create web root directory: ' . $target_dir . '. Error: ' . ($error ? $error['message'] : 'Unknown'));
-                
-                // Fallback to application folder
-                $target_dir = APPPATH . 'tms_modules/Attachment_TMS/Drawing/' . (int)$ml_id . '/' . (int)$revision . '/';
-                error_log('[Tool_draw_engin::_move_file_to_attachment_folder] Web root failed, trying application folder: ' . $target_dir);
-                log_message('debug', '[Tool_draw_engin::_move_file_to_attachment_folder] Web root failed, trying application folder: ' . $target_dir);
-                
-                if (!is_dir($target_dir)) {
-                    $created = @mkdir($target_dir, 0755, true);
-                    if (!$created) {
-                        $error = error_get_last();
-                        error_log('[Tool_draw_engin::_move_file_to_attachment_folder] ERROR: Cannot create directory: ' . $target_dir . '. Error: ' . ($error ? $error['message'] : 'Unknown'));
-                        log_message('error', '[Tool_draw_engin::_move_file_to_attachment_folder] Cannot create directory: ' . $target_dir . '. Error: ' . ($error ? $error['message'] : 'Unknown'));
-                        return false;
-                    } else {
-                        error_log('[Tool_draw_engin::_move_file_to_attachment_folder] Application folder created successfully: ' . $target_dir);
-                    }
-                }
+                error_log('[Tool_draw_engin::_move_file_to_attachment_folder] ERROR: Cannot create directory: ' . $target_dir . '. Error: ' . ($error ? $error['message'] : 'Unknown'));
+                log_message('error', '[Tool_draw_engin::_move_file_to_attachment_folder] Cannot create directory: ' . $target_dir . '. Error: ' . ($error ? $error['message'] : 'Unknown'));
+                return false;
             } else {
-                error_log('[Tool_draw_engin::_move_file_to_attachment_folder] Web root directory created successfully: ' . $target_dir);
+                error_log('[Tool_draw_engin::_move_file_to_attachment_folder] Directory created successfully: ' . $target_dir);
                 log_message('info', '[Tool_draw_engin::_move_file_to_attachment_folder] Directory created successfully: ' . $target_dir);
             }
         } else {
