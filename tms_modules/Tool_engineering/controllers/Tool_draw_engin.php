@@ -442,13 +442,22 @@ class Tool_draw_engin extends MY_Controller
                     // Get ML_ID (MLR_ML_ID) from the newly created record
                     $ml_id = $this->_get_ml_id_by_drawing_no($drawing_no);
                     
-                    if ($ml_id > 0 && $uploaded_file_path && file_exists($uploaded_file_path) && !empty($file_name_for_storage)) {
+                    log_message('debug', '[Tool_draw_engin::submit_data] After add_data - ML_ID: ' . $ml_id . ', Drawing No: ' . $drawing_no . ', Uploaded file path: ' . ($uploaded_file_path ? $uploaded_file_path : 'NULL') . ', File name for storage: ' . ($file_name_for_storage ? $file_name_for_storage : 'NULL'));
+                    
+                    if ($ml_id > 0 && $uploaded_file_path && file_exists($uploaded_file_path)) {
+                        // Use file_name_for_storage if available, otherwise use original filename
+                        $target_filename = !empty($file_name_for_storage) ? $file_name_for_storage : basename($uploaded_file_path);
+                        
                         // Move file to proper folder: Attachment_TMS/Drawing/{ML_ID}/{REVISION}/
-                        $moved = $this->_move_file_to_attachment_folder($uploaded_file_path, $ml_id, $revision, $file_name_for_storage);
-                        if (!$moved) {
+                        $moved = $this->_move_file_to_attachment_folder($uploaded_file_path, $ml_id, $revision, $target_filename);
+                        if ($moved) {
+                            log_message('info', '[Tool_draw_engin::submit_data] File successfully moved to Attachment_TMS folder. ML_ID: ' . $ml_id . ', Revision: ' . $revision . ', File: ' . $target_filename);
+                        } else {
                             // Log error but don't fail the transaction
-                            log_message('error', '[Tool_draw_engin::submit_data] Failed to move file to Attachment_TMS folder. ML_ID: ' . $ml_id . ', File: ' . $file_name_for_storage);
+                            log_message('error', '[Tool_draw_engin::submit_data] Failed to move file to Attachment_TMS folder. ML_ID: ' . $ml_id . ', Revision: ' . $revision . ', File: ' . $target_filename . ', Source: ' . $uploaded_file_path);
                         }
+                    } else {
+                        log_message('warning', '[Tool_draw_engin::submit_data] Cannot move file - ML_ID: ' . $ml_id . ', Uploaded file path exists: ' . ($uploaded_file_path && file_exists($uploaded_file_path) ? 'YES' : 'NO'));
                     }
                     
                     $result['success'] = true;
@@ -1627,15 +1636,35 @@ class Tool_draw_engin extends MY_Controller
      */
     private function _get_ml_id_by_drawing_no($drawing_no)
     {
+        if (empty($drawing_no)) {
+            log_message('error', '[Tool_draw_engin::_get_ml_id_by_drawing_no] Drawing No is empty');
+            return 0;
+        }
+        
         // Load database connection
         $db_tms = $this->load->database('tms_NEW', TRUE);
         
-        $sql = "SELECT ML_ID FROM TMS_NEW.dbo.TMS_TOOL_MASTER_LIST WHERE ML_TOOL_DRAW_NO = ?";
-        $query = $db_tms->query($sql, array($drawing_no));
+        // Try up to 3 times with small delay (in case of transaction delay)
+        $max_retries = 3;
+        $retry_delay = 100000; // 100ms in microseconds
         
-        if ($query && $query->num_rows() > 0) {
-            return (int)$query->row()->ML_ID;
+        for ($i = 0; $i < $max_retries; $i++) {
+            $sql = "SELECT ML_ID FROM TMS_NEW.dbo.TMS_TOOL_MASTER_LIST WHERE ML_TOOL_DRAW_NO = ?";
+            $query = $db_tms->query($sql, array($drawing_no));
+            
+            if ($query && $query->num_rows() > 0) {
+                $ml_id = (int)$query->row()->ML_ID;
+                log_message('debug', '[Tool_draw_engin::_get_ml_id_by_drawing_no] Found ML_ID: ' . $ml_id . ' for Drawing No: ' . $drawing_no . ' (attempt ' . ($i + 1) . ')');
+                return $ml_id;
+            }
+            
+            // Wait before retry (except on last attempt)
+            if ($i < $max_retries - 1) {
+                usleep($retry_delay);
+            }
         }
+        
+        log_message('error', '[Tool_draw_engin::_get_ml_id_by_drawing_no] ML_ID not found for Drawing No: ' . $drawing_no . ' after ' . $max_retries . ' attempts');
         return 0;
     }
     
@@ -1651,40 +1680,58 @@ class Tool_draw_engin extends MY_Controller
     private function _move_file_to_attachment_folder($source_file_path, $ml_id, $revision, $filename)
     {
         if (!file_exists($source_file_path) || !is_file($source_file_path)) {
+            log_message('error', '[Tool_draw_engin::_move_file_to_attachment_folder] Source file does not exist: ' . $source_file_path);
             return false;
+        }
+        
+        // Sanitize filename
+        $safe_filename = preg_replace('/[^A-Za-z0-9_\-\.]/', '_', basename($filename));
+        if (empty($safe_filename)) {
+            $safe_filename = 'file_' . time();
         }
         
         // Try web root first (preferred for direct access)
         $target_dir = FCPATH . 'Attachment_TMS/Drawing/' . (int)$ml_id . '/' . (int)$revision . '/';
         
+        log_message('debug', '[Tool_draw_engin::_move_file_to_attachment_folder] Attempting to create/move to: ' . $target_dir);
+        
         // Create directory if it doesn't exist
         if (!is_dir($target_dir)) {
-            if (!@mkdir($target_dir, 0755, true)) {
+            $created = @mkdir($target_dir, 0755, true);
+            if (!$created) {
                 // Fallback to application folder
                 $target_dir = APPPATH . 'tms_modules/Attachment_TMS/Drawing/' . (int)$ml_id . '/' . (int)$revision . '/';
+                log_message('debug', '[Tool_draw_engin::_move_file_to_attachment_folder] Web root failed, trying application folder: ' . $target_dir);
                 if (!is_dir($target_dir)) {
-                    if (!@mkdir($target_dir, 0755, true)) {
-                        log_message('error', '[Tool_draw_engin::_move_file_to_attachment_folder] Cannot create directory: ' . $target_dir);
+                    $created = @mkdir($target_dir, 0755, true);
+                    if (!$created) {
+                        $error = error_get_last();
+                        log_message('error', '[Tool_draw_engin::_move_file_to_attachment_folder] Cannot create directory: ' . $target_dir . '. Error: ' . ($error ? $error['message'] : 'Unknown'));
                         return false;
                     }
                 }
+            } else {
+                log_message('info', '[Tool_draw_engin::_move_file_to_attachment_folder] Directory created successfully: ' . $target_dir);
             }
         }
         
-        $target_file = $target_dir . basename($filename);
+        $target_file = $target_dir . $safe_filename;
+        
+        log_message('debug', '[Tool_draw_engin::_move_file_to_attachment_folder] Moving file from: ' . $source_file_path . ' to: ' . $target_file);
         
         // Move file to target location
         if (@rename($source_file_path, $target_file)) {
-            log_message('debug', '[Tool_draw_engin::_move_file_to_attachment_folder] File moved successfully. From: ' . $source_file_path . ' To: ' . $target_file);
+            log_message('info', '[Tool_draw_engin::_move_file_to_attachment_folder] File moved successfully. From: ' . $source_file_path . ' To: ' . $target_file);
             return true;
         } else {
             // Try copy if rename fails (different filesystem)
             if (@copy($source_file_path, $target_file)) {
                 @unlink($source_file_path); // Delete source after successful copy
-                log_message('debug', '[Tool_draw_engin::_move_file_to_attachment_folder] File copied successfully. From: ' . $source_file_path . ' To: ' . $target_file);
+                log_message('info', '[Tool_draw_engin::_move_file_to_attachment_folder] File copied successfully. From: ' . $source_file_path . ' To: ' . $target_file);
                 return true;
             } else {
-                log_message('error', '[Tool_draw_engin::_move_file_to_attachment_folder] Failed to move/copy file. From: ' . $source_file_path . ' To: ' . $target_file);
+                $error = error_get_last();
+                log_message('error', '[Tool_draw_engin::_move_file_to_attachment_folder] Failed to move/copy file. From: ' . $source_file_path . ' To: ' . $target_file . '. Error: ' . ($error ? $error['message'] : 'Unknown'));
                 return false;
             }
         }
