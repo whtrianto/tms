@@ -522,7 +522,8 @@ class Tool_draw_engin extends MY_Controller
                     $material_id,
                     $maker_id,
                     $machine_group_id,
-                    $effective_date
+                    $effective_date,
+                    $revision
                 );
                 if ($ok === true) {
                     $result['success'] = true;

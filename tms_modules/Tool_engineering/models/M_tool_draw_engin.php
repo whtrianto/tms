@@ -360,7 +360,7 @@ class M_tool_draw_engin extends CI_Model
     /**
      * Edit tool drawing
      */
-    public function edit_data_engineering($id, $product_id, $process_id, $drawing_no, $tool_id, $status, $material_id, $maker_id = null, $machine_group_id = null, $effective_date = null)
+    public function edit_data_engineering($id, $product_id, $process_id, $drawing_no, $tool_id, $status, $material_id, $maker_id = null, $machine_group_id = null, $effective_date = null, $revision = null)
     {
         $id = (int)$id;
         $product_id = (int)$product_id;
@@ -372,6 +372,7 @@ class M_tool_draw_engin extends CI_Model
         $maker_id = ($maker_id > 0) ? (int)$maker_id : null;
         $machine_group_id = ($machine_group_id > 0) ? (int)$machine_group_id : null;
         $effective_date = !empty($effective_date) ? trim((string)$effective_date) : null;
+        $revision = ($revision !== null) ? (int)$revision : null;
 
         $current = $this->get_by_id($id);
         if (!$current) {
@@ -382,8 +383,10 @@ class M_tool_draw_engin extends CI_Model
         $this->db_tms->trans_start();
 
         $ml_id = isset($current['TD_ML_ID']) ? (int)$current['TD_ML_ID'] : 0;
-        $old_revision = isset($current['TD_REVISION']) ? (int)$current['TD_REVISION'] : 0;
-        $new_revision = $old_revision + 1;
+        // Use revision from form, or keep current revision if not provided
+        if ($revision === null) {
+            $revision = isset($current['TD_REVISION']) ? (int)$current['TD_REVISION'] : 0;
+        }
 
         // Update TMS_TOOL_MASTER_LIST if drawing_no changed
         if ($ml_id > 0 && $drawing_no !== '') {
@@ -415,7 +418,7 @@ class M_tool_draw_engin extends CI_Model
                               MLR_REV = ?, MLR_MODIFIED_DATE = GETDATE(), MLR_MODIFIED_BY = ?" . $effective_date_sql . "
                           WHERE MLR_ID = ?";
         
-        $params = array($process_id, $tool_id, $material_id, $maker_id, $machine_group_id, $status, $new_revision, $modified_by);
+        $params = array($process_id, $tool_id, $material_id, $maker_id, $machine_group_id, $status, $revision, $modified_by);
         if ($effective_date !== null) {
             $params[] = $effective_date;
         }

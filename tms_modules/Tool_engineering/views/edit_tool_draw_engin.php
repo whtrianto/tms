@@ -4,7 +4,9 @@
     <?= $head; ?>
     <link href="<?= base_url('assets/vendor/datatables/dataTables.bootstrap4.min.css'); ?>" rel="stylesheet">
     <style>
+        /* konsisten: teks hitam */
         html, body, #content-wrapper { color: #000; }
+        .table td, .table th { color: #000 !important; }
         .card, .table, label, .form-text { color: #000; }
         .label-required::after { content: " *"; color: #dc3545; font-weight: 600; }
         .is-invalid + .invalid-feedback { display: block; }
@@ -231,7 +233,7 @@
                 </div>
             </div>
             <?= isset($modal_logout) ? $modal_logout : ''; ?>
-        </div><br><br><br><br><br><br>
+        </div>
         <?= isset($footer) ? $footer : ''; ?>
     </div>
 </div>
