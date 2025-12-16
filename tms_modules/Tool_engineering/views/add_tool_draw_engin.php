@@ -78,19 +78,19 @@
                             </div>
 
                             <div class="form-row">
-                                <div class="form-group col-md-4">
+                                <div class="form-group col-md-3">
                                     <label>Revision</label>
-                                    <input type="number" name="TD_REVISION" class="form-control" value="0">
+                                    <input type="number" name="TD_REVISION" class="form-control" value="0" min="0">
                                 </div>
-                                <div class="form-group col-md-4">
+                                <div class="form-group col-md-3">
                                     <label>Status</label>
                                     <select name="TD_STATUS" class="form-control">
-                                        <option value="1">Active</option>
+                                        <option value="2">Active</option>
                                         <option value="0">Inactive</option>
-                                        <option value="2">Pending</option>
+                                        <option value="1">Pending</option>
                                     </select>
                                 </div>
-                                <div class="form-group col-md-4">
+                                <div class="form-group col-md-3">
                                     <label>Material</label>
                                     <select name="TD_MATERIAL_ID" class="form-control">
                                         <option value="">-- Select Material --</option>
@@ -98,6 +98,24 @@
                                             <option value="<?= (int)$m['MATERIAL_ID']; ?>"><?= htmlspecialchars($m['MATERIAL_NAME'], ENT_QUOTES, 'UTF-8'); ?></option>
                                         <?php endforeach; ?>
                                     </select>
+                                </div>
+                                <div class="form-group col-md-3">
+                                    <label>Maker</label>
+                                    <input type="number" name="TD_MAKER_ID" class="form-control" value="" placeholder="Maker ID (optional)" min="0">
+                                    <small class="form-text text-muted">Optional: Enter Maker ID</small>
+                                </div>
+                            </div>
+                            
+                            <div class="form-row">
+                                <div class="form-group col-md-6">
+                                    <label>Machine Group</label>
+                                    <input type="number" name="TD_MAC_ID" class="form-control" value="" placeholder="Machine Group ID (optional)" min="0">
+                                    <small class="form-text text-muted">Optional: Enter Machine Group ID</small>
+                                </div>
+                                <div class="form-group col-md-6">
+                                    <label>Effective Date</label>
+                                    <input type="date" name="TD_EFFECTIVE_DATE" class="form-control" value="">
+                                    <small class="form-text text-muted">Optional: Select effective date</small>
                                 </div>
                             </div>
 
@@ -125,28 +143,42 @@
             var fileInput = $('[name="TD_DRAWING_FILE"]')[0];
             var hasFile = fileInput && fileInput.files && fileInput.files.length > 0;
             
+            // Clear previous validation
+            $('.is-invalid').removeClass('is-invalid');
+            
             var isValid = true;
+            var errorMessages = [];
+            
             if (productId === '' || productId <= 0) {
                 $('[name="TD_PRODUCT_ID"]').addClass('is-invalid');
                 isValid = false;
-            } else {
-                $('[name="TD_PRODUCT_ID"]').removeClass('is-invalid');
+                errorMessages.push('Product wajib dipilih');
             }
+            
             if (processId === '' || processId <= 0) {
                 $('[name="TD_PROCESS_ID"]').addClass('is-invalid');
                 isValid = false;
-            } else {
-                $('[name="TD_PROCESS_ID"]').removeClass('is-invalid');
+                errorMessages.push('Process wajib dipilih');
             }
+            
             if (!hasFile) {
                 $('[name="TD_DRAWING_FILE"]').addClass('is-invalid');
                 isValid = false;
-            } else {
-                $('[name="TD_DRAWING_FILE"]').removeClass('is-invalid');
+                errorMessages.push('Drawing file wajib diunggah');
             }
 
-            if (!isValid) return;
+            if (!isValid) {
+                if (errorMessages.length > 0 && typeof toastr !== 'undefined') {
+                    toastr.warning(errorMessages.join('<br>'));
+                }
+                return;
+            }
 
+            // Show loading indicator
+            var $submitBtn = $(this).find('button[type="submit"]');
+            var originalText = $submitBtn.html();
+            $submitBtn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Saving...');
+            
             var fd = new FormData(this);
             $.ajax({
                 url: $(this).attr('action'),
@@ -156,18 +188,36 @@
                 processData: false,
                 contentType: false,
                 cache: false,
-                timeout: 30000
+                timeout: 60000 // Increase timeout for file upload
             }).done(function(res){
                 if (res && res.success) {
-                    toastr.success(res.message || 'Tool Drawing berhasil ditambahkan');
+                    if (typeof toastr !== 'undefined') {
+                        toastr.success(res.message || 'Tool Drawing berhasil ditambahkan');
+                    } else {
+                        alert(res.message || 'Tool Drawing berhasil ditambahkan');
+                    }
                     setTimeout(function(){
                         window.location.href = '<?= base_url("Tool_engineering/tool_draw_engin"); ?>';
-                    }, 600);
+                    }, 1000);
                 } else {
-                    toastr.warning(res && res.message ? res.message : 'Gagal menyimpan data');
+                    if (typeof toastr !== 'undefined') {
+                        toastr.error(res && res.message ? res.message : 'Gagal menyimpan data');
+                    } else {
+                        alert(res && res.message ? res.message : 'Gagal menyimpan data');
+                    }
+                    $submitBtn.prop('disabled', false).html(originalText);
                 }
-            }).fail(function(xhr, status){
-                toastr.error('Gagal menyimpan: ' + status);
+            }).fail(function(xhr, status, error){
+                var errorMsg = 'Gagal menyimpan: ' + status;
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    errorMsg = xhr.responseJSON.message;
+                }
+                if (typeof toastr !== 'undefined') {
+                    toastr.error(errorMsg);
+                } else {
+                    alert(errorMsg);
+                }
+                $submitBtn.prop('disabled', false).html(originalText);
             });
         });
     });

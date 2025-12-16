@@ -385,7 +385,9 @@ class Tool_draw_engin extends MY_Controller
             
             // Handle uploaded file (TD_DRAWING_FILE) or use old filename (TD_DRAWING_NO_OLD)
             $drawing_no = '';
+            $uploaded_file_path = null; // Store temporary upload path for later move
             if (!empty($_FILES) && isset($_FILES['TD_DRAWING_FILE']) && !empty($_FILES['TD_DRAWING_FILE']['name'])) {
+                // Temporary upload directory
                 $uploadDir = FCPATH . 'tool_drawing/img/';
                 if (!is_dir($uploadDir)) {
                     @mkdir($uploadDir, 0755, true);
@@ -396,6 +398,7 @@ class Tool_draw_engin extends MY_Controller
                 $target = $uploadDir . $fileName;
                 if (move_uploaded_file($_FILES['TD_DRAWING_FILE']['tmp_name'], $target)) {
                     $drawing_no = $fileName;
+                    $uploaded_file_path = $target; // Store path for later move to proper folder
                 } else {
                     $result['message'] = 'Gagal mengunggah file drawing.';
                     echo json_encode($result);
@@ -423,9 +426,25 @@ class Tool_draw_engin extends MY_Controller
                 }
                 $ok = $this->tool_draw_engin->add_data($product_id, $process_id, $drawing_no, $tool_id, $revision, $status, $material_id, $maker_id);
                 if ($ok === true) {
+                    // Get ML_ID (MLR_ML_ID) from the newly created record
+                    $ml_id = $this->_get_ml_id_by_drawing_no($drawing_no);
+                    
+                    if ($ml_id > 0 && $uploaded_file_path && file_exists($uploaded_file_path)) {
+                        // Move file to proper folder: Attachment_TMS/Drawing/{ML_ID}/{REVISION}/
+                        $moved = $this->_move_file_to_attachment_folder($uploaded_file_path, $ml_id, $revision, $drawing_no);
+                        if (!$moved) {
+                            // Log error but don't fail the transaction
+                            log_message('error', '[Tool_draw_engin::submit_data] Failed to move file to Attachment_TMS folder. ML_ID: ' . $ml_id . ', File: ' . $drawing_no);
+                        }
+                    }
+                    
                     $result['success'] = true;
                     $result['message'] = $this->tool_draw_engin->messages ?: 'Tool Drawing Engineering berhasil ditambahkan.';
                 } else {
+                    // Clean up uploaded file if database insert failed
+                    if ($uploaded_file_path && file_exists($uploaded_file_path)) {
+                        @unlink($uploaded_file_path);
+                    }
                     $result['success'] = false;
                     $result['message'] = $this->tool_draw_engin->messages ?: 'Gagal menambahkan tool drawing.';
                 }
@@ -1586,6 +1605,76 @@ class Tool_draw_engin extends MY_Controller
         }
         
         return 'Plain Identifier';
+    }
+    
+    /**
+     * Get ML_ID by drawing_no (ML_TOOL_DRAW_NO)
+     * @param string $drawing_no
+     * @return int ML_ID or 0 if not found
+     */
+    private function _get_ml_id_by_drawing_no($drawing_no)
+    {
+        // Load database connection
+        $db_tms = $this->load->database('tms_NEW', TRUE);
+        
+        $sql = "SELECT ML_ID FROM TMS_NEW.dbo.TMS_TOOL_MASTER_LIST WHERE ML_TOOL_DRAW_NO = ?";
+        $query = $db_tms->query($sql, array($drawing_no));
+        
+        if ($query && $query->num_rows() > 0) {
+            return (int)$query->row()->ML_ID;
+        }
+        return 0;
+    }
+    
+    /**
+     * Move uploaded file to Attachment_TMS folder structure
+     * Folder structure: Attachment_TMS/Drawing/{ML_ID}/{REVISION}/{filename}
+     * @param string $source_file_path Full path to source file
+     * @param int $ml_id ML_ID (MLR_ML_ID)
+     * @param int $revision MLR_REV
+     * @param string $filename Original filename
+     * @return bool True if successful, false otherwise
+     */
+    private function _move_file_to_attachment_folder($source_file_path, $ml_id, $revision, $filename)
+    {
+        if (!file_exists($source_file_path) || !is_file($source_file_path)) {
+            return false;
+        }
+        
+        // Try web root first (preferred for direct access)
+        $target_dir = FCPATH . 'Attachment_TMS/Drawing/' . (int)$ml_id . '/' . (int)$revision . '/';
+        
+        // Create directory if it doesn't exist
+        if (!is_dir($target_dir)) {
+            if (!@mkdir($target_dir, 0755, true)) {
+                // Fallback to application folder
+                $target_dir = APPPATH . 'tms_modules/Attachment_TMS/Drawing/' . (int)$ml_id . '/' . (int)$revision . '/';
+                if (!is_dir($target_dir)) {
+                    if (!@mkdir($target_dir, 0755, true)) {
+                        log_message('error', '[Tool_draw_engin::_move_file_to_attachment_folder] Cannot create directory: ' . $target_dir);
+                        return false;
+                    }
+                }
+            }
+        }
+        
+        $target_file = $target_dir . basename($filename);
+        
+        // Move file to target location
+        if (@rename($source_file_path, $target_file)) {
+            log_message('debug', '[Tool_draw_engin::_move_file_to_attachment_folder] File moved successfully. From: ' . $source_file_path . ' To: ' . $target_file);
+            return true;
+        } else {
+            // Try copy if rename fails (different filesystem)
+            if (@copy($source_file_path, $target_file)) {
+                @unlink($source_file_path); // Delete source after successful copy
+                log_message('debug', '[Tool_draw_engin::_move_file_to_attachment_folder] File copied successfully. From: ' . $source_file_path . ' To: ' . $target_file);
+                return true;
+            } else {
+                log_message('error', '[Tool_draw_engin::_move_file_to_attachment_folder] Failed to move/copy file. From: ' . $source_file_path . ' To: ' . $target_file);
+                return false;
+            }
+        }
     }
 }
 
