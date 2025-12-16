@@ -201,8 +201,8 @@ class Tool_draw_engin extends MY_Controller
                 }
 
                 // Build action buttons HTML
-                $edit_url = base_url('Tool_drawing/tool_draw_engin/edit_page/' . (int)$row['TD_ID']);
-                $history_url = base_url('Tool_drawing/tool_draw_engin/history_page/' . (int)$row['TD_ID']);
+                $edit_url = base_url('Tool_engineering/tool_draw_engin/edit_page/' . (int)$row['TD_ID']);
+                $history_url = base_url('Tool_engineering/tool_draw_engin/history_page/' . (int)$row['TD_ID']);
                 $drawing_no_escaped = htmlspecialchars(isset($row['TD_DRAWING_NO']) ? $row['TD_DRAWING_NO'] : '', ENT_QUOTES, 'UTF-8');
                 
                 $action_html = '<div class="action-buttons">' .
