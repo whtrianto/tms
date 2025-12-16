@@ -455,7 +455,7 @@ class Tool_draw_engin extends MY_Controller
                         // Move file to proper folder: Attachment_TMS/Drawing/{ML_ID}/{REVISION}/
                         $moved = $this->_move_file_to_attachment_folder($uploaded_file_path, $ml_id, $revision, $target_filename);
                         if ($moved) {
-                            // Verify file was moved (only check application folder)
+                            // Verify file was moved (check application folder only)
                             $expected_path = APPPATH . 'tms_modules/Attachment_TMS/Drawing/' . (int)$ml_id . '/' . (int)$revision . '/' . $target_filename;
                             $file_exists = file_exists($expected_path);
                             
