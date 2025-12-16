@@ -647,26 +647,30 @@ class Tool_draw_engin extends MY_Controller
      */
     private function _get_folder_path($mlr_ml_id, $mlr_rev, $folder_name)
     {
+        // Get base URL without trailing slash for direct file access
+        $base_url = rtrim(base_url(), '/');
+        
         // Try multiple possible paths
         $possible_paths = array(
             // Path 1: Web root Attachment_TMS (most common for direct access)
+            // Use direct URL that bypasses CodeIgniter routing completely
             array(
                 'dir' => FCPATH . 'Attachment_TMS/' . $folder_name . '/' . $mlr_ml_id . '/' . $mlr_rev . '/',
-                'url' => base_url('Attachment_TMS/' . $folder_name . '/' . $mlr_ml_id . '/' . $mlr_rev . '/')
+                'url' => $base_url . '/Attachment_TMS/' . $folder_name . '/' . $mlr_ml_id . '/' . $mlr_rev . '/'
             ),
-            // Path 2: Application folder tms_modules
+            // Path 2: Application folder tms_modules (must use controller)
             array(
                 'dir' => APPPATH . 'tms_modules/Attachment_TMS/' . $folder_name . '/' . $mlr_ml_id . '/' . $mlr_rev . '/',
-                'url' => base_url('tms_modules/Attachment_TMS/' . $folder_name . '/' . $mlr_ml_id . '/' . $mlr_rev . '/')
+                'url' => base_url('Attachment_TMS/index') . '?folder=' . rawurlencode($folder_name) . '&mlr_ml_id=' . (int)$mlr_ml_id . '&mlr_rev=' . (int)$mlr_rev . '&filename='
             ),
             // Path 3: Try without revision subfolder (some files might be directly in MLR_ML_ID folder)
             array(
                 'dir' => FCPATH . 'Attachment_TMS/' . $folder_name . '/' . $mlr_ml_id . '/',
-                'url' => base_url('Attachment_TMS/' . $folder_name . '/' . $mlr_ml_id . '/')
+                'url' => $base_url . '/Attachment_TMS/' . $folder_name . '/' . $mlr_ml_id . '/'
             ),
             array(
                 'dir' => APPPATH . 'tms_modules/Attachment_TMS/' . $folder_name . '/' . $mlr_ml_id . '/',
-                'url' => base_url('tms_modules/Attachment_TMS/' . $folder_name . '/' . $mlr_ml_id . '/')
+                'url' => base_url('Attachment_TMS/index') . '?folder=' . rawurlencode($folder_name) . '&mlr_ml_id=' . (int)$mlr_ml_id . '&mlr_rev=0&filename='
             )
         );
         
@@ -1265,13 +1269,19 @@ class Tool_draw_engin extends MY_Controller
                     }
                     $file_path = $drawing_path_info['dir'] . $file;
                     if (is_file($file_path)) {
-                        // Always use direct URL if folder is in web root (bypasses PHP completely)
+                        // Always use direct URL if folder is in web root (bypasses PHP/CodeIgniter completely)
                         if (strpos($drawing_path_info['dir'], FCPATH) === 0) {
-                            // File is in web root, use direct URL - no PHP processing, no corruption
+                            // File is in web root, use DIRECT URL - bypasses all PHP/CodeIgniter routing
+                            // This URL goes directly to the file without any PHP processing
                             $file_url = $drawing_path_info['url'] . rawurlencode($file);
                         } else {
                             // File is in application folder, must use Attachment_TMS controller
-                            $file_url = $this->build_file_url_by_mlr($mlr_ml_id, $mlr_rev, $file, 'drawing');
+                            // Append filename to the URL that already has query parameters
+                            if (strpos($drawing_path_info['url'], '?') !== false) {
+                                $file_url = $drawing_path_info['url'] . rawurlencode($file);
+                            } else {
+                                $file_url = $this->build_file_url_by_mlr($mlr_ml_id, $mlr_rev, $file, 'drawing');
+                            }
                         }
                         $file_ext = strtolower(pathinfo($file, PATHINFO_EXTENSION));
                         $drawing_files[] = array(

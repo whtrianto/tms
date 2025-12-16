@@ -408,8 +408,9 @@
                                     }
                                     
                                     // All files are clickable links for download
+                                    // Use href directly to file - if file is in web root, this bypasses PHP completely
                                     html += '<div style="margin-bottom:4px;">' +
-                                            '<a href="' + file.url + '" download="' + file.name + '" style="display:block; padding:8px; border:1px solid #ccc; background:#fff; text-decoration:none; color:#007bff; cursor:pointer; border-radius:4px;" ' +
+                                            '<a href="' + file.url + '" target="_blank" style="display:block; padding:8px; border:1px solid #ccc; background:#fff; text-decoration:none; color:#007bff; cursor:pointer; border-radius:4px;" ' +
                                             'onmouseover="this.style.background=\'#f0f0f0\';" onmouseout="this.style.background=\'#fff\';" title="Click to download">' +
                                             '<i class="fa fa-download"></i> ' + file.name + ' (' + formatFileSize(file.size) + ')' +
                                             '</a></div>';
@@ -428,9 +429,10 @@
                                 var displayName = fileId || 'File';
                                 
                                 // All files are clickable links for download
+                                // Use href directly to file - if file is in web root, this bypasses PHP completely
                                 html = '<div style="margin-bottom:8px;"><strong>' + label + ':</strong></div>' +
                                        '<div style="border:1px solid #ddd; padding:8px; background:#f9f9f9;">' +
-                                       '<a href="' + fileUrl + '" download="' + displayName + '" style="display:block; padding:8px; border:1px solid #ccc; background:#fff; text-decoration:none; color:#007bff; cursor:pointer; border-radius:4px;" ' +
+                                       '<a href="' + fileUrl + '" target="_blank" style="display:block; padding:8px; border:1px solid #ccc; background:#fff; text-decoration:none; color:#007bff; cursor:pointer; border-radius:4px;" ' +
                                        'onmouseover="this.style.background=\'#f0f0f0\';" onmouseout="this.style.background=\'#fff\';" title="Click to download">' +
                                        '<i class="fa fa-download"></i> ' + displayName +
                                        '</a></div>';
