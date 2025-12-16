@@ -4,21 +4,29 @@ defined('BASEPATH') or exit('No direct script access allowed');
 /**
  * Controller untuk serve file dari folder Attachment_TMS
  * Handle routing: Attachment_TMS/{folder}/{mlr_id}/{mlr_rev}/{filename}
+ * 
+ * IMPORTANT: This controller extends CI_Controller directly to avoid MY_Controller output issues
  */
-class Attachment_TMS extends MY_Controller
+class Attachment_TMS extends CI_Controller
 {
     public function __construct()
     {
-        // Disable output buffering BEFORE calling parent
+        // Disable ALL output buffering immediately
         while (ob_get_level()) {
             ob_end_clean();
         }
         
+        // Turn off output buffering completely
+        if (ini_get('output_buffering')) {
+            ini_set('output_buffering', 'Off');
+        }
+        
         parent::__construct();
         
-        // Disable output buffering and CodeIgniter output class for file serving
+        // Disable CodeIgniter output class completely
         $this->output->enable_profiler(FALSE);
         $this->output->_display = FALSE;
+        $this->output->set_output(''); // Clear any output
         
         // No authentication required for file serving (or add if needed)
     }
@@ -31,6 +39,16 @@ class Attachment_TMS extends MY_Controller
      */
     public function index()
     {
+        // CRITICAL: Disable ALL output buffering FIRST - before anything else
+        while (ob_get_level()) {
+            ob_end_clean();
+        }
+        
+        // Turn off output buffering at PHP level
+        if (ini_get('output_buffering')) {
+            ini_set('output_buffering', 'Off');
+        }
+        
         // CRITICAL: Check if any output has been sent already
         if (headers_sent($file, $line)) {
             error_log('[Attachment_TMS] ERROR: Headers already sent at ' . $file . ':' . $line . ' - This will cause file corruption!');
@@ -38,17 +56,13 @@ class Attachment_TMS extends MY_Controller
             exit;
         }
         
-        // Disable all output buffering immediately to prevent corruption
-        while (ob_get_level()) {
-            ob_end_clean();
-        }
-        
         // Disable CodeIgniter output class completely
         $this->output->enable_profiler(FALSE);
         $this->output->_display = FALSE;
+        $this->output->set_output(''); // Clear any output
         
-        // Prevent CodeIgniter from sending any output
-        $this->output->set_output('');
+        // Prevent CodeIgniter from appending anything
+        $this->output->_final_output = '';
         
         // Try to get from query parameters first (more reliable for special chars)
         $folder_name = $this->input->get('folder', TRUE);
@@ -176,20 +190,33 @@ class Attachment_TMS extends MY_Controller
         header('Pragma: public');
         header('Expires: 0');
         
-        // Flush any remaining output buffers
-        if (ob_get_level()) {
-            ob_end_flush();
+        // CRITICAL: Make sure NO output buffer exists before reading file
+        while (ob_get_level()) {
+            ob_end_clean();
         }
         
-        // Use readfile() directly - most reliable for binary files
-        // readfile() doesn't load entire file into memory and handles binary correctly
-        $result = @readfile($file_path);
-        
-        if ($result === FALSE || $result !== $file_size) {
-            // File read error or size mismatch
-            error_log('[Attachment_TMS] File read error. Expected: ' . $file_size . ', Got: ' . $result);
+        // Use fopen + fpassthru for better control and error handling
+        $handle = @fopen($file_path, 'rb');
+        if ($handle === FALSE) {
+            error_log('[Attachment_TMS] Cannot open file: ' . $file_path);
             http_response_code(500);
             exit;
+        }
+        
+        // Use fpassthru which is more reliable than readfile for large files
+        // fpassthru outputs file directly to output stream
+        $bytes_sent = @fpassthru($handle);
+        fclose($handle);
+        
+        if ($bytes_sent === FALSE) {
+            error_log('[Attachment_TMS] Error sending file: ' . $file_path);
+            http_response_code(500);
+            exit;
+        }
+        
+        // Verify bytes sent matches file size
+        if ($bytes_sent !== $file_size) {
+            error_log('[Attachment_TMS] Size mismatch. Expected: ' . $file_size . ', Sent: ' . $bytes_sent . '. File: ' . $file_path);
         }
         
         exit;
@@ -221,4 +248,3 @@ class Attachment_TMS extends MY_Controller
         return isset($mime_types[$ext]) ? $mime_types[$ext] : 'application/octet-stream';
     }
 }
-
