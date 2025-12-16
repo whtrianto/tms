@@ -556,14 +556,14 @@ class Tool_draw_engin extends MY_Controller
             return $fileIdentifier;
         }
         
-        // Build direct path to Attachment_TMS folder
-        // Format: Attachment_TMS/Drawing/(MLR_ID)/(MLR_REV)/(filename)
+        // Build URL using endpoint to serve file from Attachment_TMS folder
+        // File structure: Attachment_TMS/Drawing/(MLR_ID)/(MLR_REV)/(filename)
         // or: Attachment_TMS/Drawing_Sketch/(MLR_ID)/(MLR_REV)/(filename)
-        $folder_name = ($type === 'sketch') ? 'Drawing_Sketch' : 'Drawing';
-        $filename = basename($fileIdentifier); // Clean filename to prevent directory traversal
-        
-        // Build URL: application/tms_modules/Attachment_TMS/Drawing/{MLR_ID}/{MLR_REV}/{filename}
-        $fileUrl = base_url('application/tms_modules/Attachment_TMS/' . $folder_name . '/' . (int)$mlr_id . '/' . (int)$mlr_rev . '/' . urlencode($filename));
+        // Note: Cannot access application folder directly, must use PHP endpoint
+        $fileUrl = base_url('Tool_engineering/tool_draw_engin/serve_file_by_mlr') . 
+                   '?mlr_id=' . (int)$mlr_id . 
+                   '&mlr_rev=' . (int)$mlr_rev . 
+                   '&type=' . urlencode($type);
         
         return $fileUrl;
     }

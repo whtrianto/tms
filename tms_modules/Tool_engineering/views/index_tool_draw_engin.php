@@ -408,7 +408,7 @@
                                            '<div style="text-align:center; border:1px solid #ddd; padding:8px; background:#f9f9f9;">' +
                                            '<a href="' + fileUrl + '" target="_blank" title="Click to view full size">' +
                                            '<img src="' + fileUrl + '" style="max-width:100%; height:auto; cursor:pointer; border:1px solid #ccc;" ' +
-                                           'onerror="this.style.display=\'none\'; this.nextElementSibling.style.display=\'block\';" />' +
+                                           'onerror="var parent = this.parentElement; if (parent && parent.nextElementSibling) { this.style.display=\'none\'; parent.nextElementSibling.style.display=\'block\'; } else if (parent) { parent.innerHTML=\'<div style=\\\"padding:20px; color:#999; border:1px solid #ddd; background:#f5f5f5;\\\">Image not available. <a href=\\\"' + fileUrl + '\\\" target=\\\"_blank\\\">Click to open</a></div>\'; }" />' +
                                            '<div style="display:none; padding:20px; color:#999; border:1px solid #ddd; background:#f5f5f5;">' +
                                            'Image not available. <a href="' + fileUrl + '" target="_blank">Click to open</a></div>' +
                                            '</a></div>';
