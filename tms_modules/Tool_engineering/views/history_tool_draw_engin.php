@@ -73,13 +73,13 @@
                                         </tr>
                                     <?php else:
                                         foreach ($history as $h): 
-                                            // Status badge
-                                            $statusBadge = '<span class="badge badge-success">Active</span>';
+                                            // Status badge - sama dengan index_tool_draw_engin.php
+                                            $statusBadge = '<span class="badge badge-secondary">Inactive</span>';
                                             if (isset($h['TD_STATUS'])) {
                                                 $st = (int)$h['TD_STATUS'];
-                                                if ($st === 0) {
-                                                    $statusBadge = '<span class="badge badge-secondary">Inactive</span>';
-                                                } elseif ($st === 2) {
+                                                if ($st === 2 || strtoupper((string)$h['TD_STATUS']) === 'ACTIVE') {
+                                                    $statusBadge = '<span class="badge badge-success">Active</span>';
+                                                } elseif ($st === 1) {
                                                     $statusBadge = '<span class="badge badge-warning">Pending</span>';
                                                 }
                                             }
