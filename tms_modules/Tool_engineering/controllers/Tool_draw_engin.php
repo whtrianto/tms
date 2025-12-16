@@ -282,6 +282,8 @@ class Tool_draw_engin extends MY_Controller
         $data['operations'] = $this->tool_draw_engin->get_operations();
         $data['tools'] = $this->tool_draw_engin->get_tools();
         $data['materials'] = $this->tool_draw_engin->get_materials();
+        $data['makers'] = $this->tool_draw_engin->get_makers();
+        $data['machine_groups'] = $this->tool_draw_engin->get_machine_groups();
 
         $this->view('add_tool_draw_engin', $data, FALSE);
     }
@@ -319,6 +321,8 @@ class Tool_draw_engin extends MY_Controller
         $data['operations'] = $this->tool_draw_engin->get_operations();
         $data['tools'] = $this->tool_draw_engin->get_tools();
         $data['materials'] = $this->tool_draw_engin->get_materials();
+        $data['makers'] = $this->tool_draw_engin->get_makers();
+        $data['machine_groups'] = $this->tool_draw_engin->get_machine_groups();
         $data['tool_bom_list'] = $tool_bom_list;
 
         $this->view('edit_tool_draw_engin', $data, FALSE);
@@ -430,6 +434,11 @@ class Tool_draw_engin extends MY_Controller
             $status = (int)$this->input->post('TD_STATUS', TRUE);
             $material_id = (int)$this->input->post('TD_MATERIAL_ID', TRUE);
             $maker_id = (int)$this->input->post('TD_MAKER_ID', TRUE);
+            $machine_group_id = (int)$this->input->post('TD_MACG_ID', TRUE);
+            $effective_date = trim($this->input->post('TD_EFFECTIVE_DATE', TRUE));
+            if (empty($effective_date)) {
+                $effective_date = null;
+            }
 
             if ($action === 'ADD') {
                 if (empty($drawing_no)) {
@@ -510,7 +519,10 @@ class Tool_draw_engin extends MY_Controller
                     $drawing_no,
                     $tool_id,
                     $status,
-                    $material_id
+                    $material_id,
+                    $maker_id,
+                    $machine_group_id,
+                    $effective_date
                 );
                 if ($ok === true) {
                     $result['success'] = true;

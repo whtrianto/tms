@@ -250,6 +250,21 @@ class M_tool_draw_engin extends CI_Model
     }
 
     /**
+     * Get all machine groups from MS_MACHINES
+     */
+    public function get_machine_groups()
+    {
+        $sql = "SELECT MAC_ID AS MACHINE_ID, MAC_NAME AS MACHINE_NAME 
+                FROM TMS_NEW.dbo.MS_MACHINES 
+                ORDER BY MAC_NAME ASC";
+        $q = $this->db_tms->query($sql);
+        if ($q && $q->num_rows() > 0) {
+            return $q->result_array();
+        }
+        return array();
+    }
+
+    /**
      * Get Tool BOM by Product ID (placeholder - adjust based on actual BOM table structure)
      */
     public function get_tool_bom_by_product_id($product_id)
@@ -345,7 +360,7 @@ class M_tool_draw_engin extends CI_Model
     /**
      * Edit tool drawing
      */
-    public function edit_data_engineering($id, $product_id, $process_id, $drawing_no, $tool_id, $status, $material_id)
+    public function edit_data_engineering($id, $product_id, $process_id, $drawing_no, $tool_id, $status, $material_id, $maker_id = null, $machine_group_id = null, $effective_date = null)
     {
         $id = (int)$id;
         $product_id = (int)$product_id;
@@ -354,6 +369,9 @@ class M_tool_draw_engin extends CI_Model
         $tool_id = ($tool_id > 0) ? (int)$tool_id : null;
         $status = (int)$status;
         $material_id = ($material_id > 0) ? (int)$material_id : null;
+        $maker_id = ($maker_id > 0) ? (int)$maker_id : null;
+        $machine_group_id = ($machine_group_id > 0) ? (int)$machine_group_id : null;
+        $effective_date = !empty($effective_date) ? trim((string)$effective_date) : null;
 
         $current = $this->get_by_id($id);
         if (!$current) {
@@ -386,14 +404,24 @@ class M_tool_draw_engin extends CI_Model
         // Update TMS_TOOL_MASTER_LIST_REV
         $modified_by = isset($this->uid) && $this->uid !== '' ? (string)$this->uid : 'SYSTEM';
         
+        // Build effective date SQL
+        $effective_date_sql = '';
+        if ($effective_date !== null) {
+            $effective_date_sql = ', MLR_EFFECTIVE_DATE = ?';
+        }
+        
         $update_rev_sql = "UPDATE TMS_NEW.dbo.TMS_TOOL_MASTER_LIST_REV 
-                          SET MLR_OP_ID = ?, MLR_TC_ID = ?, MLR_MAT_ID = ?, MLR_STATUS = ?, 
-                              MLR_REV = ?, MLR_MODIFIED_DATE = GETDATE(), MLR_MODIFIED_BY = ?
+                          SET MLR_OP_ID = ?, MLR_TC_ID = ?, MLR_MAT_ID = ?, MLR_MAKER_ID = ?, MLR_MACG_ID = ?, MLR_STATUS = ?, 
+                              MLR_REV = ?, MLR_MODIFIED_DATE = GETDATE(), MLR_MODIFIED_BY = ?" . $effective_date_sql . "
                           WHERE MLR_ID = ?";
         
-        $this->db_tms->query($update_rev_sql, array(
-            $process_id, $tool_id, $material_id, $status, $new_revision, $modified_by, $id
-        ));
+        $params = array($process_id, $tool_id, $material_id, $maker_id, $machine_group_id, $status, $new_revision, $modified_by);
+        if ($effective_date !== null) {
+            $params[] = $effective_date;
+        }
+        $params[] = $id;
+        
+        $this->db_tms->query($update_rev_sql, $params);
 
         $this->db_tms->trans_complete();
 

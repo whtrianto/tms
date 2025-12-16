@@ -66,13 +66,10 @@
 
                             <div class="form-row">
                                 <div class="form-group col-md-6">
-                                    <label class="label-required">Drawing (upload file)</label>
-                                    <input type="file" name="TD_DRAWING_FILE" class="form-control" accept="*">
-                                    <?php if (!empty($drawing['TD_DRAWING_NO'])): ?>
-                                        <div class="small text-muted mt-1">Current: <?= htmlspecialchars($drawing['TD_DRAWING_NO']); ?></div>
-                                    <?php endif; ?>
-                                    <small class="form-text text-muted">Biarkan kosong jika tidak mengganti file.</small>
-                                    <div class="invalid-feedback">Drawing wajib diisi.</div>
+                                    <label class="label-required">Tool Draw No</label>
+                                    <input type="text" name="TD_DRAWING_NO" class="form-control" placeholder="Enter Drawing Number" value="<?= htmlspecialchars(isset($drawing['TD_DRAWING_NO']) ? $drawing['TD_DRAWING_NO'] : ''); ?>" required>
+                                    <small class="form-text text-muted">Masukkan nomor drawing (contoh: TD-001, DWG-2024-001, dll)</small>
+                                    <div class="invalid-feedback">Tool Draw No wajib diisi.</div>
                                 </div>
                                 <div class="form-group col-md-6">
                                     <label>Tool</label>
@@ -108,19 +105,31 @@
                             </div>
 
                             <div class="form-row">
-                                <div class="form-group col-md-4">
-                                    <label>Revision</label>
-                                    <input type="number" name="TD_REVISION" class="form-control" value="<?= htmlspecialchars(isset($drawing['TD_REVISION']) ? $drawing['TD_REVISION'] : 0); ?>">
+                                <div class="form-group col-md-12">
+                                    <label>Drawing (upload file)</label>
+                                    <input type="file" name="TD_DRAWING_FILE" class="form-control" accept="*">
+                                    <?php if (!empty($drawing['TD_DRAWING_NO'])): ?>
+                                        <div class="small text-muted mt-1">Current: <?= htmlspecialchars($drawing['TD_DRAWING_NO']); ?></div>
+                                    <?php endif; ?>
+                                    <small class="form-text text-muted">Biarkan kosong jika tidak mengganti file.</small>
+                                    <div class="invalid-feedback">Drawing wajib diisi.</div>
                                 </div>
-                                <div class="form-group col-md-4">
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group col-md-3">
+                                    <label>Revision</label>
+                                    <input type="number" name="TD_REVISION" class="form-control" value="<?= htmlspecialchars(isset($drawing['TD_REVISION']) ? $drawing['TD_REVISION'] : 0); ?>" min="0">
+                                </div>
+                                <div class="form-group col-md-3">
                                     <label>Status</label>
                                     <select name="TD_STATUS" class="form-control">
-                                        <option value="1" <?= (isset($drawing['TD_STATUS']) && (int)$drawing['TD_STATUS'] === 1) ? 'selected' : ''; ?>>Active</option>
+                                        <option value="2" <?= (isset($drawing['TD_STATUS']) && (int)$drawing['TD_STATUS'] === 2) ? 'selected' : ''; ?>>Active</option>
                                         <option value="0" <?= (isset($drawing['TD_STATUS']) && (int)$drawing['TD_STATUS'] === 0) ? 'selected' : ''; ?>>Inactive</option>
-                                        <!-- <option value="2" <?= (isset($drawing['TD_STATUS']) && (int)$drawing['TD_STATUS'] === 2) ? 'selected' : ''; ?>>Pending</option> -->
+                                        <option value="1" <?= (isset($drawing['TD_STATUS']) && (int)$drawing['TD_STATUS'] === 1) ? 'selected' : ''; ?>>Pending</option>
                                     </select>
                                 </div>
-                                <div class="form-group col-md-4">
+                                <div class="form-group col-md-3">
                                     <label>Material</label>
                                     <select name="TD_MATERIAL_ID" class="form-control">
                                         <option value="">-- Select Material --</option>
@@ -130,6 +139,40 @@
                                             </option>
                                         <?php endforeach; ?>
                                     </select>
+                                </div>
+                                <div class="form-group col-md-3">
+                                    <label>Maker</label>
+                                    <select name="TD_MAKER_ID" class="form-control">
+                                        <option value="">-- Select Maker --</option>
+                                        <?php 
+                                        $makers = isset($makers) ? $makers : array();
+                                        foreach ($makers as $mk): ?>
+                                            <option value="<?= (int)$mk['MAKER_ID']; ?>" <?= (isset($drawing['TD_MAKER_ID']) && (int)$drawing['TD_MAKER_ID'] === (int)$mk['MAKER_ID']) ? 'selected' : ''; ?>>
+                                                <?= htmlspecialchars($mk['MAKER_NAME'], ENT_QUOTES, 'UTF-8'); ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="form-row">
+                                <div class="form-group col-md-6">
+                                    <label>Machine Group</label>
+                                    <select name="TD_MACG_ID" class="form-control">
+                                        <option value="">-- Select Machine Group --</option>
+                                        <?php 
+                                        $machine_groups = isset($machine_groups) ? $machine_groups : array();
+                                        foreach ($machine_groups as $mg): ?>
+                                            <option value="<?= (int)$mg['MACHINE_ID']; ?>" <?= (isset($drawing['TD_MACG_ID']) && (int)$drawing['TD_MACG_ID'] === (int)$mg['MACHINE_ID']) ? 'selected' : ''; ?>>
+                                                <?= htmlspecialchars($mg['MACHINE_NAME'], ENT_QUOTES, 'UTF-8'); ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+                                <div class="form-group col-md-6">
+                                    <label>Effective Date</label>
+                                    <input type="date" name="TD_EFFECTIVE_DATE" class="form-control" value="<?= isset($drawing['TD_EFFECTIVE_DATE']) && !empty($drawing['TD_EFFECTIVE_DATE']) ? date('Y-m-d', strtotime($drawing['TD_EFFECTIVE_DATE'])) : ''; ?>">
+                                    <small class="form-text text-muted">Optional: Select effective date</small>
                                 </div>
                             </div>
 
@@ -201,6 +244,7 @@
             e.preventDefault();
             var productId = $.trim($('[name="TD_PRODUCT_ID"]').val());
             var processId = $.trim($('[name="TD_PROCESS_ID"]').val());
+            var drawingNo = $.trim($('[name="TD_DRAWING_NO"]').val());
             var fileInput = $('[name="TD_DRAWING_FILE"]')[0];
             var hasFile = fileInput && fileInput.files && fileInput.files.length > 0;
             var oldDrawing = $.trim($('[name="TD_DRAWING_NO_OLD"]').val());
@@ -218,6 +262,13 @@
             } else {
                 $('[name="TD_PROCESS_ID"]').removeClass('is-invalid');
             }
+            if (drawingNo === '') {
+                $('[name="TD_DRAWING_NO"]').addClass('is-invalid');
+                isValid = false;
+            } else {
+                $('[name="TD_DRAWING_NO"]').removeClass('is-invalid');
+            }
+            // File is optional for edit - only required if no old drawing exists
             if (!hasFile && oldDrawing === '') {
                 $('[name="TD_DRAWING_FILE"]').addClass('is-invalid');
                 isValid = false;
