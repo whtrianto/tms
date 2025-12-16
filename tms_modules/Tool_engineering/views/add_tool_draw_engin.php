@@ -61,10 +61,10 @@
 
                             <div class="form-row">
                                 <div class="form-group col-md-6">
-                                    <label class="label-required">Drawing (upload file)</label>
-                                    <input type="file" name="TD_DRAWING_FILE" class="form-control" accept="*" required>
-                                    <small class="form-text text-muted">Upload file untuk drawing. Wajib diunggah saat membuat data baru.</small>
-                                    <div class="invalid-feedback">Drawing wajib diisi.</div>
+                                    <label class="label-required">Tool Draw No</label>
+                                    <input type="text" name="TD_DRAWING_NO" class="form-control" placeholder="Enter Drawing Number" required>
+                                    <small class="form-text text-muted">Masukkan nomor drawing (contoh: TD-001, DWG-2024-001, dll)</small>
+                                    <div class="invalid-feedback">Tool Draw No wajib diisi.</div>
                                 </div>
                                 <div class="form-group col-md-6">
                                     <label>Tool</label>
@@ -74,6 +74,15 @@
                                             <option value="<?= (int)$t['TOOL_ID']; ?>"><?= htmlspecialchars($t['TOOL_NAME'], ENT_QUOTES, 'UTF-8'); ?></option>
                                         <?php endforeach; ?>
                                     </select>
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group col-md-12">
+                                    <label class="label-required">Drawing (upload file)</label>
+                                    <input type="file" name="TD_DRAWING_FILE" class="form-control" accept="*" required>
+                                    <small class="form-text text-muted">Upload file untuk drawing. Wajib diunggah saat membuat data baru.</small>
+                                    <div class="invalid-feedback">Drawing wajib diisi.</div>
                                 </div>
                             </div>
 
@@ -140,6 +149,7 @@
             e.preventDefault();
             var productId = $.trim($('[name="TD_PRODUCT_ID"]').val());
             var processId = $.trim($('[name="TD_PROCESS_ID"]').val());
+            var drawingNo = $.trim($('[name="TD_DRAWING_NO"]').val());
             var fileInput = $('[name="TD_DRAWING_FILE"]')[0];
             var hasFile = fileInput && fileInput.files && fileInput.files.length > 0;
             
@@ -159,6 +169,12 @@
                 $('[name="TD_PROCESS_ID"]').addClass('is-invalid');
                 isValid = false;
                 errorMessages.push('Process wajib dipilih');
+            }
+            
+            if (drawingNo === '') {
+                $('[name="TD_DRAWING_NO"]').addClass('is-invalid');
+                isValid = false;
+                errorMessages.push('Tool Draw No wajib diisi');
             }
             
             if (!hasFile) {

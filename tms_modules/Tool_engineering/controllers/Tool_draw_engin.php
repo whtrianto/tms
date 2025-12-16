@@ -368,6 +368,7 @@ class Tool_draw_engin extends MY_Controller
             // Validation rules
             $this->form_validation->set_rules('TD_PRODUCT_ID', 'Product ID', 'required|integer');
             $this->form_validation->set_rules('TD_PROCESS_ID', 'Process ID', 'required|integer');
+            $this->form_validation->set_rules('TD_DRAWING_NO', 'Tool Draw No', 'required|trim');
             $this->form_validation->set_rules('TD_TOOL_NAME', 'Tool Name', 'trim');
             $this->form_validation->set_rules('TD_REVISION', 'Revision', 'integer');
             $this->form_validation->set_rules('TD_STATUS', 'Status', 'integer');
@@ -383,9 +384,17 @@ class Tool_draw_engin extends MY_Controller
             $product_id = (int)$this->input->post('TD_PRODUCT_ID', TRUE);
             $process_id = (int)$this->input->post('TD_PROCESS_ID', TRUE);
             
-            // Handle uploaded file (TD_DRAWING_FILE) or use old filename (TD_DRAWING_NO_OLD)
-            $drawing_no = '';
+            // Get Drawing No from form input (user input, not from filename)
+            $drawing_no = trim($this->input->post('TD_DRAWING_NO', TRUE));
+            if (empty($drawing_no)) {
+                $result['message'] = 'Tool Draw No wajib diisi.';
+                echo json_encode($result);
+                return;
+            }
+            
+            // Handle uploaded file (TD_DRAWING_FILE)
             $uploaded_file_path = null; // Store temporary upload path for later move
+            $file_name_for_storage = ''; // Store original filename for file storage
             if (!empty($_FILES) && isset($_FILES['TD_DRAWING_FILE']) && !empty($_FILES['TD_DRAWING_FILE']['name'])) {
                 // Temporary upload directory
                 $uploadDir = FCPATH . 'tool_drawing/img/';
@@ -394,10 +403,12 @@ class Tool_draw_engin extends MY_Controller
                 }
                 $origName = $_FILES['TD_DRAWING_FILE']['name'];
                 $safeName = preg_replace('/[^A-Za-z0-9_\-\.]/', '_', basename($origName));
-                $fileName = 'TD_' . time() . '_' . $safeName;
+                // Use Drawing No + timestamp + extension for filename
+                $fileExt = pathinfo($origName, PATHINFO_EXTENSION);
+                $fileName = $drawing_no . '_' . time() . ($fileExt ? '.' . $fileExt : '');
                 $target = $uploadDir . $fileName;
                 if (move_uploaded_file($_FILES['TD_DRAWING_FILE']['tmp_name'], $target)) {
-                    $drawing_no = $fileName;
+                    $file_name_for_storage = $fileName;
                     $uploaded_file_path = $target; // Store path for later move to proper folder
                 } else {
                     $result['message'] = 'Gagal mengunggah file drawing.';
@@ -405,9 +416,11 @@ class Tool_draw_engin extends MY_Controller
                     return;
                 }
             } else {
-                $drawing_no = $this->input->post('TD_DRAWING_NO_OLD', TRUE);
-                if ($drawing_no === '' || $drawing_no === null) {
-                    $drawing_no = $this->input->post('TD_DRAWING_NO', TRUE);
+                // For EDIT action, check if old file exists
+                $drawing_no_old = $this->input->post('TD_DRAWING_NO_OLD', TRUE);
+                if (!empty($drawing_no_old)) {
+                    // Keep using old filename if no new file uploaded
+                    $file_name_for_storage = $drawing_no_old;
                 }
             }
 
@@ -429,12 +442,12 @@ class Tool_draw_engin extends MY_Controller
                     // Get ML_ID (MLR_ML_ID) from the newly created record
                     $ml_id = $this->_get_ml_id_by_drawing_no($drawing_no);
                     
-                    if ($ml_id > 0 && $uploaded_file_path && file_exists($uploaded_file_path)) {
+                    if ($ml_id > 0 && $uploaded_file_path && file_exists($uploaded_file_path) && !empty($file_name_for_storage)) {
                         // Move file to proper folder: Attachment_TMS/Drawing/{ML_ID}/{REVISION}/
-                        $moved = $this->_move_file_to_attachment_folder($uploaded_file_path, $ml_id, $revision, $drawing_no);
+                        $moved = $this->_move_file_to_attachment_folder($uploaded_file_path, $ml_id, $revision, $file_name_for_storage);
                         if (!$moved) {
                             // Log error but don't fail the transaction
-                            log_message('error', '[Tool_draw_engin::submit_data] Failed to move file to Attachment_TMS folder. ML_ID: ' . $ml_id . ', File: ' . $drawing_no);
+                            log_message('error', '[Tool_draw_engin::submit_data] Failed to move file to Attachment_TMS folder. ML_ID: ' . $ml_id . ', File: ' . $file_name_for_storage);
                         }
                     }
                     
