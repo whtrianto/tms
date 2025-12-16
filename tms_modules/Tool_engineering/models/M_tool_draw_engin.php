@@ -502,16 +502,80 @@ class M_tool_draw_engin extends CI_Model
     }
 
     /**
-     * Get history (placeholder - adjust based on actual history table)
+     * Get history - semua revision dari MLR_ML_ID yang sama
+     * @param int $id MLR_ID dari revision tertentu
+     * @return array History records
      */
     public function get_history($id)
     {
-        // Placeholder - return current record as history
+        $id = (int)$id;
+        if ($id <= 0) return array();
+
+        // Ambil MLR_ML_ID dari revision yang diberikan
         $current = $this->get_by_id($id);
-        if ($current) {
-            return array($current);
+        if (!$current || !isset($current['TD_ML_ID'])) {
+            return array();
         }
-        return array();
+
+        $ml_id = (int)$current['TD_ML_ID'];
+
+        // Ambil semua revision dengan MLR_ML_ID yang sama
+        $sql = "
+            SELECT
+                rev.MLR_ID          AS TD_ID,
+                ml.ML_ID            AS TD_ML_ID,
+                ml.ML_TOOL_DRAW_NO  AS TD_DRAWING_NO,
+                rev.MLR_REV         AS TD_REVISION,
+                rev.MLR_STATUS      AS TD_STATUS,
+                CASE 
+                    WHEN rev.MLR_EFFECTIVE_DATE IS NULL THEN ''
+                    ELSE CONVERT(VARCHAR(19), rev.MLR_EFFECTIVE_DATE, 120)
+                END AS TD_EFFECTIVE_DATE,
+                CASE 
+                    WHEN rev.MLR_MODIFIED_DATE IS NULL THEN ''
+                    ELSE CONVERT(VARCHAR(19), rev.MLR_MODIFIED_DATE, 120)
+                END AS TD_MODIFIED_DATE,
+                ISNULL(usr.USR_NAME, '') AS TD_MODIFIED_BY,
+                rev.MLR_OP_ID       AS TD_PROCESS_ID,
+                ISNULL(op.OP_NAME, '') AS TD_OPERATION_NAME,
+                rev.MLR_TC_ID       AS TD_TOOL_ID,
+                ISNULL(tc.TC_NAME, '') AS TD_TOOL_NAME,
+                rev.MLR_MAT_ID      AS TD_MATERIAL_ID,
+                ISNULL(mat.MAT_NAME, '') AS TD_MATERIAL_NAME,
+                rev.MLR_MAKER_ID    AS TD_MAKER_ID,
+                ISNULL(maker.MAKER_NAME, '') AS TD_MAKER_NAME,
+                rev.MLR_MACG_ID     AS TD_MACG_ID,
+                ISNULL(mac.MAC_NAME, '') AS TD_MAC_NAME,
+                part.PART_ID        AS TD_PRODUCT_ID,
+                ISNULL(part.PART_NAME, '') AS TD_PRODUCT_NAME
+            FROM TMS_NEW.dbo.TMS_TOOL_MASTER_LIST_REV rev
+            INNER JOIN TMS_NEW.dbo.TMS_TOOL_MASTER_LIST ml
+                ON ml.ML_ID = rev.MLR_ML_ID
+            LEFT JOIN TMS_NEW.dbo.MS_OPERATION op
+                ON op.OP_ID = rev.MLR_OP_ID
+            LEFT JOIN TMS_NEW.dbo.MS_TOOL_CLASS tc
+                ON tc.TC_ID = rev.MLR_TC_ID
+            LEFT JOIN TMS_NEW.dbo.MS_MAKER maker
+                ON maker.MAKER_ID = rev.MLR_MAKER_ID
+            LEFT JOIN TMS_NEW.dbo.MS_MATERIAL mat
+                ON mat.MAT_ID = rev.MLR_MAT_ID
+            LEFT JOIN TMS_NEW.dbo.MS_MACHINES mac
+                ON mac.MAC_ID = rev.MLR_MACG_ID
+            LEFT JOIN TMS_NEW.dbo.MS_USERS usr
+                ON usr.USR_ID = rev.MLR_MODIFIED_BY
+            LEFT JOIN TMS_NEW.dbo.TMS_TOOL_MASTER_LIST_PARTS mlparts
+                ON mlparts.TMLP_ML_ID = ml.ML_ID
+            LEFT JOIN TMS_NEW.dbo.MS_PARTS part
+                ON part.PART_ID = mlparts.TMLP_PART_ID
+            WHERE rev.MLR_ML_ID = ? AND ml.ML_TYPE = 1
+            ORDER BY rev.MLR_REV DESC, rev.MLR_MODIFIED_DATE DESC
+        ";
+
+        $q = $this->db_tms->query($sql, array($ml_id));
+        if (!$q || $q->num_rows() === 0) {
+            return array();
+        }
+        return $q->result_array();
     }
 
     public $messages = '';
