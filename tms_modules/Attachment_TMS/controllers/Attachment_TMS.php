@@ -119,13 +119,19 @@ class Attachment_TMS extends MY_Controller
             ob_clean();
         }
         
-        // Set headers
+        // Set headers for download - always use attachment for proper download
         header('Content-Type: ' . $mime_type);
         header('Content-Length: ' . $file_size);
-        header('Content-Disposition: inline; filename="' . $file_name . '"');
+        header('Content-Disposition: attachment; filename="' . $file_name . '"');
         header('Cache-Control: public, max-age=3600');
+        header('Pragma: public');
         
-        // Output file
+        // Disable output buffering to prevent corruption
+        if (ob_get_level()) {
+            ob_end_clean();
+        }
+        
+        // Output file directly
         readfile($file_path);
         exit;
     }

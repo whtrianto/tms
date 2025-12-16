@@ -562,15 +562,19 @@ class Tool_draw_engin extends MY_Controller
         $path_info = $this->_get_folder_path($mlr_ml_id, $mlr_rev, $folder_name);
         
         if ($path_info) {
-            // If filename is provided, use Attachment_TMS URL format
-            // Controller Attachment_TMS will handle routing and serve file
+            // If filename is provided, use direct URL to file
             if (!empty($fileIdentifier) && trim($fileIdentifier) !== '') {
                 $filename = basename(trim($fileIdentifier));
-                // Use Attachment_TMS controller URL format
-                // Format: Attachment_TMS/{folder}/{MLR_ID}/{MLR_REV}/{filename}
-                // Use rawurlencode for path (produces %20 instead of + for spaces)
-                // Note: CodeIgniter routing may not allow special chars, but controller will handle it
-                return $path_info['url'] . rawurlencode($filename);
+                
+                // If folder is in web root, use direct URL (faster, no PHP processing)
+                if (strpos($path_info['dir'], FCPATH) === 0) {
+                    // Direct URL to file in web root - best for download
+                    return $path_info['url'] . rawurlencode($filename);
+                } else {
+                    // Folder is in application folder, use Attachment_TMS controller
+                    // Format: Attachment_TMS/{folder}/{MLR_ML_ID}/{MLR_REV}/{filename}
+                    return $path_info['url'] . rawurlencode($filename);
+                }
             }
             
             // Return the base URL for the folder
@@ -1261,7 +1265,14 @@ class Tool_draw_engin extends MY_Controller
                     }
                     $file_path = $drawing_path_info['dir'] . $file;
                     if (is_file($file_path)) {
-                        $file_url = $this->build_file_url_by_mlr($mlr_ml_id, $mlr_rev, $file, 'drawing');
+                        // Use direct URL to file if folder is in web root, otherwise use Attachment_TMS controller
+                        if (strpos($drawing_path_info['dir'], FCPATH) === 0) {
+                            // File is in web root, use direct URL for download
+                            $file_url = $drawing_path_info['url'] . rawurlencode($file);
+                        } else {
+                            // File is in application folder, use Attachment_TMS controller
+                            $file_url = $this->build_file_url_by_mlr($mlr_ml_id, $mlr_rev, $file, 'drawing');
+                        }
                         $file_ext = strtolower(pathinfo($file, PATHINFO_EXTENSION));
                         $drawing_files[] = array(
                             'name' => $file,
