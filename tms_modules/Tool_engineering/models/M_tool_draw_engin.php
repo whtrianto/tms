@@ -280,7 +280,7 @@ class M_tool_draw_engin extends CI_Model
     /**
      * Add new tool drawing
      */
-    public function add_data($product_id, $process_id, $drawing_no, $tool_id, $revision, $status, $material_id, $maker_id = 0)
+    public function add_data($product_id, $process_id, $drawing_no, $tool_id, $revision, $status, $material_id, $maker_id = 0, $machine_group_id = null, $effective_date = null)
     {
         $product_id = (int)$product_id;
         $process_id = (int)$process_id;
@@ -290,6 +290,8 @@ class M_tool_draw_engin extends CI_Model
         $status = (int)$status;
         $material_id = ($material_id > 0) ? (int)$material_id : null;
         $maker_id = ($maker_id > 0) ? (int)$maker_id : null;
+        $machine_group_id = ($machine_group_id > 0) ? (int)$machine_group_id : null;
+        $effective_date = !empty($effective_date) ? trim((string)$effective_date) : null;
 
         if ($drawing_no === '') {
             $this->messages = 'Drawing No tidak boleh kosong.';
@@ -335,16 +337,26 @@ class M_tool_draw_engin extends CI_Model
         }
 
         // Insert TMS_TOOL_MASTER_LIST_REV
-        $rev_sql = "INSERT INTO TMS_NEW.dbo.TMS_TOOL_MASTER_LIST_REV 
-                    (MLR_ML_ID, MLR_OP_ID, MLR_TC_ID, MLR_MAKER_ID, MLR_MAT_ID, MLR_REV, MLR_STATUS, MLR_EFFECTIVE_DATE, MLR_MODIFIED_DATE, MLR_MODIFIED_BY) 
-                    VALUES (?, ?, ?, ?, ?, ?, ?, GETDATE(), GETDATE(), ?)";
-        
         $modified_by = isset($this->uid) && $this->uid !== '' ? (string)$this->uid : 'SYSTEM';
         
-        $this->db_tms->query($rev_sql, array(
-            $ml_id, $process_id, $tool_id > 0 ? $tool_id : null, $maker_id, $material_id, 
-            $revision, $status, $modified_by
-        ));
+        // Use effective_date if provided, otherwise use GETDATE()
+        if ($effective_date !== null) {
+            $rev_sql = "INSERT INTO TMS_NEW.dbo.TMS_TOOL_MASTER_LIST_REV 
+                        (MLR_ML_ID, MLR_OP_ID, MLR_TC_ID, MLR_MAKER_ID, MLR_MAT_ID, MLR_MACG_ID, MLR_REV, MLR_STATUS, MLR_EFFECTIVE_DATE, MLR_MODIFIED_DATE, MLR_MODIFIED_BY) 
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, GETDATE(), ?)";
+            $this->db_tms->query($rev_sql, array(
+                $ml_id, $process_id, $tool_id > 0 ? $tool_id : null, $maker_id, $material_id, $machine_group_id, 
+                $revision, $status, $effective_date, $modified_by
+            ));
+        } else {
+            $rev_sql = "INSERT INTO TMS_NEW.dbo.TMS_TOOL_MASTER_LIST_REV 
+                        (MLR_ML_ID, MLR_OP_ID, MLR_TC_ID, MLR_MAKER_ID, MLR_MAT_ID, MLR_MACG_ID, MLR_REV, MLR_STATUS, MLR_EFFECTIVE_DATE, MLR_MODIFIED_DATE, MLR_MODIFIED_BY) 
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, GETDATE(), GETDATE(), ?)";
+            $this->db_tms->query($rev_sql, array(
+                $ml_id, $process_id, $tool_id > 0 ? $tool_id : null, $maker_id, $material_id, $machine_group_id, 
+                $revision, $status, $modified_by
+            ));
+        }
 
         $this->db_tms->trans_complete();
 

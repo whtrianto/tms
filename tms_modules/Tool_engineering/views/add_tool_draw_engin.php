@@ -4,10 +4,22 @@
     <?= $head; ?>
     <link href="<?= base_url('assets/vendor/datatables/dataTables.bootstrap4.min.css'); ?>" rel="stylesheet">
     <style>
+        /* konsisten: teks hitam */
         html, body, #content-wrapper { color: #000; }
+        .table td, .table th { color: #000 !important; }
         .card, .table, label, .form-text { color: #000; }
         .label-required::after { content: " *"; color: #dc3545; font-weight: 600; }
         .is-invalid + .invalid-feedback { display: block; }
+        /* Keep navbar pinned */
+        .navbar { position: sticky; top: 0; z-index: 1030; }
+        /* Fix footer spacing */
+        #content-wrapper { min-height: calc(100vh - 56px); }
+        #container-wrapper { padding-bottom: 4rem; margin-bottom: 2rem; }
+        .card { margin-bottom: 2rem; }
+        /* Ensure footer doesn't overlap */
+        #content {
+            padding-bottom: 4rem;
+        }
     </style>
 </head>
 <body id="page-top">
@@ -110,16 +122,28 @@
                                 </div>
                                 <div class="form-group col-md-3">
                                     <label>Maker</label>
-                                    <input type="number" name="TD_MAKER_ID" class="form-control" value="" placeholder="Maker ID (optional)" min="0">
-                                    <small class="form-text text-muted">Optional: Enter Maker ID</small>
+                                    <select name="TD_MAKER_ID" class="form-control">
+                                        <option value="">-- Select Maker --</option>
+                                        <?php 
+                                        $makers = isset($makers) ? $makers : array();
+                                        foreach ($makers as $mk): ?>
+                                            <option value="<?= (int)$mk['MAKER_ID']; ?>"><?= htmlspecialchars($mk['MAKER_NAME'], ENT_QUOTES, 'UTF-8'); ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
                                 </div>
                             </div>
                             
                             <div class="form-row">
                                 <div class="form-group col-md-6">
                                     <label>Machine Group</label>
-                                    <input type="number" name="TD_MAC_ID" class="form-control" value="" placeholder="Machine Group ID (optional)" min="0">
-                                    <small class="form-text text-muted">Optional: Enter Machine Group ID</small>
+                                    <select name="TD_MACG_ID" class="form-control">
+                                        <option value="">-- Select Machine Group --</option>
+                                        <?php 
+                                        $machine_groups = isset($machine_groups) ? $machine_groups : array();
+                                        foreach ($machine_groups as $mg): ?>
+                                            <option value="<?= (int)$mg['MACHINE_ID']; ?>"><?= htmlspecialchars($mg['MACHINE_NAME'], ENT_QUOTES, 'UTF-8'); ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
                                 </div>
                                 <div class="form-group col-md-6">
                                     <label>Effective Date</label>

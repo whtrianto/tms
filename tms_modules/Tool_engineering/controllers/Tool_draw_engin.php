@@ -446,7 +446,7 @@ class Tool_draw_engin extends MY_Controller
                     echo json_encode($result);
                     return;
                 }
-                $ok = $this->tool_draw_engin->add_data($product_id, $process_id, $drawing_no, $tool_id, $revision, $status, $material_id, $maker_id);
+                $ok = $this->tool_draw_engin->add_data($product_id, $process_id, $drawing_no, $tool_id, $revision, $status, $material_id, $maker_id, $machine_group_id, $effective_date);
                 if ($ok === true) {
                     // Get ML_ID (MLR_ML_ID) from the newly created record
                     $ml_id = $this->_get_ml_id_by_drawing_no($drawing_no);

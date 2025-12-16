@@ -10,6 +10,16 @@
         .card, .table, label, .form-text { color: #000; }
         .label-required::after { content: " *"; color: #dc3545; font-weight: 600; }
         .is-invalid + .invalid-feedback { display: block; }
+        /* Keep navbar pinned */
+        .navbar { position: sticky; top: 0; z-index: 1030; }
+        /* Fix footer spacing */
+        #content-wrapper { min-height: calc(100vh - 56px); }
+        #container-wrapper { padding-bottom: 4rem; margin-bottom: 2rem; }
+        .card { margin-bottom: 2rem; }
+        /* Ensure footer doesn't overlap */
+        #content {
+            padding-bottom: 4rem;
+        }
     </style>
 </head>
 <body id="page-top">
