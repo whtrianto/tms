@@ -11,17 +11,13 @@ class Attachment_TMS extends CI_Controller
 {
     public function __construct()
     {
-        // Disable ALL output buffering immediately
+        parent::__construct();
+        
+        // Disable ALL output buffering after parent construct
+        // Note: Cannot use ini_set('output_buffering') after session starts
         while (ob_get_level()) {
             ob_end_clean();
         }
-        
-        // Turn off output buffering completely
-        if (ini_get('output_buffering')) {
-            ini_set('output_buffering', 'Off');
-        }
-        
-        parent::__construct();
         
         // Disable CodeIgniter output class completely
         $this->output->enable_profiler(FALSE);
@@ -40,13 +36,9 @@ class Attachment_TMS extends CI_Controller
     public function index()
     {
         // CRITICAL: Disable ALL output buffering FIRST - before anything else
+        // Note: Cannot use ini_set('output_buffering') after session starts
         while (ob_get_level()) {
             ob_end_clean();
-        }
-        
-        // Turn off output buffering at PHP level
-        if (ini_get('output_buffering')) {
-            ini_set('output_buffering', 'Off');
         }
         
         // CRITICAL: Check if any output has been sent already
