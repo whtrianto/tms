@@ -10,6 +10,8 @@ class Attachment_TMS extends MY_Controller
     public function __construct()
     {
         parent::__construct();
+        // Disable output buffering and CodeIgniter output class for file serving
+        $this->output->enable_profiler(FALSE);
         // No authentication required for file serving (or add if needed)
     }
 
@@ -21,6 +23,14 @@ class Attachment_TMS extends MY_Controller
      */
     public function index()
     {
+        // Disable all output buffering immediately to prevent corruption
+        while (ob_get_level()) {
+            ob_end_clean();
+        }
+        
+        // Disable CodeIgniter output class interference
+        $this->output->enable_profiler(FALSE);
+        
         // Try to get from query parameters first (more reliable for special chars)
         $folder_name = $this->input->get('folder', TRUE);
         $mlr_ml_id = (int)$this->input->get('mlr_ml_id', TRUE);
@@ -100,6 +110,15 @@ class Attachment_TMS extends MY_Controller
             return;
         }
         
+        // Disable all output buffering completely
+        while (ob_get_level()) {
+            ob_end_clean();
+        }
+        
+        // Get file info
+        $file_size = filesize($file_path);
+        $file_name = basename($file_path);
+        
         // Get MIME type
         $mime_type = $this->_get_mime_type_from_filename($file_path);
         
@@ -111,28 +130,32 @@ class Attachment_TMS extends MY_Controller
             }
         }
         
-        $file_size = filesize($file_path);
-        $file_name = basename($file_path);
-        
-        // Clean output buffer
-        if (ob_get_level()) {
-            ob_clean();
-        }
+        // Disable CodeIgniter output class
+        $this->output->_display = FALSE;
         
         // Set headers for download - always use attachment for proper download
         header('Content-Type: ' . $mime_type);
         header('Content-Length: ' . $file_size);
-        header('Content-Disposition: attachment; filename="' . $file_name . '"');
+        header('Content-Disposition: attachment; filename="' . addslashes($file_name) . '"');
         header('Cache-Control: public, max-age=3600');
         header('Pragma: public');
+        header('Expires: 0');
         
-        // Disable output buffering to prevent corruption
-        if (ob_get_level()) {
-            ob_end_clean();
+        // Open file in binary mode
+        $handle = fopen($file_path, 'rb');
+        if ($handle === FALSE) {
+            log_message('error', '[Attachment_TMS] Cannot open file: ' . $file_path);
+            show_404();
+            return;
         }
         
-        // Output file directly
-        readfile($file_path);
+        // Output file in chunks to prevent memory issues
+        while (!feof($handle)) {
+            echo fread($handle, 8192); // Read 8KB at a time
+            flush();
+        }
+        
+        fclose($handle);
         exit;
     }
     
