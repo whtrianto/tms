@@ -14,11 +14,21 @@
         .navbar { position: sticky; top: 0; z-index: 1030; }
         /* Fix footer spacing */
         #content-wrapper { min-height: calc(100vh - 56px); }
-        #container-wrapper { padding-bottom: 4rem; margin-bottom: 2rem; }
+        #container-wrapper { 
+            padding-bottom: 8rem !important; 
+            margin-bottom: 3rem !important; 
+        }
         .card { margin-bottom: 2rem; }
-        /* Ensure footer doesn't overlap */
+        /* Ensure footer doesn't overlap - extra spacing for Shared Tool section */
         #content {
-            padding-bottom: 4rem;
+            padding-bottom: 8rem !important;
+        }
+        /* Extra margin for Shared Tool card to prevent footer overlap */
+        #shared-tool-card {
+            margin-bottom: 6rem !important;
+        }
+        #shared-tool-card .card-body {
+            padding-bottom: 3rem !important;
         }
     </style>
 </head>
@@ -196,7 +206,7 @@
                 </div>
 
                 <!-- Shared Tool Section -->
-                <div class="card mb-3 mt-3">
+                <div class="card mb-3 mt-3" id="shared-tool-card">
                     <div class="card-header">
                         <h5 class="m-0 font-weight-bold text-primary">Shared Tool</h5>
                     </div>
