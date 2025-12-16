@@ -561,23 +561,17 @@ class Tool_draw_engin extends MY_Controller
         $path_info = $this->_get_folder_path($mlr_id, $mlr_rev, $folder_name);
         
         if ($path_info) {
-            // If filename is provided, use direct URL
+            // If filename is provided, use Attachment_TMS URL format
+            // Controller Attachment_TMS will handle routing and serve file
             if (!empty($fileIdentifier) && trim($fileIdentifier) !== '') {
                 $filename = basename(trim($fileIdentifier));
-                // Use direct URL if folder is accessible from web root
-                if (strpos($path_info['dir'], FCPATH) === 0) {
-                    // Folder is in web root, can use direct URL
-                    // Format: Attachment_TMS/Drawing/{MLR_ID}/{MLR_REV}/{filename}
-                    return $path_info['url'] . urlencode($filename);
-                } else {
-                    // Folder is in application folder, but use Attachment_TMS URL format
-                    // Format: Attachment_TMS/Drawing/{MLR_ID}/{MLR_REV}/{filename}
-                    // Use the URL from path_info which already has the correct Attachment_TMS format
-                    return $path_info['url'] . urlencode($filename);
-                }
+                // Use Attachment_TMS controller URL format
+                // Format: Attachment_TMS/{folder}/{MLR_ID}/{MLR_REV}/{filename}
+                // Use rawurlencode for path (produces %20 instead of + for spaces)
+                // Note: CodeIgniter routing may not allow special chars, but controller will handle it
+                return $path_info['url'] . rawurlencode($filename);
             }
             
-            // Use Attachment_TMS URL format (path_info already contains correct URL structure)
             // Return the base URL for the folder
             return $path_info['url'];
         }
@@ -593,7 +587,8 @@ class Tool_draw_engin extends MY_Controller
         
         if (!empty($fileIdentifier) && trim($fileIdentifier) !== '') {
             $filename = basename(trim($fileIdentifier));
-            $fileUrl .= urlencode($filename);
+            // Use rawurlencode for path (produces %20 instead of + for spaces)
+            $fileUrl .= rawurlencode($filename);
         }
         
         return $fileUrl;
@@ -733,7 +728,8 @@ class Tool_draw_engin extends MY_Controller
                 
                 $file_path = $path_info['dir'] . $file;
                 if (is_file($file_path)) {
-                    $file_url = $path_info['url'] . urlencode($file);
+                    // Use rawurlencode for path (produces %20 instead of + for spaces)
+                    $file_url = $path_info['url'] . rawurlencode($file);
                     $file_size = filesize($file_path);
                     $file_ext = strtolower(pathinfo($file, PATHINFO_EXTENSION));
                     
