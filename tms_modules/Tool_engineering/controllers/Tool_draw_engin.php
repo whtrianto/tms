@@ -566,12 +566,12 @@ class Tool_draw_engin extends MY_Controller
             if (!empty($fileIdentifier) && trim($fileIdentifier) !== '') {
                 $filename = basename(trim($fileIdentifier));
                 
-                // If folder is in web root, use direct URL (faster, no PHP processing)
+                // Always use direct URL if folder is in web root (bypass PHP controller completely)
                 if (strpos($path_info['dir'], FCPATH) === 0) {
-                    // Direct URL to file in web root - best for download
+                    // Direct URL to file in web root - bypasses PHP, no corruption possible
                     return $path_info['url'] . rawurlencode($filename);
                 } else {
-                    // Folder is in application folder, use Attachment_TMS controller
+                    // Folder is in application folder, must use Attachment_TMS controller
                     // Format: Attachment_TMS/{folder}/{MLR_ML_ID}/{MLR_REV}/{filename}
                     return $path_info['url'] . rawurlencode($filename);
                 }
@@ -1265,12 +1265,12 @@ class Tool_draw_engin extends MY_Controller
                     }
                     $file_path = $drawing_path_info['dir'] . $file;
                     if (is_file($file_path)) {
-                        // Use direct URL to file if folder is in web root, otherwise use Attachment_TMS controller
+                        // Always use direct URL if folder is in web root (bypasses PHP completely)
                         if (strpos($drawing_path_info['dir'], FCPATH) === 0) {
-                            // File is in web root, use direct URL for download
+                            // File is in web root, use direct URL - no PHP processing, no corruption
                             $file_url = $drawing_path_info['url'] . rawurlencode($file);
                         } else {
-                            // File is in application folder, use Attachment_TMS controller
+                            // File is in application folder, must use Attachment_TMS controller
                             $file_url = $this->build_file_url_by_mlr($mlr_ml_id, $mlr_rev, $file, 'drawing');
                         }
                         $file_ext = strtolower(pathinfo($file, PATHINFO_EXTENSION));

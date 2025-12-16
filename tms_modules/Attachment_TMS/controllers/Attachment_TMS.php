@@ -9,9 +9,17 @@ class Attachment_TMS extends MY_Controller
 {
     public function __construct()
     {
+        // Disable output buffering BEFORE calling parent
+        while (ob_get_level()) {
+            ob_end_clean();
+        }
+        
         parent::__construct();
+        
         // Disable output buffering and CodeIgniter output class for file serving
         $this->output->enable_profiler(FALSE);
+        $this->output->_display = FALSE;
+        
         // No authentication required for file serving (or add if needed)
     }
 
@@ -23,13 +31,24 @@ class Attachment_TMS extends MY_Controller
      */
     public function index()
     {
+        // CRITICAL: Check if any output has been sent already
+        if (headers_sent($file, $line)) {
+            error_log('[Attachment_TMS] ERROR: Headers already sent at ' . $file . ':' . $line . ' - This will cause file corruption!');
+            http_response_code(500);
+            exit;
+        }
+        
         // Disable all output buffering immediately to prevent corruption
         while (ob_get_level()) {
             ob_end_clean();
         }
         
-        // Disable CodeIgniter output class interference
+        // Disable CodeIgniter output class completely
         $this->output->enable_profiler(FALSE);
+        $this->output->_display = FALSE;
+        
+        // Prevent CodeIgniter from sending any output
+        $this->output->set_output('');
         
         // Try to get from query parameters first (more reliable for special chars)
         $folder_name = $this->input->get('folder', TRUE);
@@ -67,8 +86,11 @@ class Attachment_TMS extends MY_Controller
         }
         
         if ($mlr_ml_id <= 0 || empty($filename) || empty($folder_name)) {
-            show_404();
-            return;
+            // Send 404 header without using show_404() to avoid output
+            http_response_code(404);
+            header('Content-Type: text/plain');
+            echo 'File not found';
+            exit;
         }
         
         // Try multiple possible paths using MLR_ML_ID
@@ -91,9 +113,11 @@ class Attachment_TMS extends MY_Controller
         }
         
         if (!$file_path) {
-            log_message('error', '[Attachment_TMS] File not found: ' . $folder_name . '/' . $mlr_ml_id . '/' . $mlr_rev . '/' . $filename);
-            show_404();
-            return;
+            // Send 404 header without using show_404() or log_message() to avoid output
+            http_response_code(404);
+            header('Content-Type: text/plain');
+            echo 'File not found';
+            exit;
         }
         
         // Serve the file
@@ -106,16 +130,21 @@ class Attachment_TMS extends MY_Controller
     private function _output_file($file_path)
     {
         if (!file_exists($file_path) || !is_file($file_path)) {
-            show_404();
-            return;
+            http_response_code(404);
+            header('Content-Type: text/plain');
+            echo 'File not found';
+            exit;
         }
         
-        // Disable all output buffering completely
+        // Disable all output buffering completely - do this FIRST
         while (ob_get_level()) {
             ob_end_clean();
         }
         
-        // Get file info
+        // Disable CodeIgniter output class completely
+        $this->output->_display = FALSE;
+        
+        // Get file info BEFORE any output
         $file_size = filesize($file_path);
         $file_name = basename($file_path);
         
@@ -130,10 +159,16 @@ class Attachment_TMS extends MY_Controller
             }
         }
         
-        // Disable CodeIgniter output class
-        $this->output->_display = FALSE;
+        // CRITICAL: Check if headers already sent (would cause corruption)
+        if (headers_sent($file, $line)) {
+            // Headers already sent - this is the problem!
+            // Log error but don't output anything
+            error_log('[Attachment_TMS] Headers already sent at ' . $file . ':' . $line);
+            http_response_code(500);
+            exit;
+        }
         
-        // Set headers for download - always use attachment for proper download
+        // Set headers for download - MUST be before any output
         header('Content-Type: ' . $mime_type);
         header('Content-Length: ' . $file_size);
         header('Content-Disposition: attachment; filename="' . addslashes($file_name) . '"');
@@ -141,21 +176,22 @@ class Attachment_TMS extends MY_Controller
         header('Pragma: public');
         header('Expires: 0');
         
-        // Open file in binary mode
-        $handle = fopen($file_path, 'rb');
-        if ($handle === FALSE) {
-            log_message('error', '[Attachment_TMS] Cannot open file: ' . $file_path);
-            show_404();
-            return;
+        // Flush any remaining output buffers
+        if (ob_get_level()) {
+            ob_end_flush();
         }
         
-        // Output file in chunks to prevent memory issues
-        while (!feof($handle)) {
-            echo fread($handle, 8192); // Read 8KB at a time
-            flush();
+        // Use readfile() directly - most reliable for binary files
+        // readfile() doesn't load entire file into memory and handles binary correctly
+        $result = @readfile($file_path);
+        
+        if ($result === FALSE || $result !== $file_size) {
+            // File read error or size mismatch
+            error_log('[Attachment_TMS] File read error. Expected: ' . $file_size . ', Got: ' . $result);
+            http_response_code(500);
+            exit;
         }
         
-        fclose($handle);
         exit;
     }
     
