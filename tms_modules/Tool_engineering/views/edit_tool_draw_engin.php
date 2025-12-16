@@ -15,20 +15,25 @@
         /* Fix footer spacing */
         #content-wrapper { min-height: calc(100vh - 56px); }
         #container-wrapper { 
-            padding-bottom: 8rem !important; 
-            margin-bottom: 3rem !important; 
+            padding-bottom: 15rem !important; 
+            margin-bottom: 5rem !important; 
         }
         .card { margin-bottom: 2rem; }
         /* Ensure footer doesn't overlap - extra spacing for Shared Tool section */
         #content {
-            padding-bottom: 8rem !important;
+            padding-bottom: 15rem !important;
+            min-height: calc(100vh - 56px);
         }
         /* Extra margin for Shared Tool card to prevent footer overlap */
         #shared-tool-card {
-            margin-bottom: 6rem !important;
+            margin-bottom: 10rem !important;
         }
         #shared-tool-card .card-body {
-            padding-bottom: 3rem !important;
+            padding-bottom: 4rem !important;
+        }
+        /* Ensure table inside Shared Tool card has spacing */
+        #shared-tool-card .table-responsive {
+            margin-bottom: 2rem;
         }
     </style>
 </head>
@@ -252,6 +257,8 @@
                     </div>
                 </div>
             </div>
+            <!-- Extra spacer to prevent footer overlap -->
+            <div style="height: 15rem; min-height: 15rem; clear: both;"></div>
             <?= isset($modal_logout) ? $modal_logout : ''; ?>
         </div>
         <?= isset($footer) ? $footer : ''; ?>
