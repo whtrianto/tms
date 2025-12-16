@@ -547,23 +547,63 @@ class Tool_draw_engin extends MY_Controller
      */
     private function build_file_url_by_mlr($mlr_id, $mlr_rev, $fileIdentifier, $type = 'drawing')
     {
-        if (empty($fileIdentifier) || trim($fileIdentifier) === '' || $mlr_id <= 0) {
+        if ($mlr_id <= 0) {
             return '';
         }
         
-        // If fileIdentifier already contains full URL, return as is
-        if (strpos($fileIdentifier, 'http://') === 0 || strpos($fileIdentifier, 'https://') === 0) {
-            return $fileIdentifier;
+        // Determine folder name
+        $folder_name = 'Drawing';
+        if ($type === 'sketch' || strpos(strtolower($type), 'sketch') !== false) {
+            $folder_name = 'Drawing_Sketch';
         }
         
-        // Build URL using endpoint to serve file from Attachment_TMS folder
-        // File structure: Attachment_TMS/Drawing/(MLR_ID)/(MLR_REV)/(filename)
-        // or: Attachment_TMS/Drawing_Sketch/(MLR_ID)/(MLR_REV)/(filename)
-        // Note: Cannot access application folder directly, must use PHP endpoint
+        // Try to get actual folder path to determine correct URL
+        $path_info = $this->_get_folder_path($mlr_id, $mlr_rev, $folder_name);
+        
+        if ($path_info) {
+            // If filename is provided, use direct URL
+            if (!empty($fileIdentifier) && trim($fileIdentifier) !== '') {
+                $filename = basename(trim($fileIdentifier));
+                // Use direct URL if folder is accessible from web root
+                if (strpos($path_info['dir'], FCPATH) === 0) {
+                    // Folder is in web root, can use direct URL
+                    // Format: Attachment_TMS/Drawing/{MLR_ID}/{MLR_REV}/{filename}
+                    return $path_info['url'] . urlencode($filename);
+                } else {
+                    // Folder is in application folder, use PHP endpoint but with direct URL format
+                    // Try to generate URL that matches the desired format
+                    // Format: Attachment_TMS/Drawing/{MLR_ID}/{filename} (without MLR_REV in URL path)
+                    $direct_url = base_url('Attachment_TMS/' . $folder_name . '/' . $mlr_id . '/' . urlencode($filename));
+                    // But we still need to use PHP endpoint since file is in application folder
+                    // So use PHP endpoint with filename parameter
+                    $fileUrl = base_url('Tool_engineering/tool_draw_engin/serve_file_by_mlr') . 
+                               '?mlr_id=' . (int)$mlr_id . 
+                               '&mlr_rev=' . (int)$mlr_rev . 
+                               '&type=' . urlencode($type) . 
+                               '&filename=' . urlencode($filename);
+                    return $fileUrl;
+                }
+            }
+            
+            // Use PHP endpoint to serve file (will serve first file found or from database)
+            $fileUrl = base_url('Tool_engineering/tool_draw_engin/serve_file_by_mlr') . 
+                       '?mlr_id=' . (int)$mlr_id . 
+                       '&mlr_rev=' . (int)$mlr_rev . 
+                       '&type=' . urlencode($type);
+            
+            return $fileUrl;
+        }
+        
+        // Fallback: use PHP endpoint
         $fileUrl = base_url('Tool_engineering/tool_draw_engin/serve_file_by_mlr') . 
                    '?mlr_id=' . (int)$mlr_id . 
                    '&mlr_rev=' . (int)$mlr_rev . 
                    '&type=' . urlencode($type);
+        
+        if (!empty($fileIdentifier) && trim($fileIdentifier) !== '') {
+            $filename = basename(trim($fileIdentifier));
+            $fileUrl .= '&filename=' . urlencode($filename);
+        }
         
         return $fileUrl;
     }
@@ -607,8 +647,151 @@ class Tool_draw_engin extends MY_Controller
      * @param string $type File type (drawing or sketch)
      */
     /**
+     * Get folder path for MLR_ID and MLR_REV
+     * Tries multiple possible locations
+     * @param int $mlr_id
+     * @param int $mlr_rev
+     * @param string $folder_name
+     * @return array Array with 'dir_path' and 'base_url' if found, null otherwise
+     */
+    private function _get_folder_path($mlr_id, $mlr_rev, $folder_name)
+    {
+        // Try multiple possible paths
+        $possible_paths = array(
+            // Path 1: Web root Attachment_TMS (most common for direct access)
+            array(
+                'dir' => FCPATH . 'Attachment_TMS/' . $folder_name . '/' . $mlr_id . '/' . $mlr_rev . '/',
+                'url' => base_url('Attachment_TMS/' . $folder_name . '/' . $mlr_id . '/' . $mlr_rev . '/')
+            ),
+            // Path 2: Application folder tms_modules
+            array(
+                'dir' => APPPATH . 'tms_modules/Attachment_TMS/' . $folder_name . '/' . $mlr_id . '/' . $mlr_rev . '/',
+                'url' => base_url('tms_modules/Attachment_TMS/' . $folder_name . '/' . $mlr_id . '/' . $mlr_rev . '/')
+            ),
+            // Path 3: Try without revision subfolder (some files might be directly in MLR_ID folder)
+            array(
+                'dir' => FCPATH . 'Attachment_TMS/' . $folder_name . '/' . $mlr_id . '/',
+                'url' => base_url('Attachment_TMS/' . $folder_name . '/' . $mlr_id . '/')
+            ),
+            array(
+                'dir' => APPPATH . 'tms_modules/Attachment_TMS/' . $folder_name . '/' . $mlr_id . '/',
+                'url' => base_url('tms_modules/Attachment_TMS/' . $folder_name . '/' . $mlr_id . '/')
+            )
+        );
+        
+        foreach ($possible_paths as $path_info) {
+            if (is_dir($path_info['dir'])) {
+                log_message('debug', '[serve_file_by_mlr] Found folder at: ' . $path_info['dir']);
+                return $path_info;
+            }
+        }
+        
+        return null;
+    }
+    
+    /**
+     * List all files in folder by MLR_ID and MLR_REV
+     * Returns JSON list of files
+     */
+    public function list_files_by_mlr()
+    {
+        if (ob_get_level()) {
+            ob_clean();
+        }
+        
+        $this->output->set_content_type('application/json', 'UTF-8');
+        
+        $mlr_id = (int)$this->input->get('mlr_id', TRUE);
+        $mlr_rev = (int)$this->input->get('mlr_rev', TRUE);
+        $file_type = $this->input->get('type', TRUE);
+        
+        if ($mlr_id <= 0) {
+            $result = array('success' => false, 'message' => 'Invalid MLR_ID', 'files' => array());
+            $this->output->set_output(json_encode($result));
+            return;
+        }
+        
+        // Determine folder name based on file type
+        $folder_name = 'Drawing';
+        if ($file_type === 'sketch' || strpos(strtolower($file_type), 'sketch') !== false) {
+            $folder_name = 'Drawing_Sketch';
+        }
+        
+        // Get folder path
+        $path_info = $this->_get_folder_path($mlr_id, $mlr_rev, $folder_name);
+        
+        if (!$path_info) {
+            $result = array(
+                'success' => false, 
+                'message' => 'Folder not found for MLR_ID=' . $mlr_id . ', MLR_REV=' . $mlr_rev,
+                'files' => array()
+            );
+            $this->output->set_output(json_encode($result));
+            return;
+        }
+        
+        // Read files from directory
+        $files = @scandir($path_info['dir']);
+        $file_list = array();
+        
+        if ($files) {
+            foreach ($files as $file) {
+                if ($file === '.' || $file === '..' || $file === 'cb.txt') {
+                    continue;
+                }
+                
+                $file_path = $path_info['dir'] . $file;
+                if (is_file($file_path)) {
+                    $file_url = $path_info['url'] . urlencode($file);
+                    $file_size = filesize($file_path);
+                    $file_ext = strtolower(pathinfo($file, PATHINFO_EXTENSION));
+                    
+                    $file_list[] = array(
+                        'name' => $file,
+                        'url' => $file_url,
+                        'size' => $file_size,
+                        'size_formatted' => $this->_format_file_size($file_size),
+                        'extension' => $file_ext,
+                        'is_image' => in_array($file_ext, array('jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp')),
+                        'is_pdf' => ($file_ext === 'pdf')
+                    );
+                }
+            }
+        }
+        
+        $result = array(
+            'success' => true,
+            'message' => 'Found ' . count($file_list) . ' file(s)',
+            'mlr_id' => $mlr_id,
+            'mlr_rev' => $mlr_rev,
+            'folder_path' => $path_info['dir'],
+            'folder_url' => $path_info['url'],
+            'files' => $file_list
+        );
+        
+        $this->output->set_output(json_encode($result, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
+    }
+    
+    /**
+     * Format file size to human readable format
+     */
+    private function _format_file_size($bytes)
+    {
+        if ($bytes >= 1073741824) {
+            return number_format($bytes / 1073741824, 2) . ' GB';
+        } elseif ($bytes >= 1048576) {
+            return number_format($bytes / 1048576, 2) . ' MB';
+        } elseif ($bytes >= 1024) {
+            return number_format($bytes / 1024, 2) . ' KB';
+        } else {
+            return $bytes . ' bytes';
+        }
+    }
+    
+    /**
      * Serve file using MLR_ID and MLR_REV directly (preferred method)
      * This is more reliable than searching by file identifier
+     * Now supports reading folder contents and serving files
      */
     public function serve_file_by_mlr()
     {
@@ -616,11 +799,10 @@ class Tool_draw_engin extends MY_Controller
             ob_clean();
         }
         
-        $this->output->set_content_type('application/octet-stream'); // Default MIME type
-        
         $mlr_id = (int)$this->input->get('mlr_id', TRUE);
         $mlr_rev = (int)$this->input->get('mlr_rev', TRUE);
         $file_type = $this->input->get('type', TRUE);
+        $filename = $this->input->get('filename', TRUE); // Optional: specific filename to serve
         
         if ($mlr_id <= 0) {
             log_message('error', '[serve_file_by_mlr] Invalid MLR_ID: ' . $mlr_id);
@@ -628,7 +810,38 @@ class Tool_draw_engin extends MY_Controller
             return;
         }
         
-        // Load database connection
+        // Determine folder name based on file type
+        $folder_name = 'Drawing';
+        if ($file_type === 'sketch' || strpos(strtolower($file_type), 'sketch') !== false) {
+            $folder_name = 'Drawing_Sketch';
+        }
+        
+        // Get folder path
+        $path_info = $this->_get_folder_path($mlr_id, $mlr_rev, $folder_name);
+        
+        if (!$path_info) {
+            log_message('error', '[serve_file_by_mlr] Folder not found for MLR_ID=' . $mlr_id . ', MLR_REV=' . $mlr_rev);
+            show_404();
+            return;
+        }
+        
+        // If filename is provided, serve that specific file
+        if (!empty($filename)) {
+            $filename = basename($filename); // Prevent directory traversal
+            $file_path = $path_info['dir'] . $filename;
+            
+            if (file_exists($file_path) && is_file($file_path)) {
+                log_message('debug', '[serve_file_by_mlr] Serving file: ' . $file_path);
+                $this->_output_file($file_path);
+                return;
+            } else {
+                log_message('error', '[serve_file_by_mlr] File not found: ' . $file_path);
+                show_404();
+                return;
+            }
+        }
+        
+        // If no filename provided, try to get filename from database
         $db_tms = $this->load->database('tms_NEW', true);
         if (!$db_tms) {
             log_message('error', '[serve_file_by_mlr] Failed to load database tms_NEW');
@@ -638,10 +851,8 @@ class Tool_draw_engin extends MY_Controller
         
         // Determine which column to query based on file type
         $column_name = 'MLR_DRAWING';
-        $folder_name = 'Drawing';
         if ($file_type === 'sketch' || strpos(strtolower($file_type), 'sketch') !== false) {
             $column_name = 'MLR_SKETCH';
-            $folder_name = 'Drawing_Sketch';
         }
         
         // Get filename from database using MLR_ID and MLR_REV
@@ -663,42 +874,37 @@ class Tool_draw_engin extends MY_Controller
         $row = $q->row_array();
         $file_name = isset($row['FILE_NAME']) ? trim($row['FILE_NAME']) : '';
         
-        if (empty($file_name)) {
-            log_message('error', '[serve_file_by_mlr] File name is empty for MLR_ID=' . $mlr_id . ', MLR_REV=' . $mlr_rev);
-            show_404();
-            return;
-        }
-        
-        // Clean filename to prevent directory traversal
-        $file_name = basename($file_name);
-        
-        // Construct the full path
-        // Note: tms_modules is inside application folder, so use APPPATH
-        $file_path = APPPATH . 'tms_modules/Attachment_TMS/' . $folder_name . '/' . $mlr_id . '/' . $mlr_rev . '/' . $file_name;
-        
-        log_message('debug', '[serve_file_by_mlr] Looking for file: ' . $file_path);
-        
-        if (file_exists($file_path) && is_file($file_path)) {
-            log_message('debug', '[serve_file_by_mlr] File found, serving: ' . $file_path);
-            $this->_output_file($file_path);
-            return;
-        }
-        
-        // If file not found, log and return 404
-        log_message('error', '[serve_file_by_mlr] File NOT found at path: ' . $file_path);
-        log_message('error', '[serve_file_by_mlr] MLR_ID=' . $mlr_id . ', MLR_REV=' . $mlr_rev . ', File=' . $file_name);
-        
-        // Check if directory exists
-        $dir_path = APPPATH . 'tms_modules/Attachment_TMS/' . $folder_name . '/' . $mlr_id . '/' . $mlr_rev . '/';
-        if (!is_dir($dir_path)) {
-            log_message('error', '[serve_file_by_mlr] Directory does not exist: ' . $dir_path);
-        } else {
-            $files = @scandir($dir_path);
-            if ($files) {
-                log_message('error', '[serve_file_by_mlr] Directory exists but file not found. Files in directory: ' . implode(', ', $files));
+        // If database has filename, try to serve it
+        if (!empty($file_name)) {
+            $file_name = basename($file_name);
+            $file_path = $path_info['dir'] . $file_name;
+            
+            if (file_exists($file_path) && is_file($file_path)) {
+                log_message('debug', '[serve_file_by_mlr] File found from database, serving: ' . $file_path);
+                $this->_output_file($file_path);
+                return;
             }
         }
         
+        // If database filename doesn't exist, try to find first file in folder
+        $files = @scandir($path_info['dir']);
+        if ($files) {
+            foreach ($files as $file) {
+                if ($file === '.' || $file === '..' || $file === 'cb.txt') {
+                    continue;
+                }
+                
+                $file_path = $path_info['dir'] . $file;
+                if (is_file($file_path)) {
+                    log_message('debug', '[serve_file_by_mlr] Serving first file found in folder: ' . $file_path);
+                    $this->_output_file($file_path);
+                    return;
+                }
+            }
+        }
+        
+        // No file found
+        log_message('error', '[serve_file_by_mlr] No file found in folder: ' . $path_info['dir']);
         show_404();
     }
     
@@ -995,6 +1201,60 @@ class Tool_draw_engin extends MY_Controller
         // Use MLR_ID and MLR_REV to build URL directly (more reliable than file identifier)
         $drawing_file_url = $this->build_file_url_by_mlr($mlr_id, $mlr_rev, $drawing_file_id, 'drawing');
         $sketch_file_url = $this->build_file_url_by_mlr($mlr_id, $mlr_rev, $sketch_file_id, 'sketch');
+        
+        // Get list of all files in drawing folder
+        $drawing_files = array();
+        $drawing_path_info = $this->_get_folder_path($mlr_id, $mlr_rev, 'Drawing');
+        if ($drawing_path_info) {
+            $files = @scandir($drawing_path_info['dir']);
+            if ($files) {
+                foreach ($files as $file) {
+                    if ($file === '.' || $file === '..' || $file === 'cb.txt') {
+                        continue;
+                    }
+                    $file_path = $drawing_path_info['dir'] . $file;
+                    if (is_file($file_path)) {
+                        $file_url = $this->build_file_url_by_mlr($mlr_id, $mlr_rev, $file, 'drawing');
+                        $file_ext = strtolower(pathinfo($file, PATHINFO_EXTENSION));
+                        $drawing_files[] = array(
+                            'name' => $file,
+                            'url' => $file_url,
+                            'size' => filesize($file_path),
+                            'extension' => $file_ext,
+                            'is_image' => in_array($file_ext, array('jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp')),
+                            'is_pdf' => ($file_ext === 'pdf')
+                        );
+                    }
+                }
+            }
+        }
+        
+        // Get list of all files in sketch folder
+        $sketch_files = array();
+        $sketch_path_info = $this->_get_folder_path($mlr_id, $mlr_rev, 'Drawing_Sketch');
+        if ($sketch_path_info) {
+            $files = @scandir($sketch_path_info['dir']);
+            if ($files) {
+                foreach ($files as $file) {
+                    if ($file === '.' || $file === '..' || $file === 'cb.txt') {
+                        continue;
+                    }
+                    $file_path = $sketch_path_info['dir'] . $file;
+                    if (is_file($file_path)) {
+                        $file_url = $this->build_file_url_by_mlr($mlr_id, $mlr_rev, $file, 'sketch');
+                        $file_ext = strtolower(pathinfo($file, PATHINFO_EXTENSION));
+                        $sketch_files[] = array(
+                            'name' => $file,
+                            'url' => $file_url,
+                            'size' => filesize($file_path),
+                            'extension' => $file_ext,
+                            'is_image' => in_array($file_ext, array('jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp')),
+                            'is_pdf' => ($file_ext === 'pdf')
+                        );
+                    }
+                }
+            }
+        }
 
         // Prepare response data
         $result = array(
@@ -1015,8 +1275,10 @@ class Tool_draw_engin extends MY_Controller
                 'TD_MAC_NAME' => isset($row['TD_MAC_NAME']) ? $row['TD_MAC_NAME'] : '',
                 'TD_DRAWING_FILE' => $drawing_file_id,
                 'TD_DRAWING_FILE_URL' => $drawing_file_url,
+                'TD_DRAWING_FILES' => $drawing_files,
                 'TD_SKETCH_FILE' => $sketch_file_id,
-                'TD_SKETCH_FILE_URL' => $sketch_file_url
+                'TD_SKETCH_FILE_URL' => $sketch_file_url,
+                'TD_SKETCH_FILES' => $sketch_files
             )
         );
 

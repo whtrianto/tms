@@ -396,11 +396,68 @@
                             return pdfPattern.test(url);
                         }
                         
-                        // Function to render file display from server URL
+                        // Function to format file size
+                        function formatFileSize(bytes) {
+                            if (bytes >= 1073741824) {
+                                return (bytes / 1073741824).toFixed(2) + ' GB';
+                            } else if (bytes >= 1048576) {
+                                return (bytes / 1048576).toFixed(2) + ' MB';
+                            } else if (bytes >= 1024) {
+                                return (bytes / 1024).toFixed(2) + ' KB';
+                            } else {
+                                return bytes + ' bytes';
+                            }
+                        }
+                        
+                        // Function to render multiple files from array
+                        function renderFilesFromArray(files, containerId, label) {
+                            var html = '';
+                            html += '<div style="margin-bottom:8px;"><strong>' + label + ':</strong></div>';
+                            
+                            if (!files || files.length === 0) {
+                                html += '<div style="text-align:center; padding:8px; border:1px solid #ddd; background:#f5f5f5; color:#999;">No files available</div>';
+                            } else {
+                                html += '<div style="border:1px solid #ddd; padding:8px; background:#f9f9f9;">';
+                                
+                                files.forEach(function(file, index) {
+                                    if (index > 0) {
+                                        html += '<hr style="margin:8px 0;" />';
+                                    }
+                                    
+                                    if (file.is_image) {
+                                        html += '<div style="margin-bottom:4px;">' +
+                                                '<a href="' + file.url + '" target="_blank" title="Click to view full size">' +
+                                                '<img src="' + file.url + '" style="max-width:100%; height:auto; cursor:pointer; border:1px solid #ccc;" ' +
+                                                'onerror="this.style.display=\'none\'; this.nextElementSibling.style.display=\'block\';" />' +
+                                                '<div style="display:none; padding:10px; color:#999; border:1px solid #ddd; background:#f5f5f5;">' +
+                                                'Image not available. <a href="' + file.url + '" target="_blank">Click to open</a></div>' +
+                                                '</a></div>';
+                                        html += '<div class="small text-muted">' + file.name + ' (' + formatFileSize(file.size) + ')</div>';
+                                    } else if (file.is_pdf) {
+                                        html += '<div style="text-align:center;">' +
+                                                '<a href="' + file.url + '" target="_blank" class="btn btn-primary btn-sm" style="display:inline-block;">' +
+                                                '<i class="fa fa-file-pdf"></i> View PDF</a>' +
+                                                '<div class="small text-muted mt-2">' + file.name + ' (' + formatFileSize(file.size) + ')</div>' +
+                                                '</div>';
+                                    } else {
+                                        html += '<div style="text-align:center;">' +
+                                                '<a href="' + file.url + '" target="_blank" class="btn btn-secondary btn-sm" style="display:inline-block;">' +
+                                                '<i class="fa fa-file"></i> Download File</a>' +
+                                                '<div class="small text-muted mt-2">' + file.name + ' (' + formatFileSize(file.size) + ')</div>' +
+                                                '</div>';
+                                    }
+                                });
+                                
+                                html += '</div>';
+                            }
+                            
+                            $(containerId).html(html);
+                        }
+                        
+                        // Function to render single file (for backward compatibility)
                         function renderFileFromUrl(fileUrl, fileId, containerId, label) {
                             var html = '';
                             if (fileUrl && fileUrl.trim() !== '') {
-                                // Use file identifier for display if available, otherwise use URL
                                 var displayName = fileId || 'File';
                                 
                                 if (isImageUrl(fileUrl)) {
@@ -408,7 +465,7 @@
                                            '<div style="text-align:center; border:1px solid #ddd; padding:8px; background:#f9f9f9;">' +
                                            '<a href="' + fileUrl + '" target="_blank" title="Click to view full size">' +
                                            '<img src="' + fileUrl + '" style="max-width:100%; height:auto; cursor:pointer; border:1px solid #ccc;" ' +
-                                           'onerror="var parent = this.parentElement; if (parent && parent.nextElementSibling) { this.style.display=\'none\'; parent.nextElementSibling.style.display=\'block\'; } else if (parent) { parent.innerHTML=\'<div style=\\\"padding:20px; color:#999; border:1px solid #ddd; background:#f5f5f5;\\\">Image not available. <a href=\\\"' + fileUrl + '\\\" target=\\\"_blank\\\">Click to open</a></div>\'; }" />' +
+                                           'onerror="this.style.display=\'none\'; this.nextElementSibling.style.display=\'block\';" />' +
                                            '<div style="display:none; padding:20px; color:#999; border:1px solid #ddd; background:#f5f5f5;">' +
                                            'Image not available. <a href="' + fileUrl + '" target="_blank">Click to open</a></div>' +
                                            '</a></div>';
@@ -434,19 +491,29 @@
                             $(containerId).html(html);
                         }
                         
-                        // Debug: Log URLs to console
-                        console.log('Drawing File URL:', d.TD_DRAWING_FILE_URL);
-                        console.log('Drawing File ID:', d.TD_DRAWING_FILE);
-                        console.log('Sketch File URL:', d.TD_SKETCH_FILE_URL);
-                        console.log('Sketch File ID:', d.TD_SKETCH_FILE);
+                        // Debug: Log data to console
+                        console.log('Drawing Files:', d.TD_DRAWING_FILES);
+                        console.log('Sketch Files:', d.TD_SKETCH_FILES);
                         
-                        // Render Drawing File from direct path
-                        // URL format: Attachment_TMS/Drawing/{MLR_ID}/{MLR_REV}/{filename}
-                        renderFileFromUrl(d.TD_DRAWING_FILE_URL, d.TD_DRAWING_FILE, '#drawingFileContainer', 'Drawing File');
+                        // Render all Drawing Files from folder
+                        if (d.TD_DRAWING_FILES && d.TD_DRAWING_FILES.length > 0) {
+                            renderFilesFromArray(d.TD_DRAWING_FILES, '#drawingFileContainer', 'Drawing Files (' + d.TD_DRAWING_FILES.length + ')');
+                        } else if (d.TD_DRAWING_FILE_URL) {
+                            // Fallback to single file if array not available
+                            renderFileFromUrl(d.TD_DRAWING_FILE_URL, d.TD_DRAWING_FILE, '#drawingFileContainer', 'Drawing File');
+                        } else {
+                            $('#drawingFileContainer').html('<div style="margin-bottom:8px;"><strong>Drawing Files:</strong></div><div style="text-align:center; padding:8px; border:1px solid #ddd; background:#f5f5f5; color:#999;">No files available</div>');
+                        }
                         
-                        // Render Sketch File from direct path
-                        // URL format: Attachment_TMS/Drawing_Sketch/{MLR_ID}/{MLR_REV}/{filename}
-                        renderFileFromUrl(d.TD_SKETCH_FILE_URL, d.TD_SKETCH_FILE, '#sketchFileContainer', 'Sketch File');
+                        // Render all Sketch Files from folder
+                        if (d.TD_SKETCH_FILES && d.TD_SKETCH_FILES.length > 0) {
+                            renderFilesFromArray(d.TD_SKETCH_FILES, '#sketchFileContainer', 'Sketch Files (' + d.TD_SKETCH_FILES.length + ')');
+                        } else if (d.TD_SKETCH_FILE_URL) {
+                            // Fallback to single file if array not available
+                            renderFileFromUrl(d.TD_SKETCH_FILE_URL, d.TD_SKETCH_FILE, '#sketchFileContainer', 'Sketch File');
+                        } else {
+                            $('#sketchFileContainer').html('<div style="margin-bottom:8px;"><strong>Sketch Files:</strong></div><div style="text-align:center; padding:8px; border:1px solid #ddd; background:#f5f5f5; color:#999;">No files available</div>');
+                        }
                         
                         // Set detail fields
                         $('#detailProduct').text(d.TD_PRODUCT_NAME || '-');
