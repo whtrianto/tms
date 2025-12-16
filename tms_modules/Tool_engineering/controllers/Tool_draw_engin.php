@@ -570,39 +570,30 @@ class Tool_draw_engin extends MY_Controller
                     // Format: Attachment_TMS/Drawing/{MLR_ID}/{MLR_REV}/{filename}
                     return $path_info['url'] . urlencode($filename);
                 } else {
-                    // Folder is in application folder, use PHP endpoint but with direct URL format
-                    // Try to generate URL that matches the desired format
-                    // Format: Attachment_TMS/Drawing/{MLR_ID}/{filename} (without MLR_REV in URL path)
-                    $direct_url = base_url('Attachment_TMS/' . $folder_name . '/' . $mlr_id . '/' . urlencode($filename));
-                    // But we still need to use PHP endpoint since file is in application folder
-                    // So use PHP endpoint with filename parameter
-                    $fileUrl = base_url('Tool_engineering/tool_draw_engin/serve_file_by_mlr') . 
-                               '?mlr_id=' . (int)$mlr_id . 
-                               '&mlr_rev=' . (int)$mlr_rev . 
-                               '&type=' . urlencode($type) . 
-                               '&filename=' . urlencode($filename);
-                    return $fileUrl;
+                    // Folder is in application folder, but use Attachment_TMS URL format
+                    // Format: Attachment_TMS/Drawing/{MLR_ID}/{MLR_REV}/{filename}
+                    // Use the URL from path_info which already has the correct Attachment_TMS format
+                    return $path_info['url'] . urlencode($filename);
                 }
             }
             
-            // Use PHP endpoint to serve file (will serve first file found or from database)
-            $fileUrl = base_url('Tool_engineering/tool_draw_engin/serve_file_by_mlr') . 
-                       '?mlr_id=' . (int)$mlr_id . 
-                       '&mlr_rev=' . (int)$mlr_rev . 
-                       '&type=' . urlencode($type);
-            
-            return $fileUrl;
+            // Use Attachment_TMS URL format (path_info already contains correct URL structure)
+            // Return the base URL for the folder
+            return $path_info['url'];
         }
         
-        // Fallback: use PHP endpoint
-        $fileUrl = base_url('Tool_engineering/tool_draw_engin/serve_file_by_mlr') . 
-                   '?mlr_id=' . (int)$mlr_id . 
-                   '&mlr_rev=' . (int)$mlr_rev . 
-                   '&type=' . urlencode($type);
+        // Fallback: use Attachment_TMS URL format
+        // Format: Attachment_TMS/Drawing/{MLR_ID}/{MLR_REV}/
+        $folder_name = 'Drawing';
+        if ($type === 'sketch' || strpos(strtolower($type), 'sketch') !== false) {
+            $folder_name = 'Drawing_Sketch';
+        }
+        
+        $fileUrl = base_url('Attachment_TMS/' . $folder_name . '/' . $mlr_id . '/' . $mlr_rev . '/');
         
         if (!empty($fileIdentifier) && trim($fileIdentifier) !== '') {
             $filename = basename(trim($fileIdentifier));
-            $fileUrl .= '&filename=' . urlencode($filename);
+            $fileUrl .= urlencode($filename);
         }
         
         return $fileUrl;
@@ -625,9 +616,9 @@ class Tool_draw_engin extends MY_Controller
             return $fileIdentifier;
         }
         
-        // Use local endpoint to serve file from filesystem
-        // Format: base_url('Tool_engineering/tool_draw_engin/serve_file')?id={identifier}&type={drawing|sketch}
-        $fileUrl = base_url('Tool_engineering/tool_draw_engin/serve_file') . '?id=' . urlencode($fileIdentifier);
+        // Use Attachment_TMS endpoint to serve file from filesystem
+        // Format: base_url('Attachment_TMS/serve_file')?id={identifier}&type={drawing|sketch}
+        $fileUrl = base_url('Attachment_TMS/serve_file') . '?id=' . urlencode($fileIdentifier);
         
         // Add type parameter based on module
         // 'sketch' or contains 'sketch' -> type=sketch, otherwise type=drawing
