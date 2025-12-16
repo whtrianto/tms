@@ -23,24 +23,25 @@ class Attachment_TMS extends MY_Controller
     {
         // Try to get from query parameters first (more reliable for special chars)
         $folder_name = $this->input->get('folder', TRUE);
-        $mlr_id = (int)$this->input->get('mlr_id', TRUE);
+        $mlr_ml_id = (int)$this->input->get('mlr_ml_id', TRUE);
         $mlr_rev = (int)$this->input->get('mlr_rev', TRUE);
         $filename = $this->input->get('filename', TRUE);
         
         // If not in query params, try URI segments
-        if (empty($folder_name) || $mlr_id <= 0 || empty($filename)) {
+        // Note: URL format uses MLR_ML_ID for folder location
+        if (empty($folder_name) || $mlr_ml_id <= 0 || empty($filename)) {
             $segments = $this->uri->segment_array();
             
-            // Expected format: Attachment_TMS/{folder}/{mlr_id}/{mlr_rev}/{filename}
+            // Expected format: Attachment_TMS/{folder}/{mlr_ml_id}/{mlr_rev}/{filename}
             // segments[0] = 'Attachment_TMS' (controller name)
             // segments[1] = folder name (Drawing, Drawing_Sketch, BOM, etc)
-            // segments[2] = mlr_id
+            // segments[2] = mlr_ml_id (MLR_ML_ID used for folder location)
             // segments[3] = mlr_rev
             // segments[4+] = filename (may contain spaces/special chars, so join remaining segments)
             
             if (count($segments) >= 4) {
                 $folder_name = $segments[1];
-                $mlr_id = (int)$segments[2];
+                $mlr_ml_id = (int)$segments[2];
                 $mlr_rev = (int)$segments[3];
                 
                 // Join remaining segments as filename (handle files with spaces/special chars)
@@ -55,20 +56,20 @@ class Attachment_TMS extends MY_Controller
             $filename = basename($filename); // Prevent directory traversal
         }
         
-        if ($mlr_id <= 0 || empty($filename) || empty($folder_name)) {
+        if ($mlr_ml_id <= 0 || empty($filename) || empty($folder_name)) {
             show_404();
             return;
         }
         
-        // Try multiple possible paths
+        // Try multiple possible paths using MLR_ML_ID
         $possible_paths = array(
             // Path 1: Web root Attachment_TMS
-            FCPATH . 'Attachment_TMS/' . $folder_name . '/' . $mlr_id . '/' . $mlr_rev . '/' . $filename,
+            FCPATH . 'Attachment_TMS/' . $folder_name . '/' . $mlr_ml_id . '/' . $mlr_rev . '/' . $filename,
             // Path 2: Application folder tms_modules
-            APPPATH . 'tms_modules/Attachment_TMS/' . $folder_name . '/' . $mlr_id . '/' . $mlr_rev . '/' . $filename,
+            APPPATH . 'tms_modules/Attachment_TMS/' . $folder_name . '/' . $mlr_ml_id . '/' . $mlr_rev . '/' . $filename,
             // Path 3: Try without revision subfolder
-            FCPATH . 'Attachment_TMS/' . $folder_name . '/' . $mlr_id . '/' . $filename,
-            APPPATH . 'tms_modules/Attachment_TMS/' . $folder_name . '/' . $mlr_id . '/' . $filename,
+            FCPATH . 'Attachment_TMS/' . $folder_name . '/' . $mlr_ml_id . '/' . $filename,
+            APPPATH . 'tms_modules/Attachment_TMS/' . $folder_name . '/' . $mlr_ml_id . '/' . $filename,
         );
         
         $file_path = null;
@@ -80,7 +81,7 @@ class Attachment_TMS extends MY_Controller
         }
         
         if (!$file_path) {
-            log_message('error', '[Attachment_TMS] File not found: ' . $folder_name . '/' . $mlr_id . '/' . $mlr_rev . '/' . $filename);
+            log_message('error', '[Attachment_TMS] File not found: ' . $folder_name . '/' . $mlr_ml_id . '/' . $mlr_rev . '/' . $filename);
             show_404();
             return;
         }
