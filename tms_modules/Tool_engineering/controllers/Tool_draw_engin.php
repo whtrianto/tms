@@ -978,16 +978,18 @@ class Tool_draw_engin extends MY_Controller
         }
         
         // Determine which column to query based on file type
+        // Note: All files are stored in 'Drawing' folder, not 'Drawing_Sketch'
         $column_name = 'MLR_DRAWING';
         $folder_name = 'Drawing';
         if ($file_type === 'sketch' || strpos(strtolower($file_type), 'sketch') !== false) {
-            $column_name = 'MLR_SKETCH';
-            $folder_name = 'Drawing_Sketch';
+            $column_name = 'MLR_SKETCH';  // Column name for database query
+            // folder_name remains 'Drawing' - all files go to Drawing folder
         }
         
         // Get MLR_ID, MLR_REV, and filename from database
         // MLR_DRAWING and MLR_SKETCH store filename (varchar(50)), not BLOB
-        // File structure: Attachment_TMS/{Drawing|Drawing_Sketch}/{MLR_ID}/{MLR_REV}/{filename}
+        // File structure: Attachment_TMS/Drawing/{MLR_ML_ID}/{MLR_REV}/{filename}
+        // Note: All files (both drawing and sketch) are stored in 'Drawing' folder
         
         // Get basename for partial matching
         $file_basename = basename($file_id);
@@ -1276,7 +1278,7 @@ class Tool_draw_engin extends MY_Controller
         
         // Get list of all files in sketch folder
         $sketch_files = array();
-        $sketch_path_info = $this->_get_folder_path($mlr_ml_id, $mlr_rev, 'Drawing_Sketch');
+        $sketch_path_info = $this->_get_folder_path($mlr_ml_id, $mlr_rev, 'Drawing');
         if ($sketch_path_info) {
             $files = @scandir($sketch_path_info['dir']);
             if ($files) {
