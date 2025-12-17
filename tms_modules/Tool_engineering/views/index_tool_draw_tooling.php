@@ -53,6 +53,15 @@
             gap: 4px;
             flex-wrap: wrap;
         }
+
+        .search-row th {
+            padding: 0.25rem !important;
+        }
+
+        .search-row input {
+            width: 100%;
+            font-size: 0.75rem;
+        }
     </style>
 </head>
 
@@ -86,6 +95,19 @@
                                             <th>Standard Tool Life</th>
                                             <th>Action</th>
                                         </tr>
+                                        <tr class="search-row">
+                                            <th><input type="text" class="form-control form-control-sm column-search" placeholder="Search..." data-column="0" /></th>
+                                            <th><input type="text" class="form-control form-control-sm column-search" placeholder="Search..." data-column="1" /></th>
+                                            <th><input type="text" class="form-control form-control-sm column-search" placeholder="Search..." data-column="2" /></th>
+                                            <th><input type="text" class="form-control form-control-sm column-search" placeholder="Search..." data-column="3" /></th>
+                                            <th><input type="text" class="form-control form-control-sm column-search" placeholder="Search..." data-column="4" /></th>
+                                            <th><input type="text" class="form-control form-control-sm column-search" placeholder="Search..." data-column="5" /></th>
+                                            <th><input type="text" class="form-control form-control-sm column-search" placeholder="Search..." data-column="6" /></th>
+                                            <th><input type="text" class="form-control form-control-sm column-search" placeholder="Search..." data-column="7" /></th>
+                                            <th><input type="text" class="form-control form-control-sm column-search" placeholder="Search..." data-column="8" /></th>
+                                            <th><input type="text" class="form-control form-control-sm column-search" placeholder="Search..." data-column="9" /></th>
+                                            <th></th>
+                                        </tr>
                                     </thead>
                                     <tbody>
                                         <?php
@@ -96,6 +118,9 @@
                                         $list_data = isset($list_data) ? $list_data : array();
 
                                         foreach ($list_data as $row):
+                                            // Skip row jika Tool Name kosong
+                                            $tool_name_check = isset($row['TC_NAME']) ? trim($row['TC_NAME']) : '';
+                                            if ($tool_name_check === '') continue;
                                             // MLR_ID dari TMS_TOOL_MASTER_LIST_REV
                                             $row_id = isset($row['MLR_ID']) ? (int)$row['MLR_ID'] : 0;
                                             
@@ -198,6 +223,13 @@
                 if (typeof _search_data === 'function') {
                     _search_data(table, '#table-tool-draw-tooling', false, false);
                 }
+
+                // Per-column search
+                $('.column-search').on('keyup', function() {
+                    var column = $(this).data('column');
+                    var value = $(this).val();
+                    table.column(column).search(value).draw();
+                });
             });
         })(jQuery);
     </script>
