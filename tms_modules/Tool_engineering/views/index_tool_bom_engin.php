@@ -13,15 +13,25 @@
             font-size: 0.85rem;
         }
 
-        .table-fixed {
-            table-layout: fixed;
+        /* Table with minimum widths to prevent shrinking */
+        #table-tool-bom-engin { 
+            min-width: 1200px !important; 
         }
-
-        .table-fixed th, .table-fixed td {
-            overflow: hidden;
-            text-overflow: ellipsis;
+        #table-tool-bom-engin th, #table-tool-bom-engin td {
             white-space: nowrap;
         }
+        /* Column minimum widths */
+        #table-tool-bom-engin th:nth-child(1), #table-tool-bom-engin td:nth-child(1) { min-width: 50px; }
+        #table-tool-bom-engin th:nth-child(2), #table-tool-bom-engin td:nth-child(2) { min-width: 120px; }
+        #table-tool-bom-engin th:nth-child(3), #table-tool-bom-engin td:nth-child(3) { min-width: 140px; }
+        #table-tool-bom-engin th:nth-child(4), #table-tool-bom-engin td:nth-child(4) { min-width: 120px; }
+        #table-tool-bom-engin th:nth-child(5), #table-tool-bom-engin td:nth-child(5) { min-width: 100px; }
+        #table-tool-bom-engin th:nth-child(6), #table-tool-bom-engin td:nth-child(6) { min-width: 120px; }
+        #table-tool-bom-engin th:nth-child(7), #table-tool-bom-engin td:nth-child(7) { min-width: 70px; }
+        #table-tool-bom-engin th:nth-child(8), #table-tool-bom-engin td:nth-child(8) { min-width: 80px; }
+        #table-tool-bom-engin th:nth-child(9), #table-tool-bom-engin td:nth-child(9) { min-width: 100px; }
+        #table-tool-bom-engin th:nth-child(10), #table-tool-bom-engin td:nth-child(10) { min-width: 110px; }
+        #table-tool-bom-engin th:nth-child(11), #table-tool-bom-engin td:nth-child(11) { min-width: 100px; }
 
         .label-required::after {
             content: " *";
@@ -44,6 +54,13 @@
             gap: 4px;
             flex-wrap: wrap;
         }
+
+        /* Keep navbar pinned */
+        .navbar { position: sticky; top: 0; z-index: 1030; }
+        /* Fix footer spacing */
+        #content-wrapper { min-height: calc(100vh - 56px); }
+        #container-wrapper { padding-bottom: 4rem; margin-bottom: 2rem; }
+        .card { margin-bottom: 2rem; }
     </style>
 </head>
 
@@ -63,7 +80,7 @@
                         </div>
                         <div class="card-body">
                             <div class="table-responsive">
-                            <table id="table-tool-bom-engin" class="table table-bordered table-striped table-fixed w-100 text-center">
+                            <table id="table-tool-bom-engin" class="table table-bordered table-striped w-100 text-center">
                                 <thead>
                                     <tr>
                                         <th>ID</th>
