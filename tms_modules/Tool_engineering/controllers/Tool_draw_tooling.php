@@ -33,15 +33,82 @@ class Tool_draw_tooling extends MY_Controller
     public function index()
     {
         $data = array();
-        // Use tooling model which reads from TMS_NEW tables
-        $data['list_data'] = $this->tool_draw_tooling->get_all();
-
-        // Provide master lookups from tooling model
-        $data['tools'] = $this->tool_draw_tooling->get_tools();
-        $data['materials'] = $this->tool_draw_tooling->get_materials();
-        $data['makers'] = $this->tool_draw_tooling->get_makers();
-
         $this->view('index_tool_draw_tooling', $data, FALSE);
+    }
+
+    /**
+     * Server-side DataTable AJAX handler
+     */
+    public function get_data()
+    {
+        $this->output->set_content_type('application/json');
+
+        $draw = (int)$this->input->post('draw');
+        $start = (int)$this->input->post('start');
+        $length = (int)$this->input->post('length');
+        
+        $search_arr = $this->input->post('search');
+        $search = isset($search_arr['value']) ? trim($search_arr['value']) : '';
+        
+        $order_arr = $this->input->post('order');
+        $order_col = isset($order_arr[0]['column']) ? (int)$order_arr[0]['column'] : 1;
+        $order_dir = isset($order_arr[0]['dir']) ? $order_arr[0]['dir'] : 'asc';
+
+        // Per-column search
+        $columns_post = $this->input->post('columns');
+        $column_search = array();
+        if (is_array($columns_post)) {
+            foreach ($columns_post as $idx => $col) {
+                if (isset($col['search']['value']) && $col['search']['value'] !== '') {
+                    $column_search[$idx] = $col['search']['value'];
+                }
+            }
+        }
+
+        $result = $this->tool_draw_tooling->get_data_serverside($start, $length, $search, $order_col, $order_dir, $column_search);
+
+        $data = array();
+        foreach ($result['data'] as $row) {
+            $id = $row['MLR_ID'];
+            $drawing_no = htmlspecialchars($row['ML_TOOL_DRAW_NO'] ?? '', ENT_QUOTES, 'UTF-8');
+            $tool_name = htmlspecialchars($row['TC_NAME'] ?? '', ENT_QUOTES, 'UTF-8');
+            $min_qty = (int)($row['MLR_MIN_QTY'] ?? 0);
+            $replenish_qty = (int)($row['MLR_REPLENISH_QTY'] ?? 0);
+            $maker = htmlspecialchars($row['MAKER_NAME'] ?? '', ENT_QUOTES, 'UTF-8');
+            $price = number_format((float)($row['MLR_PRICE'] ?? 0), 2);
+            $desc = htmlspecialchars($row['MLR_DESC'] ?? '', ENT_QUOTES, 'UTF-8');
+            $eff_date = htmlspecialchars($row['MLR_EFFECTIVE_DATE'] ?? '', ENT_QUOTES, 'UTF-8');
+            $material = htmlspecialchars($row['MAT_NAME'] ?? '', ENT_QUOTES, 'UTF-8');
+            $tool_life = htmlspecialchars($row['MLR_STD_TL_LIFE'] ?? '', ENT_QUOTES, 'UTF-8');
+
+            $detail_url = base_url('Tool_engineering/tool_draw_tooling/detail_page/' . $id);
+            $edit_url = base_url('Tool_engineering/tool_draw_tooling/edit_page/' . $id);
+            $hist_url = base_url('Tool_engineering/tool_draw_tooling/history_page/' . $id);
+
+            $data[] = array(
+                '<a href="' . $detail_url . '" class="cell-ellipsis" title="View Detail">' . $drawing_no . '</a>',
+                '<span class="cell-ellipsis">' . $tool_name . '</span>',
+                $min_qty,
+                $replenish_qty,
+                '<span class="cell-ellipsis">' . $maker . '</span>',
+                $price,
+                '<span class="cell-ellipsis">' . $desc . '</span>',
+                $eff_date,
+                '<span class="cell-ellipsis">' . $material . '</span>',
+                $tool_life,
+                '<div class="action-buttons">
+                    <a href="' . $edit_url . '" class="btn btn-secondary btn-sm" title="Edit">Edit</a>
+                    <a href="' . $hist_url . '" class="btn btn-warning btn-sm" title="History">Hist</a>
+                </div>'
+            );
+        }
+
+        echo json_encode(array(
+            'draw' => $draw,
+            'recordsTotal' => $result['recordsTotal'],
+            'recordsFiltered' => $result['recordsFiltered'],
+            'data' => $data
+        ));
     }
 
     /**

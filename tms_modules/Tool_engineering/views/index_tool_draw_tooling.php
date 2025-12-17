@@ -13,14 +13,12 @@
             font-size: 0.80rem;
         }
 
-        .table-fixed {
-            table-layout: fixed;
+        #table-tool-draw-tooling {
+            min-width: 1200px !important;
         }
 
-        .table-fixed th,
-        .table-fixed td {
-            overflow: hidden;
-            text-overflow: ellipsis;
+        #table-tool-draw-tooling th,
+        #table-tool-draw-tooling td {
             white-space: nowrap;
         }
 
@@ -30,16 +28,6 @@
             white-space: nowrap;
             display: block;
             max-width: 140px;
-        }
-
-        .label-required::after {
-            content: " *";
-            color: #dc3545;
-            font-weight: 600;
-        }
-
-        .is-invalid+.invalid-feedback {
-            display: block;
         }
 
         .table .btn-sm {
@@ -62,6 +50,10 @@
             width: 100%;
             font-size: 0.75rem;
         }
+
+        .dataTables_wrapper {
+            padding-bottom: 2rem !important;
+        }
     </style>
 </head>
 
@@ -80,7 +72,7 @@
                         </div>
                         <div class="card-body">
                             <div class="table-responsive">
-                                <table id="table-tool-draw-tooling" class="table table-bordered table-striped table-fixed w-100 text-center">
+                                <table id="table-tool-draw-tooling" class="table table-bordered table-striped w-100 text-center">
                                     <thead>
                                         <tr>
                                             <th>Tool Drawing No.</th>
@@ -110,71 +102,7 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <?php
-                                        // Data dari TMS_NEW database
-                                        // TMS_TOOL_MASTER_LIST_REV JOIN TMS_TOOL_MASTER_LIST
-                                        // JOIN MS_TOOL_CLASS, MS_MAKER, MS_MATERIAL
-                                        
-                                        $list_data = isset($list_data) ? $list_data : array();
-
-                                        foreach ($list_data as $row):
-                                            // Skip row jika Tool Name kosong
-                                            $tool_name_check = isset($row['TC_NAME']) ? trim($row['TC_NAME']) : '';
-                                            if ($tool_name_check === '') continue;
-                                            // MLR_ID dari TMS_TOOL_MASTER_LIST_REV
-                                            $row_id = isset($row['MLR_ID']) ? (int)$row['MLR_ID'] : 0;
-                                            
-                                            // Tool Drawing No. dari TMS_TOOL_MASTER_LIST.ML_TOOL_DRAW_NO
-                                            $drawing_no = isset($row['ML_TOOL_DRAW_NO']) ? $row['ML_TOOL_DRAW_NO'] : '';
-                                            
-                                            // Tool Name dari MS_TOOL_CLASS.TC_NAME (sudah di-join di model)
-                                            $tool_name = isset($row['TC_NAME']) ? $row['TC_NAME'] : '';
-                                            
-                                            // Min Quantity dari MLR_MIN_QTY
-                                            $min_qty = isset($row['MLR_MIN_QTY']) ? (int)$row['MLR_MIN_QTY'] : 0;
-                                            
-                                            // Replenish Quantity dari MLR_REPLENISH_QTY
-                                            $replenish_qty = isset($row['MLR_REPLENISH_QTY']) ? (int)$row['MLR_REPLENISH_QTY'] : 0;
-                                            
-                                            // Maker dari MS_MAKER.MAKER_NAME (sudah di-join di model)
-                                            $maker_name = isset($row['MAKER_NAME']) ? $row['MAKER_NAME'] : '';
-                                            
-                                            // Price dari MLR_PRICE
-                                            $price = isset($row['MLR_PRICE']) ? (float)$row['MLR_PRICE'] : 0;
-                                            
-                                            // Description dari MLR_DESC
-                                            $description = isset($row['MLR_DESC']) ? $row['MLR_DESC'] : '';
-                                            
-                                            // Effective Date dari MLR_EFFECTIVE_DATE
-                                            $effective_date = isset($row['MLR_EFFECTIVE_DATE']) ? $row['MLR_EFFECTIVE_DATE'] : '';
-                                            
-                                            // Material dari MS_MATERIAL.MAT_NAME (sudah di-join di model)
-                                            $material_name = isset($row['MAT_NAME']) ? $row['MAT_NAME'] : '';
-                                            
-                                            // Standard Tool Life dari MLR_STD_TL_LIFE
-                                            $tool_life = isset($row['MLR_STD_TL_LIFE']) ? $row['MLR_STD_TL_LIFE'] : '';
-                                        ?>
-                                            <tr>
-                                                <td class="text-left"><a href="<?= base_url('Tool_engineering/tool_draw_tooling/detail_page/' . $row_id); ?>" class="cell-ellipsis" title="View Detail"><?= htmlspecialchars($drawing_no, ENT_QUOTES, 'UTF-8'); ?></a></td>
-                                                <td class="text-left"><span class="cell-ellipsis"><?= htmlspecialchars($tool_name, ENT_QUOTES, 'UTF-8'); ?></span></td>
-                                                <td class="text-center"><?= $min_qty; ?></td>
-                                                <td class="text-center"><?= $replenish_qty; ?></td>
-                                                <td class="text-left"><span class="cell-ellipsis"><?= htmlspecialchars($maker_name, ENT_QUOTES, 'UTF-8'); ?></span></td>
-                                                <td class="text-right"><?= number_format($price, 2); ?></td>
-                                                <td class="text-left"><span class="cell-ellipsis"><?= htmlspecialchars($description, ENT_QUOTES, 'UTF-8'); ?></span></td>
-                                                <td class="text-center"><?= htmlspecialchars($effective_date, ENT_QUOTES, 'UTF-8'); ?></td>
-                                                <td class="text-left"><span class="cell-ellipsis"><?= htmlspecialchars($material_name, ENT_QUOTES, 'UTF-8'); ?></span></td>
-                                                <td class="text-center"><?= htmlspecialchars($tool_life, ENT_QUOTES, 'UTF-8'); ?></td>
-                                                <td>
-                                                    <div class="action-buttons">
-                                                        <a href="<?= base_url('Tool_engineering/tool_draw_tooling/edit_page/' . $row_id); ?>" 
-                                                           class="btn btn-secondary btn-sm" title="Edit">Edit</a>
-                                                        <a href="<?= base_url('Tool_engineering/tool_draw_tooling/history_page/' . $row_id); ?>" 
-                                                           class="btn btn-warning btn-sm" title="History">Hist</a>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        <?php endforeach; ?>
+                                        <!-- Data loaded via AJAX -->
                                     </tbody>
                                 </table>
                             </div>
@@ -196,40 +124,66 @@
         (function($) {
             $(function() {
                 var table = $('#table-tool-draw-tooling').DataTable({
-                    lengthMenu: [
-                        [10, 25, 50, -1],
-                        [10, 25, 50, "ALL"]
-                    ],
+                    processing: true,
+                    serverSide: true,
+                    ajax: {
+                        url: '<?= base_url("Tool_engineering/tool_draw_tooling/get_data"); ?>',
+                        type: 'POST'
+                    },
+                    lengthMenu: [[10, 25, 50, 100], [10, 25, 50, 100]],
                     pageLength: 25,
                     order: [[1, 'asc']],
                     autoWidth: false,
-                    scrollX: false,
+                    scrollX: true,
                     columnDefs: [
                         { orderable: false, targets: [10] },
-                        { width: '120px', targets: 0 }, // Tool Drawing No.
-                        { width: '120px', targets: 1 }, // Tool Name
-                        { width: '80px', targets: 2 },  // Min Quantity
-                        { width: '80px', targets: 3 },  // Replenish Quantity
-                        { width: '100px', targets: 4 }, // Maker
-                        { width: '80px', targets: 5 },  // Price
-                        { width: '120px', targets: 6 }, // Description
-                        { width: '100px', targets: 7 }, // Effective Date
-                        { width: '100px', targets: 8 }, // Material
-                        { width: '80px', targets: 9 },  // Standard Tool Life
-                        { width: '100px', targets: 10 } // Action
-                    ]
+                        { width: '120px', targets: 0 },
+                        { width: '120px', targets: 1 },
+                        { width: '80px', targets: 2 },
+                        { width: '80px', targets: 3 },
+                        { width: '100px', targets: 4 },
+                        { width: '80px', targets: 5 },
+                        { width: '120px', targets: 6 },
+                        { width: '100px', targets: 7 },
+                        { width: '100px', targets: 8 },
+                        { width: '80px', targets: 9 },
+                        { width: '100px', targets: 10 }
+                    ],
+                    language: {
+                        processing: '<div class="spinner-border spinner-border-sm" role="status"><span class="sr-only">Loading...</span></div> Processing...',
+                        emptyTable: 'No data available',
+                        zeroRecords: 'No matching records found'
+                    },
+                    initComplete: function() {
+                        setupColumnSearch();
+                    }
                 });
 
-                // if (typeof _search_data === 'function') {
-                //     _search_data(table, '#table-tool-draw-tooling', false, false);
-                // }
-
-                // Per-column search
-                $('.column-search').on('keyup', function() {
-                    var column = $(this).data('column');
-                    var value = $(this).val();
-                    table.column(column).search(value).draw();
-                });
+                // Per-column search - only on Enter key
+                function setupColumnSearch() {
+                    $('.column-search').off('keyup keydown input click');
+                    
+                    $('.column-search').on('click', function(e) {
+                        e.stopPropagation();
+                    });
+                    
+                    $('.column-search').on('keydown', function(e) {
+                        e.stopPropagation();
+                        
+                        var $input = $(this);
+                        var column = $input.data('column');
+                        var value = $input.val();
+                        
+                        if (e.keyCode === 13) { // Enter
+                            e.preventDefault();
+                            table.column(column).search(value).draw();
+                        } else if (e.keyCode === 27) { // ESC - clear
+                            e.preventDefault();
+                            $input.val('');
+                            table.column(column).search('').draw();
+                        }
+                    });
+                }
             });
         })(jQuery);
     </script>

@@ -407,6 +407,86 @@ if (!class_exists('M_tool_draw_tooling')) {
     }
 
     /**
+     * Server-side DataTable processing
+     */
+    public function get_data_serverside($start, $length, $search, $order_col, $order_dir, $column_search = array())
+    {
+        // Column mapping for ordering
+        $columns = array(
+            0 => 'ml.ML_TOOL_DRAW_NO',
+            1 => 'tc.TC_NAME',
+            2 => 'mlr.MLR_MIN_QTY',
+            3 => 'mlr.MLR_REPLENISH_QTY',
+            4 => 'mk.MAKER_NAME',
+            5 => 'mlr.MLR_PRICE',
+            6 => 'mlr.MLR_DESC',
+            7 => 'mlr.MLR_EFFECTIVE_DATE',
+            8 => 'mt.MAT_NAME',
+            9 => 'mlr.MLR_STD_TL_LIFE'
+        );
+
+        $base_sql = "FROM {$this->t($this->table_rev)} mlr
+                LEFT JOIN {$this->t($this->table_ml)} ml ON mlr.MLR_ML_ID = ml.ML_ID
+                LEFT JOIN {$this->t('MS_TOOL_CLASS')} tc ON mlr.MLR_TC_ID = tc.TC_ID
+                LEFT JOIN {$this->t('MS_MAKER')} mk ON mlr.MLR_MAKER_ID = mk.MAKER_ID
+                LEFT JOIN {$this->t('MS_MATERIAL')} mt ON mlr.MLR_MAT_ID = mt.MAT_ID";
+
+        $where = " WHERE (tc.TC_NAME IS NOT NULL AND tc.TC_NAME <> '')";
+        $params = array();
+
+        // Global search
+        if (!empty($search)) {
+            $where .= " AND (ml.ML_TOOL_DRAW_NO LIKE ? OR tc.TC_NAME LIKE ? OR mk.MAKER_NAME LIKE ? 
+                        OR mlr.MLR_DESC LIKE ? OR mt.MAT_NAME LIKE ?)";
+            $search_param = '%' . $search . '%';
+            $params = array_merge($params, array($search_param, $search_param, $search_param, $search_param, $search_param));
+        }
+
+        // Per-column search
+        foreach ($column_search as $col_idx => $col_val) {
+            if (!empty($col_val) && isset($columns[$col_idx])) {
+                $where .= " AND " . $columns[$col_idx] . " LIKE ?";
+                $params[] = '%' . $col_val . '%';
+            }
+        }
+
+        // Count total (without filter)
+        $count_total_sql = "SELECT COUNT(*) as cnt FROM {$this->t($this->table_rev)} mlr
+                           LEFT JOIN {$this->t('MS_TOOL_CLASS')} tc ON mlr.MLR_TC_ID = tc.TC_ID
+                           WHERE (tc.TC_NAME IS NOT NULL AND tc.TC_NAME <> '')";
+        $count_total = $this->tms_NEW->query($count_total_sql)->row()->cnt;
+
+        // Count filtered
+        $count_filtered_sql = "SELECT COUNT(*) as cnt " . $base_sql . $where;
+        $count_filtered = $this->tms_NEW->query($count_filtered_sql, $params)->row()->cnt;
+
+        // Order
+        $order_column = isset($columns[$order_col]) ? $columns[$order_col] : 'tc.TC_NAME';
+        $order_direction = strtoupper($order_dir) === 'DESC' ? 'DESC' : 'ASC';
+
+        // Data query with pagination (SQL Server syntax)
+        $data_sql = "SELECT 
+                        mlr.MLR_ID, mlr.MLR_MIN_QTY, mlr.MLR_REPLENISH_QTY, mlr.MLR_PRICE,
+                        mlr.MLR_STD_TL_LIFE, mlr.MLR_DESC, mlr.MLR_EFFECTIVE_DATE,
+                        ml.ML_TOOL_DRAW_NO,
+                        tc.TC_NAME,
+                        mk.MAKER_NAME,
+                        mt.MAT_NAME
+                    " . $base_sql . $where . "
+                    ORDER BY " . $order_column . " " . $order_direction . "
+                    OFFSET " . (int)$start . " ROWS FETCH NEXT " . (int)$length . " ROWS ONLY";
+
+        $result = $this->tms_NEW->query($data_sql, $params);
+        $data = $result ? $result->result_array() : array();
+
+        return array(
+            'recordsTotal' => (int)$count_total,
+            'recordsFiltered' => (int)$count_filtered,
+            'data' => $data
+        );
+    }
+
+    /**
      * Get Tool BOM list by ML_ID (master list id)
      * Uses TMS_TOOL_MASTER_LIST_MEMBERS (parent-child relationship)
      */
