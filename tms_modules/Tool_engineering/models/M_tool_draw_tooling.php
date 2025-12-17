@@ -375,5 +375,55 @@ if (!class_exists('M_tool_draw_tooling')) {
         // Fallback: return current record
         return array($current);
     }
+
+    /**
+     * Get all products from MS_PRODUCT
+     */
+    public function get_products()
+    {
+        $sql = "SELECT PRODUCT_ID, PRODUCT_NAME FROM TMS_NEW.dbo.MS_PRODUCT ORDER BY PRODUCT_NAME";
+        $query = $this->tms_db->query($sql);
+        return $query ? $query->result_array() : array();
+    }
+
+    /**
+     * Get all operations from MS_OPERATION
+     */
+    public function get_operations()
+    {
+        $sql = "SELECT OP_ID, OP_NAME FROM TMS_NEW.dbo.MS_OPERATION ORDER BY OP_NAME";
+        $query = $this->tms_db->query($sql);
+        return $query ? $query->result_array() : array();
+    }
+
+    /**
+     * Get Tool BOM list by ML_ID (master list id)
+     */
+    public function get_tool_bom_by_ml_id($mlr_id)
+    {
+        // First get the ML_ID from MLR_ID
+        $sql = "SELECT MLR_ML_ID FROM {$this->table_rev} WHERE MLR_ID = ?";
+        $query = $this->tms_db->query($sql, array($mlr_id));
+        if (!$query || $query->num_rows() == 0) {
+            return array();
+        }
+        $row = $query->row_array();
+        $ml_id = $row['MLR_ML_ID'];
+
+        // Get Tool BOM entries that use this tool
+        $sql = "SELECT 
+                    tb.TB_ID,
+                    tb.TB_BOM_NO AS TOOL_BOM,
+                    p.PRODUCT_NAME AS PRODUCT,
+                    tb.TB_REV AS BOM_REV,
+                    tbd.TBD_QTY AS QTY
+                FROM TMS_NEW.dbo.TMS_TOOL_BOM tb
+                LEFT JOIN TMS_NEW.dbo.TMS_TOOL_BOM_DTL tbd ON tb.TB_ID = tbd.TBD_TB_ID
+                LEFT JOIN TMS_NEW.dbo.MS_PRODUCT p ON tb.TB_PRODUCT_ID = p.PRODUCT_ID
+                WHERE tbd.TBD_ML_ID = ?
+                ORDER BY tb.TB_BOM_NO";
+        $query = $this->tms_db->query($sql, array($ml_id));
+        return $query ? $query->result_array() : array();
+    }
 } // end class M_tool_draw_tooling
 } // end if !class_exists
