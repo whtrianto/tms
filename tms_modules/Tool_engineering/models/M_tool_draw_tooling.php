@@ -4,7 +4,9 @@ defined('BASEPATH') or exit('No direct script access allowed');
 if (!class_exists('M_tool_draw_tooling')) {
     class M_tool_draw_tooling extends CI_Model
     {
-    private $table = 'TMS_NEW.dbo.TMS_TC_TOOL_DRAWING_TOOLING';
+    // Using TMS_TACI_SITE database tables: TMS_TOOL_MASTER_LIST and TMS_TOOL_MASTER_LIST_REV
+    private $table_rev = 'TMS_TACI_SITE.dbo.TMS_TOOL_MASTER_LIST_REV';
+    private $table_ml = 'TMS_TACI_SITE.dbo.TMS_TOOL_MASTER_LIST';
     public $tms_db;
     public $messages = '';
     public $uid = ''; // will receive username from controller
@@ -15,32 +17,27 @@ if (!class_exists('M_tool_draw_tooling')) {
         $this->tms_db = $this->load->database('tms_db', TRUE);
     }
 
-    /**
-     * Check if column exists in table (SQL Server INFORMATION_SCHEMA)
-     * @param string $col
-     * @return bool
-     */
-    protected function has_column($col)
-    {
-        $col = trim((string)$col);
-        if ($col === '') return false;
-
-        // use INFORMATION_SCHEMA for SQL Server compatibility
-        $sql = "SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS
-                WHERE TABLE_SCHEMA = 'dbo' AND TABLE_NAME = 'TMS_TC_TOOL_DRAWING_TOOLING' AND COLUMN_NAME = ?";
-        $q = $this->tms_db->query($sql, array($col));
-        return ($q && $q->num_rows() > 0);
-    }
-
     public function get_all()
     {
-        $selectCols = 'TT_ID, TT_TOOL_ID, TT_MIN_QTY, TT_REPLENISH_QTY, TT_MAKER_ID, TT_PRICE, TT_DESCRIPTION, TT_EFFECTIVE_DATE, TT_MATERIAL_ID, TT_TOOL_LIFE, TT_MODIFIED_DATE, TT_MODIFIED_BY';
+        // Get data from TMS_TOOL_MASTER_LIST_REV joined with TMS_TOOL_MASTER_LIST and related master tables
+        $sql = "SELECT 
+                    mlr.MLR_ID, mlr.MLR_ML_ID, mlr.MLR_OP_ID, mlr.MLR_TC_ID, mlr.MLR_MAKER_ID,
+                    mlr.MLR_MIN_QTY, mlr.MLR_REPLENISH_QTY, mlr.MLR_PRICE, mlr.MLR_STD_TL_LIFE,
+                    mlr.MLR_STD_REWORK, mlr.MLR_DESC, mlr.MLR_DRAWING, mlr.MLR_MAT_ID,
+                    mlr.MLR_REV, mlr.MLR_STATUS, mlr.MLR_EFFECTIVE_DATE, mlr.MLR_MODIFIED_DATE,
+                    mlr.MLR_MODIFIED_BY, mlr.MLR_MACG_ID, mlr.MLR_CHANGE_SUMMARY, mlr.MLR_SKETCH,
+                    ml.ML_TOOL_DRAW_NO, ml.ML_TYPE, ml.ML_TRIAL,
+                    tc.TC_NAME, tc.TC_DESC AS TC_DESCRIPTION,
+                    mk.MAKER_NAME,
+                    mt.MAT_NAME
+                FROM {$this->table_rev} mlr
+                LEFT JOIN {$this->table_ml} ml ON mlr.MLR_ML_ID = ml.ML_ID
+                LEFT JOIN TMS_TACI_SITE.dbo.MS_TOOL_CLASS tc ON mlr.MLR_TC_ID = tc.TC_ID
+                LEFT JOIN TMS_TACI_SITE.dbo.MS_MAKER mk ON mlr.MLR_MAKER_ID = mk.MAKER_ID
+                LEFT JOIN TMS_TACI_SITE.dbo.MS_MATERIAL mt ON mlr.MLR_MAT_ID = mt.MAT_ID
+                ORDER BY mlr.MLR_ID DESC";
 
-        $result = $this->tms_db
-            ->select($selectCols)
-            ->from($this->table)
-            ->order_by('TT_ID', 'DESC')
-            ->get();
+        $result = $this->tms_db->query($sql);
 
         if ($result && $result->num_rows() > 0) {
             return $result->result_array();
@@ -53,7 +50,26 @@ if (!class_exists('M_tool_draw_tooling')) {
         $id = (int)$id;
         if ($id <= 0) return null;
 
-        $result = $this->tms_db->where('TT_ID', $id)->limit(1)->get($this->table);
+        $sql = "SELECT 
+                    mlr.MLR_ID, mlr.MLR_ML_ID, mlr.MLR_OP_ID, mlr.MLR_TC_ID, mlr.MLR_MAKER_ID,
+                    mlr.MLR_MIN_QTY, mlr.MLR_REPLENISH_QTY, mlr.MLR_PRICE, mlr.MLR_STD_TL_LIFE,
+                    mlr.MLR_STD_REWORK, mlr.MLR_DESC, mlr.MLR_DRAWING, mlr.MLR_MAT_ID,
+                    mlr.MLR_REV, mlr.MLR_STATUS, mlr.MLR_EFFECTIVE_DATE, mlr.MLR_MODIFIED_DATE,
+                    mlr.MLR_MODIFIED_BY, mlr.MLR_MACG_ID, mlr.MLR_CHANGE_SUMMARY, mlr.MLR_SKETCH,
+                    ml.ML_TOOL_DRAW_NO, ml.ML_TYPE, ml.ML_TRIAL,
+                    tc.TC_NAME, tc.TC_DESC AS TC_DESCRIPTION,
+                    mk.MAKER_NAME,
+                    mt.MAT_NAME,
+                    op.OP_NAME AS OPERATION_NAME
+                FROM {$this->table_rev} mlr
+                LEFT JOIN {$this->table_ml} ml ON mlr.MLR_ML_ID = ml.ML_ID
+                LEFT JOIN TMS_TACI_SITE.dbo.MS_TOOL_CLASS tc ON mlr.MLR_TC_ID = tc.TC_ID
+                LEFT JOIN TMS_TACI_SITE.dbo.MS_MAKER mk ON mlr.MLR_MAKER_ID = mk.MAKER_ID
+                LEFT JOIN TMS_TACI_SITE.dbo.MS_MATERIAL mt ON mlr.MLR_MAT_ID = mt.MAT_ID
+                LEFT JOIN TMS_TACI_SITE.dbo.MS_OPERATION op ON mlr.MLR_OP_ID = op.OP_ID
+                WHERE mlr.MLR_ID = ?";
+
+        $result = $this->tms_db->query($sql, array($id));
         if ($result && $result->num_rows() > 0) {
             return $result->row_array();
         }
@@ -61,16 +77,15 @@ if (!class_exists('M_tool_draw_tooling')) {
     }
 
     /**
-     * Get all tools from TMS_M_TOOL
+     * Get all tools from MS_TOOL_CLASS
      */
     public function get_tools()
     {
-        $table = 'TMS_NEW.dbo.TMS_M_TOOL';
+        $table = 'TMS_TACI_SITE.dbo.MS_TOOL_CLASS';
         $result = $this->tms_db
-            ->select('TOOL_ID, TOOL_NAME')
+            ->select('TC_ID, TC_NAME, TC_DESC, TC_ABBR, TC_TYPE')
             ->from($table)
-            ->where('IS_DELETED', 0)
-            ->order_by('TOOL_NAME', 'ASC')
+            ->order_by('TC_NAME', 'ASC')
             ->get();
 
         if ($result && $result->num_rows() > 0) {
@@ -83,22 +98,21 @@ if (!class_exists('M_tool_draw_tooling')) {
     {
         $id = (int)$id;
         if ($id <= 0) return null;
-        $table = 'TMS_NEW.dbo.TMS_M_TOOL';
-        $result = $this->tms_db->select('TOOL_ID, TOOL_NAME')->from($table)->where('TOOL_ID', $id)->where('IS_DELETED', 0)->limit(1)->get();
+        $table = 'TMS_TACI_SITE.dbo.MS_TOOL_CLASS';
+        $result = $this->tms_db->select('TC_ID, TC_NAME')->from($table)->where('TC_ID', $id)->limit(1)->get();
         if ($result && $result->num_rows() > 0) return $result->row_array();
         return null;
     }
 
     /**
-     * Get all makers from TMS_M_MAKER
+     * Get all makers from MS_MAKER
      */
     public function get_makers()
     {
-        $table = 'TMS_NEW.dbo.TMS_M_MAKER';
+        $table = 'TMS_TACI_SITE.dbo.MS_MAKER';
         $result = $this->tms_db
-            ->select('MAKER_ID, MAKER_NAME')
+            ->select('MAKER_ID, MAKER_NAME, MAKER_CODE, MAKER_DESC')
             ->from($table)
-            ->where('IS_DELETED', 0)
             ->order_by('MAKER_NAME', 'ASC')
             ->get();
 
@@ -112,23 +126,22 @@ if (!class_exists('M_tool_draw_tooling')) {
     {
         $id = (int)$id;
         if ($id <= 0) return null;
-        $table = 'TMS_NEW.dbo.TMS_M_MAKER';
-        $result = $this->tms_db->select('MAKER_ID, MAKER_NAME')->from($table)->where('MAKER_ID', $id)->where('IS_DELETED', 0)->limit(1)->get();
+        $table = 'TMS_TACI_SITE.dbo.MS_MAKER';
+        $result = $this->tms_db->select('MAKER_ID, MAKER_NAME')->from($table)->where('MAKER_ID', $id)->limit(1)->get();
         if ($result && $result->num_rows() > 0) return $result->row_array();
         return null;
     }
 
     /**
-     * Get all materials from TMS_M_MATERIAL
+     * Get all materials from MS_MATERIAL
      */
     public function get_materials()
     {
-        $table = 'TMS_NEW.dbo.TMS_M_MATERIAL';
+        $table = 'TMS_TACI_SITE.dbo.MS_MATERIAL';
         $result = $this->tms_db
-            ->select('MATERIAL_ID, MATERIAL_NAME')
+            ->select('MAT_ID, MAT_NAME, MAT_DESC, MAT_CODE')
             ->from($table)
-            ->where('IS_DELETED', 0)
-            ->order_by('MATERIAL_NAME', 'ASC')
+            ->order_by('MAT_NAME', 'ASC')
             ->get();
 
         if ($result && $result->num_rows() > 0) {
@@ -141,79 +154,79 @@ if (!class_exists('M_tool_draw_tooling')) {
     {
         $id = (int)$id;
         if ($id <= 0) return null;
-        $table = 'TMS_NEW.dbo.TMS_M_MATERIAL';
-        $result = $this->tms_db->select('MATERIAL_ID, MATERIAL_NAME')->from($table)->where('MATERIAL_ID', $id)->where('IS_DELETED', 0)->limit(1)->get();
+        $table = 'TMS_TACI_SITE.dbo.MS_MATERIAL';
+        $result = $this->tms_db->select('MAT_ID, MAT_NAME')->from($table)->where('MAT_ID', $id)->limit(1)->get();
         if ($result && $result->num_rows() > 0) return $result->row_array();
         return null;
     }
 
     /* ========== MUTATORS ========== */
 
-    public function add_data($tool_id, $min_qty, $replenish_qty, $maker_id, $price, $description, $material_id, $tool_life)
+    public function add_data($tc_id, $min_qty, $replenish_qty, $maker_id, $price, $description, $mat_id, $tool_life)
     {
-        $tool_id = (int)$tool_id;
+        $tc_id = (int)$tc_id;
         $min_qty = (int)$min_qty;
         $replenish_qty = (int)$replenish_qty;
         $maker_id = (int)$maker_id;
         $price = (float)$price;
         $description = trim((string)$description);
-        $material_id = (int)$material_id;
-        $tool_life = (int)$tool_life;
+        $mat_id = (int)$mat_id;
+        $tool_life = trim((string)$tool_life);
 
-        if ($tool_id <= 0) {
-            $this->messages = 'Tool ID harus lebih dari 0.';
+        if ($tc_id <= 0) {
+            $this->messages = 'Tool Class ID harus lebih dari 0.';
             return false;
         }
 
         $this->tms_db->trans_start();
+
+        // First insert into TMS_TOOL_MASTER_LIST
+        $ml_data = array(
+            'ML_TOOL_DRAW_NO' => 'NEW-' . date('YmdHis'),
+            'ML_TYPE' => 1,
+            'ML_TRIAL' => 0
+        );
+        $this->tms_db->insert($this->table_ml, $ml_data);
+        $ml_id = (int)$this->tms_db->insert_id();
+        
+        if ($ml_id <= 0) {
+            $row = $this->tms_db->query("SELECT IDENT_CURRENT('TMS_TOOL_MASTER_LIST') AS last_id")->row_array();
+            if ($row && isset($row['last_id'])) $ml_id = (int)$row['last_id'];
+        }
+
+        // Then insert into TMS_TOOL_MASTER_LIST_REV
         $insertData = array(
-            'TT_TOOL_ID'        => $tool_id,
-            'TT_MIN_QTY'        => $min_qty,
-            'TT_REPLENISH_QTY'  => $replenish_qty,
-            'TT_PRICE'          => $price,
-            'TT_DESCRIPTION'    => $description,
-            'TT_TOOL_LIFE'      => $tool_life
+            'MLR_ML_ID'          => $ml_id,
+            'MLR_OP_ID'          => 0, // default operation
+            'MLR_TC_ID'          => $tc_id,
+            'MLR_MIN_QTY'        => $min_qty,
+            'MLR_REPLENISH_QTY'  => $replenish_qty,
+            'MLR_PRICE'          => $price,
+            'MLR_DESC'           => $description,
+            'MLR_STD_TL_LIFE'    => $tool_life,
+            'MLR_REV'            => 0,
+            'MLR_STATUS'         => 1,
+            'MLR_EFFECTIVE_DATE' => date('Y-m-d H:i:s'),
+            'MLR_MODIFIED_DATE'  => date('Y-m-d H:i:s')
         );
 
-        // only include MAKER_ID when valid (>0)
         if ($maker_id > 0) {
-            $insertData['TT_MAKER_ID'] = $maker_id;
-        } else {
-            $insertData['TT_MAKER_ID'] = null;
+            $insertData['MLR_MAKER_ID'] = $maker_id;
         }
 
-        // only include MATERIAL_ID when valid (>0)
-        if ($material_id > 0) {
-            $insertData['TT_MATERIAL_ID'] = $material_id;
-        } else {
-            $insertData['TT_MATERIAL_ID'] = null;
+        if ($mat_id > 0) {
+            $insertData['MLR_MAT_ID'] = $mat_id;
         }
 
-        // set TT_MODIFIED_BY to the username from controller ($this->uid)
         $modifiedBy = '';
         if (isset($this->uid) && $this->uid !== '') {
             $modifiedBy = (string)$this->uid;
         }
-        log_message('debug', '[add_data] uid="' . var_export($this->uid, true) . '", modifiedBy="' . $modifiedBy . '"');
         if ($modifiedBy !== '') {
-            $insertData['TT_MODIFIED_BY'] = $modifiedBy;
+            $insertData['MLR_MODIFIED_BY'] = $modifiedBy;
         }
 
-        $ok = $this->tms_db->insert($this->table, $insertData);
-
-        // try to obtain the inserted id and set EFFECTIVE_DATE if column exists
-        $new_id = 0;
-        if ($ok) {
-            $new_id = (int)$this->tms_db->insert_id();
-            if ($new_id <= 0) {
-                // fallback: try to get IDENT_CURRENT (best-effort)
-                $row = $this->tms_db->query("SELECT IDENT_CURRENT('TMS_TC_TOOL_DRAWING_TOOLING') AS last_id")->row_array();
-                if ($row && isset($row['last_id'])) $new_id = (int)$row['last_id'];
-            }
-            if ($this->has_column('TT_EFFECTIVE_DATE') && $new_id > 0) {
-                $this->tms_db->query("UPDATE {$this->table} SET TT_EFFECTIVE_DATE = GETDATE() WHERE TT_ID = ?", array($new_id));
-            }
-        }
+        $ok = $this->tms_db->insert($this->table_rev, $insertData);
 
         $this->tms_db->trans_complete();
 
@@ -226,17 +239,17 @@ if (!class_exists('M_tool_draw_tooling')) {
         return false;
     }
 
-    public function edit_data($id, $tool_id, $min_qty, $replenish_qty, $maker_id, $price, $description, $material_id, $tool_life)
+    public function edit_data($id, $tc_id, $min_qty, $replenish_qty, $maker_id, $price, $description, $mat_id, $tool_life)
     {
         $id = (int)$id;
-        $tool_id = (int)$tool_id;
+        $tc_id = (int)$tc_id;
         $min_qty = (int)$min_qty;
         $replenish_qty = (int)$replenish_qty;
         $maker_id = (int)$maker_id;
         $price = (float)$price;
         $description = trim((string)$description);
-        $material_id = (int)$material_id;
-        $tool_life = (int)$tool_life;
+        $mat_id = (int)$mat_id;
+        $tool_life = trim((string)$tool_life);
 
         $current = $this->get_by_id($id);
         if (!$current) {
@@ -244,53 +257,45 @@ if (!class_exists('M_tool_draw_tooling')) {
             return false;
         }
 
-        if ($tool_id <= 0) {
-            $this->messages = 'Tool ID harus lebih dari 0.';
+        if ($tc_id <= 0) {
+            $this->messages = 'Tool Class ID harus lebih dari 0.';
             return false;
         }
 
-        // set TT_MODIFIED_BY to the username from controller ($this->uid)
         $modifiedBy = '';
         if (isset($this->uid) && $this->uid !== '') {
             $modifiedBy = (string)$this->uid;
         }
-        log_message('debug', '[edit_data] id=' . $id . ', uid="' . var_export($this->uid, true) . '", modifiedBy="' . $modifiedBy . '"');
 
         $updateData = array(
-            'TT_TOOL_ID'        => $tool_id,
-            'TT_MIN_QTY'        => $min_qty,
-            'TT_REPLENISH_QTY'  => $replenish_qty,
-            'TT_PRICE'          => $price,
-            'TT_DESCRIPTION'    => $description,
-            'TT_TOOL_LIFE'      => $tool_life
+            'MLR_TC_ID'          => $tc_id,
+            'MLR_MIN_QTY'        => $min_qty,
+            'MLR_REPLENISH_QTY'  => $replenish_qty,
+            'MLR_PRICE'          => $price,
+            'MLR_DESC'           => $description,
+            'MLR_STD_TL_LIFE'    => $tool_life,
+            'MLR_MODIFIED_DATE'  => date('Y-m-d H:i:s')
         );
 
-        // Only set TT_MODIFIED_BY if we have a valid value
         if ($modifiedBy !== '') {
-            $updateData['TT_MODIFIED_BY'] = $modifiedBy;
+            $updateData['MLR_MODIFIED_BY'] = $modifiedBy;
         }
 
-        // handle MAKER_ID properly
         if ($maker_id > 0) {
-            $updateData['TT_MAKER_ID'] = $maker_id;
+            $updateData['MLR_MAKER_ID'] = $maker_id;
         } else {
-            $updateData['TT_MAKER_ID'] = null;
+            $updateData['MLR_MAKER_ID'] = null;
         }
 
-        // handle MATERIAL_ID properly
-        if ($material_id > 0) {
-            $updateData['TT_MATERIAL_ID'] = $material_id;
+        if ($mat_id > 0) {
+            $updateData['MLR_MAT_ID'] = $mat_id;
         } else {
-            $updateData['TT_MATERIAL_ID'] = null;
+            $updateData['MLR_MAT_ID'] = null;
         }
 
-        $ok = $this->tms_db->where('TT_ID', $id)->update($this->table, $updateData);
+        $ok = $this->tms_db->where('MLR_ID', $id)->update($this->table_rev, $updateData);
 
         if ($ok) {
-            // update TT_MODIFIED_DATE if column exists
-            if ($this->has_column('TT_MODIFIED_DATE')) {
-                $this->tms_db->query("UPDATE {$this->table} SET TT_MODIFIED_DATE = GETDATE() WHERE TT_ID = ?", array($id));
-            }
             $this->messages = 'Tool Drawing Tooling berhasil diubah.';
             return true;
         }
@@ -308,7 +313,7 @@ if (!class_exists('M_tool_draw_tooling')) {
             return false;
         }
 
-        $ok = $this->tms_db->delete($this->table, array('TT_ID' => $id));
+        $ok = $this->tms_db->delete($this->table_rev, array('MLR_ID' => $id));
 
         if ($ok) {
             $this->messages = 'Tool Drawing Tooling berhasil dihapus.';
@@ -320,43 +325,55 @@ if (!class_exists('M_tool_draw_tooling')) {
     }
 
     /**
-     * Get revision history for a specific record
-     * Return current record as pseudo-history for now
+     * Get revision history for a specific record (based on ML_ID)
      */
     public function get_history($id)
     {
         $id = (int)$id;
         if ($id <= 0) {
-            log_message('debug', '[M_tool_draw_tooling::get_history] invalid id=' . var_export($id, true));
             return array();
         }
 
-        $row = $this->get_by_id($id);
-        if (!$row) {
-            log_message('debug', '[M_tool_draw_tooling::get_history] no record found for id=' . $id);
+        // First get the current record to find ML_ID
+        $current = $this->get_by_id($id);
+        if (!$current) {
             return array();
         }
 
-        // Return array with at least one history entry (current record)
-        $history = array(
-            array(
-                'HISTORY_ID' => 1,
-                'TT_ID' => (int)$row['TT_ID'],
-                'TT_TOOL_ID' => isset($row['TT_TOOL_ID']) ? (int)$row['TT_TOOL_ID'] : 0,
-                'TT_MIN_QTY' => isset($row['TT_MIN_QTY']) ? (int)$row['TT_MIN_QTY'] : 0,
-                'TT_REPLENISH_QTY' => isset($row['TT_REPLENISH_QTY']) ? (int)$row['TT_REPLENISH_QTY'] : 0,
-                'TT_MAKER_ID' => isset($row['TT_MAKER_ID']) ? (int)$row['TT_MAKER_ID'] : 0,
-                'TT_PRICE' => isset($row['TT_PRICE']) ? (float)$row['TT_PRICE'] : 0,
-                'TT_DESCRIPTION' => isset($row['TT_DESCRIPTION']) ? $row['TT_DESCRIPTION'] : '',
-                'TT_EFFECTIVE_DATE' => isset($row['TT_EFFECTIVE_DATE']) ? $row['TT_EFFECTIVE_DATE'] : '',
-                'TT_MATERIAL_ID' => isset($row['TT_MATERIAL_ID']) ? (int)$row['TT_MATERIAL_ID'] : 0,
-                'TT_TOOL_LIFE' => isset($row['TT_TOOL_LIFE']) ? (int)$row['TT_TOOL_LIFE'] : 0,
-                'TT_MODIFIED_DATE' => isset($row['TT_MODIFIED_DATE']) ? $row['TT_MODIFIED_DATE'] : '',
-                'TT_MODIFIED_BY' => isset($row['TT_MODIFIED_BY']) ? $row['TT_MODIFIED_BY'] : ''
-            )
-        );
-        log_message('debug', '[M_tool_draw_tooling::get_history] returning history count=' . count($history) . ' for id=' . $id);
-        return $history;
+        $ml_id = isset($current['MLR_ML_ID']) ? (int)$current['MLR_ML_ID'] : 0;
+        if ($ml_id <= 0) {
+            // Return current record as single history entry
+            return array($current);
+        }
+
+        // Get all revisions for this master list ID
+        $sql = "SELECT 
+                    mlr.MLR_ID, mlr.MLR_ML_ID, mlr.MLR_OP_ID, mlr.MLR_TC_ID, mlr.MLR_MAKER_ID,
+                    mlr.MLR_MIN_QTY, mlr.MLR_REPLENISH_QTY, mlr.MLR_PRICE, mlr.MLR_STD_TL_LIFE,
+                    mlr.MLR_DESC, mlr.MLR_DRAWING, mlr.MLR_MAT_ID,
+                    mlr.MLR_REV, mlr.MLR_STATUS, mlr.MLR_EFFECTIVE_DATE, mlr.MLR_MODIFIED_DATE,
+                    mlr.MLR_MODIFIED_BY,
+                    ml.ML_TOOL_DRAW_NO,
+                    tc.TC_NAME,
+                    mk.MAKER_NAME,
+                    mt.MAT_NAME,
+                    op.OP_NAME AS OPERATION_NAME
+                FROM {$this->table_rev} mlr
+                LEFT JOIN {$this->table_ml} ml ON mlr.MLR_ML_ID = ml.ML_ID
+                LEFT JOIN TMS_TACI_SITE.dbo.MS_TOOL_CLASS tc ON mlr.MLR_TC_ID = tc.TC_ID
+                LEFT JOIN TMS_TACI_SITE.dbo.MS_MAKER mk ON mlr.MLR_MAKER_ID = mk.MAKER_ID
+                LEFT JOIN TMS_TACI_SITE.dbo.MS_MATERIAL mt ON mlr.MLR_MAT_ID = mt.MAT_ID
+                LEFT JOIN TMS_TACI_SITE.dbo.MS_OPERATION op ON mlr.MLR_OP_ID = op.OP_ID
+                WHERE mlr.MLR_ML_ID = ?
+                ORDER BY mlr.MLR_REV DESC";
+
+        $result = $this->tms_db->query($sql, array($ml_id));
+        if ($result && $result->num_rows() > 0) {
+            return $result->result_array();
+        }
+        
+        // Fallback: return current record
+        return array($current);
     }
 } // end class M_tool_draw_tooling
 } // end if !class_exists

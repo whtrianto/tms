@@ -3,9 +3,10 @@ defined('BASEPATH') or exit('No direct script access allowed');
 
 /**
  * Listing Tool BOM untuk kebutuhan Tooling (hanya edit & history)
- * Data diambil dari tabel yang sama dengan engineering (M_tool_bom_engin)
+ * Data diambil dari tabel TMS_TACI_SITE (TMS_TOOL_MASTER_LIST_MEMBERS, etc.)
  * 
  * @property M_tool_bom_engin $tool_bom_engin
+ * @property M_tool_draw_tooling $tool_draw_tooling
  */
 class Tool_bom_tooling extends MY_Controller
 {
@@ -68,8 +69,8 @@ class Tool_bom_tooling extends MY_Controller
         log_message('debug', '[Tool_bom_tooling::__construct] model uid set to "' . $this->tool_bom_engin->uid . '"');
 
         // drawing model used for additional information section
-        $this->load->model('M_tool_draw_engin', 'tool_draw_engin');
-        $this->tool_draw_engin->uid = $this->uid;
+        $this->load->model('M_tool_draw_tooling', 'tool_draw_tooling');
+        $this->tool_draw_tooling->uid = $this->uid;
 
         $this->config->set_item('Blade_enable', FALSE);
     }
@@ -112,11 +113,12 @@ class Tool_bom_tooling extends MY_Controller
         $data['operations'] = $this->tool_bom_engin->get_operations();
         $data['machine_groups'] = $this->tool_bom_engin->get_machine_groups();
 
-        // Additional Information: Tool Drawing Engineering filtered by product/process (best-effort)
-        $data['additional_info'] = $this->tool_draw_engin->get_by_product_process($productId, $processId);
-        $data['materials'] = $this->tool_draw_engin->get_materials();
-        $data['makers'] = $this->tool_draw_engin->get_makers();
-        $data['tools'] = $this->tool_draw_engin->get_tools();
+        // Additional Information: Tool Drawing Tooling data
+        // Use tooling model which reads from TMS_TACI_SITE tables
+        $data['additional_info'] = $this->tool_draw_tooling->get_all();
+        $data['materials'] = $this->tool_draw_tooling->get_materials();
+        $data['makers'] = $this->tool_draw_tooling->get_makers();
+        $data['tools'] = $this->tool_draw_tooling->get_tools();
 
         $this->view('detail_tool_bom_tooling', $data, FALSE);
     }
@@ -256,5 +258,3 @@ class Tool_bom_tooling extends MY_Controller
         $this->view('history_tool_bom_tooling', $data, FALSE);
     }
 }
-
-
