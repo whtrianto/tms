@@ -356,6 +356,43 @@ class Tool_draw_engin extends MY_Controller
     }
 
     /**
+     * Halaman revision (view only) Tool Drawing Engineering
+     * @param int $id MLR_ID dari revision
+     */
+    public function revision_page($id = 0)
+    {
+        $id = (int)$id;
+        if ($id <= 0) {
+            show_404();
+            return;
+        }
+
+        $row = $this->tool_draw_engin->get_by_id($id);
+        if (!$row) {
+            show_404();
+            return;
+        }
+
+        // Get Tool BOM by MLR_ID (TD_ID)
+        $tool_bom_list = array();
+        if (isset($row['TD_ID']) && (int)$row['TD_ID'] > 0) {
+            $tool_bom_list = $this->tool_draw_engin->get_tool_bom_by_mlr_id((int)$row['TD_ID']);
+        }
+
+        $data = array();
+        $data['drawing'] = $row;
+        $data['products'] = $this->tool_draw_engin->get_products();
+        $data['operations'] = $this->tool_draw_engin->get_operations();
+        $data['tools'] = $this->tool_draw_engin->get_tools();
+        $data['materials'] = $this->tool_draw_engin->get_materials();
+        $data['makers'] = $this->tool_draw_engin->get_makers();
+        $data['machine_groups'] = $this->tool_draw_engin->get_machine_groups();
+        $data['tool_bom_list'] = $tool_bom_list;
+
+        $this->view('revision_tool_draw_engin', $data, FALSE);
+    }
+
+    /**
      * submit_data: ADD / EDIT Tool Drawing Engineering (AJAX)
      */
     public function submit_data()

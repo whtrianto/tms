@@ -97,7 +97,11 @@
                                     ?>
                                         <tr>
                                             <td class="text-center"><?= htmlspecialchars($td_id, ENT_QUOTES, 'UTF-8'); ?></td>
-                                            <td class="text-center"><?= htmlspecialchars($revision, ENT_QUOTES, 'UTF-8'); ?></td>
+                                            <td class="text-center">
+                                                <a href="<?= base_url('Tool_engineering/tool_draw_engin/revision_page/' . $td_id); ?>" class="text-primary" style="text-decoration: underline; cursor: pointer;" title="View revision detail">
+                                                    <?= htmlspecialchars($revision, ENT_QUOTES, 'UTF-8'); ?>
+                                                </a>
+                                            </td>
                                             <td><?= $statusBadge; ?></td>
                                             <td><?= htmlspecialchars($product_name, ENT_QUOTES, 'UTF-8'); ?></td>
                                             <td><?= htmlspecialchars($process_name, ENT_QUOTES, 'UTF-8'); ?></td>
