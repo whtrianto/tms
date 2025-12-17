@@ -12,22 +12,21 @@
         .card { margin-bottom: 1.5rem; }
         #shared-tool-card { margin-bottom: 8rem !important; }
         
-        .detail-card { background: #f8f9fc; border-radius: 8px; padding: 1rem; margin-bottom: 1rem; }
-        .detail-label { font-weight: 600; color: #5a5c69; font-size: 0.85rem; margin-bottom: 0.25rem; }
-        .detail-value { color: #2e2e2e; font-size: 1rem; font-weight: 500; }
-        .detail-value:empty::after { content: '-'; color: #aaa; }
+        .detail-row { display: flex; margin-bottom: 0.6rem; align-items: flex-start; }
+        .detail-label { font-weight: 600; color: #5a5c69; min-width: 160px; }
+        .detail-colon { width: 20px; text-align: center; }
+        .detail-value { color: #2e2e2e; flex: 1; }
         
         .section-divider { border-top: 2px solid #4e73df; margin: 1.5rem 0 1rem 0; padding-top: 0.5rem; }
         .section-title { font-weight: 700; color: #4e73df; font-size: 1.1rem; margin-bottom: 1rem; }
         
-        .info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; }
-        .info-item { background: #fff; border: 1px solid #e3e6f0; border-radius: 6px; padding: 0.75rem 1rem; }
-        .info-item:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
-        
-        .status-badge { display: inline-block; padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.85rem; font-weight: 600; }
+        .status-badge { display: inline-block; padding: 0.2rem 0.6rem; border-radius: 20px; font-size: 0.85rem; font-weight: 600; }
         .status-active { background: #d4edda; color: #155724; }
         .status-pending { background: #fff3cd; color: #856404; }
         .status-inactive { background: #f8d7da; color: #721c24; }
+        
+        .btn-actions { position: fixed; bottom: 80px; right: 30px; z-index: 1000; }
+        .btn-actions .btn { margin-left: 0.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
     </style>
 </head>
 <body id="page-top">
@@ -40,18 +39,8 @@
 
             <div class="container-fluid" id="container-wrapper">
                 <div class="card mb-3">
-                    <div class="card-header d-flex align-items-center justify-content-between">
-                        <div>
-                            <h4 class="m-0 font-weight-bold text-primary">Detail Tool Drawing Tooling</h4>
-                        </div>
-                        <div>
-                            <a href="<?= base_url('Tool_engineering/tool_draw_tooling'); ?>" class="btn btn-sm btn-outline-primary shadow-sm">
-                                <i class="fa fa-arrow-left"></i> Back
-                            </a>
-                            <a href="<?= base_url('Tool_engineering/tool_draw_tooling/edit_page/' . $drawing['MLR_ID']); ?>" class="btn btn-sm btn-primary shadow-sm">
-                                <i class="fa fa-edit"></i> Edit
-                            </a>
-                        </div>
+                    <div class="card-header">
+                        <h4 class="m-0 font-weight-bold text-primary">Detail Tool Drawing Tooling</h4>
                     </div>
                     <div class="card-body">
                         <?php
@@ -77,114 +66,87 @@
                         $sketch = isset($drawing['MLR_SKETCH']) ? $drawing['MLR_SKETCH'] : '';
                         ?>
 
-                        <!-- Main Info -->
-                        <div class="row mb-3">
-                            <div class="col-md-4">
-                                <div class="info-item">
-                                    <div class="detail-label">Product</div>
-                                    <div class="detail-value"><?= htmlspecialchars($product_name, ENT_QUOTES, 'UTF-8'); ?></div>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="info-item">
-                                    <div class="detail-label">Tool Name</div>
-                                    <div class="detail-value"><?= htmlspecialchars($tool_name, ENT_QUOTES, 'UTF-8'); ?></div>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="info-item">
-                                    <div class="detail-label">Tool Drawing No.</div>
-                                    <div class="detail-value"><?= htmlspecialchars($drawing_no, ENT_QUOTES, 'UTF-8'); ?></div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="row mb-3">
-                            <div class="col-md-3">
-                                <div class="info-item">
-                                    <div class="detail-label">Revision</div>
-                                    <div class="detail-value"><?= $revision; ?></div>
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="info-item">
-                                    <div class="detail-label">Maker</div>
-                                    <div class="detail-value"><?= htmlspecialchars($maker_name, ENT_QUOTES, 'UTF-8'); ?></div>
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="info-item">
-                                    <div class="detail-label">Process</div>
-                                    <div class="detail-value"><?= htmlspecialchars($process_name, ENT_QUOTES, 'UTF-8'); ?></div>
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="info-item">
-                                    <div class="detail-label">Status</div>
-                                    <div class="detail-value"><span class="status-badge <?= $status_class; ?>"><?= $status_text; ?></span></div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="row mb-3">
-                            <div class="col-md-3">
-                                <div class="info-item">
-                                    <div class="detail-label">Min Quantity</div>
-                                    <div class="detail-value"><?= $min_qty; ?></div>
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="info-item">
-                                    <div class="detail-label">Replenish Quantity</div>
-                                    <div class="detail-value"><?= $replenish_qty; ?></div>
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="info-item">
-                                    <div class="detail-label">Price</div>
-                                    <div class="detail-value"><?= number_format($price, 2); ?></div>
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="info-item">
-                                    <div class="detail-label">Effective Date</div>
-                                    <div class="detail-value"><?= htmlspecialchars($effective_date, ENT_QUOTES, 'UTF-8'); ?></div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="row mb-3">
-                            <div class="col-md-4">
-                                <div class="info-item">
-                                    <div class="detail-label">Standard Tool Life</div>
-                                    <div class="detail-value"><?= htmlspecialchars($tool_life, ENT_QUOTES, 'UTF-8'); ?></div>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="info-item">
-                                    <div class="detail-label">Standard Rework</div>
-                                    <div class="detail-value"><?= htmlspecialchars($std_rework, ENT_QUOTES, 'UTF-8'); ?></div>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="info-item">
-                                    <div class="detail-label">Material</div>
-                                    <div class="detail-value"><?= htmlspecialchars($material_name, ENT_QUOTES, 'UTF-8'); ?></div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="row mb-3">
+                        <div class="row">
+                            <!-- Left Column -->
                             <div class="col-md-6">
-                                <div class="info-item">
-                                    <div class="detail-label">Description</div>
-                                    <div class="detail-value"><?= htmlspecialchars($description, ENT_QUOTES, 'UTF-8'); ?></div>
+                                <div class="detail-row">
+                                    <span class="detail-label">Product</span>
+                                    <span class="detail-colon">:</span>
+                                    <span class="detail-value"><?= htmlspecialchars($product_name, ENT_QUOTES, 'UTF-8'); ?></span>
+                                </div>
+                                <div class="detail-row">
+                                    <span class="detail-label">Tool Name</span>
+                                    <span class="detail-colon">:</span>
+                                    <span class="detail-value"><?= htmlspecialchars($tool_name, ENT_QUOTES, 'UTF-8'); ?></span>
+                                </div>
+                                <div class="detail-row">
+                                    <span class="detail-label">Tool Drawing No.</span>
+                                    <span class="detail-colon">:</span>
+                                    <span class="detail-value"><?= htmlspecialchars($drawing_no, ENT_QUOTES, 'UTF-8'); ?></span>
+                                </div>
+                                <div class="detail-row">
+                                    <span class="detail-label">Revision</span>
+                                    <span class="detail-colon">:</span>
+                                    <span class="detail-value"><?= $revision; ?></span>
+                                </div>
+                                <div class="detail-row">
+                                    <span class="detail-label">Maker</span>
+                                    <span class="detail-colon">:</span>
+                                    <span class="detail-value"><?= htmlspecialchars($maker_name, ENT_QUOTES, 'UTF-8'); ?></span>
+                                </div>
+                                <div class="detail-row">
+                                    <span class="detail-label">Min Quantity</span>
+                                    <span class="detail-colon">:</span>
+                                    <span class="detail-value"><?= $min_qty; ?></span>
+                                </div>
+                                <div class="detail-row">
+                                    <span class="detail-label">Replenish Quantity</span>
+                                    <span class="detail-colon">:</span>
+                                    <span class="detail-value"><?= $replenish_qty; ?></span>
+                                </div>
+                                <div class="detail-row">
+                                    <span class="detail-label">Process</span>
+                                    <span class="detail-colon">:</span>
+                                    <span class="detail-value"><?= htmlspecialchars($process_name, ENT_QUOTES, 'UTF-8'); ?></span>
                                 </div>
                             </div>
+
+                            <!-- Right Column -->
                             <div class="col-md-6">
-                                <div class="info-item">
-                                    <div class="detail-label">Change Summary</div>
-                                    <div class="detail-value"><?= htmlspecialchars($change_summary, ENT_QUOTES, 'UTF-8'); ?></div>
+                                <div class="detail-row">
+                                    <span class="detail-label">Price</span>
+                                    <span class="detail-colon">:</span>
+                                    <span class="detail-value"><?= number_format($price, 2); ?></span>
+                                </div>
+                                <div class="detail-row">
+                                    <span class="detail-label">Standard Tool Life</span>
+                                    <span class="detail-colon">:</span>
+                                    <span class="detail-value"><?= htmlspecialchars($tool_life, ENT_QUOTES, 'UTF-8'); ?></span>
+                                </div>
+                                <div class="detail-row">
+                                    <span class="detail-label">Standard Rework</span>
+                                    <span class="detail-colon">:</span>
+                                    <span class="detail-value"><?= htmlspecialchars($std_rework, ENT_QUOTES, 'UTF-8'); ?></span>
+                                </div>
+                                <div class="detail-row">
+                                    <span class="detail-label">Description</span>
+                                    <span class="detail-colon">:</span>
+                                    <span class="detail-value"><?= htmlspecialchars($description, ENT_QUOTES, 'UTF-8'); ?></span>
+                                </div>
+                                <div class="detail-row">
+                                    <span class="detail-label">Status</span>
+                                    <span class="detail-colon">:</span>
+                                    <span class="detail-value"><span class="status-badge <?= $status_class; ?>"><?= $status_text; ?></span></span>
+                                </div>
+                                <div class="detail-row">
+                                    <span class="detail-label">Effective Date</span>
+                                    <span class="detail-colon">:</span>
+                                    <span class="detail-value"><?= htmlspecialchars($effective_date, ENT_QUOTES, 'UTF-8'); ?></span>
+                                </div>
+                                <div class="detail-row">
+                                    <span class="detail-label">Change Summary</span>
+                                    <span class="detail-colon">:</span>
+                                    <span class="detail-value"><?= htmlspecialchars($change_summary, ENT_QUOTES, 'UTF-8'); ?></span>
                                 </div>
                             </div>
                         </div>
@@ -195,15 +157,22 @@
 
                         <div class="row">
                             <div class="col-md-6">
-                                <div class="info-item">
-                                    <div class="detail-label">Drawing</div>
-                                    <div class="detail-value"><?= htmlspecialchars($drawing_file, ENT_QUOTES, 'UTF-8'); ?></div>
+                                <div class="detail-row">
+                                    <span class="detail-label">Drawing</span>
+                                    <span class="detail-colon">:</span>
+                                    <span class="detail-value"><?= htmlspecialchars($drawing_file, ENT_QUOTES, 'UTF-8'); ?></span>
+                                </div>
+                                <div class="detail-row">
+                                    <span class="detail-label">Material</span>
+                                    <span class="detail-colon">:</span>
+                                    <span class="detail-value"><?= htmlspecialchars($material_name, ENT_QUOTES, 'UTF-8'); ?></span>
                                 </div>
                             </div>
                             <div class="col-md-6">
-                                <div class="info-item">
-                                    <div class="detail-label">Sketch</div>
-                                    <div class="detail-value"><?= htmlspecialchars($sketch, ENT_QUOTES, 'UTF-8'); ?></div>
+                                <div class="detail-row">
+                                    <span class="detail-label">Sketch</span>
+                                    <span class="detail-colon">:</span>
+                                    <span class="detail-value"><?= htmlspecialchars($sketch, ENT_QUOTES, 'UTF-8'); ?></span>
                                 </div>
                             </div>
                         </div>
@@ -245,6 +214,17 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Fixed Action Buttons -->
+            <div class="btn-actions">
+                <a href="<?= base_url('Tool_engineering/tool_draw_tooling'); ?>" class="btn btn-outline-secondary">
+                    <i class="fa fa-arrow-left"></i> Back
+                </a>
+                <a href="<?= base_url('Tool_engineering/tool_draw_tooling/edit_page/' . $drawing['MLR_ID']); ?>" class="btn btn-primary">
+                    <i class="fa fa-edit"></i> Edit
+                </a>
+            </div>
+
             <?= isset($modal_logout) ? $modal_logout : ''; ?>
         </div>
         <?= isset($footer) ? $footer : ''; ?>
