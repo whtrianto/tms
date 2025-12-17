@@ -99,14 +99,14 @@ class Tool_draw_tooling extends MY_Controller
 
             if ($action === 'EDIT' && $id > 0) {
                 $ok = $this->tool_draw_tooling->edit_data($id, $tc_id, $min_qty, $replenish_qty, $maker_id, $price, $description, $mat_id, $tool_life);
-                if ($ok === true) {
-                    $result['success'] = true;
-                    $result['message'] = $this->tool_draw_tooling->messages ?: 'Tool Drawing Tooling berhasil diperbarui.';
-                } else {
-                    $result['success'] = false;
-                    $result['message'] = $this->tool_draw_tooling->messages ?: 'Gagal memperbarui tool drawing tooling.';
-                }
-                $json = json_encode($result);
+                    if ($ok === true) {
+                        $result['success'] = true;
+                        $result['message'] = $this->tool_draw_tooling->messages ?: 'Tool Drawing Tooling berhasil diperbarui.';
+                    } else {
+                        $result['success'] = false;
+                        $result['message'] = $this->tool_draw_tooling->messages ?: 'Gagal memperbarui tool drawing tooling.';
+                    }
+                    $json = json_encode($result);
                 log_message('debug', '[submit_data EDIT] response: ' . $json);
                 echo $json;
                 return;

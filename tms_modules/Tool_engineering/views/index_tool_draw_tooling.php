@@ -176,7 +176,7 @@
                         [10, 25, 50, "ALL"]
                     ],
                     pageLength: 25,
-                    order: [[0, 'asc']],
+                    order: [[1, 'asc']],
                     autoWidth: false,
                     scrollX: false,
                     columnDefs: [
