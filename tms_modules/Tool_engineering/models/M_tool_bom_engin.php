@@ -48,7 +48,7 @@ class M_tool_bom_engin extends CI_Model
             LEFT JOIN {$this->t('MS_MACHINES')} mac ON mac.MAC_ID = rev.MLR_MACG_ID
             LEFT JOIN {$this->t('MS_USERS')} usr ON usr.USR_ID = rev.MLR_MODIFIED_BY";
 
-        $where = " WHERE ml.ML_TYPE = 2";
+        $where = " WHERE ml.ML_TYPE = 2 AND rev.MLR_STATUS > 0";
         $params = array();
 
         // Global search
@@ -78,7 +78,7 @@ class M_tool_bom_engin extends CI_Model
         // Count total
         $count_total_sql = "SELECT COUNT(*) as cnt FROM {$this->t('TMS_TOOL_MASTER_LIST_REV')} rev
                            INNER JOIN {$this->t('TMS_TOOL_MASTER_LIST')} ml ON ml.ML_ID = rev.MLR_ML_ID
-                           WHERE ml.ML_TYPE = 2";
+                           WHERE ml.ML_TYPE = 2 AND rev.MLR_STATUS > 0";
         $count_total = $this->db_tms->query($count_total_sql)->row()->cnt;
 
         // Count filtered
@@ -133,7 +133,7 @@ class M_tool_bom_engin extends CI_Model
                 INNER JOIN {$this->t('TMS_TOOL_MASTER_LIST')} ml ON ml.ML_ID = rev.MLR_ML_ID
                 LEFT JOIN {$this->t('MS_MACHINES')} mac ON mac.MAC_ID = rev.MLR_MACG_ID
                 LEFT JOIN {$this->t('MS_USERS')} usr ON usr.USR_ID = rev.MLR_MODIFIED_BY
-                WHERE ml.ML_TYPE = 2
+                WHERE ml.ML_TYPE = 2 AND rev.MLR_STATUS > 0
                 ORDER BY rev.MLR_ID DESC";
 
         $q = $this->db_tms->query($sql);
@@ -168,7 +168,7 @@ class M_tool_bom_engin extends CI_Model
                 INNER JOIN {$this->t('TMS_TOOL_MASTER_LIST')} ml ON ml.ML_ID = rev.MLR_ML_ID
                 LEFT JOIN {$this->t('MS_MACHINES')} mac ON mac.MAC_ID = rev.MLR_MACG_ID
                 LEFT JOIN {$this->t('MS_USERS')} usr ON usr.USR_ID = rev.MLR_MODIFIED_BY
-                WHERE ml.ML_TYPE = 2 AND rev.MLR_ID = ?";
+                WHERE ml.ML_TYPE = 2 AND rev.MLR_STATUS > 0 AND rev.MLR_ID = ?";
 
         $q = $this->db_tms->query($sql, array($id));
         return $q && $q->num_rows() > 0 ? $q->row_array() : null;
