@@ -97,63 +97,65 @@
                                         $materials = isset($materials) ? $materials : array();
 
                                         foreach ($list_data as $row):
-                                            // Support both TT_* (tooling table) and TD_* (engineering table) keys
-                                            $row_id = isset($row['TT_ID']) ? (int)$row['TT_ID'] : (isset($row['TD_ID']) ? (int)$row['TD_ID'] : 0);
-                                            $drawing_no = isset($row['TD_DRAWING_NO']) ? $row['TD_DRAWING_NO'] : (isset($row['TT_DRAWING_NO']) ? $row['TT_DRAWING_NO'] : '');
+                                            // Use MLR_* columns from TMS_TOOL_MASTER_LIST_REV table
+                                            $row_id = isset($row['MLR_ID']) ? (int)$row['MLR_ID'] : 0;
+                                            $drawing_no = isset($row['ML_TOOL_DRAW_NO']) ? $row['ML_TOOL_DRAW_NO'] : '';
                                             $drawing_label = $drawing_no ? pathinfo($drawing_no, PATHINFO_FILENAME) : '';
-                                            $tool_key = isset($row['TT_TOOL_ID']) ? $row['TT_TOOL_ID'] : (isset($row['TD_TOOL_ID']) ? $row['TD_TOOL_ID'] : null);
-                                            $maker_key = isset($row['TT_MAKER_ID']) ? $row['TT_MAKER_ID'] : (isset($row['TD_MAKER_ID']) ? $row['TD_MAKER_ID'] : null);
-                                            $material_key = isset($row['TT_MATERIAL_ID']) ? $row['TT_MATERIAL_ID'] : (isset($row['TD_MATERIAL_ID']) ? $row['TD_MATERIAL_ID'] : null);
+                                            
+                                            // Tool Name from MS_TOOL_CLASS via MLR_TC_ID
+                                            $tool_key = isset($row['MLR_TC_ID']) ? $row['MLR_TC_ID'] : null;
+                                            $maker_key = isset($row['MLR_MAKER_ID']) ? $row['MLR_MAKER_ID'] : null;
+                                            $material_key = isset($row['MLR_MAT_ID']) ? $row['MLR_MAT_ID'] : null;
 
-                                            $tool_name = '';
-                                            foreach ($tools as $t) {
-                                                if (isset($t['TOOL_ID']) && (int)$t['TOOL_ID'] == (int)$tool_key) {
-                                                    $tool_name = $t['TOOL_NAME'];
-                                                    break;
-                                                }
-                                            }
-                                            // If engineering row provides TD_TOOL_NAME (string), use it as fallback
-                                            if ($tool_name === '' && isset($row['TD_TOOL_NAME']) && $row['TD_TOOL_NAME'] !== '') {
-                                                $tool_name = $row['TD_TOOL_NAME'];
-                                            }
-
-                                            $maker_name = '';
-                                            foreach ($makers as $m) {
-                                                if (isset($m['MAKER_ID']) && (int)$m['MAKER_ID'] == (int)$maker_key) {
-                                                    $maker_name = $m['MAKER_NAME'];
-                                                    break;
+                                            // Try to get tool name from joined data first
+                                            $tool_name = isset($row['TC_NAME']) ? $row['TC_NAME'] : '';
+                                            if ($tool_name === '' && $tool_key !== null) {
+                                                foreach ($tools as $t) {
+                                                    if (isset($t['TC_ID']) && (int)$t['TC_ID'] == (int)$tool_key) {
+                                                        $tool_name = $t['TC_NAME'];
+                                                        break;
+                                                    }
                                                 }
                                             }
 
-                                            $material_name = '';
-                                            foreach ($materials as $mat) {
-                                                if (isset($mat['MATERIAL_ID']) && (int)$mat['MATERIAL_ID'] == (int)$material_key) {
-                                                    $material_name = $mat['MATERIAL_NAME'];
-                                                    break;
+                                            // Try to get maker name from joined data first
+                                            $maker_name = isset($row['MAKER_NAME']) ? $row['MAKER_NAME'] : '';
+                                            if ($maker_name === '' && $maker_key !== null) {
+                                                foreach ($makers as $m) {
+                                                    if (isset($m['MAKER_ID']) && (int)$m['MAKER_ID'] == (int)$maker_key) {
+                                                        $maker_name = $m['MAKER_NAME'];
+                                                        break;
+                                                    }
+                                                }
+                                            }
+
+                                            // Try to get material name from joined data first
+                                            $material_name = isset($row['MAT_NAME']) ? $row['MAT_NAME'] : '';
+                                            if ($material_name === '' && $material_key !== null) {
+                                                foreach ($materials as $mat) {
+                                                    if (isset($mat['MAT_ID']) && (int)$mat['MAT_ID'] == (int)$material_key) {
+                                                        $material_name = $mat['MAT_NAME'];
+                                                        break;
+                                                    }
                                                 }
                                             }
                                         ?>
                                             <tr>
                                                 <td class="text-left"><span class="cell-ellipsis"><?= htmlspecialchars($drawing_label, ENT_QUOTES, 'UTF-8'); ?></span></td>
                                                 <td class="text-left"><span class="cell-ellipsis"><?= htmlspecialchars($tool_name, ENT_QUOTES, 'UTF-8'); ?></span></td>
-                                                <td class="text-center"><?= isset($row['TT_MIN_QTY']) ? (int)$row['TT_MIN_QTY'] : (isset($row['TD_MIN_QTY']) ? (int)$row['TD_MIN_QTY'] : 0); ?></td>
-                                                <td class="text-center"><?= isset($row['TT_REPLENISH_QTY']) ? (int)$row['TT_REPLENISH_QTY'] : (isset($row['TD_REPLENISH_QTY']) ? (int)$row['TD_REPLENISH_QTY'] : 0); ?></td>
+                                                <td class="text-center"><?= isset($row['MLR_MIN_QTY']) ? (int)$row['MLR_MIN_QTY'] : 0; ?></td>
+                                                <td class="text-center"><?= isset($row['MLR_REPLENISH_QTY']) ? (int)$row['MLR_REPLENISH_QTY'] : 0; ?></td>
                                                 <td class="text-left"><span class="cell-ellipsis"><?= htmlspecialchars($maker_name, ENT_QUOTES, 'UTF-8'); ?></span></td>
-                                                <td class="text-right"><?= number_format((float)(isset($row['TT_PRICE']) ? $row['TT_PRICE'] : (isset($row['TD_PRICE']) ? $row['TD_PRICE'] : 0)), 2); ?></td>
-                                                <td class="text-left"><span class="cell-ellipsis"><?= htmlspecialchars(isset($row['TT_DESCRIPTION']) ? $row['TT_DESCRIPTION'] : (isset($row['TD_DESCRIPTION']) ? $row['TD_DESCRIPTION'] : ''), ENT_QUOTES, 'UTF-8'); ?></span></td>
-                                                <td><span class="cell-ellipsis"><?= htmlspecialchars(isset($row['TT_EFFECTIVE_DATE']) ? $row['TT_EFFECTIVE_DATE'] : (isset($row['TD_EFFECTIVE_DATE']) ? $row['TD_EFFECTIVE_DATE'] : ''), ENT_QUOTES, 'UTF-8'); ?></span></td>
+                                                <td class="text-right"><?= number_format((float)(isset($row['MLR_PRICE']) ? $row['MLR_PRICE'] : 0), 2); ?></td>
+                                                <td class="text-left"><span class="cell-ellipsis"><?= htmlspecialchars(isset($row['MLR_DESC']) ? $row['MLR_DESC'] : '', ENT_QUOTES, 'UTF-8'); ?></span></td>
+                                                <td><span class="cell-ellipsis"><?= htmlspecialchars(isset($row['MLR_EFFECTIVE_DATE']) ? $row['MLR_EFFECTIVE_DATE'] : '', ENT_QUOTES, 'UTF-8'); ?></span></td>
                                                 <td class="text-left"><span class="cell-ellipsis"><?= htmlspecialchars($material_name, ENT_QUOTES, 'UTF-8'); ?></span></td>
-                                                <td class="text-center"><?= isset($row['TT_TOOL_LIFE']) ? (int)$row['TT_TOOL_LIFE'] : (isset($row['TD_TOOL_LIFE']) ? (int)$row['TD_TOOL_LIFE'] : 0); ?></td>
+                                                <td class="text-center"><?= isset($row['MLR_STD_TL_LIFE']) ? htmlspecialchars($row['MLR_STD_TL_LIFE'], ENT_QUOTES, 'UTF-8') : '0'; ?></td>
                                                 <td>
                                                     <div class="action-buttons">
-                                                        <?php 
-                                                        // Determine which ID to use for edit/history links
-                                                        // Prefer TD_ID (engineering) since data comes from engineering table
-                                                        $edit_id = isset($row['TD_ID']) ? (int)$row['TD_ID'] : $row_id;
-                                                        ?>
-                                                        <a href="<?= base_url('Tool_engineering/tool_draw_tooling/edit_page/' . $edit_id); ?>" 
+                                                        <a href="<?= base_url('Tool_engineering/tool_draw_tooling/edit_page/' . $row_id); ?>" 
                                                            class="btn btn-secondary btn-sm" title="Edit">Edit</a>
-                                                        <a href="<?= base_url('Tool_engineering/tool_draw_tooling/history_page/' . $edit_id); ?>" 
+                                                        <a href="<?= base_url('Tool_engineering/tool_draw_tooling/history_page/' . $row_id); ?>" 
                                                            class="btn btn-warning btn-sm" title="History">Hist</a>
                                                     </div>
                                                 </td>
@@ -240,22 +242,22 @@
                             <div class="modal-body">
                                 <form id="formToolDrawing" method="post" action="<?= base_url('Tool_engineering/tool_draw_tooling/submit_data'); ?>">
                                     <input type="hidden" name="action" value="">
-                                    <input type="hidden" name="TT_ID" value="">
+                                    <input type="hidden" name="MLR_ID" value="">
 
                                     <div class="form-row">
                                         <div class="form-group col-md-6">
                                             <label class="label-required">Tool</label>
-                                            <select name="TT_TOOL_ID" class="form-control" required>
+                                            <select name="MLR_TC_ID" class="form-control" required>
                                                 <option value="">-- Select Tool --</option>
                                                 <?php foreach ($tools as $t): ?>
-                                                    <option value="<?= (int)$t['TOOL_ID']; ?>"><?= htmlspecialchars($t['TOOL_NAME'], ENT_QUOTES, 'UTF-8'); ?></option>
+                                                    <option value="<?= (int)$t['TC_ID']; ?>"><?= htmlspecialchars($t['TC_NAME'], ENT_QUOTES, 'UTF-8'); ?></option>
                                                 <?php endforeach; ?>
                                             </select>
                                             <div class="invalid-feedback">Tool wajib dipilih.</div>
                                         </div>
                                         <div class="form-group col-md-6">
                                             <label>Maker</label>
-                                            <select name="TT_MAKER_ID" class="form-control">
+                                            <select name="MLR_MAKER_ID" class="form-control">
                                                 <option value="">-- Select Maker --</option>
                                                 <?php foreach ($makers as $m): ?>
                                                     <option value="<?= (int)$m['MAKER_ID']; ?>"><?= htmlspecialchars($m['MAKER_NAME'], ENT_QUOTES, 'UTF-8'); ?></option>
@@ -267,38 +269,38 @@
                                     <div class="form-row">
                                         <div class="form-group col-md-4">
                                             <label>Min Quantity</label>
-                                            <input type="number" name="TT_MIN_QTY" class="form-control" value="0">
+                                            <input type="number" name="MLR_MIN_QTY" class="form-control" value="0">
                                         </div>
                                         <div class="form-group col-md-4">
                                             <label>Replenish Quantity</label>
-                                            <input type="number" name="TT_REPLENISH_QTY" class="form-control" value="0">
+                                            <input type="number" name="MLR_REPLENISH_QTY" class="form-control" value="0">
                                         </div>
                                         <div class="form-group col-md-4">
                                             <label>Price</label>
-                                            <input type="number" name="TT_PRICE" class="form-control" step="0.01" value="0">
+                                            <input type="number" name="MLR_PRICE" class="form-control" step="0.01" value="0">
                                         </div>
                                     </div>
 
                                     <div class="form-row">
                                         <div class="form-group col-md-6">
                                             <label>Material</label>
-                                            <select name="TT_MATERIAL_ID" class="form-control">
+                                            <select name="MLR_MAT_ID" class="form-control">
                                                 <option value="">-- Select Material --</option>
                                                 <?php foreach ($materials as $m): ?>
-                                                    <option value="<?= (int)$m['MATERIAL_ID']; ?>"><?= htmlspecialchars($m['MATERIAL_NAME'], ENT_QUOTES, 'UTF-8'); ?></option>
+                                                    <option value="<?= (int)$m['MAT_ID']; ?>"><?= htmlspecialchars($m['MAT_NAME'], ENT_QUOTES, 'UTF-8'); ?></option>
                                                 <?php endforeach; ?>
                                             </select>
                                         </div>
                                         <div class="form-group col-md-6">
                                             <label>Tool Life</label>
-                                            <input type="number" name="TT_TOOL_LIFE" class="form-control" value="0">
+                                            <input type="text" name="MLR_STD_TL_LIFE" class="form-control" value="0">
                                         </div>
                                     </div>
 
                                     <div class="form-row">
                                         <div class="form-group col-md-12">
                                             <label>Description</label>
-                                            <textarea name="TT_DESCRIPTION" class="form-control" rows="3"></textarea>
+                                            <textarea name="MLR_DESC" class="form-control" rows="3"></textarea>
                                         </div>
                                     </div>
                                 </form>
@@ -526,11 +528,11 @@
                     // if already a string like 'Active'/'Inactive'
                     if (typeof val === 'string') {
                         var s = val.trim().toLowerCase();
-                        if (s === 'active' || s === '1') return 'Active';
+                        if (s === 'active' || s === '1' || s === '2') return 'Active';
                         return 'Inactive';
                     }
                     var n = parseInt(val, 10);
-                    if (!isNaN(n)) return n === 1 ? 'Active' : 'Inactive';
+                    if (!isNaN(n)) return (n === 1 || n === 2) ? 'Active' : 'Inactive';
                     return 'Inactive';
                 }
 
@@ -538,8 +540,8 @@
                 $('#btn-new').on('click', function() {
                     $('#formToolDrawing')[0].reset();
                     $('input[name="action"]').val('ADD');
-                    $('input[name="TT_ID"]').val('');
-                    $('[name="TT_TOOL_ID"]').removeClass('is-invalid');
+                    $('input[name="MLR_ID"]').val('');
+                    $('[name="MLR_TC_ID"]').removeClass('is-invalid');
                     $('#modalForm').modal('show');
                 });
 
@@ -553,11 +555,11 @@
 
                 $('#formToolDrawing').on('submit', function(e) {
                     e.preventDefault();
-                    var toolId = $.trim($('[name="TT_TOOL_ID"]').val());
+                    var toolId = $.trim($('[name="MLR_TC_ID"]').val());
 
                     var isValid = true;
                     if (toolId === '' || toolId <= 0) {
-                        $('[name="TT_TOOL_ID"]').addClass('is-invalid');
+                        $('[name="MLR_TC_ID"]').addClass('is-invalid');
                         isValid = false;
                     }
 
@@ -624,7 +626,7 @@
                         type: 'POST',
                         dataType: 'json',
                         data: {
-                            TT_ID: id
+                            MLR_ID: id
                         }
                     }).done(function(res) {
                         if (res && res.success) {
