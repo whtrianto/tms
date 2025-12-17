@@ -148,6 +148,31 @@ class Tool_draw_tooling extends MY_Controller
     }
 
     /**
+     * Halaman detail Tool Drawing Tooling
+     * @param int $id
+     */
+    public function detail_page($id = 0)
+    {
+        $id = (int)$id;
+        if ($id <= 0) {
+            show_404();
+            return;
+        }
+
+        $row = $this->tool_draw_tooling->get_by_id_with_parts($id);
+        if (!$row) {
+            show_404();
+            return;
+        }
+
+        $data = array();
+        $data['drawing'] = $row;
+        $data['tool_bom_list'] = $this->tool_draw_tooling->get_tool_bom_by_ml_id($id);
+
+        $this->view('detail_tool_draw_tooling', $data, FALSE);
+    }
+
+    /**
      * Halaman edit Tool Drawing Tooling
      * @param int $id
      */

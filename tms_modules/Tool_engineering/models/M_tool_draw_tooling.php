@@ -77,6 +77,41 @@ if (!class_exists('M_tool_draw_tooling')) {
     }
 
     /**
+     * Get by ID with Parts (Product) name
+     */
+    public function get_by_id_with_parts($id)
+    {
+        $id = (int)$id;
+        if ($id <= 0) return null;
+
+        $sql = "SELECT 
+                    mlr.MLR_ID, mlr.MLR_ML_ID, mlr.MLR_OP_ID, mlr.MLR_TC_ID, mlr.MLR_MAKER_ID,
+                    mlr.MLR_MIN_QTY, mlr.MLR_REPLENISH_QTY, mlr.MLR_PRICE, mlr.MLR_STD_TL_LIFE,
+                    mlr.MLR_STD_REWORK, mlr.MLR_DESC, mlr.MLR_DRAWING, mlr.MLR_MAT_ID,
+                    mlr.MLR_REV, mlr.MLR_STATUS, mlr.MLR_EFFECTIVE_DATE, mlr.MLR_MODIFIED_DATE,
+                    mlr.MLR_MODIFIED_BY, mlr.MLR_MACG_ID, mlr.MLR_CHANGE_SUMMARY, mlr.MLR_SKETCH,
+                    ml.ML_TOOL_DRAW_NO, ml.ML_TYPE, ml.ML_TRIAL,
+                    tc.TC_NAME, tc.TC_DESC AS TC_DESCRIPTION,
+                    mk.MAKER_NAME,
+                    mt.MAT_NAME,
+                    op.OP_NAME AS OPERATION_NAME,
+                    dbo.fnGetToolMasterListParts(ml.ML_ID) AS PART_NAME
+                FROM {$this->table_rev} mlr
+                LEFT JOIN {$this->table_ml} ml ON mlr.MLR_ML_ID = ml.ML_ID
+                LEFT JOIN TMS_NEW.dbo.MS_TOOL_CLASS tc ON mlr.MLR_TC_ID = tc.TC_ID
+                LEFT JOIN TMS_NEW.dbo.MS_MAKER mk ON mlr.MLR_MAKER_ID = mk.MAKER_ID
+                LEFT JOIN TMS_NEW.dbo.MS_MATERIAL mt ON mlr.MLR_MAT_ID = mt.MAT_ID
+                LEFT JOIN TMS_NEW.dbo.MS_OPERATION op ON mlr.MLR_OP_ID = op.OP_ID
+                WHERE mlr.MLR_ID = ?";
+
+        $result = $this->tms_NEW->query($sql, array($id));
+        if ($result && $result->num_rows() > 0) {
+            return $result->row_array();
+        }
+        return null;
+    }
+
+    /**
      * Get all tools from MS_TOOL_CLASS
      */
     public function get_tools()

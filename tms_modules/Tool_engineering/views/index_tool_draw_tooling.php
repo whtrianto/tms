@@ -155,7 +155,7 @@
                                             $tool_life = isset($row['MLR_STD_TL_LIFE']) ? $row['MLR_STD_TL_LIFE'] : '';
                                         ?>
                                             <tr>
-                                                <td class="text-left"><span class="cell-ellipsis"><?= htmlspecialchars($drawing_no, ENT_QUOTES, 'UTF-8'); ?></span></td>
+                                                <td class="text-left"><a href="<?= base_url('Tool_engineering/tool_draw_tooling/detail_page/' . $row_id); ?>" class="cell-ellipsis" title="View Detail"><?= htmlspecialchars($drawing_no, ENT_QUOTES, 'UTF-8'); ?></a></td>
                                                 <td class="text-left"><span class="cell-ellipsis"><?= htmlspecialchars($tool_name, ENT_QUOTES, 'UTF-8'); ?></span></td>
                                                 <td class="text-center"><?= $min_qty; ?></td>
                                                 <td class="text-center"><?= $replenish_qty; ?></td>
@@ -220,9 +220,9 @@
                     ]
                 });
 
-                if (typeof _search_data === 'function') {
-                    _search_data(table, '#table-tool-draw-tooling', false, false);
-                }
+                // if (typeof _search_data === 'function') {
+                //     _search_data(table, '#table-tool-draw-tooling', false, false);
+                // }
 
                 // Per-column search
                 $('.column-search').on('keyup', function() {
