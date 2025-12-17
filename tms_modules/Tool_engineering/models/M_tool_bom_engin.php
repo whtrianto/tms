@@ -86,10 +86,10 @@ class M_tool_bom_engin extends CI_Model
         $count_filtered = $this->db_tms->query($count_filtered_sql, $params)->row()->cnt;
 
         // Order
-        $order_column = isset($columns[$order_col]) ? $columns[$order_col] : 'rev.MLR_ID';
+        $order_column = isset($columns[$order_col]) ? $columns[$order_col] : 'ml.ML_TOOL_DRAW_NO';
         $order_direction = strtoupper($order_dir) === 'ASC' ? 'ASC' : 'DESC';
 
-        // Data query
+        // Data query - Administrator always at the end
         $data_sql = "SELECT 
                         rev.MLR_ID AS TD_ID,
                         ml.ML_TOOL_DRAW_NO AS TD_TOOL_BOM,
@@ -100,7 +100,7 @@ class M_tool_bom_engin extends CI_Model
                         rev.MLR_STATUS AS TD_STATUS,
                         ISNULL(usr.USR_NAME, '') AS TD_MODIFIED_BY
                     " . $base_from . $where . "
-                    ORDER BY " . $order_column . " " . $order_direction . "
+                    ORDER BY CASE WHEN usr.USR_NAME = 'Administrator' THEN 1 ELSE 0 END, " . $order_column . " " . $order_direction . "
                     OFFSET " . (int)$start . " ROWS FETCH NEXT " . (int)$length . " ROWS ONLY";
 
         $result = $this->db_tms->query($data_sql, $params);
