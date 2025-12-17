@@ -591,20 +591,32 @@ class Tool_draw_engin extends MY_Controller
      */
     public function delete_data()
     {
+        if (ob_get_level()) ob_clean();
+        
         $this->output->set_content_type('application/json');
+        $result = array('success' => false, 'message' => '');
 
-        $id = (int)$this->input->post('TD_ID', TRUE);
-        if ($id <= 0) {
-            echo json_encode(array('success' => false, 'message' => 'TD_ID tidak ditemukan.'));
-            return;
+        try {
+            $id = (int)$this->input->post('TD_ID', TRUE);
+            if ($id <= 0) {
+                $result['message'] = 'TD_ID tidak valid.';
+                $this->output->set_output(json_encode($result));
+                return;
+            }
+
+            $ok = $this->tool_draw_engin->delete_data($id);
+            if ($ok) {
+                $result['success'] = true;
+                $result['message'] = $this->tool_draw_engin->messages ?: 'Tool Drawing Engineering berhasil dihapus.';
+            } else {
+                $result['message'] = $this->tool_draw_engin->messages ?: 'Gagal menghapus tool drawing.';
+            }
+        } catch (Exception $e) {
+            log_message('error', '[Tool_draw_engin::delete_data] Exception: ' . $e->getMessage());
+            $result['message'] = 'Terjadi kesalahan: ' . $e->getMessage();
         }
 
-        $ok = $this->tool_draw_engin->delete_data($id);
-        if ($ok) {
-            echo json_encode(array('success' => true, 'message' => $this->tool_draw_engin->messages ?: 'Tool Drawing Engineering berhasil dihapus.'));
-        } else {
-            echo json_encode(array('success' => false, 'message' => $this->tool_draw_engin->messages ?: 'Gagal menghapus tool drawing.'));
-        }
+        $this->output->set_output(json_encode($result));
     }
 
     /**
