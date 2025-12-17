@@ -46,6 +46,102 @@ class M_tool_draw_engin extends CI_Model
     }
 
     /**
+     * Server-side DataTable processing - pagination di database
+     */
+    public function get_data_serverside($start, $length, $search, $order_col, $order_dir, $column_search = array())
+    {
+        // Column mapping for ordering
+        $columns = array(
+            0 => 'rev.MLR_ID',
+            1 => 'TD_PRODUCT_NAME',
+            2 => 'op.OP_NAME',
+            3 => 'ml.ML_TOOL_DRAW_NO',
+            4 => 'tc.TC_NAME',
+            5 => 'rev.MLR_REV',
+            6 => 'rev.MLR_STATUS',
+            7 => 'rev.MLR_EFFECTIVE_DATE',
+            8 => 'rev.MLR_MODIFIED_DATE',
+            9 => 'usr.USR_NAME'
+        );
+
+        $base_from = "
+            FROM {$this->t('TMS_TOOL_MASTER_LIST_REV')} rev
+            INNER JOIN {$this->t('TMS_TOOL_MASTER_LIST')} ml ON ml.ML_ID = rev.MLR_ML_ID
+            LEFT JOIN {$this->t('MS_OPERATION')} op ON op.OP_ID = rev.MLR_OP_ID
+            LEFT JOIN {$this->t('MS_TOOL_CLASS')} tc ON tc.TC_ID = rev.MLR_TC_ID
+            LEFT JOIN {$this->t('MS_MAKER')} maker ON maker.MAKER_ID = rev.MLR_MAKER_ID
+            LEFT JOIN {$this->t('MS_MATERIAL')} mat ON mat.MAT_ID = rev.MLR_MAT_ID
+            LEFT JOIN {$this->t('MS_MACHINES')} mac ON mac.MAC_ID = rev.MLR_MACG_ID
+            LEFT JOIN {$this->t('MS_USERS')} usr ON usr.USR_ID = rev.MLR_MODIFIED_BY";
+
+        $where = " WHERE ml.ML_TYPE = 1";
+        $params = array();
+
+        // Global search
+        if (!empty($search)) {
+            $where .= " AND (ml.ML_TOOL_DRAW_NO LIKE ? OR tc.TC_NAME LIKE ? OR op.OP_NAME LIKE ? 
+                        OR usr.USR_NAME LIKE ? OR CAST(rev.MLR_ID AS VARCHAR) LIKE ?)";
+            $search_param = '%' . $search . '%';
+            $params = array_merge($params, array($search_param, $search_param, $search_param, $search_param, $search_param));
+        }
+
+        // Per-column search
+        $col_search_map = array(
+            0 => 'CAST(rev.MLR_ID AS VARCHAR)',
+            2 => 'op.OP_NAME',
+            3 => 'ml.ML_TOOL_DRAW_NO',
+            4 => 'tc.TC_NAME',
+            5 => 'CAST(rev.MLR_REV AS VARCHAR)',
+            9 => 'usr.USR_NAME'
+        );
+        foreach ($column_search as $col_idx => $col_val) {
+            if (!empty($col_val) && isset($col_search_map[$col_idx])) {
+                $where .= " AND " . $col_search_map[$col_idx] . " LIKE ?";
+                $params[] = '%' . $col_val . '%';
+            }
+        }
+
+        // Count total (without filter)
+        $count_total_sql = "SELECT COUNT(*) as cnt FROM {$this->t('TMS_TOOL_MASTER_LIST_REV')} rev
+                           INNER JOIN {$this->t('TMS_TOOL_MASTER_LIST')} ml ON ml.ML_ID = rev.MLR_ML_ID
+                           WHERE ml.ML_TYPE = 1";
+        $count_total = $this->db_tms->query($count_total_sql)->row()->cnt;
+
+        // Count filtered
+        $count_filtered_sql = "SELECT COUNT(*) as cnt " . $base_from . $where;
+        $count_filtered = $this->db_tms->query($count_filtered_sql, $params)->row()->cnt;
+
+        // Order
+        $order_column = isset($columns[$order_col]) ? $columns[$order_col] : 'rev.MLR_ID';
+        $order_direction = strtoupper($order_dir) === 'ASC' ? 'ASC' : 'DESC';
+
+        // Data query with pagination (SQL Server syntax)
+        $data_sql = "SELECT 
+                        rev.MLR_ID AS TD_ID,
+                        ml.ML_TOOL_DRAW_NO AS TD_DRAWING_NO,
+                        rev.MLR_REV AS TD_REVISION,
+                        rev.MLR_STATUS AS TD_STATUS,
+                        CASE WHEN rev.MLR_EFFECTIVE_DATE IS NULL THEN '' ELSE CONVERT(VARCHAR(19), rev.MLR_EFFECTIVE_DATE, 120) END AS TD_EFFECTIVE_DATE,
+                        CASE WHEN rev.MLR_MODIFIED_DATE IS NULL THEN '' ELSE CONVERT(VARCHAR(19), rev.MLR_MODIFIED_DATE, 120) END AS TD_MODIFIED_DATE,
+                        ISNULL(usr.USR_NAME, '') AS TD_MODIFIED_BY,
+                        ISNULL(op.OP_NAME, '') AS TD_OPERATION_NAME,
+                        ISNULL(tc.TC_NAME, '') AS TD_TOOL_NAME,
+                        ISNULL(dbo.fnGetToolMasterListParts(ml.ML_ID), '') AS TD_PRODUCT_NAME
+                    " . $base_from . $where . "
+                    ORDER BY " . $order_column . " " . $order_direction . "
+                    OFFSET " . (int)$start . " ROWS FETCH NEXT " . (int)$length . " ROWS ONLY";
+
+        $result = $this->db_tms->query($data_sql, $params);
+        $data = $result ? $result->result_array() : array();
+
+        return array(
+            'recordsTotal' => (int)$count_total,
+            'recordsFiltered' => (int)$count_filtered,
+            'data' => $data
+        );
+    }
+
+    /**
      * Ambil list tool drawing (engineering) dari struktur SQL bawaan.
      * Hanya mengambil ML_TYPE = 1 (tool) dan status aktif/pending/inaktif berdasar MLR_STATUS.
      */

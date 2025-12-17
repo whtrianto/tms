@@ -36,171 +36,46 @@ class Tool_draw_engin extends MY_Controller
      */
     public function get_data()
     {
-        // Clear any output buffers to ensure clean JSON response
-        if (ob_get_level()) {
-            ob_clean();
-        }
-        
+        if (ob_get_level()) ob_clean();
         $this->output->set_content_type('application/json', 'UTF-8');
 
         try {
-            // Get DataTables parameters
             $draw = (int)$this->input->post('draw');
             $start = (int)$this->input->post('start');
             $length = (int)$this->input->post('length');
             $search = $this->input->post('search');
             $search_value = isset($search['value']) ? trim($search['value']) : '';
-            $columns = $this->input->post('columns');
             $order = $this->input->post('order');
             $order_column = isset($order[0]['column']) ? (int)$order[0]['column'] : 0;
-            $order_dir = isset($order[0]['dir']) ? strtoupper($order[0]['dir']) : 'DESC';
+            $order_dir = isset($order[0]['dir']) ? $order[0]['dir'] : 'desc';
 
-            // Get all data (with search if needed)
-            $all_data = $this->tool_draw_engin->get_all();
-            
-            // Ensure all_data is an array
-            if (!is_array($all_data)) {
-                $all_data = array();
-            }
-
-            // Column mapping for search
-            $column_map = array(
-                0 => 'TD_ID',
-                1 => 'TD_PRODUCT_NAME',
-                2 => 'TD_OPERATION_NAME',
-                3 => 'TD_DRAWING_NO',
-                4 => 'TD_TOOL_NAME',
-                5 => 'TD_REVISION',
-                6 => 'TD_STATUS',
-                7 => 'TD_EFFECTIVE_DATE',
-                8 => 'TD_MODIFIED_DATE',
-                9 => 'TD_MODIFIED_BY'
-            );
-
-            // Apply per-column search filters
-            $has_column_search = false;
-            $column_searches = array();
+            // Per-column search
+            $columns = $this->input->post('columns');
+            $column_search = array();
             if (is_array($columns)) {
                 foreach ($columns as $idx => $col) {
-                    $col_idx = (int)$idx;
-                    if (isset($column_map[$col_idx])) {
-                        $col_search = isset($col['search']['value']) ? trim($col['search']['value']) : '';
-                        if ($col_search !== '') {
-                            $has_column_search = true;
-                            $column_searches[$column_map[$col_idx]] = strtolower($col_search);
-                        }
+                    if (isset($col['search']['value']) && $col['search']['value'] !== '') {
+                        $column_search[$idx] = $col['search']['value'];
                     }
                 }
             }
 
-            // Apply search filter (global search or per-column search)
-            if ($search_value !== '' || $has_column_search) {
-                $filtered_data = array();
-                foreach ($all_data as $row) {
-                    $match = true;
-                    
-                    // Global search
-                    if ($search_value !== '') {
-                        $match_global = false;
-                        $search_lower = strtolower($search_value);
-                        
-                        // Search in all visible columns
-                        if (stripos(strtolower(isset($row['TD_ID']) ? (string)$row['TD_ID'] : ''), $search_lower) !== false) $match_global = true;
-                        if (stripos(strtolower(isset($row['TD_PRODUCT_NAME']) ? $row['TD_PRODUCT_NAME'] : ''), $search_lower) !== false) $match_global = true;
-                        if (stripos(strtolower(isset($row['TD_OPERATION_NAME']) ? $row['TD_OPERATION_NAME'] : ''), $search_lower) !== false) $match_global = true;
-                        if (stripos(strtolower(isset($row['TD_DRAWING_NO']) ? $row['TD_DRAWING_NO'] : ''), $search_lower) !== false) $match_global = true;
-                        if (stripos(strtolower(isset($row['TD_TOOL_NAME']) ? $row['TD_TOOL_NAME'] : ''), $search_lower) !== false) $match_global = true;
-                        if (stripos(strtolower(isset($row['TD_REVISION']) ? (string)$row['TD_REVISION'] : ''), $search_lower) !== false) $match_global = true;
-                        if (stripos(strtolower(isset($row['TD_EFFECTIVE_DATE']) ? $row['TD_EFFECTIVE_DATE'] : ''), $search_lower) !== false) $match_global = true;
-                        if (stripos(strtolower(isset($row['TD_MODIFIED_DATE']) ? $row['TD_MODIFIED_DATE'] : ''), $search_lower) !== false) $match_global = true;
-                        if (stripos(strtolower(isset($row['TD_MODIFIED_BY']) ? $row['TD_MODIFIED_BY'] : ''), $search_lower) !== false) $match_global = true;
-                        
-                        $match = $match && $match_global;
-                    }
-                    
-                    // Per-column search
-                    if ($has_column_search && $match) {
-                        foreach ($column_searches as $col_name => $col_search_value) {
-                            $row_value = '';
-                            if (isset($row[$col_name])) {
-                                if ($col_name === 'TD_STATUS') {
-                                    // Special handling for status
-                                    $st = (int)$row[$col_name];
-                                    if ($st === 2) $row_value = 'active';
-                                    elseif ($st === 1) $row_value = 'pending';
-                                    else $row_value = 'inactive';
-                                } else {
-                                    $row_value = strtolower((string)$row[$col_name]);
-                                }
-                            }
-                            if (stripos($row_value, $col_search_value) === false) {
-                                $match = false;
-                                break;
-                            }
-                        }
-                    }
-                    
-                    if ($match) {
-                        $filtered_data[] = $row;
-                    }
-                }
-                $all_data = $filtered_data;
-            }
-
-            $total_records = count($all_data);
-
-            // Apply sorting
-            $sort_column_map = array(
-                0 => 'TD_ID',
-                1 => 'TD_PRODUCT_NAME',
-                2 => 'TD_OPERATION_NAME',
-                3 => 'TD_DRAWING_NO',
-                4 => 'TD_TOOL_NAME',
-                5 => 'TD_REVISION',
-                6 => 'TD_STATUS',
-                7 => 'TD_EFFECTIVE_DATE',
-                8 => 'TD_MODIFIED_DATE',
-                9 => 'TD_MODIFIED_BY'
-            );
-
-            $sort_column = isset($sort_column_map[$order_column]) ? $sort_column_map[$order_column] : 'TD_ID';
-            
-            usort($all_data, function($a, $b) use ($sort_column, $order_dir) {
-                $val_a = isset($a[$sort_column]) ? $a[$sort_column] : '';
-                $val_b = isset($b[$sort_column]) ? $b[$sort_column] : '';
-                
-                // Special handling for date columns
-                if (in_array($sort_column, array('TD_EFFECTIVE_DATE', 'TD_MODIFIED_DATE'))) {
-                    // Convert date strings to timestamps for proper comparison
-                    $time_a = !empty($val_a) ? strtotime($val_a) : 0;
-                    $time_b = !empty($val_b) ? strtotime($val_b) : 0;
-                    $result = $time_a - $time_b;
-                } elseif (is_numeric($val_a) && is_numeric($val_b)) {
-                    $result = (int)$val_a - (int)$val_b;
-                } else {
-                    $result = strcmp((string)$val_a, (string)$val_b);
-                }
-                
-                return $order_dir === 'ASC' ? $result : -$result;
-            });
-
-            // Apply pagination
-            $paginated_data = array_slice($all_data, $start, $length);
+            // Use server-side pagination in database
+            $result = $this->tool_draw_engin->get_data_serverside($start, $length, $search_value, $order_column, $order_dir, $column_search);
 
             // Format data for DataTables
             $formatted_data = array();
-            foreach ($paginated_data as $row) {
+            foreach ($result['data'] as $row) {
                 $status_badge = '<span class="badge badge-secondary">Inactive</span>';
                 if (isset($row['TD_STATUS'])) {
                     $st = (int)$row['TD_STATUS'];
-                    if ($st === 2 || strtoupper((string)$row['TD_STATUS']) === 'ACTIVE') {
+                    if ($st === 2) {
                         $status_badge = '<span class="badge badge-success">Active</span>';
                     } elseif ($st === 1) {
                         $status_badge = '<span class="badge badge-warning">Pending</span>';
                     }
                 }
 
-                // Build action buttons HTML
                 $edit_url = base_url('Tool_engineering/tool_draw_engin/edit_page/' . (int)$row['TD_ID']);
                 $history_url = base_url('Tool_engineering/tool_draw_engin/history_page/' . (int)$row['TD_ID']);
                 $drawing_no_escaped = htmlspecialchars(isset($row['TD_DRAWING_NO']) ? $row['TD_DRAWING_NO'] : '', ENT_QUOTES, 'UTF-8');
@@ -211,15 +86,11 @@ class Tool_draw_engin extends MY_Controller
                     '<button class="btn btn-danger btn-sm btn-delete" data-id="' . (int)$row['TD_ID'] . '" data-name="' . $drawing_no_escaped . '">Del</button>' .
                     '</div>';
 
-                // Make Drawing No clickable
                 $drawing_no = isset($row['TD_DRAWING_NO']) ? $row['TD_DRAWING_NO'] : '';
                 $drawing_no_escaped = htmlspecialchars($drawing_no, ENT_QUOTES, 'UTF-8');
-                $drawing_no_html = '';
-                if ($drawing_no !== '') {
-                    $drawing_no_html = '<a href="javascript:void(0);" class="drawing-no-link" data-id="' . (int)$row['TD_ID'] . '" style="color: #007bff; text-decoration: underline; cursor: pointer;" title="Click to view details">' . $drawing_no_escaped . '</a>';
-                } else {
-                    $drawing_no_html = $drawing_no_escaped;
-                }
+                $drawing_no_html = $drawing_no !== '' 
+                    ? '<a href="javascript:void(0);" class="drawing-no-link" data-id="' . (int)$row['TD_ID'] . '" style="color: #007bff; text-decoration: underline; cursor: pointer;" title="Click to view details">' . $drawing_no_escaped . '</a>'
+                    : $drawing_no_escaped;
 
                 $formatted_data[] = array(
                     (int)$row['TD_ID'],
@@ -238,37 +109,22 @@ class Tool_draw_engin extends MY_Controller
 
             $response = array(
                 'draw' => $draw,
-                'recordsTotal' => $total_records,
-                'recordsFiltered' => $total_records,
+                'recordsTotal' => $result['recordsTotal'],
+                'recordsFiltered' => $result['recordsFiltered'],
                 'data' => $formatted_data
             );
 
-            $json_response = json_encode($response, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
-            
-            if ($json_response === false) {
-                log_message('error', '[Tool_draw_engin::get_data] JSON encode error: ' . json_last_error_msg());
-                $error_response = array(
-                    'draw' => $draw,
-                    'recordsTotal' => 0,
-                    'recordsFiltered' => 0,
-                    'data' => array(),
-                    'error' => 'Error encoding response'
-                );
-                $this->output->set_output(json_encode($error_response));
-            } else {
-                $this->output->set_output($json_response);
-            }
+            $this->output->set_output(json_encode($response, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
             
         } catch (Exception $e) {
             log_message('error', '[Tool_draw_engin::get_data] Exception: ' . $e->getMessage());
-            $error_response = array(
+            $this->output->set_output(json_encode(array(
                 'draw' => isset($draw) ? $draw : 0,
                 'recordsTotal' => 0,
                 'recordsFiltered' => 0,
                 'data' => array(),
-                'error' => 'Error loading data. Please check logs.'
-            );
-            $this->output->set_output(json_encode($error_response));
+                'error' => 'Error loading data.'
+            )));
         }
     }
 
