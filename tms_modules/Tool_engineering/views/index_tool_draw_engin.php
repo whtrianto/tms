@@ -272,79 +272,32 @@
             observer.observe(sidebar, { attributes: true });
         }
 
-        // Per-column search with debounce
-        var searchTimeout = {};
-        var isSearching = false;
-        
+        // Per-column search - only search on Enter key
         function setupColumnSearch() {
             // Remove all existing handlers first
-            $('.column-search').off('keyup keydown input');
+            $('.column-search').off('keyup keydown input click');
             
-            // Keyup handler with debounce
-            $('.column-search').on('keyup', function(e) {
-                // Don't trigger on arrow keys, enter, etc
-                if ([37, 38, 39, 40, 13, 9, 16, 17, 18, 20, 27].indexOf(e.keyCode) !== -1) {
-                    return;
-                }
+            // Prevent click from propagating to table header (sorting)
+            $('.column-search').on('click', function(e) {
+                e.stopPropagation();
+            });
+            
+            // Only search on Enter key
+            $('.column-search').on('keydown', function(e) {
+                e.stopPropagation(); // Prevent event from bubbling to header
                 
                 var $input = $(this);
                 var column = $input.data('column');
                 var value = $input.val();
                 
-                // Clear previous timeout for this column
-                if (searchTimeout[column]) {
-                    clearTimeout(searchTimeout[column]);
-                }
-                
-                // Set new timeout for debounce (wait 800ms after user stops typing)
-                searchTimeout[column] = setTimeout(function() {
-                    if (!isSearching) {
-                        isSearching = true;
-                        table.column(column).search(value).draw();
-                        setTimeout(function() {
-                            isSearching = false;
-                        }, 100);
-                    }
-                }, 800);
-            });
-
-            // Clear search on escape
-            $('.column-search').on('keydown', function(e) {
-                if (e.keyCode === 27) { // ESC key
-                    var $input = $(this);
-                    var column = $input.data('column');
-                    
-                    // Clear timeout
-                    if (searchTimeout[column]) {
-                        clearTimeout(searchTimeout[column]);
-                    }
-                    
+                if (e.keyCode === 13) { // Enter key
+                    e.preventDefault();
+                    table.column(column).search(value).draw();
+                } else if (e.keyCode === 27) { // ESC key - clear search
+                    e.preventDefault();
                     $input.val('');
                     table.column(column).search('').draw();
                 }
-            });
-            
-            // Also handle input event for paste/autocomplete
-            $('.column-search').on('input', function() {
-                var $input = $(this);
-                var column = $input.data('column');
-                var value = $input.val();
-                
-                // Clear previous timeout
-                if (searchTimeout[column]) {
-                    clearTimeout(searchTimeout[column]);
-                }
-                
-                // Set new timeout for debounce
-                searchTimeout[column] = setTimeout(function() {
-                    if (!isSearching) {
-                        isSearching = true;
-                        table.column(column).search(value).draw();
-                        setTimeout(function() {
-                            isSearching = false;
-                        }, 100);
-                    }
-                }, 800);
             });
         }
 

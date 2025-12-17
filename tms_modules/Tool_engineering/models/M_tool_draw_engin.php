@@ -12,15 +12,37 @@ defined('BASEPATH') or exit('No direct script access allowed');
  * - MS_MATERIAL (MAT_NAME)
  * - MS_MACHINES (MAC_NAME)   -> Machine Group
  * - MS_PARTS (PART_NAME)     -> Product (via TMS_TOOL_MASTER_LIST_PARTS)
+ * 
+ * NOTE: Ubah $db_name jika ingin mengganti database
  */
 class M_tool_draw_engin extends CI_Model
 {
     private $db_tms;
+    
+    // Database name - ubah nilai ini jika ingin ganti database
+    private $db_name = 'TMS_NEW';
+    
+    // Table prefix (akan di-set di constructor)
+    private $tbl;
+    
+    public $messages = '';
+    public $uid = '';
 
     public function __construct()
     {
         parent::__construct();
         $this->db_tms = $this->load->database('tms_NEW', true);
+        
+        // Set table prefix dengan database name
+        $this->tbl = $this->db_name . '.dbo.';
+    }
+
+    /**
+     * Helper: Get table name with database prefix
+     */
+    private function t($table)
+    {
+        return $this->tbl . $table;
     }
 
     /**
@@ -29,28 +51,6 @@ class M_tool_draw_engin extends CI_Model
      */
     public function get_all()
     {
-        $sql = "
-            SELECT
-                rev.MLR_ID          AS TD_ID,
-                ml.ML_TOOL_DRAW_NO  AS TD_DRAWING_NO,
-                rev.MLR_REV         AS TD_REVISION,
-                rev.MLR_STATUS      AS TD_STATUS,
-                rev.MLR_EFFECTIVE_DATE AS TD_EFFECTIVE_DATE,
-                rev.MLR_MODIFIED_DATE  AS TD_MODIFIED_DATE,
-                rev.MLR_MODIFIED_BY    AS TD_MODIFIED_BY,
-                op.OP_NAME          AS TD_OPERATION_NAME,
-                tc.TC_NAME          AS TD_TOOL_NAME,
-                mac.MAC_NAME        AS TD_MAC_NAME,
-                maker.MAKER_NAME    AS TD_MAKER_NAME,
-                mat.MAT_NAME        AS TD_MATERIAL_NAME,
-                part.PART_NAME      AS TD_PRODUCT_NAME
-            FROM TMS_NEW.dbo.TMS_TOOL_MASTER_LIST revParent -- dummy alias to keep syntax compatible
-            ";
-
-        // Query lengkap dengan JOIN
-        // Menggunakan fnGetToolMasterListParts untuk Product Name (seperti di VW_TOOL_MASTER_LIST)
-        // JOIN dengan MS_USERS untuk mendapatkan nama user dari MLR_MODIFIED_BY
-        // Format tanggal untuk konsistensi tampilan
         $sql = "
             SELECT
                 rev.MLR_ID          AS TD_ID,
@@ -74,20 +74,20 @@ class M_tool_draw_engin extends CI_Model
                 ISNULL(dbo.fnGetToolMasterListParts(ml.ML_ID), '') AS TD_PRODUCT_NAME,
                 ISNULL(rev.MLR_DRAWING, '') AS TD_DRAWING_FILE,
                 ISNULL(rev.MLR_SKETCH, '') AS TD_SKETCH_FILE
-            FROM TMS_NEW.dbo.TMS_TOOL_MASTER_LIST_REV rev
-            INNER JOIN TMS_NEW.dbo.TMS_TOOL_MASTER_LIST ml
+            FROM {$this->t('TMS_TOOL_MASTER_LIST_REV')} rev
+            INNER JOIN {$this->t('TMS_TOOL_MASTER_LIST')} ml
                 ON ml.ML_ID = rev.MLR_ML_ID
-            LEFT JOIN TMS_NEW.dbo.MS_OPERATION op
+            LEFT JOIN {$this->t('MS_OPERATION')} op
                 ON op.OP_ID = rev.MLR_OP_ID
-            LEFT JOIN TMS_NEW.dbo.MS_TOOL_CLASS tc
+            LEFT JOIN {$this->t('MS_TOOL_CLASS')} tc
                 ON tc.TC_ID = rev.MLR_TC_ID
-            LEFT JOIN TMS_NEW.dbo.MS_MAKER maker
+            LEFT JOIN {$this->t('MS_MAKER')} maker
                 ON maker.MAKER_ID = rev.MLR_MAKER_ID
-            LEFT JOIN TMS_NEW.dbo.MS_MATERIAL mat
+            LEFT JOIN {$this->t('MS_MATERIAL')} mat
                 ON mat.MAT_ID = rev.MLR_MAT_ID
-            LEFT JOIN TMS_NEW.dbo.MS_MACHINES mac
+            LEFT JOIN {$this->t('MS_MACHINES')} mac
                 ON mac.MAC_ID = rev.MLR_MACG_ID
-            LEFT JOIN TMS_NEW.dbo.MS_USERS usr
+            LEFT JOIN {$this->t('MS_USERS')} usr
                 ON usr.USR_ID = rev.MLR_MODIFIED_BY
             WHERE ml.ML_TYPE = 1
             ORDER BY rev.MLR_ID DESC
@@ -130,22 +130,22 @@ class M_tool_draw_engin extends CI_Model
                 part.PART_NAME      AS TD_PRODUCT_NAME,
                 ISNULL(rev.MLR_DRAWING, '') AS TD_DRAWING_FILE,
                 ISNULL(rev.MLR_SKETCH, '') AS TD_SKETCH_FILE
-            FROM TMS_NEW.dbo.TMS_TOOL_MASTER_LIST_REV rev
-            INNER JOIN TMS_NEW.dbo.TMS_TOOL_MASTER_LIST ml
+            FROM {$this->t('TMS_TOOL_MASTER_LIST_REV')} rev
+            INNER JOIN {$this->t('TMS_TOOL_MASTER_LIST')} ml
                 ON ml.ML_ID = rev.MLR_ML_ID
-            LEFT JOIN TMS_NEW.dbo.MS_OPERATION op
+            LEFT JOIN {$this->t('MS_OPERATION')} op
                 ON op.OP_ID = rev.MLR_OP_ID
-            LEFT JOIN TMS_NEW.dbo.MS_TOOL_CLASS tc
+            LEFT JOIN {$this->t('MS_TOOL_CLASS')} tc
                 ON tc.TC_ID = rev.MLR_TC_ID
-            LEFT JOIN TMS_NEW.dbo.MS_MAKER maker
+            LEFT JOIN {$this->t('MS_MAKER')} maker
                 ON maker.MAKER_ID = rev.MLR_MAKER_ID
-            LEFT JOIN TMS_NEW.dbo.MS_MATERIAL mat
+            LEFT JOIN {$this->t('MS_MATERIAL')} mat
                 ON mat.MAT_ID = rev.MLR_MAT_ID
-            LEFT JOIN TMS_NEW.dbo.MS_MACHINES mac
+            LEFT JOIN {$this->t('MS_MACHINES')} mac
                 ON mac.MAC_ID = rev.MLR_MACG_ID
-            LEFT JOIN TMS_NEW.dbo.TMS_TOOL_MASTER_LIST_PARTS mlparts
+            LEFT JOIN {$this->t('TMS_TOOL_MASTER_LIST_PARTS')} mlparts
                 ON mlparts.TMLP_ML_ID = ml.ML_ID
-            LEFT JOIN TMS_NEW.dbo.MS_PARTS part
+            LEFT JOIN {$this->t('MS_PARTS')} part
                 ON part.PART_ID = mlparts.TMLP_PART_ID
             WHERE rev.MLR_ID = ? AND ml.ML_TYPE = 1
         ";
@@ -163,7 +163,7 @@ class M_tool_draw_engin extends CI_Model
     public function get_products()
     {
         $sql = "SELECT PART_ID AS PRODUCT_ID, PART_NAME AS PRODUCT_NAME 
-                FROM TMS_NEW.dbo.MS_PARTS 
+                FROM {$this->t('MS_PARTS')} 
                 ORDER BY PART_NAME ASC";
         $q = $this->db_tms->query($sql);
         if ($q && $q->num_rows() > 0) {
@@ -178,7 +178,7 @@ class M_tool_draw_engin extends CI_Model
     public function get_operations()
     {
         $sql = "SELECT OP_ID AS OPERATION_ID, OP_NAME AS OPERATION_NAME 
-                FROM TMS_NEW.dbo.MS_OPERATION 
+                FROM {$this->t('MS_OPERATION')} 
                 ORDER BY OP_NAME ASC";
         $q = $this->db_tms->query($sql);
         if ($q && $q->num_rows() > 0) {
@@ -193,7 +193,7 @@ class M_tool_draw_engin extends CI_Model
     public function get_tools()
     {
         $sql = "SELECT TC_ID AS TOOL_ID, TC_NAME AS TOOL_NAME 
-                FROM TMS_NEW.dbo.MS_TOOL_CLASS 
+                FROM {$this->t('MS_TOOL_CLASS')} 
                 ORDER BY TC_NAME ASC";
         $q = $this->db_tms->query($sql);
         if ($q && $q->num_rows() > 0) {
@@ -210,7 +210,7 @@ class M_tool_draw_engin extends CI_Model
         $id = (int)$id;
         if ($id <= 0) return null;
         $sql = "SELECT TC_ID AS TOOL_ID, TC_NAME AS TOOL_NAME 
-                FROM TMS_NEW.dbo.MS_TOOL_CLASS 
+                FROM {$this->t('MS_TOOL_CLASS')} 
                 WHERE TC_ID = ?";
         $q = $this->db_tms->query($sql, array($id));
         if ($q && $q->num_rows() > 0) {
@@ -225,7 +225,7 @@ class M_tool_draw_engin extends CI_Model
     public function get_materials()
     {
         $sql = "SELECT MAT_ID AS MATERIAL_ID, MAT_NAME AS MATERIAL_NAME 
-                FROM TMS_NEW.dbo.MS_MATERIAL 
+                FROM {$this->t('MS_MATERIAL')} 
                 ORDER BY MAT_NAME ASC";
         $q = $this->db_tms->query($sql);
         if ($q && $q->num_rows() > 0) {
@@ -240,7 +240,7 @@ class M_tool_draw_engin extends CI_Model
     public function get_makers()
     {
         $sql = "SELECT MAKER_ID, MAKER_NAME 
-                FROM TMS_NEW.dbo.MS_MAKER 
+                FROM {$this->t('MS_MAKER')} 
                 ORDER BY MAKER_NAME ASC";
         $q = $this->db_tms->query($sql);
         if ($q && $q->num_rows() > 0) {
@@ -255,7 +255,7 @@ class M_tool_draw_engin extends CI_Model
     public function get_machine_groups()
     {
         $sql = "SELECT MAC_ID AS MACHINE_ID, MAC_NAME AS MACHINE_NAME 
-                FROM TMS_NEW.dbo.MS_MACHINES 
+                FROM {$this->t('MS_MACHINES')} 
                 ORDER BY MAC_NAME ASC";
         $q = $this->db_tms->query($sql);
         if ($q && $q->num_rows() > 0) {
@@ -295,14 +295,14 @@ class M_tool_draw_engin extends CI_Model
                 parent_rev.MLR_REV AS BOM_REV,
                 parent_rev.MLR_STATUS AS BOM_STATUS,
                 ISNULL(part.PART_NAME, '') AS PRODUCT
-            FROM TMS_NEW.dbo.TMS_TOOL_MASTER_LIST_MEMBERS members
-            INNER JOIN TMS_NEW.dbo.TMS_TOOL_MASTER_LIST_REV parent_rev 
+            FROM {$this->t('TMS_TOOL_MASTER_LIST_MEMBERS')} members
+            INNER JOIN {$this->t('TMS_TOOL_MASTER_LIST_REV')} parent_rev 
                 ON parent_rev.MLR_ID = members.TB_MLR_PARENT_ID
-            INNER JOIN TMS_NEW.dbo.TMS_TOOL_MASTER_LIST parent_ml 
+            INNER JOIN {$this->t('TMS_TOOL_MASTER_LIST')} parent_ml 
                 ON parent_ml.ML_ID = parent_rev.MLR_ML_ID
-            LEFT JOIN TMS_NEW.dbo.TMS_TOOL_MASTER_LIST_PARTS mlparts 
+            LEFT JOIN {$this->t('TMS_TOOL_MASTER_LIST_PARTS')} mlparts 
                 ON mlparts.TMLP_ML_ID = parent_ml.ML_ID
-            LEFT JOIN TMS_NEW.dbo.MS_PARTS part 
+            LEFT JOIN {$this->t('MS_PARTS')} part 
                 ON part.PART_ID = mlparts.TMLP_PART_ID
             WHERE members.TB_MLR_CHILD_ID = ?
               AND parent_ml.ML_TYPE = 2
@@ -346,7 +346,7 @@ class M_tool_draw_engin extends CI_Model
         $this->db_tms->trans_start();
 
         // Check if ML_TOOL_DRAW_NO already exists
-        $check_sql = "SELECT ML_ID FROM TMS_NEW.dbo.TMS_TOOL_MASTER_LIST WHERE ML_TOOL_DRAW_NO = ?";
+        $check_sql = "SELECT ML_ID FROM {$this->t('TMS_TOOL_MASTER_LIST')} WHERE ML_TOOL_DRAW_NO = ?";
         $check_q = $this->db_tms->query($check_sql, array($drawing_no));
         $ml_id = null;
 
@@ -355,7 +355,7 @@ class M_tool_draw_engin extends CI_Model
             $ml_id = (int)$check_q->row()->ML_ID;
         } else {
             // Insert new TMS_TOOL_MASTER_LIST
-            $ml_insert_sql = "INSERT INTO TMS_NEW.dbo.TMS_TOOL_MASTER_LIST (ML_TOOL_DRAW_NO, ML_TYPE) VALUES (?, 1)";
+            $ml_insert_sql = "INSERT INTO {$this->t('TMS_TOOL_MASTER_LIST')} (ML_TOOL_DRAW_NO, ML_TYPE) VALUES (?, 1)";
             $this->db_tms->query($ml_insert_sql, array($drawing_no));
             $ml_id = (int)$this->db_tms->insert_id();
             if ($ml_id <= 0) {
@@ -365,7 +365,7 @@ class M_tool_draw_engin extends CI_Model
 
             // Insert product relationship
             if ($ml_id > 0 && $product_id > 0) {
-                $parts_sql = "INSERT INTO TMS_NEW.dbo.TMS_TOOL_MASTER_LIST_PARTS (TMLP_ML_ID, TMLP_PART_ID) VALUES (?, ?)";
+                $parts_sql = "INSERT INTO {$this->t('TMS_TOOL_MASTER_LIST_PARTS')} (TMLP_ML_ID, TMLP_PART_ID) VALUES (?, ?)";
                 $this->db_tms->query($parts_sql, array($ml_id, $product_id));
             }
         }
@@ -381,7 +381,7 @@ class M_tool_draw_engin extends CI_Model
         
         // Use effective_date if provided, otherwise use GETDATE()
         if ($effective_date !== null) {
-            $rev_sql = "INSERT INTO TMS_NEW.dbo.TMS_TOOL_MASTER_LIST_REV 
+            $rev_sql = "INSERT INTO {$this->t('TMS_TOOL_MASTER_LIST_REV')} 
                         (MLR_ML_ID, MLR_OP_ID, MLR_TC_ID, MLR_MAKER_ID, MLR_MAT_ID, MLR_MACG_ID, MLR_REV, MLR_STATUS, MLR_EFFECTIVE_DATE, MLR_MODIFIED_DATE, MLR_MODIFIED_BY) 
                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, GETDATE(), ?)";
             $this->db_tms->query($rev_sql, array(
@@ -389,7 +389,7 @@ class M_tool_draw_engin extends CI_Model
                 $revision, $status, $effective_date, $modified_by
             ));
         } else {
-            $rev_sql = "INSERT INTO TMS_NEW.dbo.TMS_TOOL_MASTER_LIST_REV 
+            $rev_sql = "INSERT INTO {$this->t('TMS_TOOL_MASTER_LIST_REV')} 
                         (MLR_ML_ID, MLR_OP_ID, MLR_TC_ID, MLR_MAKER_ID, MLR_MAT_ID, MLR_MACG_ID, MLR_REV, MLR_STATUS, MLR_EFFECTIVE_DATE, MLR_MODIFIED_DATE, MLR_MODIFIED_BY) 
                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, GETDATE(), GETDATE(), ?)";
             $this->db_tms->query($rev_sql, array(
@@ -442,17 +442,17 @@ class M_tool_draw_engin extends CI_Model
 
         // Update TMS_TOOL_MASTER_LIST if drawing_no changed
         if ($ml_id > 0 && $drawing_no !== '') {
-            $update_ml_sql = "UPDATE TMS_NEW.dbo.TMS_TOOL_MASTER_LIST SET ML_TOOL_DRAW_NO = ? WHERE ML_ID = ?";
+            $update_ml_sql = "UPDATE {$this->t('TMS_TOOL_MASTER_LIST')} SET ML_TOOL_DRAW_NO = ? WHERE ML_ID = ?";
             $this->db_tms->query($update_ml_sql, array($drawing_no, $ml_id));
         }
 
         // Update product relationship if changed
         if ($ml_id > 0 && $product_id > 0) {
             // Delete old relationship
-            $del_parts_sql = "DELETE FROM TMS_NEW.dbo.TMS_TOOL_MASTER_LIST_PARTS WHERE TMLP_ML_ID = ?";
+            $del_parts_sql = "DELETE FROM {$this->t('TMS_TOOL_MASTER_LIST_PARTS')} WHERE TMLP_ML_ID = ?";
             $this->db_tms->query($del_parts_sql, array($ml_id));
             // Insert new relationship
-            $parts_sql = "INSERT INTO TMS_NEW.dbo.TMS_TOOL_MASTER_LIST_PARTS (TMLP_ML_ID, TMLP_PART_ID) VALUES (?, ?)";
+            $parts_sql = "INSERT INTO {$this->t('TMS_TOOL_MASTER_LIST_PARTS')} (TMLP_ML_ID, TMLP_PART_ID) VALUES (?, ?)";
             $this->db_tms->query($parts_sql, array($ml_id, $product_id));
         }
 
@@ -465,7 +465,7 @@ class M_tool_draw_engin extends CI_Model
             $effective_date_sql = ', MLR_EFFECTIVE_DATE = ?';
         }
         
-        $update_rev_sql = "UPDATE TMS_NEW.dbo.TMS_TOOL_MASTER_LIST_REV 
+        $update_rev_sql = "UPDATE {$this->t('TMS_TOOL_MASTER_LIST_REV')} 
                           SET MLR_OP_ID = ?, MLR_TC_ID = ?, MLR_MAT_ID = ?, MLR_MAKER_ID = ?, MLR_MACG_ID = ?, MLR_STATUS = ?, 
                               MLR_REV = ?, MLR_MODIFIED_DATE = GETDATE(), MLR_MODIFIED_BY = ?" . $effective_date_sql . "
                           WHERE MLR_ID = ?";
@@ -511,20 +511,20 @@ class M_tool_draw_engin extends CI_Model
         $ml_id = isset($current['TD_ML_ID']) ? (int)$current['TD_ML_ID'] : 0;
 
         // Delete revision
-        $del_rev_sql = "DELETE FROM TMS_NEW.dbo.TMS_TOOL_MASTER_LIST_REV WHERE MLR_ID = ?";
+        $del_rev_sql = "DELETE FROM {$this->t('TMS_TOOL_MASTER_LIST_REV')} WHERE MLR_ID = ?";
         $this->db_tms->query($del_rev_sql, array($id));
 
         // Check if there are other revisions for this ML_ID
         if ($ml_id > 0) {
-            $check_rev_sql = "SELECT COUNT(*) AS cnt FROM TMS_NEW.dbo.TMS_TOOL_MASTER_LIST_REV WHERE MLR_ML_ID = ?";
+            $check_rev_sql = "SELECT COUNT(*) AS cnt FROM {$this->t('TMS_TOOL_MASTER_LIST_REV')} WHERE MLR_ML_ID = ?";
             $check_q = $this->db_tms->query($check_rev_sql, array($ml_id));
             if ($check_q && $check_q->num_rows() > 0) {
                 $cnt = (int)$check_q->row()->cnt;
                 if ($cnt == 0) {
                     // No more revisions, delete master list and parts
-                    $del_parts_sql = "DELETE FROM TMS_NEW.dbo.TMS_TOOL_MASTER_LIST_PARTS WHERE TMLP_ML_ID = ?";
+                    $del_parts_sql = "DELETE FROM {$this->t('TMS_TOOL_MASTER_LIST_PARTS')} WHERE TMLP_ML_ID = ?";
                     $this->db_tms->query($del_parts_sql, array($ml_id));
-                    $del_ml_sql = "DELETE FROM TMS_NEW.dbo.TMS_TOOL_MASTER_LIST WHERE ML_ID = ?";
+                    $del_ml_sql = "DELETE FROM {$this->t('TMS_TOOL_MASTER_LIST')} WHERE ML_ID = ?";
                     $this->db_tms->query($del_ml_sql, array($ml_id));
                 }
             }
@@ -588,24 +588,24 @@ class M_tool_draw_engin extends CI_Model
                 ISNULL(mac.MAC_NAME, '') AS TD_MAC_NAME,
                 part.PART_ID        AS TD_PRODUCT_ID,
                 ISNULL(part.PART_NAME, '') AS TD_PRODUCT_NAME
-            FROM TMS_NEW.dbo.TMS_TOOL_MASTER_LIST_REV rev
-            INNER JOIN TMS_NEW.dbo.TMS_TOOL_MASTER_LIST ml
+            FROM {$this->t('TMS_TOOL_MASTER_LIST_REV')} rev
+            INNER JOIN {$this->t('TMS_TOOL_MASTER_LIST')} ml
                 ON ml.ML_ID = rev.MLR_ML_ID
-            LEFT JOIN TMS_NEW.dbo.MS_OPERATION op
+            LEFT JOIN {$this->t('MS_OPERATION')} op
                 ON op.OP_ID = rev.MLR_OP_ID
-            LEFT JOIN TMS_NEW.dbo.MS_TOOL_CLASS tc
+            LEFT JOIN {$this->t('MS_TOOL_CLASS')} tc
                 ON tc.TC_ID = rev.MLR_TC_ID
-            LEFT JOIN TMS_NEW.dbo.MS_MAKER maker
+            LEFT JOIN {$this->t('MS_MAKER')} maker
                 ON maker.MAKER_ID = rev.MLR_MAKER_ID
-            LEFT JOIN TMS_NEW.dbo.MS_MATERIAL mat
+            LEFT JOIN {$this->t('MS_MATERIAL')} mat
                 ON mat.MAT_ID = rev.MLR_MAT_ID
-            LEFT JOIN TMS_NEW.dbo.MS_MACHINES mac
+            LEFT JOIN {$this->t('MS_MACHINES')} mac
                 ON mac.MAC_ID = rev.MLR_MACG_ID
-            LEFT JOIN TMS_NEW.dbo.MS_USERS usr
+            LEFT JOIN {$this->t('MS_USERS')} usr
                 ON usr.USR_ID = rev.MLR_MODIFIED_BY
-            LEFT JOIN TMS_NEW.dbo.TMS_TOOL_MASTER_LIST_PARTS mlparts
+            LEFT JOIN {$this->t('TMS_TOOL_MASTER_LIST_PARTS')} mlparts
                 ON mlparts.TMLP_ML_ID = ml.ML_ID
-            LEFT JOIN TMS_NEW.dbo.MS_PARTS part
+            LEFT JOIN {$this->t('MS_PARTS')} part
                 ON part.PART_ID = mlparts.TMLP_PART_ID
             WHERE rev.MLR_ML_ID = ? AND ml.ML_TYPE = 1
             ORDER BY rev.MLR_REV DESC, rev.MLR_MODIFIED_DATE DESC
@@ -617,8 +617,4 @@ class M_tool_draw_engin extends CI_Model
         }
         return $q->result_array();
     }
-
-    public $messages = '';
-    public $uid = '';
 }
-
