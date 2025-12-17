@@ -4,9 +4,9 @@ defined('BASEPATH') or exit('No direct script access allowed');
 if (!class_exists('M_tool_draw_tooling')) {
     class M_tool_draw_tooling extends CI_Model
     {
-    // Using TMS_TACI_SITE database tables: TMS_TOOL_MASTER_LIST and TMS_TOOL_MASTER_LIST_REV
-    private $table_rev = 'TMS_TACI_SITE.dbo.TMS_TOOL_MASTER_LIST_REV';
-    private $table_ml = 'TMS_TACI_SITE.dbo.TMS_TOOL_MASTER_LIST';
+    // Using TMS_NEW database tables: TMS_TOOL_MASTER_LIST and TMS_TOOL_MASTER_LIST_REV
+    private $table_rev = 'TMS_NEW.dbo.TMS_TOOL_MASTER_LIST_REV';
+    private $table_ml = 'TMS_NEW.dbo.TMS_TOOL_MASTER_LIST';
     public $tms_db;
     public $messages = '';
     public $uid = ''; // will receive username from controller
@@ -32,9 +32,9 @@ if (!class_exists('M_tool_draw_tooling')) {
                     mt.MAT_NAME
                 FROM {$this->table_rev} mlr
                 LEFT JOIN {$this->table_ml} ml ON mlr.MLR_ML_ID = ml.ML_ID
-                LEFT JOIN TMS_TACI_SITE.dbo.MS_TOOL_CLASS tc ON mlr.MLR_TC_ID = tc.TC_ID
-                LEFT JOIN TMS_TACI_SITE.dbo.MS_MAKER mk ON mlr.MLR_MAKER_ID = mk.MAKER_ID
-                LEFT JOIN TMS_TACI_SITE.dbo.MS_MATERIAL mt ON mlr.MLR_MAT_ID = mt.MAT_ID
+                LEFT JOIN TMS_NEW.dbo.MS_TOOL_CLASS tc ON mlr.MLR_TC_ID = tc.TC_ID
+                LEFT JOIN TMS_NEW.dbo.MS_MAKER mk ON mlr.MLR_MAKER_ID = mk.MAKER_ID
+                LEFT JOIN TMS_NEW.dbo.MS_MATERIAL mt ON mlr.MLR_MAT_ID = mt.MAT_ID
                 ORDER BY mlr.MLR_ID DESC";
 
         $result = $this->tms_db->query($sql);
@@ -63,10 +63,10 @@ if (!class_exists('M_tool_draw_tooling')) {
                     op.OP_NAME AS OPERATION_NAME
                 FROM {$this->table_rev} mlr
                 LEFT JOIN {$this->table_ml} ml ON mlr.MLR_ML_ID = ml.ML_ID
-                LEFT JOIN TMS_TACI_SITE.dbo.MS_TOOL_CLASS tc ON mlr.MLR_TC_ID = tc.TC_ID
-                LEFT JOIN TMS_TACI_SITE.dbo.MS_MAKER mk ON mlr.MLR_MAKER_ID = mk.MAKER_ID
-                LEFT JOIN TMS_TACI_SITE.dbo.MS_MATERIAL mt ON mlr.MLR_MAT_ID = mt.MAT_ID
-                LEFT JOIN TMS_TACI_SITE.dbo.MS_OPERATION op ON mlr.MLR_OP_ID = op.OP_ID
+                LEFT JOIN TMS_NEW.dbo.MS_TOOL_CLASS tc ON mlr.MLR_TC_ID = tc.TC_ID
+                LEFT JOIN TMS_NEW.dbo.MS_MAKER mk ON mlr.MLR_MAKER_ID = mk.MAKER_ID
+                LEFT JOIN TMS_NEW.dbo.MS_MATERIAL mt ON mlr.MLR_MAT_ID = mt.MAT_ID
+                LEFT JOIN TMS_NEW.dbo.MS_OPERATION op ON mlr.MLR_OP_ID = op.OP_ID
                 WHERE mlr.MLR_ID = ?";
 
         $result = $this->tms_db->query($sql, array($id));
@@ -81,7 +81,7 @@ if (!class_exists('M_tool_draw_tooling')) {
      */
     public function get_tools()
     {
-        $table = 'TMS_TACI_SITE.dbo.MS_TOOL_CLASS';
+        $table = 'TMS_NEW.dbo.MS_TOOL_CLASS';
         $result = $this->tms_db
             ->select('TC_ID, TC_NAME, TC_DESC, TC_ABBR, TC_TYPE')
             ->from($table)
@@ -98,7 +98,7 @@ if (!class_exists('M_tool_draw_tooling')) {
     {
         $id = (int)$id;
         if ($id <= 0) return null;
-        $table = 'TMS_TACI_SITE.dbo.MS_TOOL_CLASS';
+        $table = 'TMS_NEW.dbo.MS_TOOL_CLASS';
         $result = $this->tms_db->select('TC_ID, TC_NAME')->from($table)->where('TC_ID', $id)->limit(1)->get();
         if ($result && $result->num_rows() > 0) return $result->row_array();
         return null;
@@ -109,7 +109,7 @@ if (!class_exists('M_tool_draw_tooling')) {
      */
     public function get_makers()
     {
-        $table = 'TMS_TACI_SITE.dbo.MS_MAKER';
+        $table = 'TMS_NEW.dbo.MS_MAKER';
         $result = $this->tms_db
             ->select('MAKER_ID, MAKER_NAME, MAKER_CODE, MAKER_DESC')
             ->from($table)
@@ -126,7 +126,7 @@ if (!class_exists('M_tool_draw_tooling')) {
     {
         $id = (int)$id;
         if ($id <= 0) return null;
-        $table = 'TMS_TACI_SITE.dbo.MS_MAKER';
+        $table = 'TMS_NEW.dbo.MS_MAKER';
         $result = $this->tms_db->select('MAKER_ID, MAKER_NAME')->from($table)->where('MAKER_ID', $id)->limit(1)->get();
         if ($result && $result->num_rows() > 0) return $result->row_array();
         return null;
@@ -137,7 +137,7 @@ if (!class_exists('M_tool_draw_tooling')) {
      */
     public function get_materials()
     {
-        $table = 'TMS_TACI_SITE.dbo.MS_MATERIAL';
+        $table = 'TMS_NEW.dbo.MS_MATERIAL';
         $result = $this->tms_db
             ->select('MAT_ID, MAT_NAME, MAT_DESC, MAT_CODE')
             ->from($table)
@@ -154,7 +154,7 @@ if (!class_exists('M_tool_draw_tooling')) {
     {
         $id = (int)$id;
         if ($id <= 0) return null;
-        $table = 'TMS_TACI_SITE.dbo.MS_MATERIAL';
+        $table = 'TMS_NEW.dbo.MS_MATERIAL';
         $result = $this->tms_db->select('MAT_ID, MAT_NAME')->from($table)->where('MAT_ID', $id)->limit(1)->get();
         if ($result && $result->num_rows() > 0) return $result->row_array();
         return null;
@@ -360,10 +360,10 @@ if (!class_exists('M_tool_draw_tooling')) {
                     op.OP_NAME AS OPERATION_NAME
                 FROM {$this->table_rev} mlr
                 LEFT JOIN {$this->table_ml} ml ON mlr.MLR_ML_ID = ml.ML_ID
-                LEFT JOIN TMS_TACI_SITE.dbo.MS_TOOL_CLASS tc ON mlr.MLR_TC_ID = tc.TC_ID
-                LEFT JOIN TMS_TACI_SITE.dbo.MS_MAKER mk ON mlr.MLR_MAKER_ID = mk.MAKER_ID
-                LEFT JOIN TMS_TACI_SITE.dbo.MS_MATERIAL mt ON mlr.MLR_MAT_ID = mt.MAT_ID
-                LEFT JOIN TMS_TACI_SITE.dbo.MS_OPERATION op ON mlr.MLR_OP_ID = op.OP_ID
+                LEFT JOIN TMS_NEW.dbo.MS_TOOL_CLASS tc ON mlr.MLR_TC_ID = tc.TC_ID
+                LEFT JOIN TMS_NEW.dbo.MS_MAKER mk ON mlr.MLR_MAKER_ID = mk.MAKER_ID
+                LEFT JOIN TMS_NEW.dbo.MS_MATERIAL mt ON mlr.MLR_MAT_ID = mt.MAT_ID
+                LEFT JOIN TMS_NEW.dbo.MS_OPERATION op ON mlr.MLR_OP_ID = op.OP_ID
                 WHERE mlr.MLR_ML_ID = ?
                 ORDER BY mlr.MLR_REV DESC";
 

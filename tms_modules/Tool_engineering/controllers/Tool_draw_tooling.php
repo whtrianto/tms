@@ -3,7 +3,7 @@ defined('BASEPATH') or exit('No direct script access allowed');
 
 /**
  * Tool Drawing Tooling Controller
- * Uses TMS_TACI_SITE database tables: TMS_TOOL_MASTER_LIST, TMS_TOOL_MASTER_LIST_REV
+ * Uses TMS_NEW database tables: TMS_TOOL_MASTER_LIST, TMS_TOOL_MASTER_LIST_REV
  * 
  * @property M_tool_draw_tooling $tool_draw_tooling
  */
@@ -22,7 +22,7 @@ class Tool_draw_tooling extends MY_Controller
         $this->uid = (string) ($username_from_session ?: 'SYSTEM');
         log_message('debug', '[Tool_draw_tooling::__construct] username_from_session=' . var_export($username_from_session, true) . ', uid="' . $this->uid . '"');
 
-        // load tooling model (uses TMS_TACI_SITE database)
+        // load tooling model (uses TMS_NEW database)
         $this->load->model('M_tool_draw_tooling', 'tool_draw_tooling');
         $this->tool_draw_tooling->uid = $this->uid;
         log_message('debug', '[Tool_draw_tooling::__construct] tooling model uid set to "' . $this->tool_draw_tooling->uid . '"');
@@ -33,7 +33,7 @@ class Tool_draw_tooling extends MY_Controller
     public function index()
     {
         $data = array();
-        // Use tooling model which reads from TMS_TACI_SITE tables
+        // Use tooling model which reads from TMS_NEW tables
         $data['list_data'] = $this->tool_draw_tooling->get_all();
 
         // Provide master lookups from tooling model

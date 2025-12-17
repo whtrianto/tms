@@ -3,7 +3,7 @@ defined('BASEPATH') or exit('No direct script access allowed');
 
 /**
  * Listing Tool BOM untuk kebutuhan Tooling (hanya edit & history)
- * Data diambil dari tabel TMS_TACI_SITE (TMS_TOOL_MASTER_LIST_MEMBERS, etc.)
+ * Data diambil dari tabel TMS_NEW (TMS_TOOL_MASTER_LIST_MEMBERS, etc.)
  * 
  * @property M_tool_bom_engin $tool_bom_engin
  * @property M_tool_draw_tooling $tool_draw_tooling
@@ -114,7 +114,7 @@ class Tool_bom_tooling extends MY_Controller
         $data['machine_groups'] = $this->tool_bom_engin->get_machine_groups();
 
         // Additional Information: Tool Drawing Tooling data
-        // Use tooling model which reads from TMS_TACI_SITE tables
+        // Use tooling model which reads from TMS_NEW tables
         $data['additional_info'] = $this->tool_draw_tooling->get_all();
         $data['materials'] = $this->tool_draw_tooling->get_materials();
         $data['makers'] = $this->tool_draw_tooling->get_makers();
