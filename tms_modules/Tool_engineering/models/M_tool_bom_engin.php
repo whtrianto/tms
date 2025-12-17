@@ -1,619 +1,245 @@
 <?php
 defined('BASEPATH') or exit('No direct script access allowed');
 
-if (!class_exists('M_tool_bom_engin')) {
-    class M_tool_bom_engin extends CI_Model
+/**
+ * Model untuk Tool BOM (Engineering)
+ * ML_TYPE = 2 untuk BOM
+ */
+class M_tool_bom_engin extends CI_Model
+{
+    private $db_tms;
+    private $db_name = 'TMS_NEW';
+    private $tbl;
+    
+    public $messages = '';
+    public $uid = '';
+
+    public function __construct()
     {
-        private $table = 'TMS_NEW.dbo.TMS_TC_TOOL_BOM_ENGIN';
-        public $tms_db;
-        public $messages = '';
-        public $uid = ''; // will receive username from controller
+        parent::__construct();
+        $this->db_tms = $this->load->database('tms_NEW', true);
+        $this->tbl = $this->db_name . '.dbo.';
+    }
 
-        public function __construct()
-        {
-            parent::__construct();
-            try {
-                $this->tms_db = $this->load->database('tms_db', TRUE);
-                if (!$this->tms_db) {
-                    log_message('error', '[M_tool_bom_engin::__construct] Failed to load database tms_db');
-                }
-            } catch (Exception $e) {
-                log_message('error', '[M_tool_bom_engin::__construct] Exception loading database: ' . $e->getMessage());
+    private function t($table)
+    {
+        return $this->tbl . $table;
+    }
+
+    /**
+     * Server-side DataTable processing
+     */
+    public function get_data_serverside($start, $length, $search, $order_col, $order_dir, $column_search = array())
+    {
+        $columns = array(
+            0 => 'rev.MLR_ID',
+            1 => 'ml.ML_TOOL_DRAW_NO',
+            2 => 'rev.MLR_DESC',
+            3 => 'TD_PRODUCT_NAME',
+            4 => 'mac.MAC_NAME',
+            5 => 'rev.MLR_REV',
+            6 => 'rev.MLR_STATUS',
+            7 => 'usr.USR_NAME'
+        );
+
+        $base_from = "
+            FROM {$this->t('TMS_TOOL_MASTER_LIST_REV')} rev
+            INNER JOIN {$this->t('TMS_TOOL_MASTER_LIST')} ml ON ml.ML_ID = rev.MLR_ML_ID
+            LEFT JOIN {$this->t('MS_MACHINES')} mac ON mac.MAC_ID = rev.MLR_MACG_ID
+            LEFT JOIN {$this->t('MS_USERS')} usr ON usr.USR_ID = rev.MLR_MODIFIED_BY";
+
+        $where = " WHERE ml.ML_TYPE = 2";
+        $params = array();
+
+        // Global search
+        if (!empty($search)) {
+            $where .= " AND (ml.ML_TOOL_DRAW_NO LIKE ? OR rev.MLR_DESC LIKE ? OR mac.MAC_NAME LIKE ? 
+                        OR usr.USR_NAME LIKE ? OR CAST(rev.MLR_ID AS VARCHAR) LIKE ?)";
+            $search_param = '%' . $search . '%';
+            $params = array_merge($params, array($search_param, $search_param, $search_param, $search_param, $search_param));
+        }
+
+        // Per-column search
+        $col_search_map = array(
+            0 => 'CAST(rev.MLR_ID AS VARCHAR)',
+            1 => 'ml.ML_TOOL_DRAW_NO',
+            2 => 'rev.MLR_DESC',
+            4 => 'mac.MAC_NAME',
+            5 => 'CAST(rev.MLR_REV AS VARCHAR)',
+            7 => 'usr.USR_NAME'
+        );
+        foreach ($column_search as $col_idx => $col_val) {
+            if (!empty($col_val) && isset($col_search_map[$col_idx])) {
+                $where .= " AND " . $col_search_map[$col_idx] . " LIKE ?";
+                $params[] = '%' . $col_val . '%';
             }
         }
 
-        /**
-         * Check if column exists in table (SQL Server INFORMATION_SCHEMA)
-         * @param string $col
-         * @return bool
-         */
-        protected function has_column($col)
-        {
-            $col = trim((string)$col);
-            if ($col === '') return false;
+        // Count total
+        $count_total_sql = "SELECT COUNT(*) as cnt FROM {$this->t('TMS_TOOL_MASTER_LIST_REV')} rev
+                           INNER JOIN {$this->t('TMS_TOOL_MASTER_LIST')} ml ON ml.ML_ID = rev.MLR_ML_ID
+                           WHERE ml.ML_TYPE = 2";
+        $count_total = $this->db_tms->query($count_total_sql)->row()->cnt;
 
-            try {
-                // use INFORMATION_SCHEMA for SQL Server compatibility
-                $sql = "SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS
-                        WHERE TABLE_SCHEMA = 'dbo' AND TABLE_NAME = 'TMS_TC_TOOL_BOM_ENGIN' AND COLUMN_NAME = ?";
-                $q = $this->tms_db->query($sql, array($col));
-                return ($q && $q->num_rows() > 0);
-            } catch (Exception $e) {
-                log_message('error', '[has_column] Error checking column: ' . $e->getMessage());
-                return false;
-            }
-        }
+        // Count filtered
+        $count_filtered_sql = "SELECT COUNT(*) as cnt " . $base_from . $where;
+        $count_filtered = $this->db_tms->query($count_filtered_sql, $params)->row()->cnt;
 
-        /**
-         * Check if a column is an IDENTITY column (SQL Server)
-         * @param string $col
-         * @return bool
-         */
-        protected function is_identity($col)
-        {
-            $col = trim((string)$col);
-            if ($col === '') return false;
-            try {
-                $sql = "SELECT COLUMNPROPERTY(OBJECT_ID('TMS_NEW.dbo.TMS_TC_TOOL_BOM_ENGIN'), ?, 'IsIdentity') AS is_identity";
-                $row = $this->tms_db->query($sql, array($col))->row_array();
-                return isset($row['is_identity']) ? ((int)$row['is_identity'] === 1) : false;
-            } catch (Exception $e) {
-                log_message('error', '[is_identity] Error checking identity for ' . $col . ': ' . $e->getMessage());
-                return false;
-            }
-        }
+        // Order
+        $order_column = isset($columns[$order_col]) ? $columns[$order_col] : 'rev.MLR_ID';
+        $order_direction = strtoupper($order_dir) === 'ASC' ? 'ASC' : 'DESC';
 
-        public function get_all()
-        {
-            // Build select columns - include new columns if they exist
-            $selectCols = 'ID, TOOL_BOM, DESCRIPTION, REVISION, STATUS, MODIFIED_BY, MODIFIED_DATE';
-            
-            // Add FK columns if they exist
-            if ($this->has_column('PRODUCT_ID')) {
-                $selectCols .= ', PRODUCT_ID';
-            }
-            if ($this->has_column('PROCESS_ID')) {
-                $selectCols .= ', PROCESS_ID';
-            }
-            if ($this->has_column('MACHINE_GROUP_ID')) {
-                $selectCols .= ', MACHINE_GROUP_ID';
-            }
-            // Keep old text columns for backward compatibility
-            if ($this->has_column('PRODUCT')) {
-                $selectCols .= ', PRODUCT';
-            }
-            if ($this->has_column('MACHINE_GROUP')) {
-                $selectCols .= ', MACHINE_GROUP';
-            }
-            // Add new columns
-            if ($this->has_column('EFFECTIVE_DATE')) {
-                $selectCols .= ', EFFECTIVE_DATE';
-            }
-            if ($this->has_column('CHANGE_SUMMARY')) {
-                $selectCols .= ', CHANGE_SUMMARY';
-            }
-            if ($this->has_column('DRAWING')) {
-                $selectCols .= ', DRAWING';
-            }
-            if ($this->has_column('IS_TRIAL_BOM')) {
-                $selectCols .= ', IS_TRIAL_BOM';
-            }
+        // Data query
+        $data_sql = "SELECT 
+                        rev.MLR_ID AS TD_ID,
+                        ml.ML_TOOL_DRAW_NO AS TD_TOOL_BOM,
+                        ISNULL(rev.MLR_DESC, '') AS TD_DESCRIPTION,
+                        ISNULL(dbo.fnGetToolMasterListParts(ml.ML_ID), '') AS TD_PRODUCT_NAME,
+                        ISNULL(mac.MAC_NAME, '') AS TD_MACHINE_GROUP,
+                        rev.MLR_REV AS TD_REVISION,
+                        rev.MLR_STATUS AS TD_STATUS,
+                        ISNULL(usr.USR_NAME, '') AS TD_MODIFIED_BY
+                    " . $base_from . $where . "
+                    ORDER BY " . $order_column . " " . $order_direction . "
+                    OFFSET " . (int)$start . " ROWS FETCH NEXT " . (int)$length . " ROWS ONLY";
 
-            $result = $this->tms_db
-                ->select($selectCols)
-                ->from($this->table)
-                ->order_by('ID', 'DESC')
-                ->get();
+        $result = $this->db_tms->query($data_sql, $params);
+        $data = $result ? $result->result_array() : array();
 
-            if ($result && $result->num_rows() > 0) {
-                return $result->result_array();
-            }
-            return array();
-        }
+        return array(
+            'recordsTotal' => (int)$count_total,
+            'recordsFiltered' => (int)$count_filtered,
+            'data' => $data
+        );
+    }
 
-        public function get_by_id($id)
-        {
-            $id = (int)$id;
-            if ($id <= 0) return null;
+    /**
+     * Get all Tool BOM
+     */
+    public function get_all()
+    {
+        $sql = "SELECT
+                    rev.MLR_ID AS TD_ID,
+                    ml.ML_TOOL_DRAW_NO AS TD_TOOL_BOM,
+                    ISNULL(rev.MLR_DESC, '') AS TD_DESCRIPTION,
+                    ISNULL(dbo.fnGetToolMasterListParts(ml.ML_ID), '') AS TD_PRODUCT_NAME,
+                    ISNULL(mac.MAC_NAME, '') AS TD_MACHINE_GROUP,
+                    rev.MLR_REV AS TD_REVISION,
+                    rev.MLR_STATUS AS TD_STATUS,
+                    ISNULL(usr.USR_NAME, '') AS TD_MODIFIED_BY,
+                    CASE WHEN rev.MLR_MODIFIED_DATE IS NULL THEN '' 
+                         ELSE CONVERT(VARCHAR(19), rev.MLR_MODIFIED_DATE, 120) END AS TD_MODIFIED_DATE
+                FROM {$this->t('TMS_TOOL_MASTER_LIST_REV')} rev
+                INNER JOIN {$this->t('TMS_TOOL_MASTER_LIST')} ml ON ml.ML_ID = rev.MLR_ML_ID
+                LEFT JOIN {$this->t('MS_MACHINES')} mac ON mac.MAC_ID = rev.MLR_MACG_ID
+                LEFT JOIN {$this->t('MS_USERS')} usr ON usr.USR_ID = rev.MLR_MODIFIED_BY
+                WHERE ml.ML_TYPE = 2
+                ORDER BY rev.MLR_ID DESC";
 
-            $result = $this->tms_db->where('ID', $id)->limit(1)->get($this->table);
-            if ($result && $result->num_rows() > 0) {
-                return $result->row_array();
-            }
-            return null;
-        }
+        $q = $this->db_tms->query($sql);
+        return $q ? $q->result_array() : array();
+    }
 
-        public function get_new_sequence()
-        {
-            $row = $this->tms_db->select_max('ID')->get($this->table)->row_array();
-            return isset($row['ID']) ? ((int)$row['ID'] + 1) : 1;
-        }
+    /**
+     * Get by ID
+     */
+    public function get_by_id($id)
+    {
+        $id = (int)$id;
+        if ($id <= 0) return null;
 
-        /**
-         * Get all products from TMS_M_PRODUCT
-         */
-        public function get_products()
-        {
-            $table = 'TMS_NEW.dbo.TMS_M_PRODUCT';
-            $result = $this->tms_db
-                ->select('PRODUCT_ID, PRODUCT_NAME')
-                ->from($table)
-                ->where('IS_DELETED', 0)
-                ->order_by('PRODUCT_NAME', 'ASC')
-                ->get();
+        $sql = "SELECT
+                    rev.MLR_ID AS TD_ID,
+                    rev.MLR_ML_ID,
+                    ml.ML_TOOL_DRAW_NO AS TD_TOOL_BOM,
+                    ISNULL(rev.MLR_DESC, '') AS TD_DESCRIPTION,
+                    ISNULL(dbo.fnGetToolMasterListParts(ml.ML_ID), '') AS TD_PRODUCT_NAME,
+                    ISNULL(mac.MAC_NAME, '') AS TD_MACHINE_GROUP,
+                    rev.MLR_MACG_ID,
+                    rev.MLR_REV AS TD_REVISION,
+                    rev.MLR_STATUS AS TD_STATUS,
+                    ISNULL(usr.USR_NAME, '') AS TD_MODIFIED_BY,
+                    CASE WHEN rev.MLR_MODIFIED_DATE IS NULL THEN '' 
+                         ELSE CONVERT(VARCHAR(19), rev.MLR_MODIFIED_DATE, 120) END AS TD_MODIFIED_DATE,
+                    CASE WHEN rev.MLR_EFFECTIVE_DATE IS NULL THEN '' 
+                         ELSE CONVERT(VARCHAR(19), rev.MLR_EFFECTIVE_DATE, 120) END AS TD_EFFECTIVE_DATE,
+                    rev.MLR_CHANGE_SUMMARY AS TD_CHANGE_SUMMARY
+                FROM {$this->t('TMS_TOOL_MASTER_LIST_REV')} rev
+                INNER JOIN {$this->t('TMS_TOOL_MASTER_LIST')} ml ON ml.ML_ID = rev.MLR_ML_ID
+                LEFT JOIN {$this->t('MS_MACHINES')} mac ON mac.MAC_ID = rev.MLR_MACG_ID
+                LEFT JOIN {$this->t('MS_USERS')} usr ON usr.USR_ID = rev.MLR_MODIFIED_BY
+                WHERE ml.ML_TYPE = 2 AND rev.MLR_ID = ?";
 
-            if ($result && $result->num_rows() > 0) {
-                return $result->result_array();
-            }
-            return array();
-        }
+        $q = $this->db_tms->query($sql, array($id));
+        return $q && $q->num_rows() > 0 ? $q->row_array() : null;
+    }
 
-        /**
-         * Get all operations from TMS_M_OPERATION
-         */
-        public function get_operations()
-        {
-            $table = 'TMS_NEW.dbo.TMS_M_OPERATION';
-            $result = $this->tms_db
-                ->select('OPERATION_ID, OPERATION_NAME')
-                ->from($table)
-                ->where('IS_DELETED', 0)
-                ->order_by('OPERATION_NAME', 'ASC')
-                ->get();
+    /**
+     * Get history
+     */
+    public function get_history($id)
+    {
+        $id = (int)$id;
+        if ($id <= 0) return array();
 
-            if ($result && $result->num_rows() > 0) {
-                return $result->result_array();
-            }
-            return array();
-        }
+        $current = $this->get_by_id($id);
+        if (!$current) return array();
 
-        /**
-         * Get all machine groups from TMS_M_MACHINES (IS_GROUP = 1)
-         */
-        public function get_machine_groups()
-        {
-            $table = 'TMS_NEW.dbo.TMS_M_MACHINES';
-            $result = $this->tms_db
-                ->select('MACHINE_ID, MACHINE_NAME')
-                ->from($table)
-                ->where('IS_DELETED', 0)
-                ->where('IS_GROUP', 1)
-                ->order_by('MACHINE_NAME', 'ASC')
-                ->get();
+        $ml_id = isset($current['MLR_ML_ID']) ? (int)$current['MLR_ML_ID'] : 0;
+        if ($ml_id <= 0) return array($current);
 
-            if ($result && $result->num_rows() > 0) {
-                return $result->result_array();
-            }
-            return array();
-        }
+        $sql = "SELECT
+                    rev.MLR_ID AS TD_ID,
+                    ml.ML_TOOL_DRAW_NO AS TD_TOOL_BOM,
+                    ISNULL(rev.MLR_DESC, '') AS TD_DESCRIPTION,
+                    rev.MLR_REV AS TD_REVISION,
+                    rev.MLR_STATUS AS TD_STATUS,
+                    ISNULL(usr.USR_NAME, '') AS TD_MODIFIED_BY,
+                    CASE WHEN rev.MLR_MODIFIED_DATE IS NULL THEN '' 
+                         ELSE CONVERT(VARCHAR(19), rev.MLR_MODIFIED_DATE, 120) END AS TD_MODIFIED_DATE,
+                    rev.MLR_CHANGE_SUMMARY AS TD_CHANGE_SUMMARY
+                FROM {$this->t('TMS_TOOL_MASTER_LIST_REV')} rev
+                INNER JOIN {$this->t('TMS_TOOL_MASTER_LIST')} ml ON ml.ML_ID = rev.MLR_ML_ID
+                LEFT JOIN {$this->t('MS_USERS')} usr ON usr.USR_ID = rev.MLR_MODIFIED_BY
+                WHERE rev.MLR_ML_ID = ?
+                ORDER BY rev.MLR_REV DESC";
 
-        /* ========== MUTATORS ========== */
+        $q = $this->db_tms->query($sql, array($ml_id));
+        return $q && $q->num_rows() > 0 ? $q->result_array() : array($current);
+    }
 
-        public function add_data($tool_bom, $description, $product_id, $process_id, $machine_group_id, $revision, $status, $effective_date, $change_summary, $drawing_filename, $is_trial_bom = 0)
-        {
-            $tool_bom = trim((string)$tool_bom);
-            $description = trim((string)$description);
-            $product_id = (int)$product_id;
-            $process_id = (int)$process_id;
-            $machine_group_id = (int)$machine_group_id;
-            $revision = (int)$revision;
-            // status now string enum: ACTIVE / INACTIVE / PENDING
-            $status = trim((string)$status);
-            $effective_date = trim((string)$effective_date);
-            $change_summary = trim((string)$change_summary);
-            $drawing_filename = trim((string)$drawing_filename);
-
-            if ($tool_bom === '') {
-                $this->messages = 'Tool BOM tidak boleh kosong.';
-                return false;
-            }
-
-            // set MODIFIED_BY to the username from controller ($this->uid)
-            $modifiedBy = '';
-            if (isset($this->uid) && $this->uid !== '') {
-                $modifiedBy = (string)$this->uid;
-            }
-            log_message('debug', '[add_data] uid="' . var_export($this->uid, true) . '", modifiedBy="' . $modifiedBy . '"');
-
-            $insertData = array(
-                'TOOL_BOM'      => $tool_bom,
-                'DESCRIPTION'   => $description !== '' ? $description : null,
-                'REVISION'      => $revision,
-                'STATUS'        => $status
-            );
-
-            // Add FK columns if they exist
-            if ($this->has_column('PRODUCT_ID')) {
-                $insertData['PRODUCT_ID'] = $product_id > 0 ? $product_id : null;
-            }
-            if ($this->has_column('PROCESS_ID')) {
-                $insertData['PROCESS_ID'] = $process_id > 0 ? $process_id : null;
-            }
-            if ($this->has_column('MACHINE_GROUP_ID')) {
-                $insertData['MACHINE_GROUP_ID'] = $machine_group_id > 0 ? $machine_group_id : null;
-            }
-            // Keep old text columns for backward compatibility (skip if errors occur)
-            if ($product_id > 0) {
-                try {
-                    if ($this->has_column('PRODUCT')) {
-                        $product = $this->tms_db->select('PRODUCT_NAME')->from('TMS_NEW.dbo.TMS_M_PRODUCT')->where('PRODUCT_ID', $product_id)->limit(1)->get()->row_array();
-                        $insertData['PRODUCT'] = $product && isset($product['PRODUCT_NAME']) ? $product['PRODUCT_NAME'] : null;
-                    }
-                } catch (Exception $e) {
-                    log_message('error', '[add_data] Error getting product name: ' . $e->getMessage());
-                    // Don't set PRODUCT if error occurs
-                }
-            }
-            if ($machine_group_id > 0) {
-                try {
-                    if ($this->has_column('MACHINE_GROUP')) {
-                        $mg = $this->tms_db->select('MACHINE_NAME')->from('TMS_NEW.dbo.TMS_M_MACHINES')->where('MACHINE_ID', $machine_group_id)->limit(1)->get()->row_array();
-                        $insertData['MACHINE_GROUP'] = $mg && isset($mg['MACHINE_NAME']) ? $mg['MACHINE_NAME'] : null;
-                    }
-                } catch (Exception $e) {
-                    log_message('error', '[add_data] Error getting machine group name: ' . $e->getMessage());
-                    // Don't set MACHINE_GROUP if error occurs
-                }
-            }
-            // Add new columns
-            if ($this->has_column('EFFECTIVE_DATE')) {
-                // Convert date format if needed (from YYYY-MM-DD to SQL Server format)
-                if ($effective_date !== '' && $effective_date !== null) {
-                    // If date is in YYYY-MM-DD format, convert to SQL Server datetime
-                    if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $effective_date)) {
-                        $insertData['EFFECTIVE_DATE'] = $effective_date . ' 00:00:00';
-                    } else {
-                        $insertData['EFFECTIVE_DATE'] = $effective_date;
-                    }
-                } else {
-                    $insertData['EFFECTIVE_DATE'] = null;
-                }
-            }
-            if ($this->has_column('CHANGE_SUMMARY')) {
-                $insertData['CHANGE_SUMMARY'] = $change_summary !== '' ? $change_summary : null;
-            }
-            if ($this->has_column('DRAWING')) {
-                $insertData['DRAWING'] = $drawing_filename !== '' ? $drawing_filename : null;
-            }
-            if ($this->has_column('IS_TRIAL_BOM')) {
-                $is_trial_bom = (int)$is_trial_bom;
-                $insertData['IS_TRIAL_BOM'] = ($is_trial_bom === 1) ? 1 : 0;
-            }
-
-            if ($modifiedBy !== '') {
-                $insertData['MODIFIED_BY'] = $modifiedBy;
-            }
-
-            // Ensure ID is set when table is not identity
-            if ($this->has_column('ID') && !$this->is_identity('ID')) {
-                $insertData['ID'] = $this->get_new_sequence();
-            }
-
-            // Log insert data for debugging
-            log_message('debug', '[add_data] Insert data: ' . json_encode($insertData));
-            
-            try {
-                $this->tms_db->trans_start();
-                $ok = $this->tms_db->insert($this->table, $insertData);
-                
-                // Check for database errors
-                $db_error = $this->tms_db->error();
-                if (!empty($db_error) && isset($db_error['code']) && $db_error['code'] != 0) {
-                    $this->tms_db->trans_rollback();
-                    $error_msg = isset($db_error['message']) ? $db_error['message'] : 'Database error';
-                    log_message('error', '[add_data] Database error: ' . $error_msg);
-                    $this->messages = 'Gagal menambahkan tool BOM engineering. ' . $error_msg;
-                    return false;
-                }
-                
-                // try to obtain the inserted id and set EFFECTIVE_DATE if column exists
-                $new_id = 0;
-                if ($ok) {
-                    $new_id = (int)$this->tms_db->insert_id();
-                    if ($new_id <= 0) {
-                        // fallback: try to get IDENT_CURRENT (best-effort)
-                        try {
-                            $row = $this->tms_db->query("SELECT IDENT_CURRENT('TMS_TC_TOOL_BOM_ENGIN') AS last_id")->row_array();
-                            if ($row && isset($row['last_id']) && $row['last_id'] !== null) {
-                                $new_id = (int)$row['last_id'];
-                            }
-                        } catch (Exception $e2) {
-                            log_message('error', '[add_data] Error getting IDENT_CURRENT: ' . $e2->getMessage());
-                        }
-                    }
-                    // Set EFFECTIVE_DATE if column exists and not set
-                    if ($this->has_column('EFFECTIVE_DATE') && ($effective_date === '' || $effective_date === null) && $new_id > 0) {
-                        try {
-                            $this->tms_db->query("UPDATE {$this->table} SET EFFECTIVE_DATE = GETDATE() WHERE ID = ?", array($new_id));
-                        } catch (Exception $e2) {
-                            log_message('error', '[add_data] Exception updating EFFECTIVE_DATE: ' . $e2->getMessage());
-                        }
-                    }
-                }
-                
-                $this->tms_db->trans_complete();
-                
-                if ($this->tms_db->trans_status()) {
-                    $this->messages = 'Tool BOM Engineering berhasil ditambahkan.';
-                    return true;
-                }
-                $err = $this->tms_db->error();
-                $this->messages = 'Gagal menambahkan tool BOM engineering. ' . (isset($err['message']) ? $err['message'] : 'Transaction failed');
-                return false;
-            } catch (Exception $e) {
-                $this->tms_db->trans_rollback();
-                log_message('error', '[add_data] Exception: ' . $e->getMessage() . ' | File: ' . $e->getFile() . ' | Line: ' . $e->getLine());
-                $this->messages = 'Gagal menambahkan tool BOM engineering. Error: ' . $e->getMessage();
-                return false;
-            }
-        }
-
-        public function edit_data($id, $tool_bom, $description, $product_id, $process_id, $machine_group_id, $revision, $status, $effective_date, $change_summary, $drawing_filename, $is_trial_bom = 0)
-        {
-            $id = (int)$id;
-            $tool_bom = trim((string)$tool_bom);
-            $description = trim((string)$description);
-            $product_id = (int)$product_id;
-            $process_id = (int)$process_id;
-            $machine_group_id = (int)$machine_group_id;
-            $revision = (int)$revision;
-            // status now string enum: ACTIVE / INACTIVE / PENDING
-            $status = trim((string)$status);
-            $effective_date = trim((string)$effective_date);
-            $change_summary = trim((string)$change_summary);
-            $drawing_filename = trim((string)$drawing_filename);
-
-            $current = $this->get_by_id($id);
-            if (!$current) {
-                $this->messages = 'Data tidak ditemukan.';
-                return false;
-            }
-
-            if ($tool_bom === '') {
-                $this->messages = 'Tool BOM tidak boleh kosong.';
-                return false;
-            }
-
-            // set MODIFIED_BY to the username from controller ($this->uid)
-            $modifiedBy = '';
-            if (isset($this->uid) && $this->uid !== '') {
-                $modifiedBy = (string)$this->uid;
-            }
-            log_message('debug', '[edit_data] id=' . $id . ', uid="' . var_export($this->uid, true) . '", modifiedBy="' . $modifiedBy . '"');
-
-            $updateData = array(
-                'TOOL_BOM'      => $tool_bom,
-                'DESCRIPTION'   => $description !== '' ? $description : null,
-                'REVISION'      => $revision,
-                'STATUS'        => $status
-            );
-
-            // Add FK columns if they exist
-            if ($this->has_column('PRODUCT_ID')) {
-                $updateData['PRODUCT_ID'] = $product_id > 0 ? $product_id : null;
-            }
-            if ($this->has_column('PROCESS_ID')) {
-                $updateData['PROCESS_ID'] = $process_id > 0 ? $process_id : null;
-            }
-            if ($this->has_column('MACHINE_GROUP_ID')) {
-                $updateData['MACHINE_GROUP_ID'] = $machine_group_id > 0 ? $machine_group_id : null;
-            }
-            // Keep old text columns for backward compatibility (skip if errors occur)
-            if ($product_id > 0) {
-                try {
-                    if ($this->has_column('PRODUCT')) {
-                        $product = $this->tms_db->select('PRODUCT_NAME')->from('TMS_NEW.dbo.TMS_M_PRODUCT')->where('PRODUCT_ID', $product_id)->limit(1)->get()->row_array();
-                        $updateData['PRODUCT'] = $product && isset($product['PRODUCT_NAME']) ? $product['PRODUCT_NAME'] : null;
-                    }
-                } catch (Exception $e) {
-                    log_message('error', '[edit_data] Error getting product name: ' . $e->getMessage());
-                    // Don't set PRODUCT if error occurs
-                }
-            }
-            if ($machine_group_id > 0) {
-                try {
-                    if ($this->has_column('MACHINE_GROUP')) {
-                        $mg = $this->tms_db->select('MACHINE_NAME')->from('TMS_NEW.dbo.TMS_M_MACHINES')->where('MACHINE_ID', $machine_group_id)->limit(1)->get()->row_array();
-                        $updateData['MACHINE_GROUP'] = $mg && isset($mg['MACHINE_NAME']) ? $mg['MACHINE_NAME'] : null;
-                    }
-                } catch (Exception $e) {
-                    log_message('error', '[edit_data] Error getting machine group name: ' . $e->getMessage());
-                    // Don't set MACHINE_GROUP if error occurs
-                }
-            }
-            // Add new columns
-            if ($this->has_column('EFFECTIVE_DATE')) {
-                // Convert date format if needed (from YYYY-MM-DD to SQL Server format)
-                if ($effective_date !== '' && $effective_date !== null) {
-                    // If date is in YYYY-MM-DD format, convert to SQL Server datetime
-                    if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $effective_date)) {
-                        $updateData['EFFECTIVE_DATE'] = $effective_date . ' 00:00:00';
-                    } else {
-                        $updateData['EFFECTIVE_DATE'] = $effective_date;
-                    }
-                } else {
-                    $updateData['EFFECTIVE_DATE'] = null;
-                }
-            }
-            if ($this->has_column('CHANGE_SUMMARY')) {
-                $updateData['CHANGE_SUMMARY'] = $change_summary !== '' ? $change_summary : null;
-            }
-            // Only update drawing if new file is provided
-            if ($this->has_column('DRAWING') && $drawing_filename !== '') {
-                $updateData['DRAWING'] = $drawing_filename;
-            }
-            if ($this->has_column('IS_TRIAL_BOM')) {
-                $is_trial_bom = (int)$is_trial_bom;
-                $updateData['IS_TRIAL_BOM'] = ($is_trial_bom === 1) ? 1 : 0;
-            }
-
-            // Only set MODIFIED_BY if we have a valid value
-            if ($modifiedBy !== '') {
-                $updateData['MODIFIED_BY'] = $modifiedBy;
-            }
-
-            $ok = $this->tms_db->where('ID', $id)->update($this->table, $updateData);
-            
-            // update MODIFIED_DATE if column exists
-            if ($ok && $this->has_column('MODIFIED_DATE')) {
-                try {
-                    $this->tms_db->query("UPDATE {$this->table} SET MODIFIED_DATE = GETDATE() WHERE ID = ?", array($id));
-                } catch (Exception $e2) {
-                    log_message('error', '[edit_data] Exception updating MODIFIED_DATE: ' . $e2->getMessage());
-                }
-            }
-            
-            if ($ok) {
-                $this->messages = 'Tool BOM Engineering berhasil diubah.';
-                return true;
-            }
-            $err = $this->tms_db->error();
-            $this->messages = 'Gagal mengubah tool BOM engineering. ' . (isset($err['message']) ? $err['message'] : '');
+    /**
+     * Delete
+     */
+    public function delete_data($id)
+    {
+        $id = (int)$id;
+        $row = $this->get_by_id($id);
+        if (!$row) {
+            $this->messages = 'Data tidak ditemukan.';
             return false;
         }
 
-        public function delete_data($id)
-        {
-            $id = (int)$id;
-            $row = $this->get_by_id($id);
-            if (!$row) {
-                $this->messages = 'Data tidak ditemukan.';
-                return false;
-            }
+        $sql = "DELETE FROM {$this->t('TMS_TOOL_MASTER_LIST_REV')} WHERE MLR_ID = ?";
+        $ok = $this->db_tms->query($sql, array($id));
 
-            $ok = $this->tms_db->delete($this->table, array('ID' => $id));
-
-            if ($ok) {
-                $this->messages = 'Tool BOM Engineering berhasil dihapus.';
-                return true;
-            }
-            $err = $this->tms_db->error();
-            $this->messages = 'Gagal menghapus tool BOM engineering. ' . (isset($err['message']) ? $err['message'] : '');
-            return false;
+        if ($ok) {
+            $this->messages = 'Tool BOM berhasil dihapus.';
+            return true;
         }
+        $err = $this->db_tms->error();
+        $this->messages = 'Gagal menghapus. ' . (isset($err['message']) ? $err['message'] : '');
+        return false;
+    }
 
-        /**
-         * Get revision history for a specific Tool BOM record
-         * Tries stored procedure first, then history table, then returns current record as pseudo-history
-         * @param int $id
-         * @return array
-         */
-        public function get_history($id)
-        {
-            $id = (int)$id;
-            if ($id <= 0) {
-                log_message('debug', '[M_tool_bom_engin::get_history] invalid id=' . var_export($id, true));
-                return array();
-            }
-
-            // First try stored procedure sp_GetToolBomEnginHistory
-            try {
-                // Check if stored procedure exists first
-                $spCheck = $this->tms_db->query("SELECT 1 FROM INFORMATION_SCHEMA.ROUTINES WHERE ROUTINE_NAME = 'sp_GetToolBomEnginHistory' AND ROUTINE_SCHEMA = 'dbo'");
-                if ($spCheck && $spCheck->num_rows() > 0) {
-                    $sql = "EXEC sp_GetToolBomEnginHistory @ID = ?";
-                    $q = $this->tms_db->query($sql, array($id));
-                    // Check for database errors
-                    $db_error = $this->tms_db->error();
-                    if (empty($db_error) || (isset($db_error['code']) && $db_error['code'] == 0)) {
-                        if ($q && $q->num_rows() > 0) {
-                            $rows = $q->result_array();
-                            $history = array();
-                            foreach ($rows as $r) {
-                                $h = array();
-                                $h['HISTORY_ID'] = isset($r['HISTORY_ID']) ? $r['HISTORY_ID'] : null;
-                                $h['ID'] = isset($r['ID']) ? (int)$r['ID'] : $id;
-                                $h['REVISION'] = isset($r['REVISION']) ? (int)$r['REVISION'] : 0;
-                                // Map status
-                                if (isset($r['STATUS'])) {
-                                    $st = $r['STATUS'];
-                                    if (is_string($st)) {
-                                        $h['STATUS'] = strtoupper($st);
-                                    } else {
-                                        $stInt = (int)$st;
-                                        if ($stInt === 1) {
-                                            $h['STATUS'] = 'ACTIVE';
-                                        } elseif ($stInt === 2) {
-                                            $h['STATUS'] = 'PENDING';
-                                        } else {
-                                            $h['STATUS'] = 'INACTIVE';
-                                        }
-                                    }
-                                } else {
-                                    $h['STATUS'] = 'INACTIVE';
-                                }
-                                $h['EFFECTIVE_DATE'] = isset($r['EFFECTIVE_DATE']) ? $r['EFFECTIVE_DATE'] : '';
-                                $h['MODIFIED_DATE'] = isset($r['MODIFIED_DATE']) ? $r['MODIFIED_DATE'] : '';
-                                $h['MODIFIED_BY'] = isset($r['MODIFIED_BY']) ? $r['MODIFIED_BY'] : '';
-                                $h['TOOL_BOM'] = isset($r['TOOL_BOM']) ? $r['TOOL_BOM'] : '';
-                                $h['PRODUCT_ID'] = isset($r['PRODUCT_ID']) ? (int)$r['PRODUCT_ID'] : 0;
-                                $h['PROCESS_ID'] = isset($r['PROCESS_ID']) ? (int)$r['PROCESS_ID'] : 0;
-                                $h['MACHINE_GROUP_ID'] = isset($r['MACHINE_GROUP_ID']) ? (int)$r['MACHINE_GROUP_ID'] : 0;
-                                $h['PRODUCT_NAME'] = isset($r['PRODUCT_NAME']) ? $r['PRODUCT_NAME'] : '';
-                                $h['OPERATION_NAME'] = isset($r['OPERATION_NAME']) ? $r['OPERATION_NAME'] : '';
-                                $h['MACHINE_NAME'] = isset($r['MACHINE_NAME']) ? $r['MACHINE_NAME'] : '';
-                                $history[] = $h;
-                            }
-                            log_message('debug', '[M_tool_bom_engin::get_history] returning ' . count($history) . ' rows from sp_GetToolBomEnginHistory for id=' . $id);
-                            return $history;
-                        }
-                    } else {
-                        log_message('warning', '[M_tool_bom_engin::get_history] sp_GetToolBomEnginHistory call failed: ' . (isset($db_error['message']) ? $db_error['message'] : 'Unknown error'));
-                    }
-                } else {
-                    log_message('debug', '[M_tool_bom_engin::get_history] stored procedure sp_GetToolBomEnginHistory does not exist');
-                }
-            } catch (Exception $e) {
-                log_message('warning', '[M_tool_bom_engin::get_history] sp_GetToolBomEnginHistory call failed: ' . $e->getMessage());
-            }
-
-            // Fallback: read directly from history table if exists
-            try {
-                $tblCheck = $this->tms_db->query("SELECT 1 FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'TMS_TC_TOOL_BOM_ENGIN_HISTORY' AND TABLE_SCHEMA = 'dbo'");
-                if ($tblCheck && $tblCheck->num_rows() > 0) {
-                    $q2 = $this->tms_db->select('*')->from('TMS_NEW.dbo.TMS_TC_TOOL_BOM_ENGIN_HISTORY')->where('ID', $id)->order_by('REVISION', 'DESC')->get();
-                    if ($q2 && $q2->num_rows() > 0) {
-                        $rows = $q2->result_array();
-                        $history = array();
-                        foreach ($rows as $r) {
-                            $h = $r;
-                            $h['ID'] = (int)$h['ID'];
-                            $h['REVISION'] = (int)$h['REVISION'];
-                            $history[] = $h;
-                        }
-                        log_message('debug', '[M_tool_bom_engin::get_history] returning ' . count($history) . ' rows from history table for id=' . $id);
-                        return $history;
-                    }
-                }
-            } catch (Exception $e) {
-                log_message('warning', '[M_tool_bom_engin::get_history] direct history table read failed: ' . $e->getMessage());
-            }
-
-            // If no history table or SP available, return current record as pseudo-history
-            $row = $this->get_by_id($id);
-            if (!$row) {
-                log_message('debug', '[M_tool_bom_engin::get_history] no record found for id=' . $id);
-                return array();
-            }
-
-            $history = array(
-                array(
-                    'HISTORY_ID' => 1,
-                    'ID' => (int)$row['ID'],
-                    'REVISION' => isset($row['REVISION']) ? (int)$row['REVISION'] : 0,
-                    'STATUS' => isset($row['STATUS']) ? $row['STATUS'] : 'INACTIVE',
-                    'EFFECTIVE_DATE' => isset($row['EFFECTIVE_DATE']) ? $row['EFFECTIVE_DATE'] : '',
-                    'MODIFIED_DATE' => isset($row['MODIFIED_DATE']) ? $row['MODIFIED_DATE'] : '',
-                    'MODIFIED_BY' => isset($row['MODIFIED_BY']) ? $row['MODIFIED_BY'] : '',
-                    'TOOL_BOM' => isset($row['TOOL_BOM']) ? $row['TOOL_BOM'] : '',
-                    'PRODUCT_ID' => isset($row['PRODUCT_ID']) ? (int)$row['PRODUCT_ID'] : 0,
-                    'PROCESS_ID' => isset($row['PROCESS_ID']) ? (int)$row['PROCESS_ID'] : 0,
-                    'MACHINE_GROUP_ID' => isset($row['MACHINE_GROUP_ID']) ? (int)$row['MACHINE_GROUP_ID'] : 0
-                )
-            );
-            log_message('debug', '[M_tool_bom_engin::get_history] returning pseudo-history count=' . count($history) . ' for id=' . $id);
-            return $history;
-        }
+    /**
+     * Get machines
+     */
+    public function get_machines()
+    {
+        $sql = "SELECT MAC_ID, MAC_NAME FROM {$this->t('MS_MACHINES')} ORDER BY MAC_NAME";
+        $q = $this->db_tms->query($sql);
+        return $q ? $q->result_array() : array();
     }
 }
 

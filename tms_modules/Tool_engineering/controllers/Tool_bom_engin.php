@@ -2,6 +2,7 @@
 defined('BASEPATH') or exit('No direct script access allowed');
 
 /**
+ * Tool BOM Engineering Controller
  * @property M_tool_bom_engin $tool_bom_engin
  */
 class Tool_bom_engin extends MY_Controller
@@ -11,22 +12,13 @@ class Tool_bom_engin extends MY_Controller
     public function __construct()
     {
         parent::__construct();
-
         $this->load->library(array('form_validation', 'session'));
+        
+        $username = $this->session->userdata('username');
+        $this->uid = (string)($username ?: 'SYSTEM');
 
-        // capture current user id/username for later use (fallback to SYSTEM)
-        $username_from_session = $this->session->userdata('username');
-        $this->uid = (string) ($username_from_session ?: 'SYSTEM');
-        log_message('debug', '[Tool_bom_engin::__construct] username_from_session=' . var_export($username_from_session, true) . ', uid="' . $this->uid . '"');
-
-        // load model AFTER setting uid, then assign uid to model
         $this->load->model('M_tool_bom_engin', 'tool_bom_engin');
         $this->tool_bom_engin->uid = $this->uid;
-        log_message('debug', '[Tool_bom_engin::__construct] model uid set to "' . $this->tool_bom_engin->uid . '"');
-
-        // drawing model used on edit page for additional information section
-        $this->load->model('M_tool_draw_engin', 'tool_draw_engin');
-        $this->tool_draw_engin->uid = $this->uid;
 
         $this->config->set_item('Blade_enable', FALSE);
     }
@@ -34,52 +26,116 @@ class Tool_bom_engin extends MY_Controller
     public function index()
     {
         $data = array();
-        $data['list_data'] = $this->tool_bom_engin->get_all();
-        $data['products'] = $this->tool_bom_engin->get_products();
-        $data['operations'] = $this->tool_bom_engin->get_operations();
-        $data['machine_groups'] = $this->tool_bom_engin->get_machine_groups();
-
         $this->view('index_tool_bom_engin', $data, FALSE);
     }
 
     /**
-     * Halaman detail Tool BOM Engineering (read-only)
-     * @param int $id
+     * Server-side DataTable AJAX handler
      */
-    public function detail_page($id = 0)
+    public function get_data()
     {
-        $id = (int)$id;
-        if ($id <= 0) {
-            show_404();
-            return;
+        if (ob_get_level()) ob_clean();
+        $this->output->set_content_type('application/json', 'UTF-8');
+
+        try {
+            $draw = (int)$this->input->post('draw');
+            $start = (int)$this->input->post('start');
+            $length = (int)$this->input->post('length');
+            $search = $this->input->post('search');
+            $search_value = isset($search['value']) ? trim($search['value']) : '';
+            $order = $this->input->post('order');
+            $order_column = isset($order[0]['column']) ? (int)$order[0]['column'] : 0;
+            $order_dir = isset($order[0]['dir']) ? $order[0]['dir'] : 'desc';
+
+            $columns = $this->input->post('columns');
+            $column_search = array();
+            if (is_array($columns)) {
+                foreach ($columns as $idx => $col) {
+                    if (isset($col['search']['value']) && $col['search']['value'] !== '') {
+                        $column_search[$idx] = $col['search']['value'];
+                    }
+                }
+            }
+
+            $result = $this->tool_bom_engin->get_data_serverside($start, $length, $search_value, $order_column, $order_dir, $column_search);
+
+            $formatted_data = array();
+            foreach ($result['data'] as $row) {
+                $status_badge = '<span class="badge badge-secondary">Inactive</span>';
+                if (isset($row['TD_STATUS'])) {
+                    $st = (int)$row['TD_STATUS'];
+                    if ($st === 2) {
+                        $status_badge = '<span class="badge badge-success">Active</span>';
+                    } elseif ($st === 1) {
+                        $status_badge = '<span class="badge badge-warning">Pending</span>';
+                    }
+                }
+
+                $id = (int)$row['TD_ID'];
+                $edit_url = base_url('Tool_engineering/tool_bom_engin/edit_page/' . $id);
+                $history_url = base_url('Tool_engineering/tool_bom_engin/history_page/' . $id);
+                $tool_bom_escaped = htmlspecialchars(isset($row['TD_TOOL_BOM']) ? $row['TD_TOOL_BOM'] : '', ENT_QUOTES, 'UTF-8');
+                
+                $action_html = '<div class="action-buttons">' .
+                    '<a href="' . $edit_url . '" class="btn btn-secondary btn-sm" title="Edit">Edit</a> ' .
+                    '<a href="' . $history_url . '" class="btn btn-warning btn-sm" title="History">Hist</a> ' .
+                    '<button class="btn btn-danger btn-sm btn-delete" data-id="' . $id . '" data-name="' . $tool_bom_escaped . '">Del</button>' .
+                    '</div>';
+
+                $formatted_data[] = array(
+                    $id,
+                    $tool_bom_escaped,
+                    htmlspecialchars(isset($row['TD_DESCRIPTION']) ? $row['TD_DESCRIPTION'] : '', ENT_QUOTES, 'UTF-8'),
+                    htmlspecialchars(isset($row['TD_PRODUCT_NAME']) ? $row['TD_PRODUCT_NAME'] : '', ENT_QUOTES, 'UTF-8'),
+                    htmlspecialchars(isset($row['TD_MACHINE_GROUP']) ? $row['TD_MACHINE_GROUP'] : '', ENT_QUOTES, 'UTF-8'),
+                    htmlspecialchars(isset($row['TD_REVISION']) ? (string)$row['TD_REVISION'] : '0', ENT_QUOTES, 'UTF-8'),
+                    $status_badge,
+                    htmlspecialchars(isset($row['TD_MODIFIED_BY']) ? $row['TD_MODIFIED_BY'] : '', ENT_QUOTES, 'UTF-8'),
+                    $action_html
+                );
+            }
+
+            $this->output->set_output(json_encode(array(
+                'draw' => $draw,
+                'recordsTotal' => $result['recordsTotal'],
+                'recordsFiltered' => $result['recordsFiltered'],
+                'data' => $formatted_data
+            ), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
+
+        } catch (Exception $e) {
+            log_message('error', '[Tool_bom_engin::get_data] Exception: ' . $e->getMessage());
+            $this->output->set_output(json_encode(array(
+                'draw' => isset($draw) ? $draw : 0,
+                'recordsTotal' => 0,
+                'recordsFiltered' => 0,
+                'data' => array(),
+                'error' => 'Error loading data.'
+            )));
         }
-
-        $bom = $this->tool_bom_engin->get_by_id($id);
-        if (!$bom) {
-            show_404();
-            return;
-        }
-
-        $productId = isset($bom['PRODUCT_ID']) ? (int)$bom['PRODUCT_ID'] : 0;
-        $processId = isset($bom['PROCESS_ID']) ? (int)$bom['PROCESS_ID'] : 0;
-
-        $data = array();
-        $data['bom'] = $bom;
-        $data['products'] = $this->tool_bom_engin->get_products();
-        $data['operations'] = $this->tool_bom_engin->get_operations();
-        $data['machine_groups'] = $this->tool_bom_engin->get_machine_groups();
-
-        // Additional Information: Tool Drawing Engineering filtered by product/process (best-effort)
-        $data['additional_info'] = $this->tool_draw_engin->get_by_product_process($productId, $processId);
-        $data['materials'] = $this->tool_draw_engin->get_materials();
-        $data['makers'] = $this->tool_draw_engin->get_makers();
-
-        $this->view('detail_tool_bom_engin', $data, FALSE);
     }
 
     /**
-     * Halaman edit Tool BOM Engineering + Additional Information (Tool Drawing Engin)
-     * @param int $id
+     * Delete Tool BOM
+     */
+    public function delete_data()
+    {
+        $this->output->set_content_type('application/json');
+
+        $id = (int)$this->input->post('TD_ID', TRUE);
+        if ($id <= 0) {
+            echo json_encode(array('success' => false, 'message' => 'ID tidak valid.'));
+            return;
+        }
+
+        $ok = $this->tool_bom_engin->delete_data($id);
+        echo json_encode(array(
+            'success' => $ok,
+            'message' => $this->tool_bom_engin->messages
+        ));
+    }
+
+    /**
+     * Edit page
      */
     public function edit_page($id = 0)
     {
@@ -89,216 +145,41 @@ class Tool_bom_engin extends MY_Controller
             return;
         }
 
-        $bom = $this->tool_bom_engin->get_by_id($id);
-        if (!$bom) {
+        $row = $this->tool_bom_engin->get_by_id($id);
+        if (!$row) {
             show_404();
             return;
         }
 
-        $productId = isset($bom['PRODUCT_ID']) ? (int)$bom['PRODUCT_ID'] : 0;
-        $processId = isset($bom['PROCESS_ID']) ? (int)$bom['PROCESS_ID'] : 0;
-
         $data = array();
-        $data['bom'] = $bom;
-        $data['products'] = $this->tool_bom_engin->get_products();
-        $data['operations'] = $this->tool_bom_engin->get_operations();
-        $data['machine_groups'] = $this->tool_bom_engin->get_machine_groups();
-
-        // Additional Information: Tool Drawing Engineering filtered by product/process (best-effort)
-        $data['additional_info'] = $this->tool_draw_engin->get_by_product_process($productId, $processId);
-        $data['materials'] = $this->tool_draw_engin->get_materials();
-        $data['makers'] = $this->tool_draw_engin->get_makers();
-        $data['tools'] = $this->tool_draw_engin->get_tools();
+        $data['drawing'] = $row;
+        $data['machines'] = $this->tool_bom_engin->get_machines();
 
         $this->view('edit_tool_bom_engin', $data, FALSE);
     }
 
     /**
-     * submit_data: ADD / EDIT Tool BOM Engineering (AJAX)
+     * History page
      */
-    public function submit_data()
+    public function history_page($id = 0)
     {
-        // Clear output buffers to ensure clean JSON response
-        if (ob_get_level()) ob_clean();
-        
-        $this->output->set_content_type('application/json');
-        $result = array('success' => false, 'message' => '');
-        
-        try {
-            $action = strtoupper($this->input->post('action', TRUE));
-            $id     = (int)$this->input->post('ID', TRUE);
-
-            // validation rules
-            $this->form_validation->set_rules('TOOL_BOM', 'Tool BOM', 'required|trim');
-            $this->form_validation->set_rules('DESCRIPTION', 'Description', 'trim');
-            $this->form_validation->set_rules('PRODUCT_ID', 'Product', 'trim');
-            $this->form_validation->set_rules('PROCESS_ID', 'Process', 'trim');
-            $this->form_validation->set_rules('MACHINE_GROUP_ID', 'Machine Group', 'trim');
-            $this->form_validation->set_rules('REVISION', 'Revision', 'trim|numeric');
-            $this->form_validation->set_rules('STATUS', 'Status', 'trim');
-            $this->form_validation->set_rules('EFFECTIVE_DATE', 'Effective Date', 'trim');
-            $this->form_validation->set_rules('CHANGE_SUMMARY', 'Change Summary', 'trim');
-
-            if ($this->form_validation->run() == FALSE) {
-                $this->form_validation->set_error_delimiters('', '');
-                $result['message'] = validation_errors() ?: 'Data tidak valid.';
-                echo json_encode($result);
-                return;
-            }
-
-            $tool_bom = trim($this->input->post('TOOL_BOM', TRUE));
-            $description = trim($this->input->post('DESCRIPTION', TRUE));
-            
-            // Handle optional integer fields
-            $product_id_raw = $this->input->post('PRODUCT_ID', TRUE);
-            $product_id = ($product_id_raw !== '' && $product_id_raw !== null) ? (int)$product_id_raw : 0;
-            
-            $process_id_raw = $this->input->post('PROCESS_ID', TRUE);
-            $process_id = ($process_id_raw !== '' && $process_id_raw !== null) ? (int)$process_id_raw : 0;
-            
-            $machine_group_id_raw = $this->input->post('MACHINE_GROUP_ID', TRUE);
-            $machine_group_id = ($machine_group_id_raw !== '' && $machine_group_id_raw !== null) ? (int)$machine_group_id_raw : 0;
-            
-            $revision_raw = $this->input->post('REVISION', TRUE);
-            $revision = ($revision_raw !== '' && $revision_raw !== null) ? (int)$revision_raw : 0;
-            
-            // Map status value from dropdown (numeric) to DB string enum
-            $status_raw = $this->input->post('STATUS', TRUE);
-            $status = 'ACTIVE'; // default
-            if ($status_raw === '0' || $status_raw === 0) {
-                $status = 'INACTIVE';
-            } elseif ($status_raw === '2' || $status_raw === 2) {
-                $status = 'PENDING';
-            } elseif ($status_raw === '1' || $status_raw === 1 || $status_raw === '' || $status_raw === null) {
-                $status = 'ACTIVE';
-            }
-            
-            $effective_date = trim($this->input->post('EFFECTIVE_DATE', TRUE));
-            $change_summary = trim($this->input->post('CHANGE_SUMMARY', TRUE));
-            
-            // Handle Trial BOM checkbox
-            $is_trial_bom = $this->input->post('IS_TRIAL_BOM', TRUE);
-            $is_trial_bom = ($is_trial_bom === '1' || $is_trial_bom === 1 || $is_trial_bom === 'on') ? 1 : 0;
-
-            // Handle file upload for drawing
-            $drawing_filename = '';
-            if (!empty($_FILES) && isset($_FILES['DRAWING_FILE']) && !empty($_FILES['DRAWING_FILE']['name'])) {
-                // save drawing under project/tool_engineering/img/
-                $uploadDir = FCPATH . 'tool_engineering/img/';
-                if (!is_dir($uploadDir)) {
-                    @mkdir($uploadDir, 0755, true);
-                }
-                $origName = $_FILES['DRAWING_FILE']['name'];
-                $safeName = preg_replace('/[^A-Za-z0-9_\-\.]/', '_', basename($origName));
-                $fileName = 'BOM_' . time() . '_' . $safeName;
-                $target = $uploadDir . $fileName;
-                if (move_uploaded_file($_FILES['DRAWING_FILE']['tmp_name'], $target)) {
-                    $drawing_filename = $fileName;
-                } else {
-                    $result['message'] = 'Gagal mengunggah file drawing.';
-                    echo json_encode($result);
-                    return;
-                }
-            } else {
-                // Keep old filename if editing and no new file uploaded
-                if ($action === 'EDIT' && $id > 0) {
-                    $current = $this->tool_bom_engin->get_by_id($id);
-                    if ($current && isset($current['DRAWING']) && $current['DRAWING'] !== '') {
-                        $drawing_filename = $current['DRAWING'];
-                    }
-                }
-            }
-
-            if ($action === 'ADD') {
-                $ok = $this->tool_bom_engin->add_data($tool_bom, $description, $product_id, $process_id, $machine_group_id, $revision, $status, $effective_date, $change_summary, $drawing_filename, $is_trial_bom);
-                if ($ok === true) {
-                    $result['success'] = true;
-                    $result['message'] = $this->tool_bom_engin->messages ?: 'Tool BOM Engineering berhasil ditambahkan.';
-                } else {
-                    $result['success'] = false;
-                    $result['message'] = $this->tool_bom_engin->messages ?: 'Gagal menambahkan tool BOM engineering.';
-                }
-                $json = json_encode($result);
-                log_message('debug', '[submit_data ADD] response: ' . $json);
-                echo $json;
-                return;
-            }
-
-            if ($action === 'EDIT' && $id > 0) {
-                $ok = $this->tool_bom_engin->edit_data($id, $tool_bom, $description, $product_id, $process_id, $machine_group_id, $revision, $status, $effective_date, $change_summary, $drawing_filename, $is_trial_bom);
-                if ($ok === true) {
-                    $result['success'] = true;
-                    $result['message'] = $this->tool_bom_engin->messages ?: 'Tool BOM Engineering berhasil diperbarui.';
-                } else {
-                    $result['success'] = false;
-                    $result['message'] = $this->tool_bom_engin->messages ?: 'Gagal memperbarui tool BOM engineering.';
-                }
-                $json = json_encode($result);
-                log_message('debug', '[submit_data EDIT] response: ' . $json);
-                echo $json;
-                return;
-            }
-
-            $result['message'] = 'Parameter action/ID tidak valid.';
-            $json = json_encode($result);
-            log_message('debug', '[submit_data] invalid action/id response: ' . $json);
-            echo $json;
-            return;
-        } catch (Exception $e) {
-            // log full context for debugging
-            $ctx = array(
-                'msg' => $e->getMessage(),
-                'post' => $_POST,
-                'files' => isset($_FILES) ? array_map(function($f){ return array('name'=>isset($f['name'])?$f['name']:null,'error'=>isset($f['error'])?$f['error']:null); }, $_FILES) : array()
-            );
-            log_message('error', '[Tool_bom_engin::submit_data] Exception: ' . $e->getMessage() . ' | Context: ' . json_encode($ctx));
-            $result['success'] = false;
-            $result['message'] = 'Server error. Cek log untuk detail.';
-            echo json_encode($result);
-            return;
-        }
-    }
-
-    /**
-     * delete_data: delete tool BOM engineering
-     */
-    public function delete_data()
-    {
-        $this->output->set_content_type('application/json');
-
-        $id = (int)$this->input->post('ID', TRUE);
+        $id = (int)$id;
         if ($id <= 0) {
-            echo json_encode(array('success' => false, 'message' => 'ID tidak ditemukan.'));
-            return;
-        }
-
-        $ok = $this->tool_bom_engin->delete_data($id);
-        if ($ok) {
-            echo json_encode(array('success' => true, 'message' => $this->tool_bom_engin->messages ?: 'Tool BOM Engineering berhasil dihapus.'));
-        } else {
-            echo json_encode(array('success' => false, 'message' => $this->tool_bom_engin->messages ?: 'Gagal menghapus tool BOM engineering.'));
-        }
-    }
-
-    /**
-     * get_tool_bom_engin_detail: ambil data by id (AJAX)
-     */
-    public function get_tool_bom_engin_detail()
-    {
-        $this->output->set_content_type('application/json');
-
-        $id = (int)$this->input->post('ID', TRUE);
-        if ($id <= 0) {
-            echo json_encode(array('success' => false, 'message' => 'ID tidak ditemukan.'));
+            show_404();
             return;
         }
 
         $row = $this->tool_bom_engin->get_by_id($id);
-        if ($row) {
-            echo json_encode(array('success' => true, 'data' => $row));
-        } else {
-            echo json_encode(array('success' => false, 'message' => 'Data tidak ditemukan.'));
+        if (!$row) {
+            show_404();
+            return;
         }
+
+        $data = array();
+        $data['drawing'] = $row;
+        $data['history'] = $this->tool_bom_engin->get_history($id);
+
+        $this->view('history_tool_bom_engin', $data, FALSE);
     }
 }
 
