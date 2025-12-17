@@ -62,14 +62,13 @@ class Tool_bom_engin extends MY_Controller
             $formatted_data = array();
             foreach ($result['data'] as $row) {
                 $st = isset($row['TD_STATUS']) ? (int)$row['TD_STATUS'] : 0;
+                // Status: 2=Active, 3=Pending, 5/lainnya=Inactive
                 if ($st === 2) {
                     $status_badge = '<span class="badge badge-success">Active</span>';
-                } elseif ($st === 1) {
+                } elseif ($st === 3) {
                     $status_badge = '<span class="badge badge-warning">Pending</span>';
-                } elseif ($st === 0) {
-                    $status_badge = '<span class="badge badge-secondary">Inactive</span>';
                 } else {
-                    $status_badge = '<span class="badge badge-info">Status: ' . $st . '</span>';
+                    $status_badge = '<span class="badge badge-secondary">Inactive</span>';
                 }
 
                 $id = (int)$row['TD_ID'];

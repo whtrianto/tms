@@ -69,7 +69,7 @@
                     </div>
                     <div class="card-body">
                         <div class="table-responsive">
-                            <table id="table-tool-bom" class="table table-bordered table-striped w-100 text-center">
+                            <table id="table-tool-bom" class="table table-bordered table-striped w-100 text-left">
                                 <thead>
                                     <tr>
                                         <th>ID</th>
