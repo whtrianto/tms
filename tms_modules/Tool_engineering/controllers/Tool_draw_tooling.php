@@ -70,16 +70,16 @@ class Tool_draw_tooling extends MY_Controller
         $data = array();
         foreach ($result['data'] as $row) {
             $id = $row['MLR_ID'];
-            $drawing_no = htmlspecialchars($row['ML_TOOL_DRAW_NO'] ?? '', ENT_QUOTES, 'UTF-8');
-            $tool_name = htmlspecialchars($row['TC_NAME'] ?? '', ENT_QUOTES, 'UTF-8');
-            $min_qty = (int)($row['MLR_MIN_QTY'] ?? 0);
-            $replenish_qty = (int)($row['MLR_REPLENISH_QTY'] ?? 0);
-            $maker = htmlspecialchars($row['MAKER_NAME'] ?? '', ENT_QUOTES, 'UTF-8');
-            $price = number_format((float)($row['MLR_PRICE'] ?? 0), 2);
-            $desc = htmlspecialchars($row['MLR_DESC'] ?? '', ENT_QUOTES, 'UTF-8');
-            $eff_date = htmlspecialchars($row['MLR_EFFECTIVE_DATE'] ?? '', ENT_QUOTES, 'UTF-8');
-            $material = htmlspecialchars($row['MAT_NAME'] ?? '', ENT_QUOTES, 'UTF-8');
-            $tool_life = htmlspecialchars($row['MLR_STD_TL_LIFE'] ?? '', ENT_QUOTES, 'UTF-8');
+            $drawing_no = htmlspecialchars(isset($row['ML_TOOL_DRAW_NO']) ? $row['ML_TOOL_DRAW_NO'] : '', ENT_QUOTES, 'UTF-8');
+            $tool_name = htmlspecialchars(isset($row['TC_NAME']) ? $row['TC_NAME'] : '', ENT_QUOTES, 'UTF-8');
+            $min_qty = (int)(isset($row['MLR_MIN_QTY']) ? $row['MLR_MIN_QTY'] : 0);
+            $replenish_qty = (int)(isset($row['MLR_REPLENISH_QTY']) ? $row['MLR_REPLENISH_QTY'] : 0);
+            $maker = htmlspecialchars(isset($row['MAKER_NAME']) ? $row['MAKER_NAME'] : '', ENT_QUOTES, 'UTF-8');
+            $price = number_format((float)(isset($row['MLR_PRICE']) ? $row['MLR_PRICE'] : 0), 2);
+            $desc = htmlspecialchars(isset($row['MLR_DESC']) ? $row['MLR_DESC'] : '', ENT_QUOTES, 'UTF-8');
+            $eff_date = htmlspecialchars(isset($row['MLR_EFFECTIVE_DATE']) ? $row['MLR_EFFECTIVE_DATE'] : '', ENT_QUOTES, 'UTF-8');
+            $material = htmlspecialchars(isset($row['MAT_NAME']) ? $row['MAT_NAME'] : '', ENT_QUOTES, 'UTF-8');
+            $tool_life = htmlspecialchars(isset($row['MLR_STD_TL_LIFE']) ? $row['MLR_STD_TL_LIFE'] : '', ENT_QUOTES, 'UTF-8');
 
             $detail_url = base_url('Tool_engineering/tool_draw_tooling/detail_page/' . $id);
             $edit_url = base_url('Tool_engineering/tool_draw_tooling/edit_page/' . $id);
