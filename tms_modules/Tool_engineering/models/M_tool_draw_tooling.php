@@ -7,14 +7,14 @@ if (!class_exists('M_tool_draw_tooling')) {
     // Using TMS_NEW database tables: TMS_TOOL_MASTER_LIST and TMS_TOOL_MASTER_LIST_REV
     private $table_rev = 'TMS_NEW.dbo.TMS_TOOL_MASTER_LIST_REV';
     private $table_ml = 'TMS_NEW.dbo.TMS_TOOL_MASTER_LIST';
-    public $tms_db;
+    public $tms_NEW;
     public $messages = '';
     public $uid = ''; // will receive username from controller
 
     public function __construct()
     {
         parent::__construct();
-        $this->tms_db = $this->load->database('tms_db', TRUE);
+        $this->tms_NEW = $this->load->database('tms_NEW', TRUE);
     }
 
     public function get_all()
@@ -37,7 +37,7 @@ if (!class_exists('M_tool_draw_tooling')) {
                 LEFT JOIN TMS_NEW.dbo.MS_MATERIAL mt ON mlr.MLR_MAT_ID = mt.MAT_ID
                 ORDER BY mlr.MLR_ID DESC";
 
-        $result = $this->tms_db->query($sql);
+        $result = $this->tms_NEW->query($sql);
 
         if ($result && $result->num_rows() > 0) {
             return $result->result_array();
@@ -69,7 +69,7 @@ if (!class_exists('M_tool_draw_tooling')) {
                 LEFT JOIN TMS_NEW.dbo.MS_OPERATION op ON mlr.MLR_OP_ID = op.OP_ID
                 WHERE mlr.MLR_ID = ?";
 
-        $result = $this->tms_db->query($sql, array($id));
+        $result = $this->tms_NEW->query($sql, array($id));
         if ($result && $result->num_rows() > 0) {
             return $result->row_array();
         }
@@ -82,7 +82,7 @@ if (!class_exists('M_tool_draw_tooling')) {
     public function get_tools()
     {
         $table = 'TMS_NEW.dbo.MS_TOOL_CLASS';
-        $result = $this->tms_db
+        $result = $this->tms_NEW
             ->select('TC_ID, TC_NAME, TC_DESC, TC_ABBR, TC_TYPE')
             ->from($table)
             ->order_by('TC_NAME', 'ASC')
@@ -99,7 +99,7 @@ if (!class_exists('M_tool_draw_tooling')) {
         $id = (int)$id;
         if ($id <= 0) return null;
         $table = 'TMS_NEW.dbo.MS_TOOL_CLASS';
-        $result = $this->tms_db->select('TC_ID, TC_NAME')->from($table)->where('TC_ID', $id)->limit(1)->get();
+        $result = $this->tms_NEW->select('TC_ID, TC_NAME')->from($table)->where('TC_ID', $id)->limit(1)->get();
         if ($result && $result->num_rows() > 0) return $result->row_array();
         return null;
     }
@@ -110,7 +110,7 @@ if (!class_exists('M_tool_draw_tooling')) {
     public function get_makers()
     {
         $table = 'TMS_NEW.dbo.MS_MAKER';
-        $result = $this->tms_db
+        $result = $this->tms_NEW
             ->select('MAKER_ID, MAKER_NAME, MAKER_CODE, MAKER_DESC')
             ->from($table)
             ->order_by('MAKER_NAME', 'ASC')
@@ -127,7 +127,7 @@ if (!class_exists('M_tool_draw_tooling')) {
         $id = (int)$id;
         if ($id <= 0) return null;
         $table = 'TMS_NEW.dbo.MS_MAKER';
-        $result = $this->tms_db->select('MAKER_ID, MAKER_NAME')->from($table)->where('MAKER_ID', $id)->limit(1)->get();
+        $result = $this->tms_NEW->select('MAKER_ID, MAKER_NAME')->from($table)->where('MAKER_ID', $id)->limit(1)->get();
         if ($result && $result->num_rows() > 0) return $result->row_array();
         return null;
     }
@@ -138,7 +138,7 @@ if (!class_exists('M_tool_draw_tooling')) {
     public function get_materials()
     {
         $table = 'TMS_NEW.dbo.MS_MATERIAL';
-        $result = $this->tms_db
+        $result = $this->tms_NEW
             ->select('MAT_ID, MAT_NAME, MAT_DESC, MAT_CODE')
             ->from($table)
             ->order_by('MAT_NAME', 'ASC')
@@ -155,7 +155,7 @@ if (!class_exists('M_tool_draw_tooling')) {
         $id = (int)$id;
         if ($id <= 0) return null;
         $table = 'TMS_NEW.dbo.MS_MATERIAL';
-        $result = $this->tms_db->select('MAT_ID, MAT_NAME')->from($table)->where('MAT_ID', $id)->limit(1)->get();
+        $result = $this->tms_NEW->select('MAT_ID, MAT_NAME')->from($table)->where('MAT_ID', $id)->limit(1)->get();
         if ($result && $result->num_rows() > 0) return $result->row_array();
         return null;
     }
@@ -178,7 +178,7 @@ if (!class_exists('M_tool_draw_tooling')) {
             return false;
         }
 
-        $this->tms_db->trans_start();
+        $this->tms_NEW->trans_start();
 
         // First insert into TMS_TOOL_MASTER_LIST
         $ml_data = array(
@@ -186,11 +186,11 @@ if (!class_exists('M_tool_draw_tooling')) {
             'ML_TYPE' => 1,
             'ML_TRIAL' => 0
         );
-        $this->tms_db->insert($this->table_ml, $ml_data);
-        $ml_id = (int)$this->tms_db->insert_id();
+        $this->tms_NEW->insert($this->table_ml, $ml_data);
+        $ml_id = (int)$this->tms_NEW->insert_id();
         
         if ($ml_id <= 0) {
-            $row = $this->tms_db->query("SELECT IDENT_CURRENT('TMS_TOOL_MASTER_LIST') AS last_id")->row_array();
+            $row = $this->tms_NEW->query("SELECT IDENT_CURRENT('TMS_TOOL_MASTER_LIST') AS last_id")->row_array();
             if ($row && isset($row['last_id'])) $ml_id = (int)$row['last_id'];
         }
 
@@ -226,15 +226,15 @@ if (!class_exists('M_tool_draw_tooling')) {
             $insertData['MLR_MODIFIED_BY'] = $modifiedBy;
         }
 
-        $ok = $this->tms_db->insert($this->table_rev, $insertData);
+        $ok = $this->tms_NEW->insert($this->table_rev, $insertData);
 
-        $this->tms_db->trans_complete();
+        $this->tms_NEW->trans_complete();
 
-        if ($this->tms_db->trans_status()) {
+        if ($this->tms_NEW->trans_status()) {
             $this->messages = 'Tool Drawing Tooling berhasil ditambahkan.';
             return true;
         }
-        $err = $this->tms_db->error();
+        $err = $this->tms_NEW->error();
         $this->messages = 'Gagal menambahkan tool drawing tooling. ' . (isset($err['message']) ? $err['message'] : '');
         return false;
     }
@@ -293,13 +293,13 @@ if (!class_exists('M_tool_draw_tooling')) {
             $updateData['MLR_MAT_ID'] = null;
         }
 
-        $ok = $this->tms_db->where('MLR_ID', $id)->update($this->table_rev, $updateData);
+        $ok = $this->tms_NEW->where('MLR_ID', $id)->update($this->table_rev, $updateData);
 
         if ($ok) {
             $this->messages = 'Tool Drawing Tooling berhasil diubah.';
             return true;
         }
-        $err = $this->tms_db->error();
+        $err = $this->tms_NEW->error();
         $this->messages = 'Gagal mengubah tool drawing tooling. ' . (isset($err['message']) ? $err['message'] : '');
         return false;
     }
@@ -313,13 +313,13 @@ if (!class_exists('M_tool_draw_tooling')) {
             return false;
         }
 
-        $ok = $this->tms_db->delete($this->table_rev, array('MLR_ID' => $id));
+        $ok = $this->tms_NEW->delete($this->table_rev, array('MLR_ID' => $id));
 
         if ($ok) {
             $this->messages = 'Tool Drawing Tooling berhasil dihapus.';
             return true;
         }
-        $err = $this->tms_db->error();
+        $err = $this->tms_NEW->error();
         $this->messages = 'Gagal menghapus tool drawing tooling. ' . (isset($err['message']) ? $err['message'] : '');
         return false;
     }
@@ -367,7 +367,7 @@ if (!class_exists('M_tool_draw_tooling')) {
                 WHERE mlr.MLR_ML_ID = ?
                 ORDER BY mlr.MLR_REV DESC";
 
-        $result = $this->tms_db->query($sql, array($ml_id));
+        $result = $this->tms_NEW->query($sql, array($ml_id));
         if ($result && $result->num_rows() > 0) {
             return $result->result_array();
         }
@@ -377,12 +377,12 @@ if (!class_exists('M_tool_draw_tooling')) {
     }
 
     /**
-     * Get all products from MS_PRODUCT
+     * Get all parts from MS_PARTS (used as Products)
      */
     public function get_products()
     {
-        $sql = "SELECT PRODUCT_ID, PRODUCT_NAME FROM TMS_NEW.dbo.MS_PRODUCT ORDER BY PRODUCT_NAME";
-        $query = $this->tms_db->query($sql);
+        $sql = "SELECT PART_ID AS PRODUCT_ID, PART_NAME AS PRODUCT_NAME FROM TMS_NEW.dbo.MS_PARTS ORDER BY PART_NAME";
+        $query = $this->tms_NEW->query($sql);
         return $query ? $query->result_array() : array();
     }
 
@@ -392,37 +392,39 @@ if (!class_exists('M_tool_draw_tooling')) {
     public function get_operations()
     {
         $sql = "SELECT OP_ID, OP_NAME FROM TMS_NEW.dbo.MS_OPERATION ORDER BY OP_NAME";
-        $query = $this->tms_db->query($sql);
+        $query = $this->tms_NEW->query($sql);
         return $query ? $query->result_array() : array();
     }
 
     /**
      * Get Tool BOM list by ML_ID (master list id)
+     * Uses TMS_TOOL_MASTER_LIST_MEMBERS (parent-child relationship)
      */
     public function get_tool_bom_by_ml_id($mlr_id)
     {
         // First get the ML_ID from MLR_ID
         $sql = "SELECT MLR_ML_ID FROM {$this->table_rev} WHERE MLR_ID = ?";
-        $query = $this->tms_db->query($sql, array($mlr_id));
+        $query = $this->tms_NEW->query($sql, array($mlr_id));
         if (!$query || $query->num_rows() == 0) {
             return array();
         }
         $row = $query->row_array();
         $ml_id = $row['MLR_ML_ID'];
 
-        // Get Tool BOM entries that use this tool
+        // Get Tool BOM entries (parent tools) that use this tool as child
         $sql = "SELECT 
-                    tb.TB_ID,
-                    tb.TB_BOM_NO AS TOOL_BOM,
-                    p.PRODUCT_NAME AS PRODUCT,
-                    tb.TB_REV AS BOM_REV,
-                    tbd.TBD_QTY AS QTY
-                FROM TMS_NEW.dbo.TMS_TOOL_BOM tb
-                LEFT JOIN TMS_NEW.dbo.TMS_TOOL_BOM_DTL tbd ON tb.TB_ID = tbd.TBD_TB_ID
-                LEFT JOIN TMS_NEW.dbo.MS_PRODUCT p ON tb.TB_PRODUCT_ID = p.PRODUCT_ID
-                WHERE tbd.TBD_ML_ID = ?
-                ORDER BY tb.TB_BOM_NO";
-        $query = $this->tms_db->query($sql, array($ml_id));
+                    tbm.TB_ID,
+                    ml_parent.ML_TOOL_DRAW_NO AS TOOL_BOM,
+                    dbo.fnGetToolMasterListParts(ml_parent.ML_ID) AS PRODUCT,
+                    mlr_parent.MLR_REV AS BOM_REV,
+                    tbm.TB_QTY AS QTY
+                FROM TMS_NEW.dbo.TMS_TOOL_MASTER_LIST_MEMBERS tbm
+                LEFT JOIN TMS_NEW.dbo.TMS_TOOL_MASTER_LIST_REV mlr_child ON tbm.TB_MLR_CHILD_ID = mlr_child.MLR_ID
+                LEFT JOIN TMS_NEW.dbo.TMS_TOOL_MASTER_LIST_REV mlr_parent ON tbm.TB_MLR_PARENT_ID = mlr_parent.MLR_ID
+                LEFT JOIN TMS_NEW.dbo.TMS_TOOL_MASTER_LIST ml_parent ON mlr_parent.MLR_ML_ID = ml_parent.ML_ID
+                WHERE mlr_child.MLR_ML_ID = ?
+                ORDER BY ml_parent.ML_TOOL_DRAW_NO";
+        $query = $this->tms_NEW->query($sql, array($ml_id));
         return $query ? $query->result_array() : array();
     }
 } // end class M_tool_draw_tooling

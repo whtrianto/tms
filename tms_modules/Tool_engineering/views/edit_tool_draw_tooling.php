@@ -45,22 +45,8 @@
                             <input type="hidden" name="MLR_ID" value="<?= htmlspecialchars($drawing['MLR_ID']); ?>">
                             <input type="hidden" name="ML_TOOL_DRAW_NO_OLD" value="<?= htmlspecialchars(isset($drawing['ML_TOOL_DRAW_NO']) ? $drawing['ML_TOOL_DRAW_NO'] : ''); ?>">
 
-                            <!-- Row 1: Product, Tool Name -->
+                            <!-- Row 1: Tool Name, Tool Drawing No -->
                             <div class="form-row">
-                                <div class="form-group col-md-6">
-                                    <label class="label-required">Product</label>
-                                    <select name="MLR_PRODUCT_ID" class="form-control" required>
-                                        <option value="">-- Select Product --</option>
-                                        <?php 
-                                        $products = isset($products) ? $products : array();
-                                        foreach ($products as $p): ?>
-                                            <option value="<?= (int)$p['PRODUCT_ID']; ?>" <?= (isset($drawing['MLR_PRODUCT_ID']) && (int)$drawing['MLR_PRODUCT_ID'] === (int)$p['PRODUCT_ID']) ? 'selected' : ''; ?>>
-                                                <?= htmlspecialchars($p['PRODUCT_NAME'], ENT_QUOTES, 'UTF-8'); ?>
-                                            </option>
-                                        <?php endforeach; ?>
-                                    </select>
-                                    <div class="invalid-feedback">Product wajib dipilih.</div>
-                                </div>
                                 <div class="form-group col-md-6">
                                     <label class="label-required">Tool Name</label>
                                     <select name="MLR_TC_ID" class="form-control" required>
@@ -78,21 +64,21 @@
                                     </select>
                                     <div class="invalid-feedback">Tool Name wajib dipilih.</div>
                                 </div>
-                            </div>
-
-                            <!-- Row 2: Tool Drawing No, Revision, Maker -->
-                            <div class="form-row">
-                                <div class="form-group col-md-4">
+                                <div class="form-group col-md-6">
                                     <label class="label-required">Tool Drawing No.</label>
                                     <input type="text" name="ML_TOOL_DRAW_NO" class="form-control" value="<?= htmlspecialchars(isset($drawing['ML_TOOL_DRAW_NO']) ? $drawing['ML_TOOL_DRAW_NO'] : ''); ?>" required>
                                     <div class="invalid-feedback">Tool Drawing No wajib diisi.</div>
                                 </div>
-                                <div class="form-group col-md-4">
+                            </div>
+
+                            <!-- Row 2: Revision, Maker -->
+                            <div class="form-row">
+                                <div class="form-group col-md-6">
                                     <label class="label-required">Revision</label>
                                     <input type="number" name="MLR_REV" class="form-control" value="<?= htmlspecialchars(isset($drawing['MLR_REV']) ? (int)$drawing['MLR_REV'] : 0); ?>" min="0" required>
                                     <div class="invalid-feedback">Revision wajib diisi.</div>
                                 </div>
-                                <div class="form-group col-md-4">
+                                <div class="form-group col-md-6">
                                     <label>Maker</label>
                                     <select name="MLR_MAKER_ID" class="form-control">
                                         <option value="">-- Select Maker --</option>
@@ -277,20 +263,12 @@
     $(function(){
         $('#formToolDrawing').on('submit', function(e){
             e.preventDefault();
-            var productId = $.trim($('[name="MLR_PRODUCT_ID"]').val());
             var toolId = $.trim($('[name="MLR_TC_ID"]').val());
             var drawingNo = $.trim($('[name="ML_TOOL_DRAW_NO"]').val());
             var revision = $.trim($('[name="MLR_REV"]').val());
             var processId = $.trim($('[name="MLR_OP_ID"]').val());
 
             var isValid = true;
-            
-            if (productId === '' || productId <= 0) {
-                $('[name="MLR_PRODUCT_ID"]').addClass('is-invalid');
-                isValid = false;
-            } else {
-                $('[name="MLR_PRODUCT_ID"]').removeClass('is-invalid');
-            }
             
             if (toolId === '' || toolId <= 0) {
                 $('[name="MLR_TC_ID"]').addClass('is-invalid');
@@ -346,40 +324,6 @@
             });
         });
 
-        // Update Shared Tool table when Product changes
-        $('[name="MLR_PRODUCT_ID"]').on('change', function(){
-            var productId = $(this).val();
-            if (productId && productId > 0) {
-                $.ajax({
-                    url: '<?= base_url("Tool_engineering/tool_draw_tooling/get_tool_bom_by_product"); ?>',
-                    type: 'POST',
-                    dataType: 'json',
-                    data: { PRODUCT_ID: productId }
-                }).done(function(res){
-                    if (res && res.success && res.data) {
-                        var tbody = $('#shared-tool-card table tbody');
-                        tbody.empty();
-                        if (res.data.length > 0) {
-                            var no = 1;
-                            res.data.forEach(function(bom){
-                                var row = '<tr>' +
-                                    '<td class="text-center">' + (no++) + '</td>' +
-                                    '<td>' + (bom.TOOL_BOM || '') + '</td>' +
-                                    '<td>' + (bom.PRODUCT || '') + '</td>' +
-                                    '<td class="text-center">' + (bom.BOM_REV || '') + '</td>' +
-                                    '<td class="text-center">' + (bom.QTY || '') + '</td>' +
-                                    '</tr>';
-                                tbody.append(row);
-                            });
-                        } else {
-                            tbody.append('<tr><td colspan="5" class="text-center text-muted">Tidak ada Tool BOM yang menggunakan tool drawing ini.</td></tr>');
-                        }
-                    }
-                }).fail(function(){
-                    // Silently fail
-                });
-            }
-        });
     });
 })(jQuery);
 </script>

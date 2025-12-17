@@ -170,7 +170,6 @@ class Tool_draw_tooling extends MY_Controller
         $data['tools'] = $this->tool_draw_tooling->get_tools();
         $data['makers'] = $this->tool_draw_tooling->get_makers();
         $data['materials'] = $this->tool_draw_tooling->get_materials();
-        $data['products'] = $this->tool_draw_tooling->get_products();
         $data['operations'] = $this->tool_draw_tooling->get_operations();
         $data['tool_bom_list'] = $this->tool_draw_tooling->get_tool_bom_by_ml_id($id);
 
