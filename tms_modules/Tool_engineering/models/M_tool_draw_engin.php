@@ -272,8 +272,48 @@ class M_tool_draw_engin extends CI_Model
         $product_id = (int)$product_id;
         if ($product_id <= 0) return array();
         
-        // Placeholder - adjust based on actual BOM table structure
-        // This is a simplified version, you may need to adjust based on your actual BOM table
+        // Placeholder - kept for backward compatibility
+        return array();
+    }
+
+    /**
+     * Get Tool BOM list by MLR_ID (child)
+     * Mengambil semua Tool BOM yang menggunakan tool drawing ini
+     */
+    public function get_tool_bom_by_mlr_id($mlr_id)
+    {
+        $mlr_id = (int)$mlr_id;
+        if ($mlr_id <= 0) return array();
+
+        $sql = "
+            SELECT 
+                members.TB_ID AS ID,
+                members.TB_QTY AS QTY,
+                members.TB_SEQ AS SEQ,
+                parent_ml.ML_ID AS BOM_ML_ID,
+                parent_ml.ML_TOOL_DRAW_NO AS TOOL_BOM,
+                parent_rev.MLR_REV AS BOM_REV,
+                parent_rev.MLR_STATUS AS BOM_STATUS,
+                ISNULL(part.PART_NAME, '') AS PRODUCT
+            FROM TMS_NEW.dbo.TMS_TOOL_MASTER_LIST_MEMBERS members
+            INNER JOIN TMS_NEW.dbo.TMS_TOOL_MASTER_LIST_REV parent_rev 
+                ON parent_rev.MLR_ID = members.TB_MLR_PARENT_ID
+            INNER JOIN TMS_NEW.dbo.TMS_TOOL_MASTER_LIST parent_ml 
+                ON parent_ml.ML_ID = parent_rev.MLR_ML_ID
+            LEFT JOIN TMS_NEW.dbo.TMS_TOOL_MASTER_LIST_PARTS mlparts 
+                ON mlparts.TMLP_ML_ID = parent_ml.ML_ID
+            LEFT JOIN TMS_NEW.dbo.MS_PARTS part 
+                ON part.PART_ID = mlparts.TMLP_PART_ID
+            WHERE members.TB_MLR_CHILD_ID = ?
+              AND parent_ml.ML_TYPE = 2
+              AND parent_rev.MLR_STATUS = 2
+            ORDER BY parent_ml.ML_TOOL_DRAW_NO, parent_rev.MLR_REV DESC
+        ";
+
+        $q = $this->db_tms->query($sql, array($mlr_id));
+        if ($q && $q->num_rows() > 0) {
+            return $q->result_array();
+        }
         return array();
     }
 

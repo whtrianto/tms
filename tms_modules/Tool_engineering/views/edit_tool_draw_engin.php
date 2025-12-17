@@ -213,42 +213,34 @@
                 <!-- Shared Tool Section -->
                 <div class="card mb-3 mt-3" id="shared-tool-card">
                     <div class="card-header">
-                        <h5 class="m-0 font-weight-bold text-primary">Shared Tool</h5>
+                        <h5 class="m-0 font-weight-bold text-primary">Shared Tool (Tool BOM yang menggunakan tool ini)</h5>
                     </div>
                     <div class="card-body">
                         <div class="table-responsive">
                             <table class="table table-bordered table-striped table-sm">
                                 <thead>
                                     <tr>
-                                        <th>ID</th>
+                                        <th>No</th>
+                                        <th>Tool BOM No</th>
                                         <th>Product</th>
-                                        <th>Tool BOM</th>
+                                        <th>Rev</th>
+                                        <th>Qty</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <?php if (!empty($tool_bom_list)): ?>
-                                        <?php 
-                                        // Get product name for display
-                                        $current_product_name = '';
-                                        if (isset($drawing['TD_PRODUCT_ID']) && (int)$drawing['TD_PRODUCT_ID'] > 0) {
-                                            foreach ($products as $p) {
-                                                if ((int)$p['PRODUCT_ID'] === (int)$drawing['TD_PRODUCT_ID']) {
-                                                    $current_product_name = $p['PRODUCT_NAME'];
-                                                    break;
-                                                }
-                                            }
-                                        }
-                                        ?>
-                                        <?php foreach ($tool_bom_list as $bom): ?>
+                                        <?php $no = 1; foreach ($tool_bom_list as $bom): ?>
                                             <tr>
-                                                <td class="text-center"><?= htmlspecialchars(isset($bom['ID']) ? (int)$bom['ID'] : '', ENT_QUOTES, 'UTF-8'); ?></td>
-                                                <td><?= htmlspecialchars($current_product_name !== '' ? $current_product_name : (isset($bom['PRODUCT']) ? $bom['PRODUCT'] : ''), ENT_QUOTES, 'UTF-8'); ?></td>
+                                                <td class="text-center"><?= $no++; ?></td>
                                                 <td><?= htmlspecialchars(isset($bom['TOOL_BOM']) ? $bom['TOOL_BOM'] : '', ENT_QUOTES, 'UTF-8'); ?></td>
+                                                <td><?= htmlspecialchars(isset($bom['PRODUCT']) ? $bom['PRODUCT'] : '', ENT_QUOTES, 'UTF-8'); ?></td>
+                                                <td class="text-center"><?= htmlspecialchars(isset($bom['BOM_REV']) ? $bom['BOM_REV'] : '', ENT_QUOTES, 'UTF-8'); ?></td>
+                                                <td class="text-center"><?= htmlspecialchars(isset($bom['QTY']) ? $bom['QTY'] : '', ENT_QUOTES, 'UTF-8'); ?></td>
                                             </tr>
                                         <?php endforeach; ?>
                                     <?php else: ?>
                                         <tr>
-                                            <td colspan="3" class="text-center text-muted">No shared tool BOM found for this product.</td>
+                                            <td colspan="5" class="text-center text-muted">Tidak ada Tool BOM yang menggunakan tool drawing ini.</td>
                                         </tr>
                                     <?php endif; ?>
                                 </tbody>

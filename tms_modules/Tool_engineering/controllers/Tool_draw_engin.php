@@ -309,10 +309,10 @@ class Tool_draw_engin extends MY_Controller
         // Resolve tool ID
         $row['TD_TOOL_ID'] = isset($row['TD_TOOL_ID']) ? (int)$row['TD_TOOL_ID'] : null;
 
-        // Get Tool BOM by Product ID
+        // Get Tool BOM by MLR_ID (TD_ID)
         $tool_bom_list = array();
-        if (isset($row['TD_PRODUCT_ID']) && (int)$row['TD_PRODUCT_ID'] > 0) {
-            $tool_bom_list = $this->tool_draw_engin->get_tool_bom_by_product_id((int)$row['TD_PRODUCT_ID']);
+        if (isset($row['TD_ID']) && (int)$row['TD_ID'] > 0) {
+            $tool_bom_list = $this->tool_draw_engin->get_tool_bom_by_mlr_id((int)$row['TD_ID']);
         }
 
         $data = array();
