@@ -25,8 +25,7 @@
         .status-pending { background: #fff3cd; color: #856404; }
         .status-inactive { background: #f8d7da; color: #721c24; }
         
-        .btn-actions { position: fixed; bottom: 80px; right: 30px; z-index: 1000; }
-        .btn-actions .btn { margin-left: 0.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+        .card-footer-actions { text-align: right; padding-top: 1rem; border-top: 1px solid #e3e6f0; margin-top: 1.5rem; }
     </style>
 </head>
 <body id="page-top">
@@ -39,8 +38,11 @@
 
             <div class="container-fluid" id="container-wrapper">
                 <div class="card mb-3">
-                    <div class="card-header">
+                    <div class="card-header d-flex align-items-center justify-content-between">
                         <h4 class="m-0 font-weight-bold text-primary">Detail Tool Drawing Tooling</h4>
+                        <a href="<?= base_url('Tool_engineering/tool_draw_tooling'); ?>" class="btn btn-sm btn-outline-primary shadow-sm">
+                            <i class="fa fa-arrow-left"></i> Back
+                        </a>
                     </div>
                     <div class="card-body">
                         <?php
@@ -176,6 +178,13 @@
                                 </div>
                             </div>
                         </div>
+
+                        <!-- Save Button -->
+                        <div class="card-footer-actions">
+                            <a href="<?= base_url('Tool_engineering/tool_draw_tooling/edit_page/' . $drawing['MLR_ID']); ?>" class="btn btn-primary">
+                                <i class="fa fa-save"></i> Save
+                            </a>
+                        </div>
                     </div>
                 </div>
 
@@ -213,16 +222,6 @@
                         </div>
                     </div>
                 </div>
-            </div>
-
-            <!-- Fixed Action Buttons -->
-            <div class="btn-actions">
-                <a href="<?= base_url('Tool_engineering/tool_draw_tooling'); ?>" class="btn btn-outline-secondary">
-                    <i class="fa fa-arrow-left"></i> Back
-                </a>
-                <a href="<?= base_url('Tool_engineering/tool_draw_tooling/edit_page/' . $drawing['MLR_ID']); ?>" class="btn btn-primary">
-                    <i class="fa fa-edit"></i> Edit
-                </a>
             </div>
 
             <?= isset($modal_logout) ? $modal_logout : ''; ?>
