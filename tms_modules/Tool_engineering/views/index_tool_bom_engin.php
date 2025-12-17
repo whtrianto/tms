@@ -97,7 +97,9 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <?php foreach ($list_data as $row): 
+                                    <?php 
+                                    $list_data = isset($list_data) ? $list_data : array();
+                                    foreach ($list_data as $row): 
                                         // Resolve product name
                                         $product_name = '';
                                         if (isset($row['PRODUCT_ID']) && $row['PRODUCT_ID'] > 0) {
