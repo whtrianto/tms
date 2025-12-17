@@ -239,14 +239,38 @@
             }
         });
 
-        // Fix header alignment on window resize/zoom
+        // Fix header alignment on window resize/zoom and sidebar toggle
         var resizeTimer;
-        $(window).on('resize', function() {
+        function adjustTableColumns() {
             clearTimeout(resizeTimer);
             resizeTimer = setTimeout(function() {
                 table.columns.adjust();
-            }, 250);
+            }, 300);
+        }
+        
+        $(window).on('resize', adjustTableColumns);
+        
+        // Handle sidebar toggle - watch for class changes on body or sidebar
+        $(document).on('click', '#sidebarToggle, #sidebarToggleTop, .sidebar-toggled', adjustTableColumns);
+        
+        // Also observe sidebar class changes
+        var observer = new MutationObserver(function(mutations) {
+            mutations.forEach(function(mutation) {
+                if (mutation.attributeName === 'class') {
+                    adjustTableColumns();
+                }
+            });
         });
+        
+        // Observe body for sidebar-toggled class
+        if (document.body) {
+            observer.observe(document.body, { attributes: true });
+        }
+        // Observe sidebar for collapse
+        var sidebar = document.querySelector('.sidebar');
+        if (sidebar) {
+            observer.observe(sidebar, { attributes: true });
+        }
 
         // Per-column search with debounce
         var searchTimeout = {};
