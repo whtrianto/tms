@@ -239,6 +239,15 @@
             }
         });
 
+        // Fix header alignment on window resize/zoom
+        var resizeTimer;
+        $(window).on('resize', function() {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(function() {
+                table.columns.adjust();
+            }, 250);
+        });
+
         // Per-column search with debounce
         var searchTimeout = {};
         var isSearching = false;
