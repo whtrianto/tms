@@ -72,7 +72,9 @@ class M_tool_draw_engin extends CI_Model
             LEFT JOIN {$this->t('MS_MAKER')} maker ON maker.MAKER_ID = rev.MLR_MAKER_ID
             LEFT JOIN {$this->t('MS_MATERIAL')} mat ON mat.MAT_ID = rev.MLR_MAT_ID
             LEFT JOIN {$this->t('MS_MACHINES')} mac ON mac.MAC_ID = rev.MLR_MACG_ID
-            LEFT JOIN {$this->t('MS_USERS')} usr ON usr.USR_ID = rev.MLR_MODIFIED_BY";
+            LEFT JOIN {$this->t('MS_USERS')} usr ON usr.USR_ID = rev.MLR_MODIFIED_BY
+            LEFT JOIN {$this->t('TMS_TOOL_MASTER_LIST_PARTS')} mlparts ON mlparts.TMLP_ML_ID = ml.ML_ID
+            LEFT JOIN {$this->t('MS_PARTS')} part ON part.PART_ID = mlparts.TMLP_PART_ID";
 
         $where = " WHERE ml.ML_TYPE = 1";
         $params = array();
@@ -80,14 +82,15 @@ class M_tool_draw_engin extends CI_Model
         // Global search
         if (!empty($search)) {
             $where .= " AND (ml.ML_TOOL_DRAW_NO LIKE ? OR tc.TC_NAME LIKE ? OR op.OP_NAME LIKE ? 
-                        OR usr.USR_NAME LIKE ? OR CAST(rev.MLR_ID AS VARCHAR) LIKE ?)";
+                        OR usr.USR_NAME LIKE ? OR CAST(rev.MLR_ID AS VARCHAR) LIKE ? OR part.PART_NAME LIKE ?)";
             $search_param = '%' . $search . '%';
-            $params = array_merge($params, array($search_param, $search_param, $search_param, $search_param, $search_param));
+            $params = array_merge($params, array($search_param, $search_param, $search_param, $search_param, $search_param, $search_param));
         }
 
         // Per-column search
         $col_search_map = array(
             0 => 'CAST(rev.MLR_ID AS VARCHAR)',
+            1 => 'ISNULL(part.PART_NAME, \'\')',
             2 => 'op.OP_NAME',
             3 => 'ml.ML_TOOL_DRAW_NO',
             4 => 'tc.TC_NAME',

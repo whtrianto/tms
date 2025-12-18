@@ -91,6 +91,20 @@
         /* Prevent double scrollbar: disable table-responsive overflow when using DataTables scrollX */
         .table-responsive {
             overflow-x: visible !important;
+            overflow-y: visible !important;
+        }
+        /* Ensure DataTables scroll wrapper doesn't create extra scrollbar */
+        .dataTables_scroll {
+            overflow-x: auto !important;
+            overflow-y: visible !important;
+        }
+        .dataTables_scrollBody {
+            overflow-x: auto !important;
+            overflow-y: visible !important;
+        }
+        .dataTables_scrollHead {
+            overflow-x: hidden !important;
+            overflow-y: visible !important;
         }
     </style>
 </head>
@@ -213,6 +227,7 @@
             order: [[0,'desc']],
             autoWidth: false,
             scrollX: true,
+            scrollCollapse: true,
             columnDefs: [
                 { orderable:false, targets:[10] },
                 { width:'50px', targets:0 },      // ID
