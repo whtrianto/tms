@@ -15,11 +15,17 @@
         }
         .navbar { position: sticky; top: 0; z-index: 1030; }
         #content-wrapper { min-height: calc(100vh - 56px); }
+        #content {
+            padding-bottom: 8rem !important;
+        }
         #container-wrapper { 
-            padding-bottom: 4rem !important; 
-            margin-bottom: 2rem !important; 
+            padding-bottom: 8rem !important; 
+            margin-bottom: 4rem !important; 
         }
         .card { margin-bottom: 2rem; }
+        .card-body {
+            padding-bottom: 2rem;
+        }
         .section-title {
             font-weight: bold;
             font-size: 1.1rem;
