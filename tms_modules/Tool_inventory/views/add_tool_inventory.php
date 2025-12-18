@@ -30,6 +30,19 @@
         .form-group {
             margin-bottom: 1rem;
         }
+        .form-check-inline-custom {
+            display: inline-flex;
+            align-items: center;
+        }
+        .form-check-inline-custom label {
+            margin-right: 8px;
+            margin-bottom: 0;
+        }
+        .form-check-inline-custom input[type="checkbox"] {
+            position: static;
+            margin-left: 0;
+            vertical-align: middle;
+        }
     </style>
 </head>
 <body id="page-top">
@@ -58,11 +71,9 @@
                                     <!-- Tool Drawing Section -->
                                     <div class="section-title">Tool Drawing Information</div>
                                     
-                                    <div class="form-group">
-                                        <div class="form-check">
-                                            <input type="checkbox" class="form-check-input" id="allowOldRevision" name="allow_old_revision" value="1">
-                                            <label class="form-check-label" for="allowOldRevision">Allow Select Old Revision</label>
-                                        </div>
+                                    <div class="form-group form-check-inline-custom">
+                                        <label class="form-check-label" for="allowOldRevision">Allow Select Old Revision</label>
+                                        <input type="checkbox" class="form-check-input" id="allowOldRevision" name="allow_old_revision" value="1">
                                     </div>
 
                                     <div class="form-group">
@@ -122,13 +133,6 @@
                                     </div>
 
                                     <div class="form-group">
-                                        <div class="form-check">
-                                            <input type="checkbox" class="form-check-input" id="assetized" name="assetized" value="1">
-                                            <label class="form-check-label" for="assetized">Assetized</label>
-                                        </div>
-                                    </div>
-
-                                    <div class="form-group">
                                         <label>Revision</label>
                                         <input type="number" name="revision" class="form-control" placeholder="Enter Revision" min="0" value="0">
                                     </div>
@@ -161,6 +165,11 @@
 
                                 <!-- Right Column -->
                                 <div class="col-md-6">
+                                    <div class="form-group form-check-inline-custom">
+                                        <label class="form-check-label" for="assetized">Assetized</label>
+                                        <input type="checkbox" class="form-check-input" id="assetized" name="assetized" value="1">
+                                    </div>
+
                                     <div class="form-group">
                                         <label>In Tool Set</label>
                                         <input type="number" name="in_tool_set" class="form-control" placeholder="Enter In Tool Set" min="0">
@@ -203,59 +212,80 @@
                                         <label>Do No.</label>
                                         <input type="text" name="do_no" class="form-control" placeholder="Enter Do No.">
                                     </div>
+                                </div>
+                            </div>
 
-                                    <!-- Order Information Section -->
-                                    <div class="section-title mt-4">Order Information</div>
+                            <!-- Order Information Section - Full Width -->
+                            <div class="row mt-4">
+                                <div class="col-12">
+                                    <div class="section-title">Order Information</div>
+                                    
+                                    <div class="row">
+                                        <div class="col-md-3">
+                                            <div class="form-group">
+                                                <label>RQ No.</label>
+                                                <select name="rq_no" class="form-control">
+                                                    <option value="">-- Select RQ No. --</option>
+                                                    <?php foreach ($rq_numbers as $rq): ?>
+                                                        <option value="<?= htmlspecialchars($rq['RQ_NO'], ENT_QUOTES, 'UTF-8'); ?>">
+                                                            <?= htmlspecialchars($rq['RQ_NO'], ENT_QUOTES, 'UTF-8'); ?>
+                                                        </option>
+                                                    <?php endforeach; ?>
+                                                </select>
+                                            </div>
+                                        </div>
 
-                                    <div class="form-group">
-                                        <label>RQ No.</label>
-                                        <select name="rq_no" class="form-control">
-                                            <option value="">-- Select RQ No. --</option>
-                                            <?php foreach ($rq_numbers as $rq): ?>
-                                                <option value="<?= htmlspecialchars($rq['RQ_NO'], ENT_QUOTES, 'UTF-8'); ?>">
-                                                    <?= htmlspecialchars($rq['RQ_NO'], ENT_QUOTES, 'UTF-8'); ?>
-                                                </option>
-                                            <?php endforeach; ?>
-                                        </select>
+                                        <div class="col-md-3">
+                                            <div class="form-group">
+                                                <label>Maker</label>
+                                                <select name="maker_id" id="maker_id" class="form-control">
+                                                    <option value="">-- Select Maker --</option>
+                                                    <?php foreach ($makers as $mk): ?>
+                                                        <option value="<?= (int)$mk['MAKER_ID']; ?>" data-maker-code="<?= htmlspecialchars(isset($mk['MAKER_CODE']) ? $mk['MAKER_CODE'] : '', ENT_QUOTES, 'UTF-8'); ?>">
+                                                            <?= htmlspecialchars($mk['MAKER_NAME'], ENT_QUOTES, 'UTF-8'); ?>
+                                                        </option>
+                                                    <?php endforeach; ?>
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                        <div class="col-md-3">
+                                            <div class="form-group">
+                                                <label>Maker Code</label>
+                                                <input type="text" name="maker_code" id="maker_code" class="form-control" placeholder="Maker Code" readonly>
+                                            </div>
+                                        </div>
+
+                                        <div class="col-md-3">
+                                            <div class="form-group">
+                                                <label>Material</label>
+                                                <select name="material_id" class="form-control">
+                                                    <option value="">-- Select Material --</option>
+                                                    <?php foreach ($materials as $m): ?>
+                                                        <option value="<?= (int)$m['MATERIAL_ID']; ?>">
+                                                            <?= htmlspecialchars($m['MATERIAL_NAME'], ENT_QUOTES, 'UTF-8'); ?>
+                                                        </option>
+                                                    <?php endforeach; ?>
+                                                </select>
+                                            </div>
+                                        </div>
                                     </div>
 
-                                    <div class="form-group">
-                                        <label>Maker</label>
-                                        <select name="maker_id" id="maker_id" class="form-control">
-                                            <option value="">-- Select Maker --</option>
-                                            <?php foreach ($makers as $mk): ?>
-                                                <option value="<?= (int)$mk['MAKER_ID']; ?>" data-maker-code="<?= htmlspecialchars(isset($mk['MAKER_CODE']) ? $mk['MAKER_CODE'] : '', ENT_QUOTES, 'UTF-8'); ?>">
-                                                    <?= htmlspecialchars($mk['MAKER_NAME'], ENT_QUOTES, 'UTF-8'); ?>
-                                                </option>
-                                            <?php endforeach; ?>
-                                        </select>
-                                    </div>
-
-                                    <div class="form-group">
-                                        <label>Maker Code</label>
-                                        <input type="text" name="maker_code" id="maker_code" class="form-control" placeholder="Maker Code" readonly>
-                                    </div>
-
-                                    <div class="form-group">
-                                        <label>Material</label>
-                                        <select name="material_id" class="form-control">
-                                            <option value="">-- Select Material --</option>
-                                            <?php foreach ($materials as $m): ?>
-                                                <option value="<?= (int)$m['MATERIAL_ID']; ?>">
-                                                    <?= htmlspecialchars($m['MATERIAL_NAME'], ENT_QUOTES, 'UTF-8'); ?>
-                                                </option>
-                                            <?php endforeach; ?>
-                                        </select>
-                                    </div>
-
-                                    <div class="form-group">
-                                        <label>Purchase Type</label>
-                                        <div class="form-check">
-                                            <input type="checkbox" class="form-check-input" id="purchase_type_local" name="purchase_type" value="Local">
-                                            <label class="form-check-label" for="purchase_type_local">Local</label>
+                                    <div class="row">
+                                        <div class="col-md-3">
+                                            <div class="form-group">
+                                                <label>Purchase Type</label>
+                                                <select name="purchase_type" class="form-control">
+                                                    <option value="">-- Select Purchase Type --</option>
+                                                    <option value="Local">Local</option>
+                                                    <option value="Overseas">Overseas</option>
+                                                    <option value="Internal Fabrication">Internal Fabrication</option>
+                                                </select>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
+                            </div>
                             </div>
 
                             <div class="row mt-4">
