@@ -45,7 +45,7 @@
                             <!-- Trial BOM Checkbox -->
                             <div class="form-row">
                                 <div class="form-group col-md-12">
-                                    <div class="form-check">
+                                    <div class="form-check form-check-inline">
                                         <input class="form-check-input" type="checkbox" name="IS_TRIAL_BOM" id="isTrialBom" value="1" disabled <?= (isset($bom['IS_TRIAL_BOM']) && ((int)$bom['IS_TRIAL_BOM'] === 1 || $bom['IS_TRIAL_BOM'] === true)) ? 'checked' : ''; ?>>
                                         <label class="form-check-label" for="isTrialBom">
                                             <strong>Trial BOM</strong>

@@ -43,7 +43,7 @@
                             <!-- Trial BOM Checkbox -->
                             <div class="form-row">
                                 <div class="form-group col-md-12">
-                                    <div class="form-check">
+                                    <div class="form-check form-check-inline">
                                         <input class="form-check-input" type="checkbox" name="IS_TRIAL_BOM" id="isTrialBom" value="1" <?= (isset($bom['IS_TRIAL_BOM']) && ((int)$bom['IS_TRIAL_BOM'] === 1 || $bom['IS_TRIAL_BOM'] === true)) ? 'checked' : ''; ?>>
                                         <label class="form-check-label" for="isTrialBom">
                                             <strong>Trial BOM</strong>
@@ -199,7 +199,7 @@
                                             <td><?= htmlspecialchars(isset($row['TD_MIN_QTY']) ? $row['TD_MIN_QTY'] : ''); ?></td>
                                             <td><?= htmlspecialchars(isset($row['TD_REPLENISH_QTY']) ? $row['TD_REPLENISH_QTY'] : ''); ?></td>
                                             <td><?= htmlspecialchars(isset($row['TD_SEQUENCE']) ? $row['TD_SEQUENCE'] : ''); ?></td>
-                                            <td><?= htmlspecialchars(isset($row['TD_DESCRIPTION']) ? $row['TD_DESCRIPTION'] : ''); ?></td>
+                                            <td><?= htmlspecialchars(isset($row['TD_REMARKS']) && $row['TD_REMARKS'] !== '' ? $row['TD_REMARKS'] : '-', ENT_QUOTES, 'UTF-8'); ?></td>
                                             <td>
                                                 <div class="action-buttons">
                                                     <button class="btn btn-sm btn-warning btn-edit-additional" data-edit='<?= htmlspecialchars(json_encode($row), ENT_QUOTES, "UTF-8"); ?>'>
