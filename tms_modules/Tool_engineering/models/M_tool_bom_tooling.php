@@ -75,7 +75,7 @@ class M_tool_bom_tooling extends CI_Model
             7 => 'CONVERT(VARCHAR(19), rev.MLR_EFFECTIVE_DATE, 120)',
             8 => 'CONVERT(VARCHAR(19), rev.MLR_MODIFIED_DATE, 120)',
             9 => 'usr.USR_NAME',
-            10 => 'ml.ML_TOOL_DRAW_NO'
+            10 => 'ml.ML_TOOL_DRAW_NO' // Type column - tidak perlu search karena semua "ToolBOM"
         );
         foreach ($column_search as $col_idx => $col_val) {
             if (!empty($col_val) && isset($col_search_map[$col_idx])) {
@@ -112,7 +112,7 @@ class M_tool_bom_tooling extends CI_Model
                         CASE WHEN rev.MLR_MODIFIED_DATE IS NULL THEN '' 
                              ELSE CONVERT(VARCHAR(19), rev.MLR_MODIFIED_DATE, 120) END AS TD_MODIFIED_DATE,
                         ISNULL(usr.USR_NAME, '') AS TD_MODIFIED_BY,
-                        ml.ML_TOOL_DRAW_NO AS TD_TYPE
+                        'ToolBOM' AS TD_TYPE
                     " . $base_from . $where . "
                     ORDER BY CASE WHEN usr.USR_NAME = 'Administrator' THEN 1 ELSE 0 END, " . $order_column . " " . $order_direction . "
                     OFFSET " . (int)$start . " ROWS FETCH NEXT " . (int)$length . " ROWS ONLY";

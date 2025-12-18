@@ -71,8 +71,8 @@ class Tool_bom_tooling extends MY_Controller
                     $status_badge = '<span class="badge badge-secondary">Inactive</span>';
                 }
 
-                // Type: Mengambil dari Tool BOM (ML_TOOL_DRAW_NO)
-                $type_text = isset($row['TD_TYPE']) ? $row['TD_TYPE'] : (isset($row['TD_TOOL_BOM']) ? $row['TD_TOOL_BOM'] : '');
+                // Type: Selalu menampilkan "ToolBOM"
+                $type_text = 'ToolBOM';
 
                 $id = (int)$row['TD_ID'];
                 $edit_url = base_url('Tool_engineering/tool_bom_tooling/edit_page/' . $id);
