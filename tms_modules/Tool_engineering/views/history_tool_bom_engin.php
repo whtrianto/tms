@@ -90,9 +90,6 @@
                                         <th>ID</th>
                                         <th>Revision</th>
                                         <th>Status</th>
-                                        <!-- <th>Product</th>
-                                        <th>Process</th>
-                                        <th>Machine Group</th> -->
                                         <th>Effective Date</th>
                                         <th>Modified Date</th>
                                         <th>Modified By</th>
@@ -102,7 +99,7 @@
                                     <?php 
                                     if (empty($history) || !is_array($history)): ?>
                                         <tr>
-                                            <td colspan="9" class="text-center text-muted">No revision history found.</td>
+                                            <td colspan="6" class="text-center text-muted">No revision history found.</td>
                                         </tr>
                                     <?php else:
                                         foreach ($history as $h): 
@@ -122,9 +119,6 @@
                                             // Data dari query
                                             $td_id = isset($h['TD_ID']) ? (int)$h['TD_ID'] : 0;
                                             $revision = isset($h['TD_REVISION']) ? (int)$h['TD_REVISION'] : 0;
-                                            $product_name_history = isset($h['TD_PRODUCT_NAME']) ? $h['TD_PRODUCT_NAME'] : '';
-                                            $process_name_history = isset($h['TD_PROCESS_NAME']) ? $h['TD_PROCESS_NAME'] : '';
-                                            $machine_group_history = isset($h['TD_MACHINE_GROUP']) ? $h['TD_MACHINE_GROUP'] : '';
                                             $effective_date = isset($h['TD_EFFECTIVE_DATE']) ? $h['TD_EFFECTIVE_DATE'] : '';
                                             $modified_date = isset($h['TD_MODIFIED_DATE']) ? $h['TD_MODIFIED_DATE'] : '';
                                             $modified_by = isset($h['TD_MODIFIED_BY']) ? $h['TD_MODIFIED_BY'] : '';
@@ -133,9 +127,6 @@
                                             <td class="text-left"><?= htmlspecialchars($td_id, ENT_QUOTES, 'UTF-8'); ?></td>
                                             <td class="text-left"><?= htmlspecialchars($revision, ENT_QUOTES, 'UTF-8'); ?></td>
                                             <td><?= $statusBadge; ?></td>
-                                            <!-- <td class="text-left"><?= htmlspecialchars($product_name_history, ENT_QUOTES, 'UTF-8'); ?></td>
-                                            <td class="text-left"><?= htmlspecialchars($process_name_history, ENT_QUOTES, 'UTF-8'); ?></td>
-                                            <td class="text-left"><?= htmlspecialchars($machine_group_history, ENT_QUOTES, 'UTF-8'); ?></td> -->
                                             <td class="text-left"><?= htmlspecialchars($effective_date !== '' ? $effective_date : '-', ENT_QUOTES, 'UTF-8'); ?></td>
                                             <td class="text-left"><?= htmlspecialchars($modified_date !== '' ? $modified_date : '-', ENT_QUOTES, 'UTF-8'); ?></td>
                                             <td class="text-left"><?= htmlspecialchars($modified_by !== '' ? $modified_by : '-', ENT_QUOTES, 'UTF-8'); ?></td>
@@ -171,11 +162,8 @@
                 { width: '100px', targets: 1 },
                 { width: '100px', targets: 2 },
                 { width: '120px', targets: 3 },
-                { width: '120px', targets: 4 },
+                { width: '150px', targets: 4 },
                 { width: '120px', targets: 5 },
-                { width: '120px', targets: 6 },
-                { width: '150px', targets: 7 },
-                { width: '120px', targets: 8 },
                 { className: "text-left", targets: "_all" }
             ]
         });
