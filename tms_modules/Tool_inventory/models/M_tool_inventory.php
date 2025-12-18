@@ -46,7 +46,7 @@ class M_tool_inventory extends CI_Model
             11 => 'sl.SL_NAME',
             12 => 'mat.MAT_NAME',
             13 => 'inv.INV_TOOL_CONDITION',
-            14 => 'inv.INV_END_CYCLE'
+            14 => 'CAST(ISNULL(ISNULL(inv.INV_BEGIN_CYCLE, 0) + ISNULL(cycle_calc.TOTAL_PRODUCED, 0), 0) AS VARCHAR)'
         );
 
         $base_from = "
@@ -59,7 +59,14 @@ class M_tool_inventory extends CI_Model
             LEFT JOIN {$this->t('TMS_ORDERING_ITEMS')} ordi ON ordi.ORDI_ID = inv.INV_ORDI_ID
             LEFT JOIN {$this->t('TMS_ORDERING')} ord ON ord.ORD_ID = ordi.ORDI_ORD_ID
             LEFT JOIN {$this->t('TMS_TOOL_MASTER_LIST_PARTS')} mlparts ON mlparts.TMLP_ML_ID = ml.ML_ID
-            LEFT JOIN {$this->t('MS_PARTS')} part ON part.PART_ID = mlparts.TMLP_PART_ID";
+            LEFT JOIN {$this->t('MS_PARTS')} part ON part.PART_ID = mlparts.TMLP_PART_ID
+            LEFT JOIN (
+                SELECT INVH_INV_ID, SUM(ASSGN_QTY_PRODUCED) AS TOTAL_PRODUCED
+                FROM {$this->t('TMS_TOOL_INVENTORY_HISTORY')} hist
+                INNER JOIN {$this->t('TMS_ASSIGNED_TOOLS')} assigned ON assigned.ASSGN_ID = hist.INVH_ASSGN_ID
+                WHERE hist.INVH_ACTION LIKE '%InUsed%'
+                GROUP BY INVH_INV_ID
+            ) cycle_calc ON cycle_calc.INVH_INV_ID = inv.INV_ID";
 
         $where = " WHERE (ml.ML_TYPE = 1 OR ml.ML_TYPE IS NULL OR inv.INV_MLR_ID IS NULL)";
         $params = array();
@@ -147,7 +154,7 @@ class M_tool_inventory extends CI_Model
                         ISNULL(sl.SL_NAME, '') AS STORAGE_LOCATION,
                         ISNULL(mat.MAT_NAME, '') AS MATERIAL,
                         inv.INV_TOOL_CONDITION,
-                        ISNULL(inv.INV_END_CYCLE, 0) AS END_CYCLE
+                        ISNULL(ISNULL(inv.INV_BEGIN_CYCLE, 0) + ISNULL(cycle_calc.TOTAL_PRODUCED, 0), 0) AS END_CYCLE
                     " . $base_from . $where . "
                     ORDER BY " . $order_column . " " . $order_direction . "
                     OFFSET " . (int)$start . " ROWS FETCH NEXT " . (int)$length . " ROWS ONLY";
@@ -186,7 +193,7 @@ class M_tool_inventory extends CI_Model
                     ISNULL(sl.SL_NAME, '') AS STORAGE_LOCATION,
                     ISNULL(mat.MAT_NAME, '') AS MATERIAL,
                     inv.INV_TOOL_CONDITION,
-                    ISNULL(inv.INV_END_CYCLE, 0) AS END_CYCLE,
+                    ISNULL(ISNULL(inv.INV_BEGIN_CYCLE, 0) + ISNULL(cycle_calc.TOTAL_PRODUCED, 0), 0) AS END_CYCLE,
                     inv.INV_MLR_ID,
                     inv.INV_SL_ID,
                     inv.INV_MAT_ID,
@@ -198,6 +205,13 @@ class M_tool_inventory extends CI_Model
                 LEFT JOIN {$this->t('MS_TOOL_CLASS')} tc ON tc.TC_ID = mlr.MLR_TC_ID
                 LEFT JOIN {$this->t('MS_MATERIAL')} mat ON mat.MAT_ID = inv.INV_MAT_ID
                 LEFT JOIN {$this->t('MS_STORAGE_LOCATION')} sl ON sl.SL_ID = inv.INV_SL_ID
+                LEFT JOIN (
+                    SELECT INVH_INV_ID, SUM(ASSGN_QTY_PRODUCED) AS TOTAL_PRODUCED
+                    FROM {$this->t('TMS_TOOL_INVENTORY_HISTORY')} hist
+                    INNER JOIN {$this->t('TMS_ASSIGNED_TOOLS')} assigned ON assigned.ASSGN_ID = hist.INVH_ASSGN_ID
+                    WHERE hist.INVH_ACTION LIKE '%InUsed%'
+                    GROUP BY INVH_INV_ID
+                ) cycle_calc ON cycle_calc.INVH_INV_ID = inv.INV_ID
                 LEFT JOIN {$this->t('TMS_ORDERING_ITEMS')} ordi ON ordi.ORDI_ID = inv.INV_ORDI_ID
                 LEFT JOIN {$this->t('TMS_ORDERING')} ord ON ord.ORD_ID = ordi.ORDI_ORD_ID
                 LEFT JOIN {$this->t('TMS_TOOL_MASTER_LIST_PARTS')} mlparts ON mlparts.TMLP_ML_ID = ml.ML_ID
