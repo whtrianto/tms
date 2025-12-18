@@ -153,6 +153,7 @@ class Tool_inventory extends MY_Controller
         $data['makers'] = $this->tool_inventory->get_makers();
         $data['tool_drawing_nos'] = $this->tool_inventory->get_tool_drawing_nos();
         $data['rq_numbers'] = $this->tool_inventory->get_rq_numbers();
+        $data['next_tool_tag'] = $this->tool_inventory->get_next_tool_tag();
         $this->view('add_tool_inventory', $data, FALSE);
     }
 
@@ -324,7 +325,7 @@ class Tool_inventory extends MY_Controller
     }
 
     /**
-     * Edit page (placeholder - to be implemented)
+     * Edit page
      */
     public function edit_page($id = 0)
     {
@@ -342,10 +343,14 @@ class Tool_inventory extends MY_Controller
 
         $data = array();
         $data['inventory'] = $row;
-        // TODO: Load dropdown data for form
-        // $data['tools'] = ...
-        // $data['storage_locations'] = ...
-        // $data['materials'] = ...
+        $data['products'] = $this->tool_inventory->get_products();
+        $data['operations'] = $this->tool_inventory->get_operations();
+        $data['tools'] = $this->tool_inventory->get_tools();
+        $data['storage_locations'] = $this->tool_inventory->get_storage_locations();
+        $data['materials'] = $this->tool_inventory->get_materials();
+        $data['makers'] = $this->tool_inventory->get_makers();
+        $data['tool_drawing_nos'] = $this->tool_inventory->get_tool_drawing_nos();
+        $data['rq_numbers'] = $this->tool_inventory->get_rq_numbers();
         $this->view('edit_tool_inventory', $data, FALSE);
     }
 }

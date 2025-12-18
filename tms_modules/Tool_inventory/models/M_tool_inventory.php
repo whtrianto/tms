@@ -175,8 +175,13 @@ class M_tool_inventory extends CI_Model
                     inv.INV_TOOL_TAG,
                     ISNULL(inv.INV_RQ_NO, ord.ORD_RQ_NO) AS RQ_NO,
                     ISNULL(part.PART_NAME, '') AS PRODUCT_NAME,
+                    part.PART_ID AS PRODUCT_ID,
                     ISNULL(tc.TC_NAME, '') AS TOOL_NAME,
+                    tc.TC_ID AS TOOL_NAME_ID,
                     ISNULL(ml.ML_TOOL_DRAW_NO, '') AS TOOL_DRAWING_NO,
+                    ml.ML_ID AS TOOL_DRAWING_ML_ID,
+                    mlr.MLR_OP_ID AS PROCESS_ID,
+                    mlr.MLR_REV AS REVISION,
                     CASE WHEN inv.INV_RECEIVED_DATE IS NULL THEN '' 
                          ELSE CONVERT(VARCHAR(19), inv.INV_RECEIVED_DATE, 120) END AS RECEIVED_DATE,
                     ISNULL(inv.INV_DO_NO, '') AS DO_NO,
@@ -184,14 +189,18 @@ class M_tool_inventory extends CI_Model
                     inv.INV_STATUS,
                     ISNULL(inv.INV_NOTES, '') AS NOTES,
                     ISNULL(sl.SL_NAME, '') AS STORAGE_LOCATION,
+                    inv.INV_SL_ID AS STORAGE_LOCATION_ID,
                     ISNULL(mat.MAT_NAME, '') AS MATERIAL,
+                    inv.INV_MAT_ID AS MATERIAL_ID,
                     inv.INV_TOOL_CONDITION,
                     ISNULL(inv.INV_END_CYCLE, 0) AS END_CYCLE,
                     inv.INV_MLR_ID,
-                    inv.INV_SL_ID,
-                    inv.INV_MAT_ID,
                     inv.INV_MAKER_ID,
-                    inv.INV_BEGIN_CYCLE
+                    inv.INV_BEGIN_CYCLE,
+                    inv.INV_IN_TOOL_SET,
+                    inv.INV_ASSETIZED,
+                    inv.INV_PURCHASE_TYPE,
+                    maker.MAKER_CODE AS MAKER_CODE
                 FROM {$this->t('TMS_TOOL_INVENTORY')} inv
                 LEFT JOIN {$this->t('TMS_TOOL_MASTER_LIST_REV')} mlr ON mlr.MLR_ID = inv.INV_MLR_ID
                 LEFT JOIN {$this->t('TMS_TOOL_MASTER_LIST')} ml ON ml.ML_ID = mlr.MLR_ML_ID
@@ -202,6 +211,7 @@ class M_tool_inventory extends CI_Model
                 LEFT JOIN {$this->t('TMS_ORDERING')} ord ON ord.ORD_ID = ordi.ORDI_ORD_ID
                 LEFT JOIN {$this->t('TMS_TOOL_MASTER_LIST_PARTS')} mlparts ON mlparts.TMLP_ML_ID = ml.ML_ID
                 LEFT JOIN {$this->t('MS_PARTS')} part ON part.PART_ID = mlparts.TMLP_PART_ID
+                LEFT JOIN {$this->t('MS_MAKER')} maker ON maker.MAKER_ID = inv.INV_MAKER_ID
                 WHERE inv.INV_ID = ?";
 
         $q = $this->db_tms->query($sql, array($id));
@@ -427,6 +437,22 @@ class M_tool_inventory extends CI_Model
                 ORDER BY ORD_RQ_NO DESC";
         $q = $this->db_tms->query($sql);
         return $q && $q->num_rows() > 0 ? $q->result_array() : array();
+    }
+
+    /**
+     * Get next Tool Tag number (auto-increment based on INV_ID)
+     */
+    public function get_next_tool_tag()
+    {
+        // Get max INV_ID and generate next Tool Tag
+        $sql = "SELECT MAX(INV_ID) AS MAX_ID FROM {$this->t('TMS_TOOL_INVENTORY')}";
+        $q = $this->db_tms->query($sql);
+        if ($q && $q->num_rows() > 0) {
+            $row = $q->row_array();
+            $max_id = isset($row['MAX_ID']) ? (int)$row['MAX_ID'] : 0;
+            return $max_id + 1;
+        }
+        return 1;
     }
 
     /**
