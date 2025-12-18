@@ -223,10 +223,17 @@ class M_tool_bom_engin extends CI_Model
                     ISNULL(usr.USR_NAME, '') AS TD_MODIFIED_BY,
                     CASE WHEN rev.MLR_MODIFIED_DATE IS NULL THEN '' 
                          ELSE CONVERT(VARCHAR(19), rev.MLR_MODIFIED_DATE, 120) END AS TD_MODIFIED_DATE,
-                    rev.MLR_CHANGE_SUMMARY AS TD_CHANGE_SUMMARY
+                    CASE WHEN rev.MLR_EFFECTIVE_DATE IS NULL THEN '' 
+                         ELSE CONVERT(VARCHAR(19), rev.MLR_EFFECTIVE_DATE, 120) END AS TD_EFFECTIVE_DATE,
+                    rev.MLR_CHANGE_SUMMARY AS TD_CHANGE_SUMMARY,
+                    ISNULL(dbo.fnGetToolMasterListParts(ml.ML_ID), '') AS TD_PRODUCT_NAME,
+                    ISNULL(op.OP_NAME, '') AS TD_PROCESS_NAME,
+                    ISNULL(mac.MAC_NAME, '') AS TD_MACHINE_GROUP
                 FROM {$this->t('TMS_TOOL_MASTER_LIST_REV')} rev
                 INNER JOIN {$this->t('TMS_TOOL_MASTER_LIST')} ml ON ml.ML_ID = rev.MLR_ML_ID
                 LEFT JOIN {$this->t('MS_USERS')} usr ON usr.USR_ID = rev.MLR_MODIFIED_BY
+                LEFT JOIN {$this->t('MS_OPERATION')} op ON op.OP_ID = rev.MLR_OP_ID
+                LEFT JOIN {$this->t('MS_MACHINES')} mac ON mac.MAC_ID = rev.MLR_MACG_ID
                 WHERE rev.MLR_ML_ID = ?
                 ORDER BY rev.MLR_REV DESC";
 

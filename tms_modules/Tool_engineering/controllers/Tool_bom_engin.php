@@ -197,9 +197,41 @@ class Tool_bom_engin extends MY_Controller
             return;
         }
 
+        // Resolve names for info section
+        $product_name = isset($row['TD_PRODUCT_NAME']) ? $row['TD_PRODUCT_NAME'] : '';
+        $tool_bom = isset($row['TD_TOOL_BOM']) ? $row['TD_TOOL_BOM'] : '';
+        
+        // Get process name
+        $process_name = '';
+        if (isset($row['MLR_OP_ID']) && (int)$row['MLR_OP_ID'] > 0) {
+            $operations = $this->tool_bom_engin->get_operations();
+            foreach ($operations as $op) {
+                if ((int)$op['OPERATION_ID'] === (int)$row['MLR_OP_ID']) {
+                    $process_name = $op['OPERATION_NAME'];
+                    break;
+                }
+            }
+        }
+        
+        // Get machine group name
+        $machine_group_name = isset($row['TD_MACHINE_GROUP']) ? $row['TD_MACHINE_GROUP'] : '';
+        if (empty($machine_group_name) && isset($row['MLR_MACG_ID']) && (int)$row['MLR_MACG_ID'] > 0) {
+            $machines = $this->tool_bom_engin->get_machine_groups();
+            foreach ($machines as $m) {
+                if ((int)$m['MACHINE_ID'] === (int)$row['MLR_MACG_ID']) {
+                    $machine_group_name = $m['MACHINE_NAME'];
+                    break;
+                }
+            }
+        }
+
         $data = array();
         $data['drawing'] = $row;
         $data['history'] = $this->tool_bom_engin->get_history($id);
+        $data['product_name'] = $product_name;
+        $data['tool_bom'] = $tool_bom;
+        $data['process_name'] = $process_name;
+        $data['machine_group_name'] = $machine_group_name;
 
         $this->view('history_tool_bom_engin', $data, FALSE);
     }
