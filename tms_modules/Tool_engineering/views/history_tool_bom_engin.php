@@ -90,9 +90,9 @@
                                         <th>ID</th>
                                         <th>Revision</th>
                                         <th>Status</th>
-                                        <th>Product</th>
+                                        <!-- <th>Product</th>
                                         <th>Process</th>
-                                        <th>Machine Group</th>
+                                        <th>Machine Group</th> -->
                                         <th>Effective Date</th>
                                         <th>Modified Date</th>
                                         <th>Modified By</th>
@@ -133,9 +133,9 @@
                                             <td class="text-left"><?= htmlspecialchars($td_id, ENT_QUOTES, 'UTF-8'); ?></td>
                                             <td class="text-left"><?= htmlspecialchars($revision, ENT_QUOTES, 'UTF-8'); ?></td>
                                             <td><?= $statusBadge; ?></td>
-                                            <td class="text-left"><?= htmlspecialchars($product_name_history, ENT_QUOTES, 'UTF-8'); ?></td>
+                                            <!-- <td class="text-left"><?= htmlspecialchars($product_name_history, ENT_QUOTES, 'UTF-8'); ?></td>
                                             <td class="text-left"><?= htmlspecialchars($process_name_history, ENT_QUOTES, 'UTF-8'); ?></td>
-                                            <td class="text-left"><?= htmlspecialchars($machine_group_history, ENT_QUOTES, 'UTF-8'); ?></td>
+                                            <td class="text-left"><?= htmlspecialchars($machine_group_history, ENT_QUOTES, 'UTF-8'); ?></td> -->
                                             <td class="text-left"><?= htmlspecialchars($effective_date !== '' ? $effective_date : '-', ENT_QUOTES, 'UTF-8'); ?></td>
                                             <td class="text-left"><?= htmlspecialchars($modified_date !== '' ? $modified_date : '-', ENT_QUOTES, 'UTF-8'); ?></td>
                                             <td class="text-left"><?= htmlspecialchars($modified_by !== '' ? $modified_by : '-', ENT_QUOTES, 'UTF-8'); ?></td>
