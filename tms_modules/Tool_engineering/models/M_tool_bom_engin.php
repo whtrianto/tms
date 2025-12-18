@@ -154,7 +154,6 @@ class M_tool_bom_engin extends CI_Model
                     rev.MLR_OP_ID,
                     rev.MLR_MACG_ID,
                     ml.ML_TOOL_DRAW_NO AS TD_TOOL_BOM,
-                    ml.ML_IS_TRIAL_BOM,
                     ISNULL(rev.MLR_DESC, '') AS TD_DESCRIPTION,
                     ISNULL(dbo.fnGetToolMasterListParts(ml.ML_ID), '') AS TD_PRODUCT_NAME,
                     ISNULL(mac.MAC_NAME, '') AS TD_MACHINE_GROUP,
@@ -176,8 +175,15 @@ class M_tool_bom_engin extends CI_Model
         $q = $this->db_tms->query($sql, array($id));
         $result = $q && $q->num_rows() > 0 ? $q->row_array() : null;
         
+        if (!$result) {
+            return null;
+        }
+        
+        // Set default value for IS_TRIAL_BOM (field doesn't exist in table)
+        $result['ML_IS_TRIAL_BOM'] = 0;
+        
         // Get product ID from TMS_TOOL_MASTER_LIST_PARTS
-        if ($result && isset($result['MLR_ML_ID']) && (int)$result['MLR_ML_ID'] > 0) {
+        if (isset($result['MLR_ML_ID']) && (int)$result['MLR_ML_ID'] > 0) {
             $ml_id = (int)$result['MLR_ML_ID'];
             $part_sql = "SELECT TOP 1 TMLP_PART_ID FROM {$this->t('TMS_TOOL_MASTER_LIST_PARTS')} WHERE TMLP_ML_ID = ?";
             $part_q = $this->db_tms->query($part_sql, array($ml_id));
