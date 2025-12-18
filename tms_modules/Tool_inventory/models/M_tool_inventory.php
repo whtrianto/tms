@@ -311,6 +311,125 @@ class M_tool_inventory extends CI_Model
     }
 
     /**
+     * Get all products from MS_PARTS
+     */
+    public function get_products()
+    {
+        $sql = "SELECT PART_ID AS PRODUCT_ID, PART_NAME AS PRODUCT_NAME 
+                FROM {$this->t('MS_PARTS')} 
+                ORDER BY PART_NAME ASC";
+        $q = $this->db_tms->query($sql);
+        return $q && $q->num_rows() > 0 ? $q->result_array() : array();
+    }
+
+    /**
+     * Get all operations from MS_OPERATION
+     */
+    public function get_operations()
+    {
+        $sql = "SELECT OP_ID AS OPERATION_ID, OP_NAME AS OPERATION_NAME 
+                FROM {$this->t('MS_OPERATION')} 
+                ORDER BY OP_NAME ASC";
+        $q = $this->db_tms->query($sql);
+        return $q && $q->num_rows() > 0 ? $q->result_array() : array();
+    }
+
+    /**
+     * Get all tools from MS_TOOL_CLASS
+     */
+    public function get_tools()
+    {
+        $sql = "SELECT TC_ID AS TOOL_ID, TC_NAME AS TOOL_NAME 
+                FROM {$this->t('MS_TOOL_CLASS')} 
+                ORDER BY TC_NAME ASC";
+        $q = $this->db_tms->query($sql);
+        return $q && $q->num_rows() > 0 ? $q->result_array() : array();
+    }
+
+    /**
+     * Get all storage locations from MS_STORAGE_LOCATION
+     */
+    public function get_storage_locations()
+    {
+        $sql = "SELECT SL_ID AS STORAGE_LOCATION_ID, SL_NAME AS STORAGE_LOCATION_NAME 
+                FROM {$this->t('MS_STORAGE_LOCATION')} 
+                ORDER BY SL_NAME ASC";
+        $q = $this->db_tms->query($sql);
+        return $q && $q->num_rows() > 0 ? $q->result_array() : array();
+    }
+
+    /**
+     * Get all materials from MS_MATERIAL
+     */
+    public function get_materials()
+    {
+        $sql = "SELECT MAT_ID AS MATERIAL_ID, MAT_NAME AS MATERIAL_NAME 
+                FROM {$this->t('MS_MATERIAL')} 
+                ORDER BY MAT_NAME ASC";
+        $q = $this->db_tms->query($sql);
+        return $q && $q->num_rows() > 0 ? $q->result_array() : array();
+    }
+
+    /**
+     * Get all makers from MS_MAKER
+     */
+    public function get_makers()
+    {
+        $sql = "SELECT MAKER_ID, MAKER_NAME, MAKER_CODE 
+                FROM {$this->t('MS_MAKER')} 
+                ORDER BY MAKER_NAME ASC";
+        $q = $this->db_tms->query($sql);
+        return $q && $q->num_rows() > 0 ? $q->result_array() : array();
+    }
+
+    /**
+     * Get tool drawing numbers from TMS_TOOL_MASTER_LIST (ML_TYPE = 1 for Engineering)
+     */
+    public function get_tool_drawing_nos()
+    {
+        $sql = "SELECT DISTINCT ml.ML_ID, ml.ML_TOOL_DRAW_NO, 
+                MAX(mlr.MLR_REV) AS MAX_REV,
+                mlr.MLR_ID AS LATEST_MLR_ID
+                FROM {$this->t('TMS_TOOL_MASTER_LIST')} ml
+                LEFT JOIN {$this->t('TMS_TOOL_MASTER_LIST_REV')} mlr ON mlr.MLR_ML_ID = ml.ML_ID
+                WHERE ml.ML_TYPE = 1
+                GROUP BY ml.ML_ID, ml.ML_TOOL_DRAW_NO, mlr.MLR_ID
+                ORDER BY ml.ML_TOOL_DRAW_NO ASC";
+        $q = $this->db_tms->query($sql);
+        return $q && $q->num_rows() > 0 ? $q->result_array() : array();
+    }
+
+    /**
+     * Get revisions for a specific Tool Drawing (ML_ID)
+     */
+    public function get_revisions_by_ml_id($ml_id)
+    {
+        $ml_id = (int)$ml_id;
+        if ($ml_id <= 0) return array();
+        
+        $sql = "SELECT mlr.MLR_ID, mlr.MLR_REV, mlr.MLR_STATUS
+                FROM {$this->t('TMS_TOOL_MASTER_LIST_REV')} mlr
+                WHERE mlr.MLR_ML_ID = ?
+                ORDER BY mlr.MLR_REV DESC";
+        $q = $this->db_tms->query($sql, array($ml_id));
+        return $q && $q->num_rows() > 0 ? $q->result_array() : array();
+    }
+
+    /**
+     * Get RQ Numbers from TMS_ORDERING or TMS_REQUISITION
+     */
+    public function get_rq_numbers()
+    {
+        // Get from TMS_ORDERING
+        $sql = "SELECT DISTINCT ORD_RQ_NO AS RQ_NO 
+                FROM {$this->t('TMS_ORDERING')} 
+                WHERE ORD_RQ_NO IS NOT NULL AND ORD_RQ_NO <> ''
+                ORDER BY ORD_RQ_NO DESC";
+        $q = $this->db_tms->query($sql);
+        return $q && $q->num_rows() > 0 ? $q->result_array() : array();
+    }
+
+    /**
      * Delete
      */
     public function delete_data($id)

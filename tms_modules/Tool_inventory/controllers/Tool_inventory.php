@@ -140,15 +140,19 @@ class Tool_inventory extends MY_Controller
     }
 
     /**
-     * Add page (placeholder - to be implemented)
+     * Add page
      */
     public function add_page()
     {
         $data = array();
-        // TODO: Load dropdown data for form
-        // $data['tools'] = ...
-        // $data['storage_locations'] = ...
-        // $data['materials'] = ...
+        $data['products'] = $this->tool_inventory->get_products();
+        $data['operations'] = $this->tool_inventory->get_operations();
+        $data['tools'] = $this->tool_inventory->get_tools();
+        $data['storage_locations'] = $this->tool_inventory->get_storage_locations();
+        $data['materials'] = $this->tool_inventory->get_materials();
+        $data['makers'] = $this->tool_inventory->get_makers();
+        $data['tool_drawing_nos'] = $this->tool_inventory->get_tool_drawing_nos();
+        $data['rq_numbers'] = $this->tool_inventory->get_rq_numbers();
         $this->view('add_tool_inventory', $data, FALSE);
     }
 
@@ -254,6 +258,69 @@ class Tool_inventory extends MY_Controller
         echo '</Worksheet>' . "\n";
         echo '</Workbook>';
         exit;
+    }
+
+    /**
+     * Get revisions by ML_ID (AJAX)
+     */
+    public function get_revisions()
+    {
+        if (ob_get_level()) ob_clean();
+        $this->output->set_content_type('application/json', 'UTF-8');
+
+        $ml_id = (int)$this->input->post('ml_id');
+        if ($ml_id <= 0) {
+            echo json_encode(array('success' => false, 'message' => 'Invalid ML_ID', 'data' => array()));
+            return;
+        }
+
+        $revisions = $this->tool_inventory->get_revisions_by_ml_id($ml_id);
+        echo json_encode(array(
+            'success' => true,
+            'data' => $revisions
+        ));
+    }
+
+    /**
+     * Submit data (ADD/EDIT)
+     */
+    public function submit_data()
+    {
+        if (ob_get_level()) ob_clean();
+        $this->output->set_content_type('application/json', 'UTF-8');
+        
+        $result = array('success' => false, 'message' => '');
+        
+        try {
+            $action = strtoupper($this->input->post('action'));
+            
+            // Validate required fields
+            $this->form_validation->set_rules('tool_drawing_no', 'Tool Drawing No', 'required|integer');
+            $this->form_validation->set_rules('tool_id', 'Tool ID', 'required|trim');
+            $this->form_validation->set_rules('product_id', 'Product', 'required|integer');
+            $this->form_validation->set_rules('process_id', 'Process', 'required|integer');
+            $this->form_validation->set_rules('tool_name', 'Tool Name', 'required|integer');
+            $this->form_validation->set_rules('tool_tag', 'Tool Tag', 'required|trim');
+            $this->form_validation->set_rules('tool_status', 'Tool Status', 'required|integer');
+
+            if ($this->form_validation->run() == FALSE) {
+                $this->form_validation->set_error_delimiters('', '');
+                $result['message'] = validation_errors() ?: 'Data tidak valid.';
+                echo json_encode($result);
+                return;
+            }
+
+            // TODO: Implement add_data method in model
+            // For now, return placeholder
+            $result['success'] = false;
+            $result['message'] = 'Save functionality will be implemented in model.';
+            echo json_encode($result);
+            
+        } catch (Exception $e) {
+            log_message('error', '[Tool_inventory::submit_data] Exception: ' . $e->getMessage());
+            $result['message'] = 'Server error. Cek log untuk detail.';
+            echo json_encode($result);
+        }
     }
 
     /**
