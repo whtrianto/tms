@@ -88,15 +88,8 @@
             color: #0056b3 !important;
             text-decoration: underline !important;
         }
-        /* Prevent double scrollbar when using DataTables scrollX */
-        .dataTables_wrapper .dataTables_scroll {
-            overflow-x: auto !important;
-        }
-        .dataTables_wrapper .dataTables_scrollBody {
-            overflow-x: auto !important;
-        }
-        /* Ensure card-body doesn't add extra scrollbar */
-        .card-body {
+        /* Prevent double scrollbar: disable table-responsive overflow when using DataTables scrollX */
+        .table-responsive {
             overflow-x: visible !important;
         }
     </style>
@@ -118,7 +111,8 @@
                         </a>
                     </div>
                     <div class="card-body">
-                        <table id="table-tool-draw-sql" class="table table-bordered table-striped w-100 text-center">
+                        <div class="table-responsive">
+                            <table id="table-tool-draw-sql" class="table table-bordered table-striped w-100 text-center">
                                 <thead>
                                     <tr>
                                         <th>ID</th>
@@ -151,6 +145,7 @@
                                     <!-- Data will be loaded via AJAX -->
                                 </tbody>
                             </table>
+                        </div>
                     </div>
                 </div>
             </div>
