@@ -71,7 +71,7 @@
                         <div class="table-responsive">
                             <table id="table-tool-bom" class="table table-bordered table-striped w-100 text-left">
                                 <thead>
-                                    <tr>
+                                    <tr class="text-center">
                                         <th>ID</th>
                                         <th>Tool BOM</th>
                                         <th>Description</th>

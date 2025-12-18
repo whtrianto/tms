@@ -134,12 +134,32 @@ class Tool_bom_tooling extends MY_Controller
             return;
         }
 
+        // Map data to view format
+        $bom = array(
+            'ID' => isset($row['TD_ID']) ? (int)$row['TD_ID'] : 0,
+            'TOOL_BOM' => isset($row['TD_TOOL_BOM']) ? $row['TD_TOOL_BOM'] : '',
+            'DESCRIPTION' => isset($row['TD_DESCRIPTION']) ? $row['TD_DESCRIPTION'] : '',
+            'PRODUCT_ID' => isset($row['PRODUCT_ID']) ? (int)$row['PRODUCT_ID'] : 0,
+            'PROCESS_ID' => isset($row['MLR_OP_ID']) ? (int)$row['MLR_OP_ID'] : 0,
+            'MACHINE_GROUP_ID' => isset($row['MLR_MACG_ID']) ? (int)$row['MLR_MACG_ID'] : 0,
+            'REVISION' => isset($row['TD_REVISION']) ? (int)$row['TD_REVISION'] : 0,
+            'STATUS' => isset($row['TD_STATUS']) ? (int)$row['TD_STATUS'] : 1,
+            'EFFECTIVE_DATE' => isset($row['TD_EFFECTIVE_DATE']) ? $row['TD_EFFECTIVE_DATE'] : '',
+            'CHANGE_SUMMARY' => isset($row['TD_CHANGE_SUMMARY']) ? $row['TD_CHANGE_SUMMARY'] : '',
+            'DRAWING' => isset($row['MLR_DRAWING']) ? $row['MLR_DRAWING'] : '',
+            'SKETCH' => isset($row['MLR_SKETCH']) ? $row['MLR_SKETCH'] : '',
+            'IS_TRIAL_BOM' => isset($row['ML_TRIAL']) ? (int)$row['ML_TRIAL'] : 0
+        );
+
         $data = array();
-        $data['bom'] = $row;
-        // TODO: Load master data if needed for edit form
-        // $data['products'] = $this->tool_bom_tooling->get_products();
-        // $data['operations'] = $this->tool_bom_tooling->get_operations();
-        // $data['machine_groups'] = $this->tool_bom_tooling->get_machine_groups();
+        $data['bom'] = $bom;
+        $data['products'] = $this->tool_bom_tooling->get_products();
+        $data['operations'] = $this->tool_bom_tooling->get_operations();
+        $data['machine_groups'] = $this->tool_bom_tooling->get_machine_groups();
+        $data['tools'] = $this->tool_bom_tooling->get_tools();
+        $data['materials'] = $this->tool_bom_tooling->get_materials();
+        $data['makers'] = $this->tool_bom_tooling->get_makers();
+        $data['additional_info'] = $this->tool_bom_tooling->get_additional_info($id);
 
         $this->view('edit_tool_bom_tooling', $data, FALSE);
     }

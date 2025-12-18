@@ -181,6 +181,7 @@ class M_tool_bom_tooling extends CI_Model
                          ELSE CONVERT(VARCHAR(19), rev.MLR_EFFECTIVE_DATE, 120) END AS TD_EFFECTIVE_DATE,
                     rev.MLR_CHANGE_SUMMARY AS TD_CHANGE_SUMMARY,
                     ISNULL(rev.MLR_DRAWING, '') AS MLR_DRAWING,
+                    ISNULL(rev.MLR_SKETCH, '') AS MLR_SKETCH,
                     ISNULL(ml.ML_TRIAL, 0) AS ML_TRIAL
                 FROM {$this->t('TMS_TOOL_MASTER_LIST_REV')} rev
                 INNER JOIN {$this->t('TMS_TOOL_MASTER_LIST')} ml ON ml.ML_ID = rev.MLR_ML_ID
