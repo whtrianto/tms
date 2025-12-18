@@ -25,6 +25,9 @@
         .info-section td {
             color: #212529;
         }
+        .table td, .table th { 
+            color: #000 !important;
+        }
     </style>
 </head>
 <body id="page-top">
@@ -53,19 +56,19 @@
                             <table class="table table-borderless table-sm">
                                 <tr>
                                     <th>Product</th>
-                                    <td>: <?= htmlspecialchars($product_name !== '' ? $product_name : '-', ENT_QUOTES, 'UTF-8'); ?></td>
+                                    <td>: <?= htmlspecialchars(isset($product_name) && $product_name !== '' ? $product_name : '-', ENT_QUOTES, 'UTF-8'); ?></td>
                                 </tr>
                                 <tr>
                                     <th>Tool BOM</th>
-                                    <td>: <?= htmlspecialchars($tool_bom !== '' ? $tool_bom : '-', ENT_QUOTES, 'UTF-8'); ?></td>
+                                    <td>: <?= htmlspecialchars(isset($tool_bom) && $tool_bom !== '' ? $tool_bom : '-', ENT_QUOTES, 'UTF-8'); ?></td>
                                 </tr>
                                 <tr>
                                     <th>Process</th>
-                                    <td>: <?= htmlspecialchars($process_name !== '' ? $process_name : '-', ENT_QUOTES, 'UTF-8'); ?></td>
+                                    <td>: <?= htmlspecialchars(isset($process_name) && $process_name !== '' ? $process_name : '-', ENT_QUOTES, 'UTF-8'); ?></td>
                                 </tr>
                                 <tr>
                                     <th>Machine Group</th>
-                                    <td>: <?= htmlspecialchars($machine_group_name !== '' ? $machine_group_name : '-', ENT_QUOTES, 'UTF-8'); ?></td>
+                                    <td>: <?= htmlspecialchars(isset($machine_group_name) && $machine_group_name !== '' ? $machine_group_name : '-', ENT_QUOTES, 'UTF-8'); ?></td>
                                 </tr>
                             </table>
                         </div>
@@ -86,40 +89,43 @@
                                 </thead>
                                 <tbody>
                                     <?php 
-                                    foreach ($history as $h): 
-                                        // Map status
-                                        $statusVal = isset($h['STATUS']) ? $h['STATUS'] : 'INACTIVE';
-                                        $status = 'Inactive';
-                                        $statusBadge = '<span class="badge badge-secondary">Inactive</span>';
-                                        if (is_string($statusVal)) {
-                                            $s = strtoupper(trim($statusVal));
-                                            if ($s === 'ACTIVE' || $s === '1') {
-                                                $status = 'Active';
-                                                $statusBadge = '<span class="badge badge-success">Active</span>';
-                                            } elseif ($s === 'PENDING' || $s === '2') {
-                                                $status = 'Pending';
-                                                $statusBadge = '<span class="badge badge-warning">Pending</span>';
+                                    if (empty($history) || !is_array($history)): ?>
+                                        <tr>
+                                            <td colspan="6" class="text-center text-muted">No revision history found.</td>
+                                        </tr>
+                                    <?php else:
+                                        foreach ($history as $h): 
+                                            // Status mapping: 2=Active, 3=Pending, 5/lainnya=Inactive (sesuai index_tool_bom_engin.php)
+                                            $statusBadge = '<span class="badge badge-secondary">Inactive</span>';
+                                            if (isset($h['TD_STATUS'])) {
+                                                $st = (int)$h['TD_STATUS'];
+                                                if ($st === 2) {
+                                                    $statusBadge = '<span class="badge badge-success">Active</span>';
+                                                } elseif ($st === 3) {
+                                                    $statusBadge = '<span class="badge badge-warning">Pending</span>';
+                                                } elseif ($st === 5) {
+                                                    $statusBadge = '<span class="badge badge-secondary">Inactive</span>';
+                                                }
                                             }
-                                        } else {
-                                            $n = (int)$statusVal;
-                                            if ($n === 1) {
-                                                $status = 'Active';
-                                                $statusBadge = '<span class="badge badge-success">Active</span>';
-                                            } elseif ($n === 2) {
-                                                $status = 'Pending';
-                                                $statusBadge = '<span class="badge badge-warning">Pending</span>';
-                                            }
-                                        }
+                                            
+                                            // Data dari query
+                                            $td_id = isset($h['TD_ID']) ? (int)$h['TD_ID'] : 0;
+                                            $revision = isset($h['TD_REVISION']) ? (int)$h['TD_REVISION'] : 0;
+                                            $effective_date = isset($h['TD_EFFECTIVE_DATE']) ? $h['TD_EFFECTIVE_DATE'] : '';
+                                            $modified_date = isset($h['TD_MODIFIED_DATE']) ? $h['TD_MODIFIED_DATE'] : '';
+                                            $modified_by = isset($h['TD_MODIFIED_BY']) ? $h['TD_MODIFIED_BY'] : '';
                                     ?>
                                         <tr>
-                                            <td><?= htmlspecialchars(isset($h['ID']) ? $h['ID'] : '', ENT_QUOTES, 'UTF-8'); ?></td>
-                                            <td><?= htmlspecialchars(isset($h['REVISION']) ? $h['REVISION'] : '0', ENT_QUOTES, 'UTF-8'); ?></td>
+                                            <td class="text-left"><?= htmlspecialchars($td_id, ENT_QUOTES, 'UTF-8'); ?></td>
+                                            <td class="text-left"><?= htmlspecialchars($revision, ENT_QUOTES, 'UTF-8'); ?></td>
                                             <td><?= $statusBadge; ?></td>
-                                            <td><?= htmlspecialchars(isset($h['EFFECTIVE_DATE']) && $h['EFFECTIVE_DATE'] !== '' ? substr($h['EFFECTIVE_DATE'], 0, 10) : '-', ENT_QUOTES, 'UTF-8'); ?></td>
-                                            <td><?= htmlspecialchars(isset($h['MODIFIED_DATE']) && $h['MODIFIED_DATE'] !== '' ? $h['MODIFIED_DATE'] : '-', ENT_QUOTES, 'UTF-8'); ?></td>
-                                            <td><?= htmlspecialchars(isset($h['MODIFIED_BY']) && $h['MODIFIED_BY'] !== '' ? $h['MODIFIED_BY'] : '-', ENT_QUOTES, 'UTF-8'); ?></td>
+                                            <td class="text-left"><?= htmlspecialchars($effective_date !== '' ? $effective_date : '-', ENT_QUOTES, 'UTF-8'); ?></td>
+                                            <td class="text-left"><?= htmlspecialchars($modified_date !== '' ? $modified_date : '-', ENT_QUOTES, 'UTF-8'); ?></td>
+                                            <td class="text-left"><?= htmlspecialchars($modified_by !== '' ? $modified_by : '-', ENT_QUOTES, 'UTF-8'); ?></td>
                                         </tr>
-                                    <?php endforeach; ?>
+                                    <?php 
+                                        endforeach;
+                                    endif; ?>
                                 </tbody>
                             </table>
                         </div>
@@ -149,7 +155,8 @@
                 { width: '100px', targets: 2 },
                 { width: '120px', targets: 3 },
                 { width: '150px', targets: 4 },
-                { width: '120px', targets: 5 }
+                { width: '120px', targets: 5 },
+                { className: "text-left", targets: "_all" }
             ]
         });
     });
