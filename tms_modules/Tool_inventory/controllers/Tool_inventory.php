@@ -73,7 +73,12 @@ class Tool_inventory extends MY_Controller
 
                 $id = (int)$row['INV_ID'];
                 $tool_tag = htmlspecialchars(isset($row['INV_TOOL_TAG']) ? $row['INV_TOOL_TAG'] : '', ENT_QUOTES, 'UTF-8');
+                $tool_id = htmlspecialchars(isset($row['INV_TOOL_ID']) ? $row['INV_TOOL_ID'] : '', ENT_QUOTES, 'UTF-8');
                 $edit_url = base_url('Tool_inventory/tool_inventory/edit_page/' . $id);
+                
+                // Make Tool ID clickable - link to detail page
+                $detail_url = base_url('Tool_inventory/tool_inventory/detail_page/' . $id);
+                $tool_id_html = '<a href="' . $detail_url . '" class="text-primary" style="text-decoration: underline;">' . $tool_id . '</a>';
                 
                 $action_html = '<div class="action-buttons">' .
                     '<a href="' . $edit_url . '" class="btn btn-secondary btn-sm" title="Edit">Edit</a> ' .
@@ -89,7 +94,7 @@ class Tool_inventory extends MY_Controller
                     htmlspecialchars(isset($row['TOOL_DRAWING_NO']) ? $row['TOOL_DRAWING_NO'] : '', ENT_QUOTES, 'UTF-8'),
                     htmlspecialchars(isset($row['RECEIVED_DATE']) ? $row['RECEIVED_DATE'] : '', ENT_QUOTES, 'UTF-8'),
                     htmlspecialchars(isset($row['DO_NO']) ? $row['DO_NO'] : '', ENT_QUOTES, 'UTF-8'),
-                    htmlspecialchars(isset($row['INV_TOOL_ID']) ? $row['INV_TOOL_ID'] : '', ENT_QUOTES, 'UTF-8'),
+                    $tool_id_html,
                     $status_badge,
                     htmlspecialchars(isset($row['NOTES']) ? $row['NOTES'] : '', ENT_QUOTES, 'UTF-8'),
                     htmlspecialchars(isset($row['STORAGE_LOCATION']) ? $row['STORAGE_LOCATION'] : '', ENT_QUOTES, 'UTF-8'),
@@ -283,6 +288,35 @@ class Tool_inventory extends MY_Controller
     }
 
     /**
+     * Get detail by ID (AJAX)
+     */
+    public function get_detail()
+    {
+        if (ob_get_level()) ob_clean();
+        $this->output->set_content_type('application/json', 'UTF-8');
+
+        $id = (int)$this->input->post('INV_ID');
+        if ($id <= 0) {
+            echo json_encode(array('success' => false, 'message' => 'Invalid ID', 'data' => null));
+            return;
+        }
+
+        $data = $this->tool_inventory->get_by_id($id);
+        if ($data) {
+            echo json_encode(array(
+                'success' => true,
+                'data' => $data
+            ));
+        } else {
+            echo json_encode(array(
+                'success' => false,
+                'message' => 'Data tidak ditemukan',
+                'data' => null
+            ));
+        }
+    }
+
+    /**
      * Submit data (ADD/EDIT)
      */
     public function submit_data()
@@ -322,6 +356,36 @@ class Tool_inventory extends MY_Controller
             $result['message'] = 'Server error. Cek log untuk detail.';
             echo json_encode($result);
         }
+    }
+
+    /**
+     * Detail page (view only)
+     */
+    public function detail_page($id = 0)
+    {
+        $id = (int)$id;
+        if ($id <= 0) {
+            show_404();
+            return;
+        }
+
+        $row = $this->tool_inventory->get_by_id($id);
+        if (!$row) {
+            show_404();
+            return;
+        }
+
+        $data = array();
+        $data['inventory'] = $row;
+        $data['products'] = $this->tool_inventory->get_products();
+        $data['operations'] = $this->tool_inventory->get_operations();
+        $data['tools'] = $this->tool_inventory->get_tools();
+        $data['storage_locations'] = $this->tool_inventory->get_storage_locations();
+        $data['materials'] = $this->tool_inventory->get_materials();
+        $data['makers'] = $this->tool_inventory->get_makers();
+        $data['tool_drawing_nos'] = $this->tool_inventory->get_tool_drawing_nos();
+        $data['rq_numbers'] = $this->tool_inventory->get_rq_numbers();
+        $this->view('detail_tool_inventory', $data, FALSE);
     }
 
     /**

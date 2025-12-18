@@ -181,6 +181,7 @@ class M_tool_inventory extends CI_Model
                     ISNULL(ml.ML_TOOL_DRAW_NO, '') AS TOOL_DRAWING_NO,
                     ml.ML_ID AS TOOL_DRAWING_ML_ID,
                     mlr.MLR_OP_ID AS PROCESS_ID,
+                    op.OP_NAME AS PROCESS_NAME,
                     mlr.MLR_REV AS REVISION,
                     CASE WHEN inv.INV_RECEIVED_DATE IS NULL THEN '' 
                          ELSE CONVERT(VARCHAR(19), inv.INV_RECEIVED_DATE, 120) END AS RECEIVED_DATE,
@@ -200,10 +201,12 @@ class M_tool_inventory extends CI_Model
                     inv.INV_IN_TOOL_SET,
                     inv.INV_ASSETIZED,
                     inv.INV_PURCHASE_TYPE,
-                    maker.MAKER_CODE AS MAKER_CODE
+                    maker.MAKER_CODE AS MAKER_CODE,
+                    maker.MAKER_NAME AS MAKER_NAME
                 FROM {$this->t('TMS_TOOL_INVENTORY')} inv
                 LEFT JOIN {$this->t('TMS_TOOL_MASTER_LIST_REV')} mlr ON mlr.MLR_ID = inv.INV_MLR_ID
                 LEFT JOIN {$this->t('TMS_TOOL_MASTER_LIST')} ml ON ml.ML_ID = mlr.MLR_ML_ID
+                LEFT JOIN {$this->t('MS_OPERATION')} op ON op.OP_ID = mlr.MLR_OP_ID
                 LEFT JOIN {$this->t('MS_TOOL_CLASS')} tc ON tc.TC_ID = mlr.MLR_TC_ID
                 LEFT JOIN {$this->t('MS_MATERIAL')} mat ON mat.MAT_ID = inv.INV_MAT_ID
                 LEFT JOIN {$this->t('MS_STORAGE_LOCATION')} sl ON sl.SL_ID = inv.INV_SL_ID
