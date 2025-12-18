@@ -51,8 +51,9 @@ class Tool_inventory extends MY_Controller
             $column_search = array();
             if (is_array($columns)) {
                 foreach ($columns as $idx => $col) {
-                    if (isset($col['search']['value']) && $col['search']['value'] !== '') {
-                        $column_search[$idx] = $col['search']['value'];
+                    $search_val = isset($col['search']['value']) ? trim($col['search']['value']) : '';
+                    if ($search_val !== '') {
+                        $column_search[$idx] = $search_val;
                     }
                 }
             }

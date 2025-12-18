@@ -92,24 +92,25 @@ class M_tool_inventory extends CI_Model
         // Per-column search
         $col_search_map = array(
             0 => 'CAST(inv.INV_ID AS VARCHAR)',
-            1 => 'inv.INV_TOOL_TAG',
-            2 => 'ISNULL(inv.INV_RQ_NO, ord.ORD_RQ_NO)',
-            3 => 'part.PART_NAME',
-            4 => 'tc.TC_NAME',
-            5 => 'ml.ML_TOOL_DRAW_NO',
-            6 => 'CONVERT(VARCHAR(19), inv.INV_RECEIVED_DATE, 120)',
-            7 => 'inv.INV_DO_NO',
-            8 => 'inv.INV_TOOL_ID',
+            1 => 'ISNULL(inv.INV_TOOL_TAG, \'\')',
+            2 => 'ISNULL(ISNULL(inv.INV_RQ_NO, ord.ORD_RQ_NO), \'\')',
+            3 => 'ISNULL(part.PART_NAME, \'\')',
+            4 => 'ISNULL(tc.TC_NAME, \'\')',
+            5 => 'ISNULL(ml.ML_TOOL_DRAW_NO, \'\')',
+            6 => 'ISNULL(CONVERT(VARCHAR(19), inv.INV_RECEIVED_DATE, 120), \'\')',
+            7 => 'ISNULL(inv.INV_DO_NO, \'\')',
+            8 => 'ISNULL(inv.INV_TOOL_ID, \'\')',
             9 => 'CAST(inv.INV_STATUS AS VARCHAR)',
-            10 => 'inv.INV_NOTES',
-            11 => 'sl.SL_NAME',
-            12 => 'mat.MAT_NAME',
-            13 => 'CAST(inv.INV_TOOL_CONDITION AS VARCHAR)',
-            14 => 'CAST(inv.INV_END_CYCLE AS VARCHAR)'
+            10 => 'ISNULL(inv.INV_NOTES, \'\')',
+            11 => 'ISNULL(sl.SL_NAME, \'\')',
+            12 => 'ISNULL(mat.MAT_NAME, \'\')',
+            13 => 'ISNULL(CAST(inv.INV_TOOL_CONDITION AS VARCHAR), \'\')',
+            14 => 'ISNULL(CAST(inv.INV_END_CYCLE AS VARCHAR), \'0\')'
         );
         
         foreach ($column_search as $col_idx => $col_val) {
-            if (!empty($col_val) && isset($col_search_map[$col_idx])) {
+            $col_val = trim($col_val);
+            if ($col_val !== '' && isset($col_search_map[$col_idx])) {
                 $where .= " AND " . $col_search_map[$col_idx] . " LIKE ?";
                 $params[] = '%' . $col_val . '%';
             }
