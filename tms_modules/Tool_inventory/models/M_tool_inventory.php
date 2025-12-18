@@ -267,6 +267,50 @@ class M_tool_inventory extends CI_Model
     }
 
     /**
+     * Get all data for export (no pagination)
+     */
+    public function get_all_for_export()
+    {
+        $base_from = "
+            FROM {$this->t('TMS_TOOL_INVENTORY')} inv
+            LEFT JOIN {$this->t('TMS_TOOL_MASTER_LIST_REV')} mlr ON mlr.MLR_ID = inv.INV_MLR_ID
+            LEFT JOIN {$this->t('TMS_TOOL_MASTER_LIST')} ml ON ml.ML_ID = mlr.MLR_ML_ID
+            LEFT JOIN {$this->t('MS_TOOL_CLASS')} tc ON tc.TC_ID = mlr.MLR_TC_ID
+            LEFT JOIN {$this->t('MS_MATERIAL')} mat ON mat.MAT_ID = inv.INV_MAT_ID
+            LEFT JOIN {$this->t('MS_STORAGE_LOCATION')} sl ON sl.SL_ID = inv.INV_SL_ID
+            LEFT JOIN {$this->t('TMS_ORDERING_ITEMS')} ordi ON ordi.ORDI_ID = inv.INV_ORDI_ID
+            LEFT JOIN {$this->t('TMS_ORDERING')} ord ON ord.ORD_ID = ordi.ORDI_ORD_ID
+            LEFT JOIN {$this->t('TMS_TOOL_MASTER_LIST_PARTS')} mlparts ON mlparts.TMLP_ML_ID = ml.ML_ID
+            LEFT JOIN {$this->t('MS_PARTS')} part ON part.PART_ID = mlparts.TMLP_PART_ID";
+
+        $where = " WHERE (ml.ML_TYPE = 1 OR ml.ML_TYPE IS NULL OR inv.INV_MLR_ID IS NULL)";
+
+        // Data query - order by ID DESC (terbesar ke terkecil)
+        $data_sql = "SELECT 
+                        inv.INV_ID,
+                        inv.INV_TOOL_TAG,
+                        ISNULL(inv.INV_RQ_NO, ord.ORD_RQ_NO) AS RQ_NO,
+                        ISNULL(part.PART_NAME, '') AS PRODUCT_NAME,
+                        ISNULL(tc.TC_NAME, '') AS TOOL_NAME,
+                        ISNULL(ml.ML_TOOL_DRAW_NO, '') AS TOOL_DRAWING_NO,
+                        CASE WHEN inv.INV_RECEIVED_DATE IS NULL THEN '' 
+                             ELSE CONVERT(VARCHAR(19), inv.INV_RECEIVED_DATE, 120) END AS RECEIVED_DATE,
+                        ISNULL(inv.INV_DO_NO, '') AS DO_NO,
+                        inv.INV_TOOL_ID,
+                        inv.INV_STATUS,
+                        ISNULL(inv.INV_NOTES, '') AS NOTES,
+                        ISNULL(sl.SL_NAME, '') AS STORAGE_LOCATION,
+                        ISNULL(mat.MAT_NAME, '') AS MATERIAL,
+                        inv.INV_TOOL_CONDITION,
+                        ISNULL(inv.INV_END_CYCLE, 0) AS END_CYCLE
+                    " . $base_from . $where . "
+                    ORDER BY inv.INV_ID DESC";
+
+        $result = $this->db_tms->query($data_sql);
+        return $result ? $result->result_array() : array();
+    }
+
+    /**
      * Delete
      */
     public function delete_data($id)

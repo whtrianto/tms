@@ -153,6 +153,110 @@ class Tool_inventory extends MY_Controller
     }
 
     /**
+     * Export to Excel
+     */
+    public function export_excel()
+    {
+        // Get all data
+        $data = $this->tool_inventory->get_all_for_export();
+
+        // Generate filename with timestamp
+        $filename = 'Tool_Inventory_' . date('Y-m-d_H-i-s') . '.xls';
+
+        // Set headers for Excel download
+        header('Content-Type: application/vnd.ms-excel; charset=UTF-8');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        header('Cache-Control: max-age=0');
+        header('Content-Transfer-Encoding: binary');
+
+        // Output BOM for UTF-8 Excel compatibility
+        echo "\xEF\xBB\xBF";
+
+        // Start Excel XML output
+        echo '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
+        echo '<?mso-application progid="Excel.Sheet"?>' . "\n";
+        echo '<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"' . "\n";
+        echo ' xmlns:o="urn:schemas-microsoft-com:office:office"' . "\n";
+        echo ' xmlns:x="urn:schemas-microsoft-com:office:excel"' . "\n";
+        echo ' xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"' . "\n";
+        echo ' xmlns:html="http://www.w3.org/TR/REC-html40">' . "\n";
+        echo '<DocumentProperties xmlns="urn:schemas-microsoft-com:office:office">' . "\n";
+        echo '<Title>Tool Inventory Listing</Title>' . "\n";
+        echo '<Created>' . date('Y-m-d\TH:i:s\Z') . '</Created>' . "\n";
+        echo '</DocumentProperties>' . "\n";
+        echo '<Worksheet ss:Name="Tool Inventory">' . "\n";
+        echo '<Table>' . "\n";
+
+        // Header Section
+        echo '<Row>' . "\n";
+        echo '<Cell><Data ss:Type="String">Tool Inventory Listing</Data></Cell>' . "\n";
+        echo '</Row>' . "\n";
+        echo '<Row></Row>' . "\n";
+
+        // Reported on date
+        echo '<Row>' . "\n";
+        echo '<Cell><Data ss:Type="String">Reported on: ' . date('Y-m-d H:i:s') . '</Data></Cell>' . "\n";
+        echo '</Row>' . "\n";
+        echo '<Row></Row>' . "\n";
+
+        // Status filter
+        echo '<Row>' . "\n";
+        echo '<Cell><Data ss:Type="String">Status</Data></Cell>' . "\n";
+        echo '<Cell><Data ss:Type="String">InUsed, New, Available, DesignChange, Allocated, Onhold, Repairing, Modifying, Scrapped</Data></Cell>' . "\n";
+        echo '</Row>' . "\n";
+        echo '<Row></Row>' . "\n";
+
+        // Column headers
+        $headers = array('ID', 'Tool Tag', 'RQ No.', 'Product', 'Tool Name', 'Tool Drawing No.', 
+                        'Received Date', 'Do No.', 'Tool ID', 'Status', 'Notes', 'Storage Location', 
+                        'Material', 'Tool Condition', 'End Cycle');
+        
+        echo '<Row>' . "\n";
+        foreach ($headers as $header) {
+            echo '<Cell><Data ss:Type="String">' . htmlspecialchars($header, ENT_XML1, 'UTF-8') . '</Data></Cell>' . "\n";
+        }
+        echo '</Row>' . "\n";
+
+        // Data rows
+        foreach ($data as $row) {
+            $status = isset($row['INV_STATUS']) ? (int)$row['INV_STATUS'] : 0;
+            $status_name = $this->tool_inventory->get_status_name($status);
+            
+            $tool_condition = isset($row['INV_TOOL_CONDITION']) && $row['INV_TOOL_CONDITION'] !== null 
+                ? (string)$row['INV_TOOL_CONDITION'] 
+                : '';
+            
+            $end_cycle = isset($row['END_CYCLE']) && $row['END_CYCLE'] !== null 
+                ? (string)$row['END_CYCLE'] 
+                : '0';
+
+            echo '<Row>' . "\n";
+            echo '<Cell><Data ss:Type="Number">' . (int)$row['INV_ID'] . '</Data></Cell>' . "\n";
+            echo '<Cell><Data ss:Type="String">' . htmlspecialchars(isset($row['INV_TOOL_TAG']) ? $row['INV_TOOL_TAG'] : '', ENT_XML1, 'UTF-8') . '</Data></Cell>' . "\n";
+            echo '<Cell><Data ss:Type="String">' . htmlspecialchars(isset($row['RQ_NO']) ? $row['RQ_NO'] : '', ENT_XML1, 'UTF-8') . '</Data></Cell>' . "\n";
+            echo '<Cell><Data ss:Type="String">' . htmlspecialchars(isset($row['PRODUCT_NAME']) ? $row['PRODUCT_NAME'] : '', ENT_XML1, 'UTF-8') . '</Data></Cell>' . "\n";
+            echo '<Cell><Data ss:Type="String">' . htmlspecialchars(isset($row['TOOL_NAME']) ? $row['TOOL_NAME'] : '', ENT_XML1, 'UTF-8') . '</Data></Cell>' . "\n";
+            echo '<Cell><Data ss:Type="String">' . htmlspecialchars(isset($row['TOOL_DRAWING_NO']) ? $row['TOOL_DRAWING_NO'] : '', ENT_XML1, 'UTF-8') . '</Data></Cell>' . "\n";
+            echo '<Cell><Data ss:Type="String">' . htmlspecialchars(isset($row['RECEIVED_DATE']) ? $row['RECEIVED_DATE'] : '', ENT_XML1, 'UTF-8') . '</Data></Cell>' . "\n";
+            echo '<Cell><Data ss:Type="String">' . htmlspecialchars(isset($row['DO_NO']) ? $row['DO_NO'] : '', ENT_XML1, 'UTF-8') . '</Data></Cell>' . "\n";
+            echo '<Cell><Data ss:Type="String">' . htmlspecialchars(isset($row['INV_TOOL_ID']) ? $row['INV_TOOL_ID'] : '', ENT_XML1, 'UTF-8') . '</Data></Cell>' . "\n";
+            echo '<Cell><Data ss:Type="String">' . htmlspecialchars($status_name, ENT_XML1, 'UTF-8') . '</Data></Cell>' . "\n";
+            echo '<Cell><Data ss:Type="String">' . htmlspecialchars(isset($row['NOTES']) ? $row['NOTES'] : '', ENT_XML1, 'UTF-8') . '</Data></Cell>' . "\n";
+            echo '<Cell><Data ss:Type="String">' . htmlspecialchars(isset($row['STORAGE_LOCATION']) ? $row['STORAGE_LOCATION'] : '', ENT_XML1, 'UTF-8') . '</Data></Cell>' . "\n";
+            echo '<Cell><Data ss:Type="String">' . htmlspecialchars(isset($row['MATERIAL']) ? $row['MATERIAL'] : '', ENT_XML1, 'UTF-8') . '</Data></Cell>' . "\n";
+            echo '<Cell><Data ss:Type="String">' . htmlspecialchars($tool_condition, ENT_XML1, 'UTF-8') . '</Data></Cell>' . "\n";
+            echo '<Cell><Data ss:Type="Number">' . htmlspecialchars($end_cycle, ENT_XML1, 'UTF-8') . '</Data></Cell>' . "\n";
+            echo '</Row>' . "\n";
+        }
+
+        // Close XML tags
+        echo '</Table>' . "\n";
+        echo '</Worksheet>' . "\n";
+        echo '</Workbook>';
+        exit;
+    }
+
+    /**
      * Edit page (placeholder - to be implemented)
      */
     public function edit_page($id = 0)

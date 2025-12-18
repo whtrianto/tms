@@ -63,9 +63,14 @@
                 <div class="card">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <h4 class="m-0 font-weight-bold text-primary">Tool Inventory</h4>
-                        <a href="<?= base_url('Tool_inventory/tool_inventory/add_page'); ?>" class="btn btn-sm btn-primary shadow-sm">
-                            <i class="fa fa-plus"></i> Add New
-                        </a>
+                        <div>
+                            <a href="<?= base_url('Tool_inventory/tool_inventory/export_excel'); ?>" class="btn btn-sm btn-success shadow-sm mr-2" target="_blank">
+                                <i class="fa fa-file-excel"></i> Export to Excel
+                            </a>
+                            <a href="<?= base_url('Tool_inventory/tool_inventory/add_page'); ?>" class="btn btn-sm btn-primary shadow-sm">
+                                <i class="fa fa-plus"></i> Add New
+                            </a>
+                        </div>
                     </div>
                     <div class="card-body">
                         <div class="table-responsive">
@@ -137,7 +142,7 @@
             },
             lengthMenu: [[10,25,50,100],[10,25,50,100]],
             pageLength: 25,
-            order: [[1,'asc']],
+            order: [[0,'desc']],
             autoWidth: false,
             scrollX: true,
             columnDefs: [
