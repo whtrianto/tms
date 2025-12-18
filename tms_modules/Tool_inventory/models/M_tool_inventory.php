@@ -61,7 +61,7 @@ class M_tool_inventory extends CI_Model
             LEFT JOIN {$this->t('TMS_TOOL_MASTER_LIST_PARTS')} mlparts ON mlparts.TMLP_ML_ID = ml.ML_ID
             LEFT JOIN {$this->t('MS_PARTS')} part ON part.PART_ID = mlparts.TMLP_PART_ID";
 
-        $where = " WHERE ml.ML_TYPE = 1 OR ml.ML_TYPE IS NULL";
+        $where = " WHERE (ml.ML_TYPE = 1 OR ml.ML_TYPE IS NULL OR inv.INV_MLR_ID IS NULL)";
         $params = array();
 
         // Global search
@@ -100,33 +100,31 @@ class M_tool_inventory extends CI_Model
             6 => 'ISNULL(CONVERT(VARCHAR(19), inv.INV_RECEIVED_DATE, 120), \'\')',
             7 => 'ISNULL(inv.INV_DO_NO, \'\')',
             8 => 'ISNULL(inv.INV_TOOL_ID, \'\')',
-            9 => 'CAST(inv.INV_STATUS AS VARCHAR)',
+            9 => 'CAST(ISNULL(inv.INV_STATUS, 0) AS VARCHAR)',
             10 => 'ISNULL(inv.INV_NOTES, \'\')',
             11 => 'ISNULL(sl.SL_NAME, \'\')',
             12 => 'ISNULL(mat.MAT_NAME, \'\')',
-            13 => 'ISNULL(CAST(inv.INV_TOOL_CONDITION AS VARCHAR), \'\')',
-            14 => 'ISNULL(CAST(inv.INV_END_CYCLE AS VARCHAR), \'0\')'
+            13 => 'CAST(ISNULL(inv.INV_TOOL_CONDITION, 0) AS VARCHAR)',
+            14 => 'CAST(ISNULL(inv.INV_END_CYCLE, 0) AS VARCHAR)'
         );
         
         foreach ($column_search as $col_idx => $col_val) {
-            $col_val = trim($col_val);
-            if ($col_val !== '' && isset($col_search_map[$col_idx])) {
+            if (!empty($col_val) && isset($col_search_map[$col_idx])) {
                 $where .= " AND " . $col_search_map[$col_idx] . " LIKE ?";
                 $params[] = '%' . $col_val . '%';
             }
         }
 
-        // Count total
-        $count_total_sql = "SELECT COUNT(*) as cnt 
-                           FROM {$this->t('TMS_TOOL_INVENTORY')} inv
-                           LEFT JOIN {$this->t('TMS_TOOL_MASTER_LIST_REV')} mlr ON mlr.MLR_ID = inv.INV_MLR_ID
-                           LEFT JOIN {$this->t('TMS_TOOL_MASTER_LIST')} ml ON ml.ML_ID = mlr.MLR_ML_ID
-                           WHERE ml.ML_TYPE = 1 OR ml.ML_TYPE IS NULL";
-        $count_total = $this->db_tms->query($count_total_sql)->row()->cnt;
+        // Count total - use same joins as base_from
+        $count_total_where = " WHERE (ml.ML_TYPE = 1 OR ml.ML_TYPE IS NULL OR inv.INV_MLR_ID IS NULL)";
+        $count_total_sql = "SELECT COUNT(*) as cnt " . $base_from . $count_total_where;
+        $count_total_result = $this->db_tms->query($count_total_sql);
+        $count_total = $count_total_result && $count_total_result->num_rows() > 0 ? $count_total_result->row()->cnt : 0;
 
         // Count filtered
         $count_filtered_sql = "SELECT COUNT(*) as cnt " . $base_from . $where;
-        $count_filtered = $this->db_tms->query($count_filtered_sql, $params)->row()->cnt;
+        $count_filtered_result = $this->db_tms->query($count_filtered_sql, $params);
+        $count_filtered = $count_filtered_result && $count_filtered_result->num_rows() > 0 ? $count_filtered_result->row()->cnt : 0;
 
         // Order
         $order_column = isset($columns[$order_col]) ? $columns[$order_col] : 'inv.INV_ID';
