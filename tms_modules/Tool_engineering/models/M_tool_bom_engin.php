@@ -165,7 +165,8 @@ class M_tool_bom_engin extends CI_Model
                     CASE WHEN rev.MLR_EFFECTIVE_DATE IS NULL THEN '' 
                          ELSE CONVERT(VARCHAR(19), rev.MLR_EFFECTIVE_DATE, 120) END AS TD_EFFECTIVE_DATE,
                     rev.MLR_CHANGE_SUMMARY AS TD_CHANGE_SUMMARY,
-                    ISNULL(rev.MLR_DRAWING, '') AS MLR_DRAWING
+                    ISNULL(rev.MLR_DRAWING, '') AS MLR_DRAWING,
+                    ISNULL(ml.ML_TRIAL, 0) AS ML_TRIAL
                 FROM {$this->t('TMS_TOOL_MASTER_LIST_REV')} rev
                 INNER JOIN {$this->t('TMS_TOOL_MASTER_LIST')} ml ON ml.ML_ID = rev.MLR_ML_ID
                 LEFT JOIN {$this->t('MS_MACHINES')} mac ON mac.MAC_ID = rev.MLR_MACG_ID
@@ -179,8 +180,8 @@ class M_tool_bom_engin extends CI_Model
             return null;
         }
         
-        // Set default value for IS_TRIAL_BOM (field doesn't exist in table)
-        $result['ML_IS_TRIAL_BOM'] = 0;
+        // Set IS_TRIAL_BOM from ML_TRIAL
+        $result['ML_IS_TRIAL_BOM'] = isset($result['ML_TRIAL']) ? (int)$result['ML_TRIAL'] : 0;
         
         // Get product ID from TMS_TOOL_MASTER_LIST_PARTS
         if (isset($result['MLR_ML_ID']) && (int)$result['MLR_ML_ID'] > 0) {
@@ -384,6 +385,7 @@ class M_tool_bom_engin extends CI_Model
                 ISNULL(members.TB_QTY, 0) AS TD_MIN_QTY,
                 ISNULL(members.TB_STD_QTY, 0) AS TD_REPLENISH_QTY,
                 ISNULL(members.TB_SEQ, 0) AS TD_SEQUENCE,
+                ISNULL(members.TB_REMARK, '') AS TD_REMARKS,
                 ISNULL(child_rev.MLR_DESC, '') AS TD_DESCRIPTION,
                 ISNULL(part.PART_ID, 0) AS TD_PRODUCT_ID,
                 ISNULL(op.OP_ID, 0) AS TD_PROCESS_ID,

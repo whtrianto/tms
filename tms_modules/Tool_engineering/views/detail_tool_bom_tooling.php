@@ -39,7 +39,7 @@
                             <div class="small text-muted">ID: <?= htmlspecialchars($bom['ID']); ?></div>
                         </div>
                         <div>
-                            <a href="<?= base_url('tool_engineering/tool_bom_tooling'); ?>" class="btn btn-sm btn-outline-primary shadow-sm">
+                            <a href="<?= base_url('Tool_engineering/tool_bom_tooling'); ?>" class="btn btn-sm btn-outline-primary shadow-sm">
                                 <i class="fa fa-arrow-left"></i> Back
                             </a>
                         </div>
@@ -283,7 +283,7 @@
                                                 <td><?= htmlspecialchars(isset($row['TD_MIN_QTY']) && $row['TD_MIN_QTY'] !== '' ? $row['TD_MIN_QTY'] : '-', ENT_QUOTES, 'UTF-8'); ?></td>
                                                 <td><?= htmlspecialchars(isset($row['TD_REPLENISH_QTY']) && $row['TD_REPLENISH_QTY'] !== '' ? $row['TD_REPLENISH_QTY'] : '-', ENT_QUOTES, 'UTF-8'); ?></td>
                                                 <td><?= htmlspecialchars(isset($row['TD_SEQUENCE']) && $row['TD_SEQUENCE'] !== '' ? $row['TD_SEQUENCE'] : '-', ENT_QUOTES, 'UTF-8'); ?></td>
-                                                <td><?= htmlspecialchars(isset($row['TD_DESCRIPTION']) && $row['TD_DESCRIPTION'] !== '' ? $row['TD_DESCRIPTION'] : '-', ENT_QUOTES, 'UTF-8'); ?></td>
+                                                <td><?= htmlspecialchars(isset($row['TD_REMARKS']) && $row['TD_REMARKS'] !== '' ? $row['TD_REMARKS'] : '-', ENT_QUOTES, 'UTF-8'); ?></td>
                                             </tr>
                                         <?php endforeach; ?>
                                     <?php else: ?>

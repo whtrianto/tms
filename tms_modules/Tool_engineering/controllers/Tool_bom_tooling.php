@@ -77,6 +77,9 @@ class Tool_bom_tooling extends MY_Controller
                 $id = (int)$row['TD_ID'];
                 $edit_url = base_url('Tool_engineering/tool_bom_tooling/edit_page/' . $id);
                 $history_url = base_url('Tool_engineering/tool_bom_tooling/history_page/' . $id);
+                $detail_url = base_url('Tool_engineering/tool_bom_tooling/detail_page/' . $id);
+                $tool_bom_escaped = htmlspecialchars(isset($row['TD_TOOL_BOM']) ? $row['TD_TOOL_BOM'] : '', ENT_QUOTES, 'UTF-8');
+                $tool_bom_link = '<a href="' . $detail_url . '" class="text-primary" style="text-decoration: underline;">' . $tool_bom_escaped . '</a>';
                 
                 $action_html = '<div class="action-buttons">' .
                     '<a href="' . $edit_url . '" class="btn btn-secondary btn-sm" title="Edit">Edit</a> ' .
@@ -86,7 +89,7 @@ class Tool_bom_tooling extends MY_Controller
                 $formatted_data[] = array(
                     $id,
                     htmlspecialchars(isset($row['TD_PRODUCT_NAME']) ? $row['TD_PRODUCT_NAME'] : '', ENT_QUOTES, 'UTF-8'),
-                    htmlspecialchars(isset($row['TD_TOOL_BOM']) ? $row['TD_TOOL_BOM'] : '', ENT_QUOTES, 'UTF-8'),
+                    $tool_bom_link,
                     htmlspecialchars(isset($row['TD_PROCESS_NAME']) ? $row['TD_PROCESS_NAME'] : '', ENT_QUOTES, 'UTF-8'),
                     htmlspecialchars(isset($row['TD_MACHINE_GROUP']) ? $row['TD_MACHINE_GROUP'] : '', ENT_QUOTES, 'UTF-8'),
                     htmlspecialchars(isset($row['TD_REVISION']) ? (string)$row['TD_REVISION'] : '0', ENT_QUOTES, 'UTF-8'),
@@ -172,6 +175,54 @@ class Tool_bom_tooling extends MY_Controller
         $data['machine_group_name'] = $machine_group_name;
 
         $this->view('history_tool_bom_tooling', $data, FALSE);
+    }
+
+    /**
+     * Detail page
+     */
+    public function detail_page($id = 0)
+    {
+        $id = (int)$id;
+        if ($id <= 0) {
+            show_404();
+            return;
+        }
+
+        $row = $this->tool_bom_tooling->get_by_id($id);
+        if (!$row) {
+            show_404();
+            return;
+        }
+
+        // Map data to view format
+        $bom = array(
+            'ID' => isset($row['TD_ID']) ? (int)$row['TD_ID'] : 0,
+            'TOOL_BOM' => isset($row['TD_TOOL_BOM']) ? $row['TD_TOOL_BOM'] : '',
+            'DESCRIPTION' => isset($row['TD_DESCRIPTION']) ? $row['TD_DESCRIPTION'] : '',
+            'PRODUCT_ID' => isset($row['PRODUCT_ID']) ? (int)$row['PRODUCT_ID'] : 0,
+            'PRODUCT' => isset($row['TD_PRODUCT_NAME']) ? $row['TD_PRODUCT_NAME'] : '',
+            'PROCESS_ID' => isset($row['MLR_OP_ID']) ? (int)$row['MLR_OP_ID'] : 0,
+            'MACHINE_GROUP_ID' => isset($row['MLR_MACG_ID']) ? (int)$row['MLR_MACG_ID'] : 0,
+            'MACHINE_GROUP' => isset($row['TD_MACHINE_GROUP']) ? $row['TD_MACHINE_GROUP'] : '',
+            'REVISION' => isset($row['TD_REVISION']) ? (int)$row['TD_REVISION'] : 0,
+            'STATUS' => isset($row['TD_STATUS']) ? (int)$row['TD_STATUS'] : 1,
+            'EFFECTIVE_DATE' => isset($row['TD_EFFECTIVE_DATE']) ? $row['TD_EFFECTIVE_DATE'] : '',
+            'CHANGE_SUMMARY' => isset($row['TD_CHANGE_SUMMARY']) ? $row['TD_CHANGE_SUMMARY'] : '',
+            'DRAWING' => isset($row['MLR_DRAWING']) ? $row['MLR_DRAWING'] : '',
+            'MODIFIED_DATE' => isset($row['TD_MODIFIED_DATE']) ? $row['TD_MODIFIED_DATE'] : '',
+            'MODIFIED_BY' => isset($row['TD_MODIFIED_BY']) ? $row['TD_MODIFIED_BY'] : '',
+            'IS_TRIAL_BOM' => isset($row['ML_IS_TRIAL_BOM']) ? (int)$row['ML_IS_TRIAL_BOM'] : (isset($row['ML_TRIAL']) ? (int)$row['ML_TRIAL'] : 0)
+        );
+
+        $data = array();
+        $data['bom'] = $bom;
+        $data['products'] = $this->tool_bom_tooling->get_products();
+        $data['operations'] = $this->tool_bom_tooling->get_operations();
+        $data['machine_groups'] = $this->tool_bom_tooling->get_machine_groups();
+        $data['tools'] = $this->tool_bom_tooling->get_tools();
+        $data['additional_info'] = $this->tool_bom_tooling->get_additional_info($id);
+
+        $this->view('detail_tool_bom_tooling', $data, FALSE);
     }
 }
 
