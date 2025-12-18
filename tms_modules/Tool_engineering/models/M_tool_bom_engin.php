@@ -151,11 +151,13 @@ class M_tool_bom_engin extends CI_Model
         $sql = "SELECT
                     rev.MLR_ID AS TD_ID,
                     rev.MLR_ML_ID,
+                    rev.MLR_OP_ID,
+                    rev.MLR_MACG_ID,
                     ml.ML_TOOL_DRAW_NO AS TD_TOOL_BOM,
+                    ml.ML_IS_TRIAL_BOM,
                     ISNULL(rev.MLR_DESC, '') AS TD_DESCRIPTION,
                     ISNULL(dbo.fnGetToolMasterListParts(ml.ML_ID), '') AS TD_PRODUCT_NAME,
                     ISNULL(mac.MAC_NAME, '') AS TD_MACHINE_GROUP,
-                    rev.MLR_MACG_ID,
                     rev.MLR_REV AS TD_REVISION,
                     rev.MLR_STATUS AS TD_STATUS,
                     ISNULL(usr.USR_NAME, '') AS TD_MODIFIED_BY,
@@ -163,7 +165,8 @@ class M_tool_bom_engin extends CI_Model
                          ELSE CONVERT(VARCHAR(19), rev.MLR_MODIFIED_DATE, 120) END AS TD_MODIFIED_DATE,
                     CASE WHEN rev.MLR_EFFECTIVE_DATE IS NULL THEN '' 
                          ELSE CONVERT(VARCHAR(19), rev.MLR_EFFECTIVE_DATE, 120) END AS TD_EFFECTIVE_DATE,
-                    rev.MLR_CHANGE_SUMMARY AS TD_CHANGE_SUMMARY
+                    rev.MLR_CHANGE_SUMMARY AS TD_CHANGE_SUMMARY,
+                    ISNULL(rev.MLR_DRAWING, '') AS MLR_DRAWING
                 FROM {$this->t('TMS_TOOL_MASTER_LIST_REV')} rev
                 INNER JOIN {$this->t('TMS_TOOL_MASTER_LIST')} ml ON ml.ML_ID = rev.MLR_ML_ID
                 LEFT JOIN {$this->t('MS_MACHINES')} mac ON mac.MAC_ID = rev.MLR_MACG_ID
@@ -171,7 +174,24 @@ class M_tool_bom_engin extends CI_Model
                 WHERE ml.ML_TYPE = 2 AND rev.MLR_ID = ?";
 
         $q = $this->db_tms->query($sql, array($id));
-        return $q && $q->num_rows() > 0 ? $q->row_array() : null;
+        $result = $q && $q->num_rows() > 0 ? $q->row_array() : null;
+        
+        // Get product ID from TMS_TOOL_MASTER_LIST_PARTS
+        if ($result && isset($result['MLR_ML_ID']) && (int)$result['MLR_ML_ID'] > 0) {
+            $ml_id = (int)$result['MLR_ML_ID'];
+            $part_sql = "SELECT TOP 1 TMLP_PART_ID FROM {$this->t('TMS_TOOL_MASTER_LIST_PARTS')} WHERE TMLP_ML_ID = ?";
+            $part_q = $this->db_tms->query($part_sql, array($ml_id));
+            if ($part_q && $part_q->num_rows() > 0) {
+                $part_row = $part_q->row_array();
+                $result['PRODUCT_ID'] = isset($part_row['TMLP_PART_ID']) ? (int)$part_row['TMLP_PART_ID'] : 0;
+            } else {
+                $result['PRODUCT_ID'] = 0;
+            }
+        } else {
+            $result['PRODUCT_ID'] = 0;
+        }
+        
+        return $result;
     }
 
     /**
@@ -240,6 +260,146 @@ class M_tool_bom_engin extends CI_Model
         $sql = "SELECT MAC_ID, MAC_NAME FROM {$this->t('MS_MACHINES')} ORDER BY MAC_NAME";
         $q = $this->db_tms->query($sql);
         return $q ? $q->result_array() : array();
+    }
+
+    /**
+     * Get all products from MS_PARTS
+     */
+    public function get_products()
+    {
+        $sql = "SELECT PART_ID AS PRODUCT_ID, PART_NAME AS PRODUCT_NAME 
+                FROM {$this->t('MS_PARTS')} 
+                ORDER BY PART_NAME ASC";
+        $q = $this->db_tms->query($sql);
+        if ($q && $q->num_rows() > 0) {
+            return $q->result_array();
+        }
+        return array();
+    }
+
+    /**
+     * Get all operations from MS_OPERATION
+     */
+    public function get_operations()
+    {
+        $sql = "SELECT OP_ID AS OPERATION_ID, OP_NAME AS OPERATION_NAME 
+                FROM {$this->t('MS_OPERATION')} 
+                ORDER BY OP_NAME ASC";
+        $q = $this->db_tms->query($sql);
+        if ($q && $q->num_rows() > 0) {
+            return $q->result_array();
+        }
+        return array();
+    }
+
+    /**
+     * Get all tools from MS_TOOL_CLASS
+     */
+    public function get_tools()
+    {
+        $sql = "SELECT TC_ID AS TOOL_ID, TC_NAME AS TOOL_NAME 
+                FROM {$this->t('MS_TOOL_CLASS')} 
+                ORDER BY TC_NAME ASC";
+        $q = $this->db_tms->query($sql);
+        if ($q && $q->num_rows() > 0) {
+            return $q->result_array();
+        }
+        return array();
+    }
+
+    /**
+     * Get all materials from MS_MATERIAL
+     */
+    public function get_materials()
+    {
+        $sql = "SELECT MAT_ID AS MATERIAL_ID, MAT_NAME AS MATERIAL_NAME 
+                FROM {$this->t('MS_MATERIAL')} 
+                ORDER BY MAT_NAME ASC";
+        $q = $this->db_tms->query($sql);
+        if ($q && $q->num_rows() > 0) {
+            return $q->result_array();
+        }
+        return array();
+    }
+
+    /**
+     * Get all makers from MS_MAKER
+     */
+    public function get_makers()
+    {
+        $sql = "SELECT MAKER_ID, MAKER_NAME 
+                FROM {$this->t('MS_MAKER')} 
+                ORDER BY MAKER_NAME ASC";
+        $q = $this->db_tms->query($sql);
+        if ($q && $q->num_rows() > 0) {
+            return $q->result_array();
+        }
+        return array();
+    }
+
+    /**
+     * Get all machine groups from MS_MACHINES
+     */
+    public function get_machine_groups()
+    {
+        $sql = "SELECT MAC_ID AS MACHINE_ID, MAC_NAME AS MACHINE_NAME 
+                FROM {$this->t('MS_MACHINES')} 
+                ORDER BY MAC_NAME ASC";
+        $q = $this->db_tms->query($sql);
+        if ($q && $q->num_rows() > 0) {
+            return $q->result_array();
+        }
+        return array();
+    }
+
+    /**
+     * Get additional information (Tool Drawing Engineering members) for BOM
+     * Returns Tool Drawing Engineering data that are children of this BOM
+     */
+    public function get_additional_info($bom_mlr_id)
+    {
+        $bom_mlr_id = (int)$bom_mlr_id;
+        if ($bom_mlr_id <= 0) return array();
+
+        $sql = "
+            SELECT 
+                child_rev.MLR_ID AS TD_ID,
+                child_ml.ML_TOOL_DRAW_NO AS TD_DRAWING_NO,
+                ISNULL(tc.TC_NAME, '') AS TD_TOOL_NAME,
+                child_rev.MLR_REV AS TD_REVISION,
+                child_rev.MLR_STATUS AS TD_STATUS,
+                ISNULL(members.TB_QTY, 0) AS TD_MIN_QTY,
+                ISNULL(members.TB_STD_QTY, 0) AS TD_REPLENISH_QTY,
+                ISNULL(members.TB_SEQ, 0) AS TD_SEQUENCE,
+                ISNULL(child_rev.MLR_DESC, '') AS TD_DESCRIPTION,
+                ISNULL(part.PART_ID, 0) AS TD_PRODUCT_ID,
+                ISNULL(op.OP_ID, 0) AS TD_PROCESS_ID,
+                ISNULL(mat.MAT_ID, 0) AS TD_MATERIAL_ID,
+                ISNULL(maker.MAKER_ID, 0) AS TD_MAKER_ID
+            FROM {$this->t('TMS_TOOL_MASTER_LIST_MEMBERS')} members
+            INNER JOIN {$this->t('TMS_TOOL_MASTER_LIST_REV')} child_rev 
+                ON child_rev.MLR_ID = members.TB_MLR_CHILD_ID
+            INNER JOIN {$this->t('TMS_TOOL_MASTER_LIST')} child_ml 
+                ON child_ml.ML_ID = child_rev.MLR_ML_ID
+            LEFT JOIN {$this->t('MS_TOOL_CLASS')} tc 
+                ON tc.TC_ID = child_rev.MLR_TC_ID
+            LEFT JOIN {$this->t('MS_OPERATION')} op 
+                ON op.OP_ID = child_rev.MLR_OP_ID
+            LEFT JOIN {$this->t('MS_MATERIAL')} mat 
+                ON mat.MAT_ID = child_rev.MLR_MAT_ID
+            LEFT JOIN {$this->t('MS_MAKER')} maker 
+                ON maker.MAKER_ID = child_rev.MLR_MAKER_ID
+            LEFT JOIN {$this->t('TMS_TOOL_MASTER_LIST_PARTS')} mlparts 
+                ON mlparts.TMLP_ML_ID = child_ml.ML_ID
+            LEFT JOIN {$this->t('MS_PARTS')} part 
+                ON part.PART_ID = mlparts.TMLP_PART_ID
+            WHERE members.TB_MLR_PARENT_ID = ?
+              AND child_ml.ML_TYPE = 1
+            ORDER BY members.TB_SEQ ASC, child_ml.ML_TOOL_DRAW_NO ASC
+        ";
+
+        $q = $this->db_tms->query($sql, array($bom_mlr_id));
+        return $q && $q->num_rows() > 0 ? $q->result_array() : array();
     }
 }
 

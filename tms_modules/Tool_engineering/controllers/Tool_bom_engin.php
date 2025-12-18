@@ -151,9 +151,31 @@ class Tool_bom_engin extends MY_Controller
             return;
         }
 
+        // Map data to view format
+        $bom = array(
+            'ID' => isset($row['TD_ID']) ? (int)$row['TD_ID'] : 0,
+            'TOOL_BOM' => isset($row['TD_TOOL_BOM']) ? $row['TD_TOOL_BOM'] : '',
+            'DESCRIPTION' => isset($row['TD_DESCRIPTION']) ? $row['TD_DESCRIPTION'] : '',
+            'PRODUCT_ID' => isset($row['PRODUCT_ID']) ? (int)$row['PRODUCT_ID'] : 0,
+            'PROCESS_ID' => isset($row['MLR_OP_ID']) ? (int)$row['MLR_OP_ID'] : 0,
+            'MACHINE_GROUP_ID' => isset($row['MLR_MACG_ID']) ? (int)$row['MLR_MACG_ID'] : 0,
+            'REVISION' => isset($row['TD_REVISION']) ? (int)$row['TD_REVISION'] : 0,
+            'STATUS' => isset($row['TD_STATUS']) ? (int)$row['TD_STATUS'] : 1,
+            'EFFECTIVE_DATE' => isset($row['TD_EFFECTIVE_DATE']) ? $row['TD_EFFECTIVE_DATE'] : '',
+            'CHANGE_SUMMARY' => isset($row['TD_CHANGE_SUMMARY']) ? $row['TD_CHANGE_SUMMARY'] : '',
+            'DRAWING' => isset($row['MLR_DRAWING']) ? $row['MLR_DRAWING'] : '',
+            'IS_TRIAL_BOM' => isset($row['ML_IS_TRIAL_BOM']) ? (int)$row['ML_IS_TRIAL_BOM'] : 0
+        );
+
         $data = array();
-        $data['drawing'] = $row;
-        $data['machines'] = $this->tool_bom_engin->get_machines();
+        $data['bom'] = $bom;
+        $data['products'] = $this->tool_bom_engin->get_products();
+        $data['operations'] = $this->tool_bom_engin->get_operations();
+        $data['machine_groups'] = $this->tool_bom_engin->get_machine_groups();
+        $data['tools'] = $this->tool_bom_engin->get_tools();
+        $data['materials'] = $this->tool_bom_engin->get_materials();
+        $data['makers'] = $this->tool_bom_engin->get_makers();
+        $data['additional_info'] = $this->tool_bom_engin->get_additional_info($id);
 
         $this->view('edit_tool_bom_engin', $data, FALSE);
     }
