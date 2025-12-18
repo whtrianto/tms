@@ -10,17 +10,44 @@
             padding: 0.35rem 0.4rem !important;
             font-size: 0.85rem;
         }
-        .table-fixed { table-layout: fixed; }
-        .table-fixed th, .table-fixed td {
+        #table-tool-bom-tooling { 
+            min-width: 1400px !important; 
+        }
+        #table-tool-bom-tooling th, #table-tool-bom-tooling td {
+            white-space: nowrap;
+        }
+        .cell-ellipsis {
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
+            display: block;
+            max-width: 100%;
         }
         .action-buttons {
             display: flex;
             justify-content: center;
-            gap: 6px;
+            gap: 4px;
             flex-wrap: wrap;
+        }
+        .navbar { position: sticky; top: 0; z-index: 1030; }
+        #content-wrapper { min-height: calc(100vh - 56px); }
+        #container-wrapper { padding-bottom: 4rem; margin-bottom: 2rem; }
+        .card { margin-bottom: 2rem; }
+        .dataTables_wrapper { 
+            padding-bottom: 4rem !important; 
+            margin-bottom: 2rem !important; 
+        }
+        .dataTables_paginate {
+            margin-top: 1rem;
+            margin-bottom: 2rem !important;
+            padding-bottom: 1rem;
+        }
+        .search-row th {
+            padding: 0.25rem !important;
+        }
+        .search-row input {
+            width: 100%;
+            font-size: 0.8rem;
         }
     </style>
 </head>
@@ -35,11 +62,11 @@
             <div class="container-fluid" id="container-wrapper">
                 <div class="card">
                     <div class="card-header d-flex justify-content-between align-items-center">
-                        <h4 class="m-0 font-weight-bold text-primary">Tool BOM Tooling</h4>
+                        <h4 class="m-0 font-weight-bold text-primary">Tool BOM (Tooling)</h4>
                     </div>
                     <div class="card-body">
                         <div class="table-responsive">
-                            <table id="table-tool-bom-tooling" class="table table-bordered table-striped table-fixed w-100 text-center">
+                            <table id="table-tool-bom-tooling" class="table table-bordered table-striped w-100 text-left">
                                 <thead>
                                     <tr>
                                         <th>ID</th>
@@ -52,102 +79,35 @@
                                         <th>Effective Date</th>
                                         <th>Modified Date</th>
                                         <th>Modified By</th>
-                                        <th>Type Action</th>
+                                        <th>Type</th>
+                                        <th>Action</th>
+                                    </tr>
+                                    <tr class="search-row">
+                                        <th><input type="text" class="form-control form-control-sm column-search" placeholder="Search..." data-column="0" /></th>
+                                        <th><input type="text" class="form-control form-control-sm column-search" placeholder="Search..." data-column="1" /></th>
+                                        <th><input type="text" class="form-control form-control-sm column-search" placeholder="Search..." data-column="2" /></th>
+                                        <th><input type="text" class="form-control form-control-sm column-search" placeholder="Search..." data-column="3" /></th>
+                                        <th><input type="text" class="form-control form-control-sm column-search" placeholder="Search..." data-column="4" /></th>
+                                        <th><input type="text" class="form-control form-control-sm column-search" placeholder="Search..." data-column="5" /></th>
+                                        <th><input type="text" class="form-control form-control-sm column-search" placeholder="Search..." data-column="6" /></th>
+                                        <th><input type="text" class="form-control form-control-sm column-search" placeholder="Search..." data-column="7" /></th>
+                                        <th><input type="text" class="form-control form-control-sm column-search" placeholder="Search..." data-column="8" /></th>
+                                        <th><input type="text" class="form-control form-control-sm column-search" placeholder="Search..." data-column="9" /></th>
+                                        <th><input type="text" class="form-control form-control-sm column-search" placeholder="Search..." data-column="10" /></th>
+                                        <th></th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <?php foreach ($list_data as $row):
-                                        // Resolve product name
-                                        $product_name = '';
-                                        if (isset($row['PRODUCT_ID']) && $row['PRODUCT_ID'] > 0) {
-                                            foreach ($products as $p) {
-                                                if ((int)$p['PRODUCT_ID'] === (int)$row['PRODUCT_ID']) {
-                                                    $product_name = $p['PRODUCT_NAME'];
-                                                    break;
-                                                }
-                                            }
-                                        }
-                                        if ($product_name === '' && isset($row['PRODUCT'])) {
-                                            $product_name = $row['PRODUCT'];
-                                        }
-                                        // Resolve process name
-                                        $process_name = '';
-                                        if (isset($row['PROCESS_ID']) && $row['PROCESS_ID'] > 0) {
-                                            foreach ($operations as $o) {
-                                                if ((int)$o['OPERATION_ID'] === (int)$row['PROCESS_ID']) {
-                                                    $process_name = $o['OPERATION_NAME'];
-                                                    break;
-                                                }
-                                            }
-                                        }
-                                        // Resolve machine group name
-                                        $machine_group_name = '';
-                                        if (isset($row['MACHINE_GROUP_ID']) && $row['MACHINE_GROUP_ID'] > 0) {
-                                            foreach ($machine_groups as $mg) {
-                                                if ((int)$mg['MACHINE_ID'] === (int)$row['MACHINE_GROUP_ID']) {
-                                                    $machine_group_name = $mg['MACHINE_NAME'];
-                                                    break;
-                                                }
-                                            }
-                                        }
-                                        if ($machine_group_name === '' && isset($row['MACHINE_GROUP'])) {
-                                            $machine_group_name = $row['MACHINE_GROUP'];
-                                        }
-                                        // Status badge
-                                        $status_badge = '';
-                                        if (isset($row['STATUS'])) {
-                                            $st = strtoupper((string)$row['STATUS']);
-                                            if ($st === 'ACTIVE' || $st === '1') {
-                                                $status_badge = '<span class="badge badge-success">Active</span>';
-                                            } elseif ($st === 'PENDING' || $st === '2') {
-                                                $status_badge = '<span class="badge badge-warning">Pending</span>';
-                                            } else {
-                                                $status_badge = '<span class="badge badge-secondary">Inactive</span>';
-                                            }
-                                        }
-                                        $effective = isset($row['EFFECTIVE_DATE']) ? $row['EFFECTIVE_DATE'] : '';
-                                        $modified = isset($row['MODIFIED_DATE']) ? $row['MODIFIED_DATE'] : '';
-                                    ?>
-                                    <tr>
-                                        <td><?= htmlspecialchars($row['ID'], ENT_QUOTES, 'UTF-8'); ?></td>
-                                        <td><?= htmlspecialchars($product_name, ENT_QUOTES, 'UTF-8'); ?></td>
-                                        <td>
-                                            <a href="<?= base_url('Tool_engineering/tool_bom_engin/detail_page/' . (int)$row['ID']); ?>" 
-                                               class="text-primary" 
-                                               style="text-decoration: underline; cursor: pointer;"
-                                               title="View Detail">
-                                                <?= htmlspecialchars($row['TOOL_BOM'], ENT_QUOTES, 'UTF-8'); ?>
-                                            </a>
-                                        </td>
-                                        <td><?= htmlspecialchars($process_name, ENT_QUOTES, 'UTF-8'); ?></td>
-                                        <td><?= htmlspecialchars($machine_group_name, ENT_QUOTES, 'UTF-8'); ?></td>
-                                        <td><?= htmlspecialchars($row['REVISION'], ENT_QUOTES, 'UTF-8'); ?></td>
-                                        <td><?= $status_badge; ?></td>
-                                        <td><?= htmlspecialchars($effective, ENT_QUOTES, 'UTF-8'); ?></td>
-                                        <td><?= htmlspecialchars($modified, ENT_QUOTES, 'UTF-8'); ?></td>
-                                        <td><?= htmlspecialchars(isset($row['MODIFIED_BY']) ? $row['MODIFIED_BY'] : '', ENT_QUOTES, 'UTF-8'); ?></td>
-                                        <td>
-                                            <div class="action-buttons">
-                                                <a class="btn btn-sm btn-warning" href="<?= base_url('Tool_engineering/tool_bom_tooling/detail_page/' . (int)$row['ID']); ?>" title="View Detail">
-                                                    <i class="fas fa-edit"></i>
-                                                </a>
-                                                <button class="btn btn-sm btn-info btn-history" data-id="<?= (int)$row['ID']; ?>" title="History">
-                                                    <i class="fas fa-history"></i>
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    <?php endforeach; ?>
+                                    <!-- Data loaded via AJAX -->
                                 </tbody>
                             </table>
                         </div>
                     </div>
                 </div>
-
-                <?= isset($modal_logout) ? $modal_logout : ''; ?>
             </div>
-            <?= isset($footer) ? $footer : ''; ?>
+            <?= isset($modal_logout) ? $modal_logout : ''; ?>
         </div>
+        <?= isset($footer) ? $footer : ''; ?>
     </div>
 </div>
 
@@ -158,40 +118,73 @@
 (function($){
     $(function(){
         var table = $('#table-tool-bom-tooling').DataTable({
-            lengthMenu: [[10,25,50,-1],[10,25,50,"ALL"]],
+            processing: true,
+            serverSide: true,
+            ajax: {
+                url: '<?= base_url("Tool_engineering/tool_bom_tooling/get_data"); ?>',
+                type: 'POST'
+            },
+            lengthMenu: [[10,25,50,100],[10,25,50,100]],
             pageLength: 25,
-            order: [[0,'desc']],
+            order: [[2,'asc']], // Sort by Tool BOM (column 2) ascending
             autoWidth: false,
-            scrollX: false,
+            scrollX: true,
             columnDefs: [
-                { orderable:false, targets:[10] },
-                { width:'70px', targets:0 },
-                { width:'130px', targets:2 },
-                { width:'120px', targets:3 },
-                { width:'140px', targets:4 },
-                { width:'80px', targets:5 },
-                { width:'90px', targets:6 },
-                { width:'110px', targets:7 },
-                { width:'120px', targets:8 },
-                { width:'110px', targets:9 },
-                { width:'120px', targets:10 }
-            ]
-        });
-
-        if (typeof _search_data === 'function') {
-            _search_data(table, '#table-tool-bom-tooling', false, false);
-        }
-
-        $('#table-tool-bom-tooling').on('click', '.btn-history', function(){
-            var id = Number($(this).data('id')) || 0;
-            if (id <= 0) {
-                toastr.error('ID tidak valid');
-                return;
+                { orderable:false, targets:[11] }, // Action column not sortable
+                { width:'50px', targets:0 }, // ID
+                { width:'120px', targets:1 }, // Product
+                { width:'120px', targets:2 }, // Tool BOM
+                { width:'100px', targets:3 }, // Process
+                { width:'100px', targets:4 }, // Machine Group
+                { width:'60px', targets:5 }, // Revision
+                { width:'80px', targets:6 }, // Status
+                { width:'100px', targets:7 }, // Effective Date
+                { width:'150px', targets:8 }, // Modified Date
+                { width:'100px', targets:9 }, // Modified By
+                { width:'80px', targets:10 }, // Type
+                { width:'120px', targets:11 } // Action
+            ],
+            language: {
+                processing: '<div class="spinner-border spinner-border-sm" role="status"><span class="sr-only">Loading...</span></div> Processing...',
+                emptyTable: 'No data available',
+                zeroRecords: 'No matching records found'
+            },
+            initComplete: function() {
+                setupColumnSearch();
+            },
+            drawCallback: function() {
+                setupColumnSearch(); // Re-attach handlers after table redraw
             }
-            window.location.href = '<?= base_url('Tool_engineering/tool_bom_tooling/history_page/'); ?>' + id;
         });
+
+        // Per-column search - only on Enter key
+        function setupColumnSearch() {
+            $('.column-search').off('keyup keydown input click');
+            
+            $('.column-search').on('click', function(e) {
+                e.stopPropagation();
+            });
+            
+            $('.column-search').on('keydown', function(e) {
+                e.stopPropagation();
+                
+                var $input = $(this);
+                var column = $input.data('column');
+                var value = $input.val();
+                
+                if (e.keyCode === 13) { // Enter
+                    e.preventDefault();
+                    table.column(column).search(value).draw();
+                } else if (e.keyCode === 27) { // ESC - clear
+                    e.preventDefault();
+                    $input.val('');
+                    table.column(column).search('').draw();
+                }
+            });
+        }
     });
 })(jQuery);
 </script>
 </body>
 </html>
+
