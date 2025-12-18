@@ -210,10 +210,10 @@
         var table = $('#table-additional').DataTable({
             lengthMenu: [[10,25,50,-1],[10,25,50,"ALL"]],
             pageLength: 10,
-            order: [[1,'desc']],
+            order: [], // No default sorting - maintain order from database (TB_SEQ)
             autoWidth: false,
             columnDefs: [
-                { orderable:false, targets:[0] },
+                { orderable:false, targets:[0] }, // No. column not sortable (it's auto-increment)
                 { width: '50px', targets:0 },
                 { width: '70px', targets:1 }
             ]
