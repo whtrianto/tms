@@ -133,11 +133,7 @@
             serverSide: true,
             ajax: {
                 url: '<?= base_url("Tool_inventory/tool_inventory/get_data"); ?>',
-                type: 'POST',
-                data: function(d) {
-                    // Ensure column search data is sent
-                    return d;
-                }
+                type: 'POST'
             },
             lengthMenu: [[10,25,50,100],[10,25,50,100]],
             pageLength: 25,
@@ -145,8 +141,7 @@
             autoWidth: false,
             scrollX: true,
             columnDefs: [
-                { orderable:false, searchable:false, targets:[15] },
-                { searchable:true, targets:[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14] },
+                { orderable:false, targets:[15] },
                 { width:'50px', targets:0 },
                 { width:'100px', targets:1 },
                 { width:'100px', targets:2 },
@@ -174,48 +169,31 @@
             },
             initComplete: function() {
                 setupColumnSearch();
-                // Sync search inputs with DataTables column search values after init
-                this.api().columns().every(function(index) {
-                    var column = this;
-                    var searchInput = $('input[data-column="' + index + '"]');
-                    if (searchInput.length) {
-                        var searchVal = column.search();
-                        if (searchVal) {
-                            searchInput.val(searchVal);
-                        }
-                    }
-                });
             }
         });
 
         // Per-column search - only on Enter key
         function setupColumnSearch() {
-            // Remove any existing handlers
-            $('.column-search').off('keydown keyup click');
+            $('.column-search').off('keyup keydown input click');
             
-            // Prevent event bubbling on click
             $('.column-search').on('click', function(e) {
                 e.stopPropagation();
             });
             
-            // Handle keydown for Enter and ESC
             $('.column-search').on('keydown', function(e) {
                 e.stopPropagation();
                 
                 var $input = $(this);
-                var columnIdx = parseInt($input.attr('data-column')) || 0;
-                var searchValue = $input.val().trim();
+                var column = $input.data('column');
+                var value = $input.val();
                 
-                if (e.keyCode === 13) { // Enter key
+                if (e.keyCode === 13) { // Enter
                     e.preventDefault();
-                    // Use DataTables column search API for server-side processing
-                    table.column(columnIdx).search(searchValue);
-                    table.draw();
-                } else if (e.keyCode === 27) { // ESC key - clear
+                    table.column(column).search(value).draw();
+                } else if (e.keyCode === 27) { // ESC - clear
                     e.preventDefault();
                     $input.val('');
-                    table.column(columnIdx).search('');
-                    table.draw();
+                    table.column(column).search('').draw();
                 }
             });
         }
