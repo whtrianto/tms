@@ -85,7 +85,7 @@
                     <div class="card-body">
                         <form id="formToolSet" method="post" action="<?= base_url('Tool_management/tool_sets/submit_data'); ?>">
                             <input type="hidden" name="action" value="EDIT">
-                            <input type="hidden" name="TSET_ID" value="<?= htmlspecialchars($tool_set['TSET_ID']); ?>">
+                            <input type="hidden" name="TSET_ID" value="<?= isset($tool_set['TSET_ID']) ? htmlspecialchars($tool_set['TSET_ID'], ENT_QUOTES, 'UTF-8') : ''; ?>">
                             
                             <div class="row">
                                 <!-- Kolom Kiri -->
@@ -93,28 +93,28 @@
                                     <div class="form-group">
                                         <label class="label-required">Toolset Name</label>
                                         <input type="text" name="tset_name" class="form-control" 
-                                               value="<?= htmlspecialchars($tool_set['TSET_NAME'] ?? '', ENT_QUOTES, 'UTF-8'); ?>" 
+                                               value="<?= isset($tool_set['TSET_NAME']) ? htmlspecialchars($tool_set['TSET_NAME'], ENT_QUOTES, 'UTF-8') : ''; ?>" 
                                                required>
                                     </div>
 
                                     <div class="form-group">
                                         <label class="label-required">Tool BOM No.</label>
                                         <div class="info-display">
-                                            <?= htmlspecialchars($tool_set['TOOL_BOM'] ?? '', ENT_QUOTES, 'UTF-8'); ?>
+                                            <?= isset($tool_set['TOOL_BOM']) ? htmlspecialchars($tool_set['TOOL_BOM'], ENT_QUOTES, 'UTF-8') : ''; ?>
                                         </div>
                                     </div>
 
                                     <div class="form-group">
                                         <label>Tool BOM Description</label>
                                         <div class="info-display">
-                                            <?= htmlspecialchars($tool_set['TOOL_BOM_DESC'] ?? '', ENT_QUOTES, 'UTF-8'); ?>
+                                            <?= isset($tool_set['TOOL_BOM_DESC']) ? htmlspecialchars($tool_set['TOOL_BOM_DESC'], ENT_QUOTES, 'UTF-8') : ''; ?>
                                         </div>
                                     </div>
 
                                     <div class="form-group">
                                         <label>Tool BOM Revision</label>
                                         <div class="info-display">
-                                            <?= htmlspecialchars($tool_set['REVISION'] ?? '0', ENT_QUOTES, 'UTF-8'); ?>
+                                            <?= isset($tool_set['REVISION']) ? htmlspecialchars($tool_set['REVISION'], ENT_QUOTES, 'UTF-8') : '0'; ?>
                                         </div>
                                     </div>
                                 </div>
@@ -124,21 +124,21 @@
                                     <div class="form-group">
                                         <label>Product</label>
                                         <div class="info-display">
-                                            <?= htmlspecialchars($tool_set['PRODUCT'] ?? '', ENT_QUOTES, 'UTF-8'); ?>
+                                            <?= isset($tool_set['PRODUCT']) ? htmlspecialchars($tool_set['PRODUCT'], ENT_QUOTES, 'UTF-8') : ''; ?>
                                         </div>
                                     </div>
 
                                     <div class="form-group">
                                         <label>Process</label>
                                         <div class="info-display">
-                                            <?= htmlspecialchars($tool_set['PROCESS'] ?? '', ENT_QUOTES, 'UTF-8'); ?>
+                                            <?= isset($tool_set['PROCESS']) ? htmlspecialchars($tool_set['PROCESS'], ENT_QUOTES, 'UTF-8') : ''; ?>
                                         </div>
                                     </div>
 
                                     <div class="form-group">
                                         <label>Toolsets Status</label>
                                         <div class="info-display">
-                                            <?= $this->tool_sets->get_status_badge($tool_set['TSET_STATUS'] ?? 0); ?>
+                                            <?= $this->tool_sets->get_status_badge(isset($tool_set['TSET_STATUS']) ? $tool_set['TSET_STATUS'] : 0); ?>
                                         </div>
                                     </div>
                                 </div>
@@ -191,15 +191,15 @@
                                         <?php $no = 1; foreach ($compositions as $comp): ?>
                                             <tr>
                                                 <td><?= $no++; ?></td>
-                                                <td><?= htmlspecialchars($comp['TSCOMP_ID'] ?? '', ENT_QUOTES, 'UTF-8'); ?></td>
-                                                <td><?= htmlspecialchars($comp['TOOL_DRAWING_NO'] ?? '', ENT_QUOTES, 'UTF-8'); ?></td>
-                                                <td><?= htmlspecialchars($comp['REVISION'] ?? '0', ENT_QUOTES, 'UTF-8'); ?></td>
-                                                <td><?= htmlspecialchars($comp['TOOL_NAME'] ?? '', ENT_QUOTES, 'UTF-8'); ?></td>
-                                                <td><?= htmlspecialchars($comp['TSCOMP_STD_REQ'] ?? '', ENT_QUOTES, 'UTF-8'); ?></td>
-                                                <td><?= htmlspecialchars($comp['TOOL_ID'] ?? '', ENT_QUOTES, 'UTF-8'); ?></td>
-                                                <td><?= htmlspecialchars($comp['STANDARD_TOOL_LIFE'] ?? '', ENT_QUOTES, 'UTF-8'); ?></td>
-                                                <td><?= htmlspecialchars($comp['END_CYCLE'] ?? '0', ENT_QUOTES, 'UTF-8'); ?></td>
-                                                <td><?= htmlspecialchars($comp['TSCOMP_REMARKS'] ?? '', ENT_QUOTES, 'UTF-8'); ?></td>
+                                                <td><?= isset($comp['TSCOMP_ID']) ? htmlspecialchars($comp['TSCOMP_ID'], ENT_QUOTES, 'UTF-8') : ''; ?></td>
+                                                <td><?= isset($comp['TOOL_DRAWING_NO']) ? htmlspecialchars($comp['TOOL_DRAWING_NO'], ENT_QUOTES, 'UTF-8') : ''; ?></td>
+                                                <td><?= isset($comp['REVISION']) ? htmlspecialchars($comp['REVISION'], ENT_QUOTES, 'UTF-8') : '0'; ?></td>
+                                                <td><?= isset($comp['TOOL_NAME']) ? htmlspecialchars($comp['TOOL_NAME'], ENT_QUOTES, 'UTF-8') : ''; ?></td>
+                                                <td><?= isset($comp['TSCOMP_STD_REQ']) ? htmlspecialchars($comp['TSCOMP_STD_REQ'], ENT_QUOTES, 'UTF-8') : ''; ?></td>
+                                                <td><?= isset($comp['TOOL_ID']) ? htmlspecialchars($comp['TOOL_ID'], ENT_QUOTES, 'UTF-8') : ''; ?></td>
+                                                <td><?= isset($comp['STANDARD_TOOL_LIFE']) ? htmlspecialchars($comp['STANDARD_TOOL_LIFE'], ENT_QUOTES, 'UTF-8') : ''; ?></td>
+                                                <td><?= isset($comp['END_CYCLE']) ? htmlspecialchars($comp['END_CYCLE'], ENT_QUOTES, 'UTF-8') : '0'; ?></td>
+                                                <td><?= isset($comp['TSCOMP_REMARKS']) ? htmlspecialchars($comp['TSCOMP_REMARKS'], ENT_QUOTES, 'UTF-8') : ''; ?></td>
                                                 <td>
                                                     <?php 
                                                     $tool_status = isset($comp['TOOL_STATUS']) ? (int)$comp['TOOL_STATUS'] : 0;
@@ -212,8 +212,8 @@
                                                 </td>
                                                 <td>
                                                     <div class="action-buttons">
-                                                        <button class="btn btn-secondary btn-sm btn-edit-comp" data-id="<?= $comp['TSCOMP_ID']; ?>">Edit</button>
-                                                        <button class="btn btn-warning btn-sm btn-replace-comp" data-id="<?= $comp['TSCOMP_ID']; ?>">Replace</button>
+                                                        <button class="btn btn-secondary btn-sm btn-edit-comp" data-id="<?= isset($comp['TSCOMP_ID']) ? $comp['TSCOMP_ID'] : ''; ?>">Edit</button>
+                                                        <button class="btn btn-warning btn-sm btn-replace-comp" data-id="<?= isset($comp['TSCOMP_ID']) ? $comp['TSCOMP_ID'] : ''; ?>">Replace</button>
                                                     </div>
                                                 </td>
                                             </tr>
@@ -234,7 +234,7 @@
                     <div class="card-header">
                         <div class="sub-section-title">
                             <span>Usage Assignments List</span>
-                            <a href="<?= base_url('Tool_management/tool_sets/add_assignment/' . $tool_set['TSET_ID']); ?>" class="btn btn-sm btn-primary">
+                            <a href="<?= base_url('Tool_management/tool_sets/add_assignment/' . (isset($tool_set['TSET_ID']) ? $tool_set['TSET_ID'] : 0)); ?>" class="btn btn-sm btn-primary">
                                 <i class="fa fa-plus"></i> Add New
                             </a>
                         </div>
@@ -260,17 +260,17 @@
                                         <?php $no = 1; foreach ($assignments as $assign): ?>
                                             <tr>
                                                 <td><?= $no++; ?></td>
-                                                <td><?= htmlspecialchars($assign['OPERATION_NAME'] ?? '', ENT_QUOTES, 'UTF-8'); ?></td>
-                                                <td><?= htmlspecialchars($assign['MACHINE_NAME'] ?? '', ENT_QUOTES, 'UTF-8'); ?></td>
-                                                <td><?= htmlspecialchars($assign['PRODUCT_NAME'] ?? '', ENT_QUOTES, 'UTF-8'); ?></td>
-                                                <td><?= htmlspecialchars($assign['PRODUCTION_START'] ?? '', ENT_QUOTES, 'UTF-8'); ?></td>
-                                                <td><?= htmlspecialchars($assign['PRODUCTION_END'] ?? '', ENT_QUOTES, 'UTF-8'); ?></td>
-                                                <td><?= htmlspecialchars($assign['USAGE'] ?? '', ENT_QUOTES, 'UTF-8'); ?></td>
-                                                <td><?= htmlspecialchars($assign['REMARKS'] ?? '', ENT_QUOTES, 'UTF-8'); ?></td>
+                                                <td><?= isset($assign['OPERATION_NAME']) ? htmlspecialchars($assign['OPERATION_NAME'], ENT_QUOTES, 'UTF-8') : ''; ?></td>
+                                                <td><?= isset($assign['MACHINE_NAME']) ? htmlspecialchars($assign['MACHINE_NAME'], ENT_QUOTES, 'UTF-8') : ''; ?></td>
+                                                <td><?= isset($assign['PRODUCT_NAME']) ? htmlspecialchars($assign['PRODUCT_NAME'], ENT_QUOTES, 'UTF-8') : ''; ?></td>
+                                                <td><?= isset($assign['PRODUCTION_START']) ? htmlspecialchars($assign['PRODUCTION_START'], ENT_QUOTES, 'UTF-8') : ''; ?></td>
+                                                <td><?= isset($assign['PRODUCTION_END']) ? htmlspecialchars($assign['PRODUCTION_END'], ENT_QUOTES, 'UTF-8') : ''; ?></td>
+                                                <td><?= isset($assign['USAGE']) ? htmlspecialchars($assign['USAGE'], ENT_QUOTES, 'UTF-8') : ''; ?></td>
+                                                <td><?= isset($assign['REMARKS']) ? htmlspecialchars($assign['REMARKS'], ENT_QUOTES, 'UTF-8') : ''; ?></td>
                                                 <td>
                                                     <div class="action-buttons">
-                                                        <a href="<?= base_url('Tool_management/tool_sets/edit_assignment/' . $assign['TASGN_ID']); ?>" class="btn btn-secondary btn-sm">Edit</a>
-                                                        <button class="btn btn-danger btn-sm btn-delete-assignment" data-id="<?= $assign['TASGN_ID']; ?>">Delete</button>
+                                                        <a href="<?= base_url('Tool_management/tool_sets/edit_assignment/' . (isset($assign['TASGN_ID']) ? $assign['TASGN_ID'] : 0)); ?>" class="btn btn-secondary btn-sm">Edit</a>
+                                                        <button class="btn btn-danger btn-sm btn-delete-assignment" data-id="<?= isset($assign['TASGN_ID']) ? $assign['TASGN_ID'] : ''; ?>">Delete</button>
                                                     </div>
                                                 </td>
                                             </tr>
