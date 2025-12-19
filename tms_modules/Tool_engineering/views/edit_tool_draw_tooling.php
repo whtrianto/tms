@@ -16,6 +16,15 @@
         #shared-tool-card { margin-bottom: 10rem !important; }
         #shared-tool-card .card-body { padding-bottom: 4rem !important; }
         #shared-tool-card .table-responsive { margin-bottom: 2rem; }
+        .info-display {
+            padding: 0.5rem;
+            background-color: #e9ecef;
+            border: 1px solid #ced4da;
+            border-radius: 0.25rem;
+            min-height: 38px;
+            display: flex;
+            align-items: center;
+        }
     </style>
 </head>
 <body id="page-top">
@@ -44,39 +53,55 @@
                             <input type="hidden" name="action" value="EDIT">
                             <input type="hidden" name="MLR_ID" value="<?= htmlspecialchars($drawing['MLR_ID']); ?>">
                             <input type="hidden" name="ML_TOOL_DRAW_NO_OLD" value="<?= htmlspecialchars(isset($drawing['ML_TOOL_DRAW_NO']) ? $drawing['ML_TOOL_DRAW_NO'] : ''); ?>">
+                            <input type="hidden" name="MLR_TC_ID" value="<?= isset($drawing['MLR_TC_ID']) ? (int)$drawing['MLR_TC_ID'] : ''; ?>">
+                            <input type="hidden" name="ML_TOOL_DRAW_NO" value="<?= htmlspecialchars(isset($drawing['ML_TOOL_DRAW_NO']) ? $drawing['ML_TOOL_DRAW_NO'] : ''); ?>">
+                            <input type="hidden" name="MLR_REV" value="<?= htmlspecialchars(isset($drawing['MLR_REV']) ? (int)$drawing['MLR_REV'] : 0); ?>">
+                            <input type="hidden" name="MLR_OP_ID" value="<?= isset($drawing['MLR_OP_ID']) ? (int)$drawing['MLR_OP_ID'] : ''; ?>">
+                            <input type="hidden" name="MLR_STATUS" value="<?= isset($drawing['MLR_STATUS']) ? (int)$drawing['MLR_STATUS'] : ''; ?>">
+                            <input type="hidden" name="MLR_EFFECTIVE_DATE" value="<?= isset($drawing['MLR_EFFECTIVE_DATE']) && !empty($drawing['MLR_EFFECTIVE_DATE']) ? date('Y-m-d', strtotime($drawing['MLR_EFFECTIVE_DATE'])) : ''; ?>">
+                            <input type="hidden" name="MLR_MAT_ID" value="<?= isset($drawing['MLR_MAT_ID']) ? (int)$drawing['MLR_MAT_ID'] : ''; ?>">
 
-                            <!-- Row 1: Tool Name, Tool Drawing No -->
+                            <!-- Row 0: Product (Read-only) -->
+                            <div class="form-row">
+                                <div class="form-group col-md-12">
+                                    <label>Product</label>
+                                    <div class="info-display">
+                                        <?php 
+                                        $product_name = '';
+                                        if (isset($drawing['PART_NAME']) && !empty($drawing['PART_NAME'])) {
+                                            $product_name = htmlspecialchars($drawing['PART_NAME'], ENT_QUOTES, 'UTF-8');
+                                        } elseif (!empty($tool_bom_list) && isset($tool_bom_list[0]['PRODUCT'])) {
+                                            $product_name = htmlspecialchars($tool_bom_list[0]['PRODUCT'], ENT_QUOTES, 'UTF-8');
+                                        }
+                                        echo $product_name ?: '-';
+                                        ?>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Row 1: Tool Name, Tool Drawing No (Read-only) -->
                             <div class="form-row">
                                 <div class="form-group col-md-6">
-                                    <label class="label-required">Tool Name</label>
-                                    <select name="MLR_TC_ID" class="form-control" required>
-                                        <option value="">-- Select Tool --</option>
-                                        <?php 
-                                        $selected_tool_id = null;
-                                        if (isset($drawing['MLR_TC_ID']) && (int)$drawing['MLR_TC_ID'] > 0) {
-                                            $selected_tool_id = (int)$drawing['MLR_TC_ID'];
-                                        }
-                                        foreach ($tools as $t): ?>
-                                            <option value="<?= (int)$t['TC_ID']; ?>" <?= ($selected_tool_id !== null && (int)$t['TC_ID'] === $selected_tool_id) ? 'selected' : ''; ?>>
-                                                <?= htmlspecialchars($t['TC_NAME'], ENT_QUOTES, 'UTF-8'); ?>
-                                            </option>
-                                        <?php endforeach; ?>
-                                    </select>
-                                    <div class="invalid-feedback">Tool Name wajib dipilih.</div>
+                                    <label>Tool Name</label>
+                                    <div class="info-display">
+                                        <?= isset($drawing['TC_NAME']) ? htmlspecialchars($drawing['TC_NAME'], ENT_QUOTES, 'UTF-8') : ''; ?>
+                                    </div>
                                 </div>
                                 <div class="form-group col-md-6">
-                                    <label class="label-required">Tool Drawing No.</label>
-                                    <input type="text" name="ML_TOOL_DRAW_NO" class="form-control" value="<?= htmlspecialchars(isset($drawing['ML_TOOL_DRAW_NO']) ? $drawing['ML_TOOL_DRAW_NO'] : ''); ?>" required>
-                                    <div class="invalid-feedback">Tool Drawing No wajib diisi.</div>
+                                    <label>Tool Drawing No.</label>
+                                    <div class="info-display">
+                                        <?= isset($drawing['ML_TOOL_DRAW_NO']) ? htmlspecialchars($drawing['ML_TOOL_DRAW_NO'], ENT_QUOTES, 'UTF-8') : ''; ?>
+                                    </div>
                                 </div>
                             </div>
 
                             <!-- Row 2: Revision, Maker -->
                             <div class="form-row">
                                 <div class="form-group col-md-6">
-                                    <label class="label-required">Revision</label>
-                                    <input type="number" name="MLR_REV" class="form-control" value="<?= htmlspecialchars(isset($drawing['MLR_REV']) ? (int)$drawing['MLR_REV'] : 0); ?>" min="0" required>
-                                    <div class="invalid-feedback">Revision wajib diisi.</div>
+                                    <label>Revision</label>
+                                    <div class="info-display">
+                                        <?= isset($drawing['MLR_REV']) ? htmlspecialchars((int)$drawing['MLR_REV'], ENT_QUOTES, 'UTF-8') : '0'; ?>
+                                    </div>
                                 </div>
                                 <div class="form-group col-md-6">
                                     <label>Maker</label>
@@ -91,14 +116,7 @@
                                 </div>
                             </div>
 
-                            <!-- Submit Button -->
-                            <div class="form-row mb-3">
-                                <div class="form-group col-md-12">
-                                    <button type="submit" class="btn btn-primary">Submit</button>
-                                </div>
-                            </div>
-
-                            <!-- Row 3: Min Quantity, Replenish Quantity, Process -->
+                            <!-- Row 3: Min Quantity, Replenish Quantity, Process (Read-only) -->
                             <div class="form-row">
                                 <div class="form-group col-md-4">
                                     <label>Min Quantity</label>
@@ -109,18 +127,10 @@
                                     <input type="number" name="MLR_REPLENISH_QTY" class="form-control" value="<?= htmlspecialchars(isset($drawing['MLR_REPLENISH_QTY']) ? (int)$drawing['MLR_REPLENISH_QTY'] : 1); ?>">
                                 </div>
                                 <div class="form-group col-md-4">
-                                    <label class="label-required">Process</label>
-                                    <select name="MLR_OP_ID" class="form-control" required>
-                                        <option value="">-- Select Process --</option>
-                                        <?php 
-                                        $operations = isset($operations) ? $operations : array();
-                                        foreach ($operations as $o): ?>
-                                            <option value="<?= (int)$o['OP_ID']; ?>" <?= (isset($drawing['MLR_OP_ID']) && (int)$drawing['MLR_OP_ID'] === (int)$o['OP_ID']) ? 'selected' : ''; ?>>
-                                                <?= htmlspecialchars($o['OP_NAME'], ENT_QUOTES, 'UTF-8'); ?>
-                                            </option>
-                                        <?php endforeach; ?>
-                                    </select>
-                                    <div class="invalid-feedback">Process wajib dipilih.</div>
+                                    <label>Process</label>
+                                    <div class="info-display">
+                                        <?= isset($drawing['OPERATION_NAME']) ? htmlspecialchars($drawing['OPERATION_NAME'], ENT_QUOTES, 'UTF-8') : ''; ?>
+                                    </div>
                                 </div>
                             </div>
 
@@ -148,19 +158,32 @@
                                 </div>
                             </div>
 
-                            <!-- Row 6: Status, Effective Date -->
+                            <!-- Row 6: Status, Effective Date (Read-only) -->
                             <div class="form-row">
                                 <div class="form-group col-md-6">
                                     <label>Status</label>
-                                    <select name="MLR_STATUS" class="form-control">
-                                        <option value="2" <?= (isset($drawing['MLR_STATUS']) && (int)$drawing['MLR_STATUS'] === 2) ? 'selected' : ''; ?>>Active</option>
-                                        <option value="1" <?= (isset($drawing['MLR_STATUS']) && (int)$drawing['MLR_STATUS'] === 1) ? 'selected' : ''; ?>>Pending</option>
-                                        <option value="0" <?= (isset($drawing['MLR_STATUS']) && (int)$drawing['MLR_STATUS'] === 0) ? 'selected' : ''; ?>>Inactive</option>
-                                    </select>
+                                    <div class="info-display">
+                                        <?php 
+                                        $status = isset($drawing['MLR_STATUS']) ? (int)$drawing['MLR_STATUS'] : 0;
+                                        $status_text = 'Unknown';
+                                        if ($status === 2) $status_text = 'Active';
+                                        elseif ($status === 1) $status_text = 'Pending';
+                                        elseif ($status === 0) $status_text = 'Inactive';
+                                        echo htmlspecialchars($status_text, ENT_QUOTES, 'UTF-8');
+                                        ?>
+                                    </div>
                                 </div>
                                 <div class="form-group col-md-6">
                                     <label>Effective Date</label>
-                                    <input type="date" name="MLR_EFFECTIVE_DATE" class="form-control" value="<?= isset($drawing['MLR_EFFECTIVE_DATE']) && !empty($drawing['MLR_EFFECTIVE_DATE']) ? date('Y-m-d', strtotime($drawing['MLR_EFFECTIVE_DATE'])) : ''; ?>">
+                                    <div class="info-display">
+                                        <?php 
+                                        if (isset($drawing['MLR_EFFECTIVE_DATE']) && !empty($drawing['MLR_EFFECTIVE_DATE'])) {
+                                            echo htmlspecialchars(date('d/m/Y', strtotime($drawing['MLR_EFFECTIVE_DATE'])), ENT_QUOTES, 'UTF-8');
+                                        } else {
+                                            echo '-';
+                                        }
+                                        ?>
+                                    </div>
                                 </div>
                             </div>
 
@@ -175,23 +198,19 @@
                             <!-- Additional Information Section -->
                             <h5 class="mt-4 mb-3 font-weight-bold">Additional Information</h5>
 
-                            <!-- Row 8: Drawing, Material -->
+                            <!-- Row 8: Drawing, Material (Read-only) -->
                             <div class="form-row">
                                 <div class="form-group col-md-6">
-                                    <label class="label-required">Drawing</label>
-                                    <input type="text" name="MLR_DRAWING" class="form-control" value="<?= htmlspecialchars(isset($drawing['MLR_DRAWING']) ? $drawing['MLR_DRAWING'] : (isset($drawing['ML_TOOL_DRAW_NO']) ? $drawing['ML_TOOL_DRAW_NO'] : '')); ?>" readonly>
-                                    <small class="form-text text-muted">File drawing saat ini</small>
+                                    <label>Drawing</label>
+                                    <div class="info-display">
+                                        <?= htmlspecialchars(isset($drawing['MLR_DRAWING']) ? $drawing['MLR_DRAWING'] : (isset($drawing['ML_TOOL_DRAW_NO']) ? $drawing['ML_TOOL_DRAW_NO'] : ''), ENT_QUOTES, 'UTF-8'); ?>
+                                    </div>
                                 </div>
                                 <div class="form-group col-md-6">
                                     <label>Material</label>
-                                    <select name="MLR_MAT_ID" class="form-control">
-                                        <option value="">-- Select Material --</option>
-                                        <?php foreach ($materials as $m): ?>
-                                            <option value="<?= (int)$m['MAT_ID']; ?>" <?= (isset($drawing['MLR_MAT_ID']) && (int)$drawing['MLR_MAT_ID'] === (int)$m['MAT_ID']) ? 'selected' : ''; ?>>
-                                                <?= htmlspecialchars($m['MAT_NAME'], ENT_QUOTES, 'UTF-8'); ?>
-                                            </option>
-                                        <?php endforeach; ?>
-                                    </select>
+                                    <div class="info-display">
+                                        <?= isset($drawing['MAT_NAME']) ? htmlspecialchars($drawing['MAT_NAME'], ENT_QUOTES, 'UTF-8') : ''; ?>
+                                    </div>
                                 </div>
                             </div>
 
@@ -205,6 +224,18 @@
                                     <?php else: ?>
                                         <div class="small text-muted mt-1">No file chosen</div>
                                     <?php endif; ?>
+                                </div>
+                            </div>
+
+                            <!-- Submit Button -->
+                            <div class="form-row mt-4 mb-3">
+                                <div class="form-group col-md-12">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fa fa-save"></i> Submit
+                                    </button>
+                                    <a href="<?= base_url('Tool_engineering/tool_draw_tooling'); ?>" class="btn btn-secondary">
+                                        <i class="fa fa-times"></i> Cancel
+                                    </a>
                                 </div>
                             </div>
                         </form>
@@ -263,40 +294,11 @@
     $(function(){
         $('#formToolDrawing').on('submit', function(e){
             e.preventDefault();
-            var toolId = $.trim($('[name="MLR_TC_ID"]').val());
-            var drawingNo = $.trim($('[name="ML_TOOL_DRAW_NO"]').val());
-            var revision = $.trim($('[name="MLR_REV"]').val());
-            var processId = $.trim($('[name="MLR_OP_ID"]').val());
-
             var isValid = true;
             
-            if (toolId === '' || toolId <= 0) {
-                $('[name="MLR_TC_ID"]').addClass('is-invalid');
-                isValid = false;
-            } else {
-                $('[name="MLR_TC_ID"]').removeClass('is-invalid');
-            }
-            
-            if (drawingNo === '') {
-                $('[name="ML_TOOL_DRAW_NO"]').addClass('is-invalid');
-                isValid = false;
-            } else {
-                $('[name="ML_TOOL_DRAW_NO"]').removeClass('is-invalid');
-            }
-            
-            if (revision === '') {
-                $('[name="MLR_REV"]').addClass('is-invalid');
-                isValid = false;
-            } else {
-                $('[name="MLR_REV"]').removeClass('is-invalid');
-            }
-            
-            if (processId === '' || processId <= 0) {
-                $('[name="MLR_OP_ID"]').addClass('is-invalid');
-                isValid = false;
-            } else {
-                $('[name="MLR_OP_ID"]').removeClass('is-invalid');
-            }
+            // Validation untuk field yang bisa diedit
+            // Tool Name, Tool Drawing No, Revision, Process, Status, Effective Date, Drawing, Material sudah read-only
+            // Jadi tidak perlu validasi lagi
 
             if (!isValid) return;
 

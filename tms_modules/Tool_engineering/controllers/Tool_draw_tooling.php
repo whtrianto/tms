@@ -251,7 +251,7 @@ class Tool_draw_tooling extends MY_Controller
             return;
         }
 
-        $row = $this->tool_draw_tooling->get_by_id($id);
+        $row = $this->tool_draw_tooling->get_by_id_with_parts($id);
         if (!$row) {
             show_404();
             return;
