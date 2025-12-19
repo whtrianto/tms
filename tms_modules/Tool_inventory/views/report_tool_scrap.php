@@ -38,15 +38,17 @@
             width: 100%;
             border-collapse: collapse;
             margin-bottom: 20px;
+            border: 1px solid #000;
         }
         .report-table td {
             padding: 4px 8px;
             vertical-align: top;
-            border: none;
+            border: 1px solid #000;
         }
         .report-table .label {
             font-weight: bold;
             width: 30%;
+            background-color: #f5f5f5;
         }
         .report-table .value {
             width: 35%;
@@ -63,15 +65,25 @@
             min-height: 60px;
             padding: 5px;
             margin-top: 5px;
+            background-color: #fff;
         }
         .sketch-box {
             border: 1px solid #000;
             min-height: 150px;
             padding: 5px;
             margin-top: 5px;
+            background-color: #fff;
         }
         .action-buttons {
             margin-bottom: 20px;
+        }
+        .btn-group {
+            display: inline-block;
+        }
+        #export-format {
+            display: inline-block;
+            width: 150px;
+            margin-right: 5px;
         }
     </style>
 </head>
@@ -133,6 +145,21 @@
         <button onclick="window.print();" class="btn btn-primary btn-sm">
             <i class="fa fa-print"></i> Print
         </button>
+        <div class="btn-group" style="margin-left: 10px;">
+            <select id="export-format" class="form-control form-control-sm" style="display: inline-block; width: auto;">
+                <option value="">Export Format...</option>
+                <option value="pdf">PDF</option>
+                <option value="word">Word</option>
+                <option value="excel">Excel</option>
+                <option value="csv">CSV</option>
+                <option value="xml">XML</option>
+                <option value="mhtml">MHTML</option>
+                <option value="tiff">TIFF</option>
+            </select>
+            <button onclick="exportReport();" class="btn btn-success btn-sm">
+                <i class="fa fa-download"></i> Export
+            </button>
+        </div>
     </div>
 
     <div class="report-header">
@@ -235,6 +262,24 @@
         </div>
     </div>
 
+    <script>
+    function exportReport() {
+        var format = document.getElementById('export-format').value;
+        if (!format) {
+            alert('Please select export format');
+            return;
+        }
+        
+        var scrapId = <?= isset($scrap['SCRAP_ID']) ? (int)$scrap['SCRAP_ID'] : 0; ?>;
+        if (scrapId <= 0) {
+            alert('Invalid scrap ID');
+            return;
+        }
+        
+        var url = '<?= base_url("Tool_inventory/tool_scrap/export_report"); ?>' + '/' + scrapId + '/' + format;
+        window.location.href = url;
+    }
+    </script>
 </body>
 </html>
 
