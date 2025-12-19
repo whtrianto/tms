@@ -65,6 +65,14 @@
             color: #0056b3 !important;
             text-decoration: underline !important;
         }
+        body, html {
+            margin: 0;
+            padding: 0;
+        }
+        #wrapper {
+            margin: 0;
+            padding: 0;
+        }
     </style>
 </head>
 <body id="page-top">
