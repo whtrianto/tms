@@ -168,7 +168,7 @@
                 <option value="excel">Excel</option>
                 <option value="csv">CSV</option>
                 <option value="xml">XML</option>
-                <option value="mhtml">MHTML</option>
+                <option value="html">HTML</option>
                 <option value="tiff">TIFF</option>
             </select>
             <button onclick="exportReport();" class="btn btn-success btn-sm">

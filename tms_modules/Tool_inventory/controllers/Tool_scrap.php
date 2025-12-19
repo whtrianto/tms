@@ -196,7 +196,7 @@ class Tool_scrap extends MY_Controller
         }
 
         $format = strtolower(trim($format));
-        $allowed_formats = array('pdf', 'word', 'excel', 'csv', 'xml', 'mhtml', 'tiff');
+        $allowed_formats = array('pdf', 'word', 'excel', 'csv', 'xml', 'html', 'tiff');
         if (!in_array($format, $allowed_formats)) {
             show_404();
             return;
@@ -227,8 +227,8 @@ class Tool_scrap extends MY_Controller
             case 'xml':
                 $this->export_xml($data);
                 break;
-            case 'mhtml':
-                $this->export_mhtml($data);
+            case 'html':
+                $this->export_html($data);
                 break;
             case 'tiff':
                 $this->export_tiff($data);
@@ -311,22 +311,115 @@ class Tool_scrap extends MY_Controller
     }
 
     /**
-     * Export to Excel (XLS)
+     * Export to Excel (XLS) - Using SpreadsheetML format
      */
     private function export_excel($data)
     {
         $scrap = $data['scrap'];
         $filename = 'Tool_Scrap_Report_' . (isset($scrap['SCRAP_NO']) ? $scrap['SCRAP_NO'] : '') . '.xls';
 
-        $content = $this->generate_excel_content($data);
-
-        header('Content-Type: application/vnd.ms-excel');
+        // Set headers for Excel download
+        header('Content-Type: application/vnd.ms-excel; charset=UTF-8');
         header('Content-Disposition: attachment; filename="' . $filename . '"');
+        header('Cache-Control: max-age=0');
         header('Content-Transfer-Encoding: binary');
-        header('Cache-Control: must-revalidate, post-check=0, pre-check=0');
-        header('Pragma: public');
-        
-        echo $content;
+
+        // Output BOM for UTF-8 Excel compatibility
+        echo "\xEF\xBB\xBF";
+
+        // Start Excel XML output (SpreadsheetML format)
+        echo '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
+        echo '<?mso-application progid="Excel.Sheet"?>' . "\n";
+        echo '<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"' . "\n";
+        echo ' xmlns:o="urn:schemas-microsoft-com:office:office"' . "\n";
+        echo ' xmlns:x="urn:schemas-microsoft-com:office:excel"' . "\n";
+        echo ' xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"' . "\n";
+        echo ' xmlns:html="http://www.w3.org/TR/REC-html40">' . "\n";
+        echo '<DocumentProperties xmlns="urn:schemas-microsoft-com:office:office">' . "\n";
+        echo '<Title>Tool Scrap Report</Title>' . "\n";
+        echo '<Created>' . date('Y-m-d\TH:i:s\Z') . '</Created>' . "\n";
+        echo '</DocumentProperties>' . "\n";
+        echo '<Worksheet ss:Name="Tool Scrap Report">' . "\n";
+        echo '<Table>' . "\n";
+
+        // Header
+        echo '<Row>' . "\n";
+        echo '<Cell><Data ss:Type="String">PT. TD AUTOMOTIVE COMPRESSOR INDONESIA</Data></Cell>' . "\n";
+        echo '</Row>' . "\n";
+        echo '<Row>' . "\n";
+        echo '<Cell><Data ss:Type="String">TOOL ACCIDENT/ SCRAP</Data></Cell>' . "\n";
+        echo '</Row>' . "\n";
+        echo '<Row>' . "\n";
+        echo '<Cell><Data ss:Type="String">Printed at : ' . date('d-m-Y H:i') . '</Data></Cell>' . "\n";
+        echo '</Row>' . "\n";
+        echo '<Row></Row>' . "\n";
+
+        // First table data
+        $rows1 = array(
+            array('Scrap No.', isset($scrap['SCRAP_NO']) ? $scrap['SCRAP_NO'] : '', 'Acc/ Scrap Date', $this->format_date_report(isset($scrap['SCRAP_ACC_DATE']) ? $scrap['SCRAP_ACC_DATE'] : '')),
+            array('Issue Date', $this->format_date_report(isset($scrap['SCRAP_DATE']) ? $scrap['SCRAP_DATE'] : ''), 'Machine', isset($scrap['MACHINE']) ? $scrap['MACHINE'] : ''),
+            array('Request By', isset($scrap['REQUESTED_BY_NAME']) ? $scrap['REQUESTED_BY_NAME'] : '', 'Operator', isset($scrap['OPERATOR_NAME']) ? $scrap['OPERATOR_NAME'] : ''),
+            array('Tool ID', isset($scrap['INV_TOOL_ID']) ? $scrap['INV_TOOL_ID'] : '', 'Std Qty', isset($scrap['SCRAP_STD_QTY_THIS']) ? (int)$scrap['SCRAP_STD_QTY_THIS'] : 0),
+            array('Tool Name', isset($scrap['TOOL_NAME']) ? $scrap['TOOL_NAME'] : '', 'Current Qty', isset($scrap['SCRAP_CURRENT_QTY_THIS']) ? (int)$scrap['SCRAP_CURRENT_QTY_THIS'] : 0),
+            array('Tool Price', isset($scrap['TOOL_PRICE']) ? number_format((float)$scrap['TOOL_PRICE'], 2, ',', '.') : '', 'Not Received', isset($scrap['SCRAP_NRCV_QTY_THIS']) ? (int)$scrap['SCRAP_NRCV_QTY_THIS'] : 0),
+            array('Tool Residue Value', '', 'Pcs Produced', isset($scrap['PCS_PRODUCED']) ? (int)$scrap['PCS_PRODUCED'] : 0),
+        );
+
+        foreach ($rows1 as $row) {
+            echo '<Row>' . "\n";
+            echo '<Cell><Data ss:Type="String">' . htmlspecialchars($row[0], ENT_XML1, 'UTF-8') . '</Data></Cell>' . "\n";
+            echo '<Cell><Data ss:Type="String">' . htmlspecialchars($row[1], ENT_XML1, 'UTF-8') . '</Data></Cell>' . "\n";
+            echo '<Cell><Data ss:Type="String">' . htmlspecialchars($row[2], ENT_XML1, 'UTF-8') . '</Data></Cell>' . "\n";
+            echo '<Cell><Data ss:Type="String">' . htmlspecialchars($row[3], ENT_XML1, 'UTF-8') . '</Data></Cell>' . "\n";
+            echo '</Row>' . "\n";
+        }
+
+        echo '<Row></Row>' . "\n";
+        echo '<Row>' . "\n";
+        echo '<Cell><Data ss:Type="String">Cause Remark</Data></Cell>' . "\n";
+        echo '</Row>' . "\n";
+        echo '<Row>' . "\n";
+        echo '<Cell><Data ss:Type="String">' . htmlspecialchars(isset($scrap['SCRAP_CAUSE_REMARK']) ? $scrap['SCRAP_CAUSE_REMARK'] : '', ENT_XML1, 'UTF-8') . '</Data></Cell>' . "\n";
+        echo '</Row>' . "\n";
+        echo '<Row></Row>' . "\n";
+        echo '<Row>' . "\n";
+        echo '<Cell><Data ss:Type="String">Sketch</Data></Cell>' . "\n";
+        echo '</Row>' . "\n";
+        echo '<Row></Row>' . "\n";
+
+        // Second table data
+        $rows2 = array(
+            array('Suggestion', 'Scrap', 'Approve By', isset($scrap['APPROVED_BY_NAME']) ? $scrap['APPROVED_BY_NAME'] : ''),
+            array('To Order', isset($scrap['SCRAP_TO_ORDER']) && $scrap['SCRAP_TO_ORDER'] ? 'Yes' : 'No', 'Approve Date', $this->format_date_report(isset($scrap['SCRAP_APPROVED_DATE']) ? $scrap['SCRAP_APPROVED_DATE'] : '')),
+            array('Reason', isset($scrap['REASON']) ? $scrap['REASON'] : '', 'Cause', isset($scrap['CAUSE_NAME']) ? $scrap['CAUSE_NAME'] : ''),
+        );
+
+        foreach ($rows2 as $row) {
+            echo '<Row>' . "\n";
+            echo '<Cell><Data ss:Type="String">' . htmlspecialchars($row[0], ENT_XML1, 'UTF-8') . '</Data></Cell>' . "\n";
+            echo '<Cell><Data ss:Type="String">' . htmlspecialchars($row[1], ENT_XML1, 'UTF-8') . '</Data></Cell>' . "\n";
+            echo '<Cell><Data ss:Type="String">' . htmlspecialchars($row[2], ENT_XML1, 'UTF-8') . '</Data></Cell>' . "\n";
+            echo '<Cell><Data ss:Type="String">' . htmlspecialchars($row[3], ENT_XML1, 'UTF-8') . '</Data></Cell>' . "\n";
+            echo '</Row>' . "\n";
+        }
+
+        echo '<Row></Row>' . "\n";
+        echo '<Row>' . "\n";
+        echo '<Cell><Data ss:Type="String">Counter Measure</Data></Cell>' . "\n";
+        echo '</Row>' . "\n";
+        echo '<Row>' . "\n";
+        echo '<Cell><Data ss:Type="String">' . htmlspecialchars(isset($scrap['SCRAP_COUNTER_MEASURE']) ? $scrap['SCRAP_COUNTER_MEASURE'] : '', ENT_XML1, 'UTF-8') . '</Data></Cell>' . "\n";
+        echo '</Row>' . "\n";
+        echo '<Row></Row>' . "\n";
+        echo '<Row>' . "\n";
+        echo '<Cell><Data ss:Type="String">Investigated By</Data></Cell>' . "\n";
+        echo '<Cell><Data ss:Type="String">' . htmlspecialchars(isset($scrap['INVESTIGATED_BY_NAME']) ? $scrap['INVESTIGATED_BY_NAME'] : '', ENT_XML1, 'UTF-8') . '</Data></Cell>' . "\n";
+        echo '</Row>' . "\n";
+
+        // Close XML tags
+        echo '</Table>' . "\n";
+        echo '</Worksheet>' . "\n";
+        echo '</Workbook>';
         exit;
     }
 
@@ -423,29 +516,20 @@ class Tool_scrap extends MY_Controller
     }
 
     /**
-     * Export to MHTML
+     * Export to HTML
      */
-    private function export_mhtml($data)
+    private function export_html($data)
     {
         $scrap = $data['scrap'];
-        $filename = 'Tool_Scrap_Report_' . (isset($scrap['SCRAP_NO']) ? $scrap['SCRAP_NO'] : '') . '.mhtml';
+        $filename = 'Tool_Scrap_Report_' . (isset($scrap['SCRAP_NO']) ? $scrap['SCRAP_NO'] : '') . '.html';
 
         // Generate HTML content directly (no template dependency)
         $html = $this->generate_html_content($data);
 
-        $boundary = '----=_NextPart_000_0000_01D' . uniqid();
-        $mhtml = "MIME-Version: 1.0\n";
-        $mhtml .= "Content-Type: multipart/related; boundary=\"$boundary\"\n\n";
-        $mhtml .= "--$boundary\n";
-        $mhtml .= "Content-Type: text/html; charset=utf-8\n";
-        $mhtml .= "Content-Transfer-Encoding: 7bit\n\n";
-        $mhtml .= $html . "\n";
-        $mhtml .= "--$boundary--\n";
-
-        header('Content-Type: message/rfc822');
+        header('Content-Type: text/html; charset=utf-8');
         header('Content-Disposition: attachment; filename="' . $filename . '"');
         
-        echo $mhtml;
+        echo $html;
         exit;
     }
 
