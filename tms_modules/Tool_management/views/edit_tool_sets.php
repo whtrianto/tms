@@ -249,7 +249,7 @@
                                                 </td>
                                                 <td>
                                                     <div class="action-buttons">
-                                                        <button class="btn btn-secondary btn-sm btn-edit-comp" data-id="<?= isset($comp['TSCOMP_ID']) ? $comp['TSCOMP_ID'] : ''; ?>">Edit</button>
+                                                        <a href="<?= base_url('Tool_management/tool_sets/edit_composition_page/' . (isset($comp['TSCOMP_ID']) ? $comp['TSCOMP_ID'] : 0)); ?>" class="btn btn-secondary btn-sm">Edit</a>
                                                         <button class="btn btn-warning btn-sm btn-replace-comp" data-id="<?= isset($comp['TSCOMP_ID']) ? $comp['TSCOMP_ID'] : ''; ?>">Replace</button>
                                                     </div>
                                                 </td>
@@ -322,6 +322,7 @@
                         </div>
                     </div>
                 </div>
+                <br><br>
             </div>
             <?= isset($modal_logout) ? $modal_logout : ''; ?>
         </div>
@@ -372,12 +373,11 @@
             alert('Delete assignment functionality will be implemented');
         });
 
-        // Edit/Replace Composition handlers
-        $('.btn-edit-comp, .btn-replace-comp').on('click', function() {
+        // Replace Composition handler
+        $('.btn-replace-comp').on('click', function() {
             var id = $(this).data('id');
-            var action = $(this).hasClass('btn-edit-comp') ? 'Edit' : 'Replace';
-            // TODO: Implement edit/replace composition
-            alert(action + ' composition functionality will be implemented');
+            // TODO: Implement replace composition
+            alert('Replace composition functionality will be implemented');
         });
 
         // Form submit

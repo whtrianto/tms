@@ -154,5 +154,55 @@ class Tool_sets extends MY_Controller
         $data['assignments'] = $this->tool_sets->get_usage_assignments($id);
         $this->view('edit_tool_sets', $data, FALSE);
     }
+
+    /**
+     * Edit Composition page
+     */
+    public function edit_composition_page($comp_id = 0)
+    {
+        $comp_id = (int)$comp_id;
+        if ($comp_id <= 0) {
+            show_404();
+            return;
+        }
+
+        $comp = $this->tool_sets->get_composition_by_id($comp_id);
+        if (!$comp) {
+            show_404();
+            return;
+        }
+
+        // Get tool set info for back link
+        $tset_id = isset($comp['TSCOMP_TSET_ID']) ? (int)$comp['TSCOMP_TSET_ID'] : 0;
+        $tool_set = $this->tool_sets->get_by_id($tset_id);
+
+        $data = array();
+        $data['composition'] = $comp;
+        $data['tool_set'] = $tool_set;
+        $this->view('edit_tool_set_composition', $data, FALSE);
+    }
+
+    /**
+     * Submit Composition data (AJAX)
+     */
+    public function submit_composition_data()
+    {
+        $this->output->set_content_type('application/json');
+
+        $comp_id = (int)$this->input->post('TSCOMP_ID', TRUE);
+        if ($comp_id <= 0) {
+            echo json_encode(array('success' => false, 'message' => 'ID tidak valid.'));
+            return;
+        }
+
+        $remarks = $this->input->post('TSCOMP_REMARKS', TRUE);
+        $end_cycle = (int)$this->input->post('END_CYCLE', TRUE);
+
+        $ok = $this->tool_sets->update_composition($comp_id, $remarks, $end_cycle);
+        echo json_encode(array(
+            'success' => $ok,
+            'message' => $this->tool_sets->messages
+        ));
+    }
 }
 

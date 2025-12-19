@@ -289,5 +289,90 @@ class M_tool_sets extends CI_Model
         $this->messages = 'Gagal menghapus. ' . (isset($err['message']) ? $err['message'] : '');
         return false;
     }
+
+    /**
+     * Get Composition by ID
+     */
+    public function get_composition_by_id($comp_id)
+    {
+        $comp_id = (int)$comp_id;
+        if ($comp_id <= 0) return null;
+
+        $sql = "SELECT 
+                    tscomp.TSCOMP_ID,
+                    tscomp.TSCOMP_TSET_ID,
+                    tscomp.TSCOMP_INV_ID,
+                    tscomp.TSCOMP_MLR_ID,
+                    tscomp.TSCOMP_STD_REQ,
+                    tscomp.TSCOMP_REMARKS,
+                    ISNULL(ml.ML_TOOL_DRAW_NO, '') AS TOOL_DRAWING_NO,
+                    ISNULL(mlr.MLR_REV, 0) AS REVISION,
+                    ISNULL(tc.TC_NAME, '') AS TOOL_NAME,
+                    ISNULL(inv.INV_TOOL_ID, '') AS TOOL_ID,
+                    ISNULL(mlr.MLR_STD_TL_LIFE, '') AS STANDARD_TOOL_LIFE,
+                    ISNULL(inv.INV_END_CYCLE, 0) AS END_CYCLE,
+                    inv.INV_STATUS AS TOOL_STATUS
+                FROM {$this->t('TMS_TOOLSET_COMPOSITIONS')} tscomp
+                LEFT JOIN {$this->t('TMS_TOOL_MASTER_LIST_REV')} mlr ON mlr.MLR_ID = tscomp.TSCOMP_MLR_ID
+                LEFT JOIN {$this->t('TMS_TOOL_MASTER_LIST')} ml ON ml.ML_ID = mlr.MLR_ML_ID
+                LEFT JOIN {$this->t('MS_TOOL_CLASS')} tc ON tc.TC_ID = mlr.MLR_TC_ID
+                LEFT JOIN {$this->t('TMS_TOOL_INVENTORY')} inv ON inv.INV_ID = tscomp.TSCOMP_INV_ID
+                WHERE tscomp.TSCOMP_ID = ?";
+
+        $q = $this->db_tms->query($sql, array($comp_id));
+        return $q && $q->num_rows() > 0 ? $q->row_array() : null;
+    }
+
+    /**
+     * Update Composition (Remarks and End Cycle only)
+     */
+    public function update_composition($comp_id, $remarks, $end_cycle)
+    {
+        $comp_id = (int)$comp_id;
+        if ($comp_id <= 0) {
+            $this->messages = 'ID tidak valid.';
+            return false;
+        }
+
+        try {
+            // Get composition to get INV_ID
+            $comp = $this->get_composition_by_id($comp_id);
+            if (!$comp) {
+                $this->messages = 'Composition tidak ditemukan.';
+                return false;
+            }
+
+            $this->db_tms->trans_start();
+
+            // Update TSCOMP_REMARKS
+            $this->db_tms->where('TSCOMP_ID', $comp_id);
+            $this->db_tms->update($this->t('TMS_TOOLSET_COMPOSITIONS'), array(
+                'TSCOMP_REMARKS' => $remarks
+            ));
+
+            // Update INV_END_CYCLE if INV_ID exists
+            if (isset($comp['TSCOMP_INV_ID']) && (int)$comp['TSCOMP_INV_ID'] > 0) {
+                $end_cycle_int = (int)$end_cycle;
+                $this->db_tms->where('INV_ID', (int)$comp['TSCOMP_INV_ID']);
+                $this->db_tms->update($this->t('TMS_TOOL_INVENTORY'), array(
+                    'INV_END_CYCLE' => $end_cycle_int
+                ));
+            }
+
+            $this->db_tms->trans_complete();
+
+            if ($this->db_tms->trans_status() === FALSE) {
+                $this->messages = 'Gagal mengupdate composition.';
+                return false;
+            }
+
+            $this->messages = 'Composition berhasil diupdate.';
+            return true;
+        } catch (Exception $e) {
+            log_message('error', '[M_tool_sets::update_composition] Exception: ' . $e->getMessage());
+            $this->messages = 'Error: ' . $e->getMessage();
+            return false;
+        }
+    }
 }
 
