@@ -258,12 +258,8 @@ class Tool_scrap extends MY_Controller
         $scrap = $data['scrap'];
         $filename = 'Tool_Scrap_Report_' . (isset($scrap['SCRAP_NO']) ? $scrap['SCRAP_NO'] : '') . '.pdf';
         
-        // Load HTML content
-        $html = $this->load->view('report_tool_scrap', $data, TRUE);
-        
-        // Remove print buttons and action buttons
-        $html = preg_replace('/<div class="action-buttons[^"]*">.*?<\/div>/is', '', $html);
-        $html = preg_replace('/<script>.*?<\/script>/is', '', $html);
+        // Generate HTML content directly (no template dependency)
+        $html = $this->generate_html_content($data);
         
         // Try to use TCPDF or mPDF if available
         if (file_exists(APPPATH . 'libraries/Pdf.php')) {
@@ -434,9 +430,8 @@ class Tool_scrap extends MY_Controller
         $scrap = $data['scrap'];
         $filename = 'Tool_Scrap_Report_' . (isset($scrap['SCRAP_NO']) ? $scrap['SCRAP_NO'] : '') . '.mhtml';
 
-        $html = $this->load->view('report_tool_scrap', $data, TRUE);
-        $html = preg_replace('/<div class="action-buttons[^"]*">.*?<\/div>/is', '', $html);
-        $html = preg_replace('/<script>.*?<\/script>/is', '', $html);
+        // Generate HTML content directly (no template dependency)
+        $html = $this->generate_html_content($data);
 
         $boundary = '----=_NextPart_000_0000_01D' . uniqid();
         $mhtml = "MIME-Version: 1.0\n";
@@ -462,23 +457,33 @@ class Tool_scrap extends MY_Controller
         $scrap = $data['scrap'];
         $filename = 'Tool_Scrap_Report_' . (isset($scrap['SCRAP_NO']) ? $scrap['SCRAP_NO'] : '') . '.tiff';
 
-        // Note: TIFF conversion typically requires image processing library
-        // For now, we'll export as PNG and suggest conversion, or use HTML canvas approach
-        // Alternative: Use wkhtmltopdf or similar tool to convert HTML to image
-        
-        $html = $this->load->view('report_tool_scrap', $data, TRUE);
-        $html = preg_replace('/<div class="action-buttons[^"]*">.*?<\/div>/is', '', $html);
-        $html = preg_replace('/<script>.*?<\/script>/is', '', $html);
+        // Generate HTML content directly (no template dependency)
+        $html = $this->generate_html_content($data);
         
         // For TIFF, we'll provide HTML that can be converted via browser print to TIFF
         // Or use a service/library that converts HTML to TIFF
         // For now, export as HTML with instructions, or convert to PNG
         
         header('Content-Type: text/html; charset=utf-8');
-        echo '<!DOCTYPE html><html><head><title>Export to TIFF</title></head><body>';
-        echo '<p>TIFF export requires image conversion. Please use Print to PDF and convert to TIFF, or use a conversion tool.</p>';
-        echo '<p>Alternatively, you can use the browser print function and save as TIFF.</p>';
-        echo '<button onclick="window.print();">Print to Save as TIFF</button>';
+        echo '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Export to TIFF</title>';
+        echo '<style>';
+        echo 'body { font-family: Arial, sans-serif; padding: 20px; }';
+        echo '.instructions { background-color: #f0f0f0; padding: 15px; margin-bottom: 20px; border: 1px solid #ccc; border-radius: 5px; }';
+        echo '.instructions p { margin: 5px 0; }';
+        echo '.instructions button { background-color: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; }';
+        echo '.instructions button:hover { background-color: #0056b3; }';
+        echo '</style>';
+        echo '</head><body>';
+        echo '<div class="instructions">';
+        echo '<p><strong>TIFF Export Instructions:</strong></p>';
+        echo '<p>TIFF export requires image conversion. You can:</p>';
+        echo '<ul>';
+        echo '<li>Use the browser print function (Ctrl+P / Cmd+P) and select "Save as PDF", then convert PDF to TIFF using a conversion tool</li>';
+        echo '<li>Use an online HTML to TIFF converter</li>';
+        echo '<li>Use specialized software like wkhtmltopdf or similar tools</li>';
+        echo '</ul>';
+        echo '<button onclick="window.print();">Print / Save as PDF</button>';
+        echo '</div>';
         echo $html;
         echo '</body></html>';
         exit;
@@ -623,6 +628,133 @@ class Tool_scrap extends MY_Controller
         $html .= '<div style="border:1px solid #000; padding:5px; min-height:60px;">' . nl2br(htmlspecialchars(isset($scrap['SCRAP_COUNTER_MEASURE']) ? $scrap['SCRAP_COUNTER_MEASURE'] : '', ENT_QUOTES, 'UTF-8')) . '</div>';
         
         $html .= '<p style="margin-top:30px; text-align:right;"><strong>Investigated By:</strong> ' . htmlspecialchars(isset($scrap['INVESTIGATED_BY_NAME']) ? $scrap['INVESTIGATED_BY_NAME'] : '', ENT_QUOTES, 'UTF-8') . '</p>';
+        
+        $html .= '</body></html>';
+        
+        return $html;
+    }
+
+    /**
+     * Generate HTML content for export (PDF, MHTML, TIFF)
+     * This method generates HTML without template dependencies
+     */
+    private function generate_html_content($data)
+    {
+        $scrap = $data['scrap'];
+        
+        // Format dates helper
+        $formatDate = function($date) {
+            if (empty($date) || $date === null) return '';
+            try {
+                $d = new DateTime($date);
+                return $d->format('d-m-Y');
+            } catch (Exception $e) {
+                return $date;
+            }
+        };
+        
+        // Prepare data
+        $scrap_no = isset($scrap['SCRAP_NO']) ? htmlspecialchars($scrap['SCRAP_NO'], ENT_QUOTES, 'UTF-8') : '';
+        $issue_date = $formatDate(isset($scrap['SCRAP_DATE']) ? $scrap['SCRAP_DATE'] : '');
+        $acc_scrap_date = $formatDate(isset($scrap['SCRAP_ACC_DATE']) ? $scrap['SCRAP_ACC_DATE'] : '');
+        $machine = isset($scrap['MACHINE']) ? htmlspecialchars($scrap['MACHINE'], ENT_QUOTES, 'UTF-8') : '';
+        $request_by = isset($scrap['REQUESTED_BY_NAME']) ? htmlspecialchars($scrap['REQUESTED_BY_NAME'], ENT_QUOTES, 'UTF-8') : '';
+        $operator = isset($scrap['OPERATOR_NAME']) ? htmlspecialchars($scrap['OPERATOR_NAME'], ENT_QUOTES, 'UTF-8') : '';
+        $tool_id = isset($scrap['INV_TOOL_ID']) ? htmlspecialchars($scrap['INV_TOOL_ID'], ENT_QUOTES, 'UTF-8') : '';
+        $std_qty = isset($scrap['SCRAP_STD_QTY_THIS']) ? (int)$scrap['SCRAP_STD_QTY_THIS'] : 0;
+        $current_qty = isset($scrap['SCRAP_CURRENT_QTY_THIS']) ? (int)$scrap['SCRAP_CURRENT_QTY_THIS'] : 0;
+        $not_received = isset($scrap['SCRAP_NRCV_QTY_THIS']) ? (int)$scrap['SCRAP_NRCV_QTY_THIS'] : 0;
+        $pcs_produced = isset($scrap['PCS_PRODUCED']) ? (int)$scrap['PCS_PRODUCED'] : 0;
+        $tool_name = isset($scrap['TOOL_NAME']) ? htmlspecialchars($scrap['TOOL_NAME'], ENT_QUOTES, 'UTF-8') : '';
+        $tool_price = isset($scrap['TOOL_PRICE']) && $scrap['TOOL_PRICE'] !== null ? number_format((float)$scrap['TOOL_PRICE'], 2, ',', '.') : '';
+        $tool_residue_value = '';
+        $cause_remark = isset($scrap['SCRAP_CAUSE_REMARK']) ? htmlspecialchars($scrap['SCRAP_CAUSE_REMARK'], ENT_QUOTES, 'UTF-8') : '';
+        $sketch = isset($scrap['SKETCH']) ? htmlspecialchars($scrap['SKETCH'], ENT_QUOTES, 'UTF-8') : '';
+        $suggestion = 'Scrap';
+        $approve_by = isset($scrap['APPROVED_BY_NAME']) ? htmlspecialchars($scrap['APPROVED_BY_NAME'], ENT_QUOTES, 'UTF-8') : '';
+        $approve_date = $formatDate(isset($scrap['SCRAP_APPROVED_DATE']) ? $scrap['SCRAP_APPROVED_DATE'] : '');
+        $to_order = isset($scrap['SCRAP_TO_ORDER']) && $scrap['SCRAP_TO_ORDER'] ? 'Yes' : 'No';
+        $reason = isset($scrap['REASON']) ? htmlspecialchars($scrap['REASON'], ENT_QUOTES, 'UTF-8') : '';
+        $cause = isset($scrap['CAUSE_NAME']) ? htmlspecialchars($scrap['CAUSE_NAME'], ENT_QUOTES, 'UTF-8') : '';
+        $counter_measure = isset($scrap['SCRAP_COUNTER_MEASURE']) ? htmlspecialchars($scrap['SCRAP_COUNTER_MEASURE'], ENT_QUOTES, 'UTF-8') : '';
+        $investigated_by = isset($scrap['INVESTIGATED_BY_NAME']) ? htmlspecialchars($scrap['INVESTIGATED_BY_NAME'], ENT_QUOTES, 'UTF-8') : '';
+        
+        $html = '<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><title>Tool Scrap Report</title>';
+        $html .= '<style>';
+        $html .= '@media print { body { margin: 0; padding: 0; } .no-print { display: none !important; } .print-break { page-break-after: always; } }';
+        $html .= 'body { font-family: Arial, sans-serif; font-size: 11pt; padding: 20px; }';
+        $html .= '.report-header { text-align: center; margin-bottom: 20px; }';
+        $html .= '.report-header h2 { font-size: 14pt; font-weight: bold; margin: 5px 0; }';
+        $html .= '.report-header .printed-date { text-align: right; font-size: 9pt; margin-bottom: 10px; }';
+        $html .= '.report-title { text-align: center; font-size: 12pt; font-weight: bold; margin: 20px 0; text-decoration: underline; }';
+        $html .= '.report-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; border: 1px solid #000; }';
+        $html .= '.report-table td { padding: 8px 12px; vertical-align: middle; border: 1px solid #000; min-height: 35px; }';
+        $html .= '.report-table .label { font-weight: bold; width: 20%; background-color: #f5f5f5; text-align: left; padding-left: 15px; }';
+        $html .= '.report-table .value { width: 30%; text-align: left; padding-left: 15px; word-wrap: break-word; }';
+        $html .= '.report-table tr { height: 40px; }';
+        $html .= '.report-table tr:nth-child(even) .label { background-color: #f9f9f9; }';
+        $html .= '.report-table tr:nth-child(even) .value { background-color: #ffffff; }';
+        $html .= '.report-section { margin-top: 15px; }';
+        $html .= '.report-section-label { font-weight: bold; margin-bottom: 5px; }';
+        $html .= '.text-area-box { border: 1px solid #000; min-height: 60px; padding: 5px; margin-top: 5px; background-color: #fff; }';
+        $html .= '.sketch-box { border: 1px solid #000; min-height: 150px; padding: 5px; margin-top: 5px; background-color: #fff; }';
+        $html .= '</style>';
+        $html .= '</head><body>';
+        
+        // Header
+        $html .= '<div class="report-header">';
+        $html .= '<div class="printed-date">Printed at : ' . date('d-m-Y H:i') . '</div>';
+        $html .= '<h2>PT. TD AUTOMOTIVE COMPRESSOR INDONESIA</h2>';
+        $html .= '<div class="report-title">TOOL ACCIDENT/ SCRAP</div>';
+        $html .= '</div>';
+        
+        // First table
+        $html .= '<table class="report-table">';
+        $html .= '<tr><td class="label">Scrap No.</td><td class="value"><strong>' . $scrap_no . '</strong></td><td class="label">Acc/ Scrap Date</td><td class="value">' . $acc_scrap_date . '</td></tr>';
+        $html .= '<tr><td class="label">Issue Date</td><td class="value">' . $issue_date . '</td><td class="label">Machine</td><td class="value">' . $machine . '</td></tr>';
+        $html .= '<tr><td class="label">Request By</td><td class="value">' . $request_by . '</td><td class="label">Operator</td><td class="value">' . $operator . '</td></tr>';
+        $html .= '<tr><td class="label">Tool ID</td><td class="value">' . $tool_id . '</td><td class="label">Std Qty</td><td class="value">' . number_format($std_qty, 0, ',', '.') . '</td></tr>';
+        $html .= '<tr><td class="label">Tool Name</td><td class="value">' . $tool_name . '</td><td class="label">Current Qty</td><td class="value">' . number_format($current_qty, 0, ',', '.') . '</td></tr>';
+        $html .= '<tr><td class="label">Tool Price</td><td class="value">' . $tool_price . '</td><td class="label">Not Received</td><td class="value">' . number_format($not_received, 0, ',', '.') . '</td></tr>';
+        $html .= '<tr><td class="label">Tool Residue Value</td><td class="value">' . $tool_residue_value . '</td><td class="label">Pcs Produced</td><td class="value"><strong>' . number_format($pcs_produced, 0, ',', '.') . '</strong></td></tr>';
+        $html .= '</table>';
+        
+        // Cause Remark
+        $html .= '<div class="report-section">';
+        $html .= '<div class="report-section-label">Cause Remark</div>';
+        $html .= '<div class="text-area-box">' . nl2br($cause_remark) . '</div>';
+        $html .= '</div>';
+        
+        // Sketch
+        $html .= '<div class="report-section">';
+        $html .= '<div class="report-section-label">Sketch</div>';
+        $html .= '<div class="sketch-box">';
+        if (!empty($sketch)) {
+            $html .= '<img src="' . base_url('uploads/sketch/' . $sketch) . '" alt="Sketch" style="max-width: 100%; height: auto;" />';
+        }
+        $html .= '</div>';
+        $html .= '</div>';
+        
+        // Second table
+        $html .= '<table class="report-table" style="margin-top: 20px;">';
+        $html .= '<tr><td class="label">Suggestion</td><td class="value"><strong>' . $suggestion . '</strong></td><td class="label">Approve By</td><td class="value">' . $approve_by . '</td></tr>';
+        $html .= '<tr><td class="label">To Order</td><td class="value">' . $to_order . '</td><td class="label">Approve Date</td><td class="value">' . $approve_date . '</td></tr>';
+        $html .= '<tr><td class="label">Reason</td><td class="value">' . $reason . '</td><td class="label">Cause</td><td class="value">' . $cause . '</td></tr>';
+        $html .= '</table>';
+        
+        // Counter Measure
+        $html .= '<div class="report-section">';
+        $html .= '<div class="report-section-label">Counter Measure</div>';
+        $html .= '<div class="text-area-box">' . nl2br($counter_measure) . '</div>';
+        $html .= '</div>';
+        
+        // Investigated By
+        $html .= '<div class="report-section" style="margin-top: 30px;">';
+        $html .= '<div style="text-align: right;">';
+        $html .= '<div class="report-section-label" style="text-align: left; display: inline-block;">Investigated By</div>';
+        $html .= '<div style="margin-top: 40px; display: inline-block; margin-left: 20px;">' . $investigated_by . '</div>';
+        $html .= '</div>';
+        $html .= '</div>';
         
         $html .= '</body></html>';
         
