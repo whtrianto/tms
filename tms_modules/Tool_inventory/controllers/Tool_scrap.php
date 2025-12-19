@@ -339,6 +339,31 @@ class Tool_scrap extends MY_Controller
         echo '<Title>Tool Scrap Report</Title>' . "\n";
         echo '<Created>' . date('Y-m-d\TH:i:s\Z') . '</Created>' . "\n";
         echo '</DocumentProperties>' . "\n";
+        
+        // Styles must be defined before Worksheet
+        echo '<Styles>' . "\n";
+        echo '<Style ss:ID="Header">' . "\n";
+        echo '<Font ss:Bold="1"/>' . "\n";
+        echo '<Interior ss:Color="#D3D3D3" ss:Pattern="Solid"/>' . "\n";
+        echo '<Borders>' . "\n";
+        echo '<Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1"/>' . "\n";
+        echo '<Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1"/>' . "\n";
+        echo '<Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1"/>' . "\n";
+        echo '<Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1"/>' . "\n";
+        echo '</Borders>' . "\n";
+        echo '</Style>' . "\n";
+        echo '<Style ss:ID="Label">' . "\n";
+        echo '<Font ss:Bold="1"/>' . "\n";
+        echo '<Interior ss:Color="#F5F5F5" ss:Pattern="Solid"/>' . "\n";
+        echo '<Borders>' . "\n";
+        echo '<Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1"/>' . "\n";
+        echo '<Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1"/>' . "\n";
+        echo '<Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1"/>' . "\n";
+        echo '<Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1"/>' . "\n";
+        echo '</Borders>' . "\n";
+        echo '</Style>' . "\n";
+        echo '</Styles>' . "\n";
+        
         echo '<Worksheet ss:Name="Tool Scrap Report">' . "\n";
         echo '<Table>' . "\n";
 
@@ -394,39 +419,11 @@ class Tool_scrap extends MY_Controller
             echo '</Row>' . "\n";
         }
 
-        // Close Table
+        // Close Table and Worksheet
         echo '</Table>' . "\n";
-        
-        // Worksheet Options
-        echo '<WorksheetOptions xmlns="urn:schemas-microsoft-com:office:excel">' . "\n";
-        echo '</WorksheetOptions>' . "\n";
-        
-        // Styles
-        echo '<Styles>' . "\n";
-        echo '<Style ss:ID="Header">' . "\n";
-        echo '<Font ss:Bold="1"/>' . "\n";
-        echo '<Interior ss:Color="#D3D3D3" ss:Pattern="Solid"/>' . "\n";
-        echo '<Borders>' . "\n";
-        echo '<Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1"/>' . "\n";
-        echo '<Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1"/>' . "\n";
-        echo '<Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1"/>' . "\n";
-        echo '<Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1"/>' . "\n";
-        echo '</Borders>' . "\n";
-        echo '</Style>' . "\n";
-        echo '<Style ss:ID="Label">' . "\n";
-        echo '<Font ss:Bold="1"/>' . "\n";
-        echo '<Interior ss:Color="#F5F5F5" ss:Pattern="Solid"/>' . "\n";
-        echo '<Borders>' . "\n";
-        echo '<Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1"/>' . "\n";
-        echo '<Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1"/>' . "\n";
-        echo '<Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1"/>' . "\n";
-        echo '<Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1"/>' . "\n";
-        echo '</Borders>' . "\n";
-        echo '</Style>' . "\n";
-        echo '</Styles>' . "\n";
-        
-        // Close Worksheet and Workbook
         echo '</Worksheet>' . "\n";
+        
+        // Close Workbook
         echo '</Workbook>';
         exit;
     }
