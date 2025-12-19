@@ -203,11 +203,11 @@ class M_tool_work_order extends CI_Model
     public function get_wo_status_name($status)
     {
         $status = (int)$status;
-        // Common status values: 1=Open, 2=In Progress, 3=Completed, 4=Cancelled
+        // Common status values: 1=Open, 2=In Progress, 3=Completed/Closed, 4=Cancelled
         $status_map = array(
             1 => 'Open',
             2 => 'In Progress',
-            3 => 'Completed',
+            3 => 'Closed',
             4 => 'Cancelled'
         );
         return isset($status_map[$status]) ? $status_map[$status] : 'Unknown';
@@ -223,7 +223,7 @@ class M_tool_work_order extends CI_Model
         
         $badge_class = 'badge-secondary'; // Default
         if ($status === 3) {
-            $badge_class = 'badge-success'; // Completed
+            $badge_class = 'badge-success'; // Closed
         } elseif ($status === 2) {
             $badge_class = 'badge-warning'; // In Progress
         } elseif ($status === 4) {
@@ -233,6 +233,244 @@ class M_tool_work_order extends CI_Model
         }
         
         return '<span class="badge ' . $badge_class . '">' . htmlspecialchars($status_name, ENT_QUOTES, 'UTF-8') . '</span>';
+    }
+
+    /**
+     * Get Work Order by ID
+     */
+    public function get_by_id($id)
+    {
+        $id = (int)$id;
+        if ($id <= 0) return null;
+
+        $sql = "SELECT 
+                    wo.WO_ID,
+                    wo.WO_INV_ID,
+                    wo.WO_MLR_ID,
+                    wo.WO_NO,
+                    wo.WO_TYPE,
+                    CASE WHEN wo.WO_CREATED_DATE IS NULL THEN '' 
+                         ELSE CONVERT(VARCHAR(19), wo.WO_CREATED_DATE, 120) END AS DATE,
+                    wo.WO_CREATED_BY,
+                    wo.WO_REQUESTED_BY,
+                    wo.WO_DEPARTMENT,
+                    wo.WO_REASON,
+                    CASE WHEN wo.WO_TARGET_COM_DATE IS NULL THEN '' 
+                         ELSE CONVERT(VARCHAR(19), wo.WO_TARGET_COM_DATE, 120) END AS TARGET_COMPLETION_DATE,
+                    CASE WHEN wo.WO_ACTUAL_COM_DATE IS NULL THEN '' 
+                         ELSE CONVERT(VARCHAR(19), wo.WO_ACTUAL_COM_DATE, 120) END AS ACTUAL_COMPLETION_DATE,
+                    wo.WO_STATUS,
+                    wo.WO_CONDITION,
+                    wo.WO_QTY,
+                    wo.WO_URGENCY,
+                    wo.WO_REMARKS,
+                    ISNULL(created_by.USR_NAME, '') AS CREATED_BY_NAME,
+                    ISNULL(req_by.USR_NAME, '') AS REQUESTED_BY_NAME,
+                    ISNULL(inv.INV_TOOL_ID, '') AS TOOL_ID,
+                    ISNULL(inv.INV_TOOL_TAG, '') AS TOOL_TAG,
+                    ISNULL(ml.ML_TOOL_DRAW_NO, '') AS TOOL_DRAWING_NO,
+                    ISNULL(mlr.MLR_REV, 0) AS REVISION,
+                    ISNULL(tc.TC_NAME, '') AS TOOL_NAME
+                FROM {$this->t('TMS_WORKORDER')} wo
+                LEFT JOIN {$this->t('TMS_TOOL_INVENTORY')} inv ON inv.INV_ID = wo.WO_INV_ID
+                LEFT JOIN {$this->t('TMS_TOOL_MASTER_LIST_REV')} mlr ON mlr.MLR_ID = wo.WO_MLR_ID
+                LEFT JOIN {$this->t('TMS_TOOL_MASTER_LIST')} ml ON ml.ML_ID = mlr.MLR_ML_ID
+                LEFT JOIN {$this->t('MS_TOOL_CLASS')} tc ON tc.TC_ID = mlr.MLR_TC_ID
+                LEFT JOIN {$this->t('MS_USERS')} created_by ON created_by.USR_ID = wo.WO_CREATED_BY
+                LEFT JOIN {$this->t('MS_USERS')} req_by ON req_by.USR_ID = wo.WO_REQUESTED_BY
+                WHERE wo.WO_ID = ?";
+
+        $q = $this->db_tms->query($sql, array($id));
+        return $q && $q->num_rows() > 0 ? $q->row_array() : null;
+    }
+
+    /**
+     * Get External Costs for Work Order
+     */
+    public function get_external_costs($wo_id)
+    {
+        $wo_id = (int)$wo_id;
+        if ($wo_id <= 0) return array();
+
+        $sql = "SELECT 
+                    ext.EXTCOST_ID,
+                    ext.EXTCOST_WO_ID,
+                    ext.EXTCOST_WA_ID,
+                    ext.EXTCOST_SUP_ID,
+                    ext.EXTCOST_SUP_UNIT_PRICE,
+                    ext.EXTCOST_SUP_QTY,
+                    CASE WHEN ext.EXTCOST_DATE IS NULL THEN '' 
+                         ELSE CONVERT(VARCHAR(19), ext.EXTCOST_DATE, 120) END AS DATE,
+                    ISNULL(ext.EXTCOST_PO_NO, '') AS PO_NO,
+                    ISNULL(ext.EXTCOST_INVOICE_NO, '') AS INVOICE_NO,
+                    ISNULL(ext.EXTCOST_RF_NO, '') AS RF_NO,
+                    CASE WHEN ext.EXTCOST_GRN_DATE IS NULL THEN '' 
+                         ELSE CONVERT(VARCHAR(19), ext.EXTCOST_GRN_DATE, 120) END AS GRN_DATE,
+                    ISNULL(ext.EXTCOST_GRN_NO, '') AS GRN_NO,
+                    ISNULL(wa.WA_NAME, '') AS ACTIVITY,
+                    ISNULL(sup.SUP_NAME, '') AS SUPPLIER,
+                    (ISNULL(ext.EXTCOST_SUP_UNIT_PRICE, 0) * ISNULL(ext.EXTCOST_SUP_QTY, 0)) AS SUB_TOTAL
+                FROM {$this->t('TMS_WO_EXTERNAL_COSTS')} ext
+                LEFT JOIN {$this->t('TMS_WORK_ACTIVITIES')} wa ON wa.WA_ID = ext.EXTCOST_WA_ID
+                LEFT JOIN {$this->t('MS_SUPPLIER')} sup ON sup.SUP_ID = ext.EXTCOST_SUP_ID
+                WHERE ext.EXTCOST_WO_ID = ?
+                ORDER BY ext.EXTCOST_ID ASC";
+
+        $q = $this->db_tms->query($sql, array($wo_id));
+        return $q && $q->num_rows() > 0 ? $q->result_array() : array();
+    }
+
+    /**
+     * Get Work Activities
+     */
+    public function get_work_activities()
+    {
+        $sql = "SELECT WA_ID, WA_NAME, WA_DESC 
+                FROM {$this->t('TMS_WORK_ACTIVITIES')} 
+                ORDER BY WA_NAME ASC";
+        $q = $this->db_tms->query($sql);
+        return $q && $q->num_rows() > 0 ? $q->result_array() : array();
+    }
+
+    /**
+     * Get Suppliers
+     */
+    public function get_suppliers()
+    {
+        $sql = "SELECT SUP_ID, SUP_NAME 
+                FROM {$this->t('MS_SUPPLIER')} 
+                ORDER BY SUP_NAME ASC";
+        $q = $this->db_tms->query($sql);
+        return $q && $q->num_rows() > 0 ? $q->result_array() : array();
+    }
+
+    /**
+     * Get External Cost by ID
+     */
+    public function get_external_cost_by_id($extcost_id)
+    {
+        $extcost_id = (int)$extcost_id;
+        if ($extcost_id <= 0) return null;
+
+        $sql = "SELECT 
+                    ext.EXTCOST_ID,
+                    ext.EXTCOST_WO_ID,
+                    ext.EXTCOST_WA_ID,
+                    ext.EXTCOST_SUP_ID,
+                    ext.EXTCOST_SUP_UNIT_PRICE,
+                    ext.EXTCOST_SUP_QTY,
+                    CASE WHEN ext.EXTCOST_DATE IS NULL THEN '' 
+                         ELSE CONVERT(VARCHAR(19), ext.EXTCOST_DATE, 120) END AS DATE,
+                    ISNULL(ext.EXTCOST_PO_NO, '') AS PO_NO,
+                    ISNULL(ext.EXTCOST_INVOICE_NO, '') AS INVOICE_NO,
+                    ISNULL(ext.EXTCOST_RF_NO, '') AS RF_NO,
+                    CASE WHEN ext.EXTCOST_GRN_DATE IS NULL THEN '' 
+                         ELSE CONVERT(VARCHAR(19), ext.EXTCOST_GRN_DATE, 120) END AS GRN_DATE,
+                    ISNULL(ext.EXTCOST_GRN_NO, '') AS GRN_NO,
+                    ISNULL(wa.WA_NAME, '') AS ACTIVITY,
+                    ISNULL(sup.SUP_NAME, '') AS SUPPLIER
+                FROM {$this->t('TMS_WO_EXTERNAL_COSTS')} ext
+                LEFT JOIN {$this->t('TMS_WORK_ACTIVITIES')} wa ON wa.WA_ID = ext.EXTCOST_WA_ID
+                LEFT JOIN {$this->t('MS_SUPPLIER')} sup ON sup.SUP_ID = ext.EXTCOST_SUP_ID
+                WHERE ext.EXTCOST_ID = ?";
+
+        $q = $this->db_tms->query($sql, array($extcost_id));
+        return $q && $q->num_rows() > 0 ? $q->row_array() : null;
+    }
+
+    /**
+     * Save External Cost (Add/Edit)
+     */
+    public function save_external_cost($action, $extcost_id, $wo_id, $wa_id, $sup_id, $unit_price, $qty, $date, $po_no, $invoice_no, $rf_no, $grn_date, $grn_no)
+    {
+        $wo_id = (int)$wo_id;
+        $wa_id = (int)$wa_id;
+        if ($wo_id <= 0 || $wa_id <= 0) {
+            $this->messages = 'WO_ID dan Activity harus diisi.';
+            return false;
+        }
+
+        try {
+            $data = array(
+                'EXTCOST_WO_ID' => $wo_id,
+                'EXTCOST_WA_ID' => $wa_id,
+                'EXTCOST_SUP_ID' => $sup_id > 0 ? $sup_id : null,
+                'EXTCOST_SUP_UNIT_PRICE' => $unit_price > 0 ? $unit_price : null,
+                'EXTCOST_SUP_QTY' => $qty > 0 ? $qty : null,
+                'EXTCOST_PO_NO' => $po_no ?: null,
+                'EXTCOST_INVOICE_NO' => $invoice_no ?: null,
+                'EXTCOST_RF_NO' => $rf_no ?: null,
+                'EXTCOST_GRN_NO' => $grn_no ?: null
+            );
+
+            if (!empty($date)) {
+                $data['EXTCOST_DATE'] = $date;
+            } else {
+                $data['EXTCOST_DATE'] = null;
+            }
+
+            if (!empty($grn_date)) {
+                $data['EXTCOST_GRN_DATE'] = $grn_date;
+            } else {
+                $data['EXTCOST_GRN_DATE'] = null;
+            }
+
+            if ($action === 'EDIT' && $extcost_id > 0) {
+                $this->db_tms->where('EXTCOST_ID', $extcost_id);
+                $this->db_tms->update($this->t('TMS_WO_EXTERNAL_COSTS'), $data);
+                
+                if ($this->db_tms->affected_rows() >= 0) {
+                    $this->messages = 'External Cost berhasil diupdate.';
+                    return true;
+                } else {
+                    $this->messages = 'Gagal mengupdate External Cost.';
+                    return false;
+                }
+            } else {
+                $this->db_tms->insert($this->t('TMS_WO_EXTERNAL_COSTS'), $data);
+                
+                if ($this->db_tms->affected_rows() > 0) {
+                    $this->messages = 'External Cost berhasil ditambahkan.';
+                    return true;
+                } else {
+                    $this->messages = 'Gagal menambahkan External Cost.';
+                    return false;
+                }
+            }
+        } catch (Exception $e) {
+            log_message('error', '[M_tool_work_order::save_external_cost] Exception: ' . $e->getMessage());
+            $this->messages = 'Error: ' . $e->getMessage();
+            return false;
+        }
+    }
+
+    /**
+     * Delete External Cost
+     */
+    public function delete_external_cost($extcost_id)
+    {
+        $extcost_id = (int)$extcost_id;
+        if ($extcost_id <= 0) {
+            $this->messages = 'ID tidak valid.';
+            return false;
+        }
+
+        try {
+            $this->db_tms->where('EXTCOST_ID', $extcost_id);
+            $this->db_tms->delete($this->t('TMS_WO_EXTERNAL_COSTS'));
+            
+            if ($this->db_tms->affected_rows() > 0) {
+                $this->messages = 'External Cost berhasil dihapus.';
+                return true;
+            } else {
+                $this->messages = 'External Cost tidak ditemukan atau gagal dihapus.';
+                return false;
+            }
+        } catch (Exception $e) {
+            log_message('error', '[M_tool_work_order::delete_external_cost] Exception: ' . $e->getMessage());
+            $this->messages = 'Error: ' . $e->getMessage();
+            return false;
+        }
     }
 
     /**

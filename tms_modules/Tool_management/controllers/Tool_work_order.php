@@ -156,7 +156,7 @@ class Tool_work_order extends MY_Controller
     }
 
     /**
-     * Edit page (placeholder)
+     * Edit page
      */
     public function edit_page($id = 0)
     {
@@ -166,9 +166,102 @@ class Tool_work_order extends MY_Controller
             return;
         }
 
+        $wo = $this->tool_work_order->get_by_id($id);
+        if (!$wo) {
+            show_404();
+            return;
+        }
+
         $data = array();
-        $data['wo_id'] = $id;
+        $data['work_order'] = $wo;
+        $data['external_costs'] = $this->tool_work_order->get_external_costs($id);
+        $data['work_activities'] = $this->tool_work_order->get_work_activities();
+        $data['suppliers'] = $this->tool_work_order->get_suppliers();
         $this->view('edit_tool_work_order', $data, FALSE);
+    }
+
+    /**
+     * Get External Cost by ID (AJAX)
+     */
+    public function get_external_cost()
+    {
+        $this->output->set_content_type('application/json');
+
+        $extcost_id = (int)$this->input->post('EXTCOST_ID', TRUE);
+        if ($extcost_id <= 0) {
+            echo json_encode(array('success' => false, 'message' => 'ID tidak valid.'));
+            return;
+        }
+
+        $extcost = $this->tool_work_order->get_external_cost_by_id($extcost_id);
+        if (!$extcost) {
+            echo json_encode(array('success' => false, 'message' => 'External Cost tidak ditemukan.'));
+            return;
+        }
+
+        echo json_encode(array(
+            'success' => true,
+            'data' => $extcost
+        ));
+    }
+
+    /**
+     * Submit External Cost (Add/Edit)
+     */
+    public function submit_external_cost()
+    {
+        $this->output->set_content_type('application/json');
+
+        $action = strtoupper($this->input->post('action', TRUE));
+        $wo_id = (int)$this->input->post('EXTCOST_WO_ID', TRUE);
+        $extcost_id = (int)$this->input->post('EXTCOST_ID', TRUE);
+
+        if ($wo_id <= 0) {
+            echo json_encode(array('success' => false, 'message' => 'WO_ID tidak valid.'));
+            return;
+        }
+
+        $wa_id = (int)$this->input->post('EXTCOST_WA_ID', TRUE);
+        $sup_id = (int)$this->input->post('EXTCOST_SUP_ID', TRUE);
+        $unit_price = (float)$this->input->post('EXTCOST_SUP_UNIT_PRICE', TRUE);
+        $qty = (float)$this->input->post('EXTCOST_SUP_QTY', TRUE);
+        $date = $this->input->post('EXTCOST_DATE', TRUE);
+        $po_no = $this->input->post('EXTCOST_PO_NO', TRUE);
+        $invoice_no = $this->input->post('EXTCOST_INVOICE_NO', TRUE);
+        $rf_no = $this->input->post('EXTCOST_RF_NO', TRUE);
+        $grn_date = $this->input->post('EXTCOST_GRN_DATE', TRUE);
+        $grn_no = $this->input->post('EXTCOST_GRN_NO', TRUE);
+
+        if ($wa_id <= 0) {
+            echo json_encode(array('success' => false, 'message' => 'Activity harus dipilih.'));
+            return;
+        }
+
+        $ok = $this->tool_work_order->save_external_cost($action, $extcost_id, $wo_id, $wa_id, $sup_id, $unit_price, $qty, $date, $po_no, $invoice_no, $rf_no, $grn_date, $grn_no);
+        echo json_encode(array(
+            'success' => $ok,
+            'message' => $this->tool_work_order->messages
+        ));
+    }
+
+    /**
+     * Delete External Cost
+     */
+    public function delete_external_cost()
+    {
+        $this->output->set_content_type('application/json');
+
+        $extcost_id = (int)$this->input->post('EXTCOST_ID', TRUE);
+        if ($extcost_id <= 0) {
+            echo json_encode(array('success' => false, 'message' => 'ID tidak valid.'));
+            return;
+        }
+
+        $ok = $this->tool_work_order->delete_external_cost($extcost_id);
+        echo json_encode(array(
+            'success' => $ok,
+            'message' => $this->tool_work_order->messages
+        ));
     }
 }
 
