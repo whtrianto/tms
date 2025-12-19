@@ -362,10 +362,24 @@ class Tool_scrap extends MY_Controller
         echo '<Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1"/>' . "\n";
         echo '</Borders>' . "\n";
         echo '</Style>' . "\n";
+        echo '<Style ss:ID="Value">' . "\n";
+        echo '<Alignment ss:Vertical="Top" ss:WrapText="1"/>' . "\n";
+        echo '<Borders>' . "\n";
+        echo '<Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1"/>' . "\n";
+        echo '<Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1"/>' . "\n";
+        echo '<Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1"/>' . "\n";
+        echo '<Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1"/>' . "\n";
+        echo '</Borders>' . "\n";
+        echo '</Style>' . "\n";
         echo '</Styles>' . "\n";
         
         echo '<Worksheet ss:Name="Tool Scrap Report">' . "\n";
         echo '<Table>' . "\n";
+        // Set column widths (4 columns: Label, Value, Label, Value)
+        echo '<Column ss:Width="120"/>' . "\n"; // Label column 1
+        echo '<Column ss:Width="150"/>' . "\n"; // Value column 1
+        echo '<Column ss:Width="120"/>' . "\n"; // Label column 2
+        echo '<Column ss:Width="150"/>' . "\n"; // Value column 2
 
         // Header
         echo '<Row>' . "\n";
@@ -391,24 +405,24 @@ class Tool_scrap extends MY_Controller
         );
 
         foreach ($rows1 as $row) {
-            echo '<Row>' . "\n";
+            echo '<Row ss:Height="20">' . "\n";
             echo '<Cell ss:StyleID="Label"><Data ss:Type="String">' . htmlspecialchars($row[0], ENT_XML1, 'UTF-8') . '</Data></Cell>' . "\n";
-            echo '<Cell><Data ss:Type="String">' . htmlspecialchars($row[1], ENT_XML1, 'UTF-8') . '</Data></Cell>' . "\n";
+            echo '<Cell ss:StyleID="Value"><Data ss:Type="String">' . htmlspecialchars($row[1], ENT_XML1, 'UTF-8') . '</Data></Cell>' . "\n";
             echo '<Cell ss:StyleID="Label"><Data ss:Type="String">' . htmlspecialchars($row[2], ENT_XML1, 'UTF-8') . '</Data></Cell>' . "\n";
-            echo '<Cell><Data ss:Type="String">' . htmlspecialchars($row[3], ENT_XML1, 'UTF-8') . '</Data></Cell>' . "\n";
+            echo '<Cell ss:StyleID="Value"><Data ss:Type="String">' . htmlspecialchars($row[3], ENT_XML1, 'UTF-8') . '</Data></Cell>' . "\n";
             echo '</Row>' . "\n";
         }
 
         echo '<Row></Row>' . "\n";
-        echo '<Row>' . "\n";
+        echo '<Row ss:Height="60">' . "\n";
         echo '<Cell ss:StyleID="Label"><Data ss:Type="String">Cause Remark</Data></Cell>' . "\n";
-        echo '<Cell ss:MergeAcross="3"><Data ss:Type="String">' . htmlspecialchars(isset($scrap['SCRAP_CAUSE_REMARK']) ? $scrap['SCRAP_CAUSE_REMARK'] : '', ENT_XML1, 'UTF-8') . '</Data></Cell>' . "\n";
+        echo '<Cell ss:MergeAcross="3" ss:StyleID="Value"><Data ss:Type="String">' . htmlspecialchars(isset($scrap['SCRAP_CAUSE_REMARK']) ? $scrap['SCRAP_CAUSE_REMARK'] : '', ENT_XML1, 'UTF-8') . '</Data></Cell>' . "\n";
         echo '</Row>' . "\n";
 
         echo '<Row></Row>' . "\n";
-        echo '<Row>' . "\n";
+        echo '<Row ss:Height="100">' . "\n";
         echo '<Cell ss:StyleID="Label"><Data ss:Type="String">Sketch</Data></Cell>' . "\n";
-        echo '<Cell ss:MergeAcross="3"></Cell>' . "\n";
+        echo '<Cell ss:MergeAcross="3" ss:StyleID="Value"></Cell>' . "\n";
         echo '</Row>' . "\n";
 
         echo '<Row></Row>' . "\n";
@@ -421,26 +435,26 @@ class Tool_scrap extends MY_Controller
         );
 
         foreach ($rows2 as $row) {
-            echo '<Row>' . "\n";
+            echo '<Row ss:Height="20">' . "\n";
             echo '<Cell ss:StyleID="Label"><Data ss:Type="String">' . htmlspecialchars($row[0], ENT_XML1, 'UTF-8') . '</Data></Cell>' . "\n";
-            echo '<Cell><Data ss:Type="String">' . htmlspecialchars($row[1], ENT_XML1, 'UTF-8') . '</Data></Cell>' . "\n";
+            echo '<Cell ss:StyleID="Value"><Data ss:Type="String">' . htmlspecialchars($row[1], ENT_XML1, 'UTF-8') . '</Data></Cell>' . "\n";
             echo '<Cell ss:StyleID="Label"><Data ss:Type="String">' . htmlspecialchars($row[2], ENT_XML1, 'UTF-8') . '</Data></Cell>' . "\n";
-            echo '<Cell><Data ss:Type="String">' . htmlspecialchars($row[3], ENT_XML1, 'UTF-8') . '</Data></Cell>' . "\n";
+            echo '<Cell ss:StyleID="Value"><Data ss:Type="String">' . htmlspecialchars($row[3], ENT_XML1, 'UTF-8') . '</Data></Cell>' . "\n";
             echo '</Row>' . "\n";
         }
 
         echo '<Row></Row>' . "\n";
-        echo '<Row>' . "\n";
+        echo '<Row ss:Height="60">' . "\n";
         echo '<Cell ss:StyleID="Label"><Data ss:Type="String">Counter Measure</Data></Cell>' . "\n";
-        echo '<Cell ss:MergeAcross="3"><Data ss:Type="String">' . htmlspecialchars(isset($scrap['SCRAP_COUNTER_MEASURE']) ? $scrap['SCRAP_COUNTER_MEASURE'] : '', ENT_XML1, 'UTF-8') . '</Data></Cell>' . "\n";
+        echo '<Cell ss:MergeAcross="3" ss:StyleID="Value"><Data ss:Type="String">' . htmlspecialchars(isset($scrap['SCRAP_COUNTER_MEASURE']) ? $scrap['SCRAP_COUNTER_MEASURE'] : '', ENT_XML1, 'UTF-8') . '</Data></Cell>' . "\n";
         echo '</Row>' . "\n";
 
         echo '<Row></Row>' . "\n";
-        echo '<Row>' . "\n";
+        echo '<Row ss:Height="30">' . "\n";
         echo '<Cell></Cell>' . "\n";
         echo '<Cell></Cell>' . "\n";
         echo '<Cell ss:StyleID="Label"><Data ss:Type="String">Investigated By</Data></Cell>' . "\n";
-        echo '<Cell><Data ss:Type="String">' . htmlspecialchars(isset($scrap['INVESTIGATED_BY_NAME']) ? $scrap['INVESTIGATED_BY_NAME'] : '', ENT_XML1, 'UTF-8') . '</Data></Cell>' . "\n";
+        echo '<Cell ss:StyleID="Value"><Data ss:Type="String">' . htmlspecialchars(isset($scrap['INVESTIGATED_BY_NAME']) ? $scrap['INVESTIGATED_BY_NAME'] : '', ENT_XML1, 'UTF-8') . '</Data></Cell>' . "\n";
         echo '</Row>' . "\n";
 
         // Close Table and Worksheet
