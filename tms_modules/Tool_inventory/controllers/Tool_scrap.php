@@ -379,45 +379,69 @@ class Tool_scrap extends MY_Controller
         echo '</Row>' . "\n";
         echo '<Row></Row>' . "\n";
 
-        // Table with 2 columns (Field | Value)
-        echo '<Row>' . "\n";
-        echo '<Cell ss:StyleID="Header"><Data ss:Type="String">Field</Data></Cell>' . "\n";
-        echo '<Cell ss:StyleID="Header"><Data ss:Type="String">Value</Data></Cell>' . "\n";
-        echo '</Row>' . "\n";
-
-        // First section - Basic Information
-        $fields = array(
-            'Scrap No.' => isset($scrap['SCRAP_NO']) ? $scrap['SCRAP_NO'] : '',
-            'Issue Date' => $this->format_date_report(isset($scrap['SCRAP_DATE']) ? $scrap['SCRAP_DATE'] : ''),
-            'Acc/ Scrap Date' => $this->format_date_report(isset($scrap['SCRAP_ACC_DATE']) ? $scrap['SCRAP_ACC_DATE'] : ''),
-            'Machine' => isset($scrap['MACHINE']) ? $scrap['MACHINE'] : '',
-            'Request By' => isset($scrap['REQUESTED_BY_NAME']) ? $scrap['REQUESTED_BY_NAME'] : '',
-            'Operator' => isset($scrap['OPERATOR_NAME']) ? $scrap['OPERATOR_NAME'] : '',
-            'Tool ID' => isset($scrap['INV_TOOL_ID']) ? $scrap['INV_TOOL_ID'] : '',
-            'Tool Name' => isset($scrap['TOOL_NAME']) ? $scrap['TOOL_NAME'] : '',
-            'Std Qty' => isset($scrap['SCRAP_STD_QTY_THIS']) ? number_format((int)$scrap['SCRAP_STD_QTY_THIS'], 0, ',', '.') : '0',
-            'Current Qty' => isset($scrap['SCRAP_CURRENT_QTY_THIS']) ? number_format((int)$scrap['SCRAP_CURRENT_QTY_THIS'], 0, ',', '.') : '0',
-            'Not Received' => isset($scrap['SCRAP_NRCV_QTY_THIS']) ? number_format((int)$scrap['SCRAP_NRCV_QTY_THIS'], 0, ',', '.') : '0',
-            'Pcs Produced' => isset($scrap['PCS_PRODUCED']) ? number_format((int)$scrap['PCS_PRODUCED'], 0, ',', '.') : '0',
-            'Tool Price' => isset($scrap['TOOL_PRICE']) && $scrap['TOOL_PRICE'] !== null ? number_format((float)$scrap['TOOL_PRICE'], 2, ',', '.') : '',
-            'Tool Residue Value' => '',
-            'Cause Remark' => isset($scrap['SCRAP_CAUSE_REMARK']) ? $scrap['SCRAP_CAUSE_REMARK'] : '',
-            'Suggestion' => 'Scrap',
-            'Approve By' => isset($scrap['APPROVED_BY_NAME']) ? $scrap['APPROVED_BY_NAME'] : '',
-            'Approve Date' => $this->format_date_report(isset($scrap['SCRAP_APPROVED_DATE']) ? $scrap['SCRAP_APPROVED_DATE'] : ''),
-            'To Order' => isset($scrap['SCRAP_TO_ORDER']) && $scrap['SCRAP_TO_ORDER'] ? 'Yes' : 'No',
-            'Reason' => isset($scrap['REASON']) ? $scrap['REASON'] : '',
-            'Cause' => isset($scrap['CAUSE_NAME']) ? $scrap['CAUSE_NAME'] : '',
-            'Counter Measure' => isset($scrap['SCRAP_COUNTER_MEASURE']) ? $scrap['SCRAP_COUNTER_MEASURE'] : '',
-            'Investigated By' => isset($scrap['INVESTIGATED_BY_NAME']) ? $scrap['INVESTIGATED_BY_NAME'] : '',
+        // First table - same format as PDF (4 columns: Label | Value | Label | Value)
+        $rows1 = array(
+            array('Scrap No.', isset($scrap['SCRAP_NO']) ? $scrap['SCRAP_NO'] : '', 'Acc/ Scrap Date', $this->format_date_report(isset($scrap['SCRAP_ACC_DATE']) ? $scrap['SCRAP_ACC_DATE'] : '')),
+            array('Issue Date', $this->format_date_report(isset($scrap['SCRAP_DATE']) ? $scrap['SCRAP_DATE'] : ''), 'Machine', isset($scrap['MACHINE']) ? $scrap['MACHINE'] : ''),
+            array('Request By', isset($scrap['REQUESTED_BY_NAME']) ? $scrap['REQUESTED_BY_NAME'] : '', 'Operator', isset($scrap['OPERATOR_NAME']) ? $scrap['OPERATOR_NAME'] : ''),
+            array('Tool ID', isset($scrap['INV_TOOL_ID']) ? $scrap['INV_TOOL_ID'] : '', 'Std Qty', isset($scrap['SCRAP_STD_QTY_THIS']) ? number_format((int)$scrap['SCRAP_STD_QTY_THIS'], 0, ',', '.') : '0'),
+            array('Tool Name', isset($scrap['TOOL_NAME']) ? $scrap['TOOL_NAME'] : '', 'Current Qty', isset($scrap['SCRAP_CURRENT_QTY_THIS']) ? number_format((int)$scrap['SCRAP_CURRENT_QTY_THIS'], 0, ',', '.') : '0'),
+            array('Tool Price', isset($scrap['TOOL_PRICE']) && $scrap['TOOL_PRICE'] !== null ? number_format((float)$scrap['TOOL_PRICE'], 2, ',', '.') : '', 'Not Received', isset($scrap['SCRAP_NRCV_QTY_THIS']) ? number_format((int)$scrap['SCRAP_NRCV_QTY_THIS'], 0, ',', '.') : '0'),
+            array('Tool Residue Value', '', 'Pcs Produced', isset($scrap['PCS_PRODUCED']) ? number_format((int)$scrap['PCS_PRODUCED'], 0, ',', '.') : '0'),
         );
 
-        foreach ($fields as $label => $value) {
+        foreach ($rows1 as $row) {
             echo '<Row>' . "\n";
-            echo '<Cell ss:StyleID="Label"><Data ss:Type="String">' . htmlspecialchars($label, ENT_XML1, 'UTF-8') . '</Data></Cell>' . "\n";
-            echo '<Cell><Data ss:Type="String">' . htmlspecialchars($value, ENT_XML1, 'UTF-8') . '</Data></Cell>' . "\n";
+            echo '<Cell ss:StyleID="Label"><Data ss:Type="String">' . htmlspecialchars($row[0], ENT_XML1, 'UTF-8') . '</Data></Cell>' . "\n";
+            echo '<Cell><Data ss:Type="String">' . htmlspecialchars($row[1], ENT_XML1, 'UTF-8') . '</Data></Cell>' . "\n";
+            echo '<Cell ss:StyleID="Label"><Data ss:Type="String">' . htmlspecialchars($row[2], ENT_XML1, 'UTF-8') . '</Data></Cell>' . "\n";
+            echo '<Cell><Data ss:Type="String">' . htmlspecialchars($row[3], ENT_XML1, 'UTF-8') . '</Data></Cell>' . "\n";
             echo '</Row>' . "\n";
         }
+
+        echo '<Row></Row>' . "\n";
+        echo '<Row>' . "\n";
+        echo '<Cell ss:StyleID="Label"><Data ss:Type="String">Cause Remark</Data></Cell>' . "\n";
+        echo '<Cell ss:MergeAcross="3"><Data ss:Type="String">' . htmlspecialchars(isset($scrap['SCRAP_CAUSE_REMARK']) ? $scrap['SCRAP_CAUSE_REMARK'] : '', ENT_XML1, 'UTF-8') . '</Data></Cell>' . "\n";
+        echo '</Row>' . "\n";
+
+        echo '<Row></Row>' . "\n";
+        echo '<Row>' . "\n";
+        echo '<Cell ss:StyleID="Label"><Data ss:Type="String">Sketch</Data></Cell>' . "\n";
+        echo '<Cell ss:MergeAcross="3"></Cell>' . "\n";
+        echo '</Row>' . "\n";
+
+        echo '<Row></Row>' . "\n";
+
+        // Second table - same format as PDF
+        $rows2 = array(
+            array('Suggestion', 'Scrap', 'Approve By', isset($scrap['APPROVED_BY_NAME']) ? $scrap['APPROVED_BY_NAME'] : ''),
+            array('To Order', isset($scrap['SCRAP_TO_ORDER']) && $scrap['SCRAP_TO_ORDER'] ? 'Yes' : 'No', 'Approve Date', $this->format_date_report(isset($scrap['SCRAP_APPROVED_DATE']) ? $scrap['SCRAP_APPROVED_DATE'] : '')),
+            array('Reason', isset($scrap['REASON']) ? $scrap['REASON'] : '', 'Cause', isset($scrap['CAUSE_NAME']) ? $scrap['CAUSE_NAME'] : ''),
+        );
+
+        foreach ($rows2 as $row) {
+            echo '<Row>' . "\n";
+            echo '<Cell ss:StyleID="Label"><Data ss:Type="String">' . htmlspecialchars($row[0], ENT_XML1, 'UTF-8') . '</Data></Cell>' . "\n";
+            echo '<Cell><Data ss:Type="String">' . htmlspecialchars($row[1], ENT_XML1, 'UTF-8') . '</Data></Cell>' . "\n";
+            echo '<Cell ss:StyleID="Label"><Data ss:Type="String">' . htmlspecialchars($row[2], ENT_XML1, 'UTF-8') . '</Data></Cell>' . "\n";
+            echo '<Cell><Data ss:Type="String">' . htmlspecialchars($row[3], ENT_XML1, 'UTF-8') . '</Data></Cell>' . "\n";
+            echo '</Row>' . "\n";
+        }
+
+        echo '<Row></Row>' . "\n";
+        echo '<Row>' . "\n";
+        echo '<Cell ss:StyleID="Label"><Data ss:Type="String">Counter Measure</Data></Cell>' . "\n";
+        echo '<Cell ss:MergeAcross="3"><Data ss:Type="String">' . htmlspecialchars(isset($scrap['SCRAP_COUNTER_MEASURE']) ? $scrap['SCRAP_COUNTER_MEASURE'] : '', ENT_XML1, 'UTF-8') . '</Data></Cell>' . "\n";
+        echo '</Row>' . "\n";
+
+        echo '<Row></Row>' . "\n";
+        echo '<Row>' . "\n";
+        echo '<Cell></Cell>' . "\n";
+        echo '<Cell></Cell>' . "\n";
+        echo '<Cell ss:StyleID="Label"><Data ss:Type="String">Investigated By</Data></Cell>' . "\n";
+        echo '<Cell><Data ss:Type="String">' . htmlspecialchars(isset($scrap['INVESTIGATED_BY_NAME']) ? $scrap['INVESTIGATED_BY_NAME'] : '', ENT_XML1, 'UTF-8') . '</Data></Cell>' . "\n";
+        echo '</Row>' . "\n";
 
         // Close Table and Worksheet
         echo '</Table>' . "\n";
