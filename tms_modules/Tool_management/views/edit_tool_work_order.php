@@ -114,15 +114,31 @@
 
                                     <div class="form-group">
                                         <label>Requested By</label>
-                                        <div class="info-display">
-                                            <?= isset($work_order['REQUESTED_BY_NAME']) ? htmlspecialchars($work_order['REQUESTED_BY_NAME'], ENT_QUOTES, 'UTF-8') : ''; ?>
+                                        <div class="tool-id-input-group">
+                                            <input type="text" id="selected_user_name" class="form-control" readonly 
+                                                   value="<?= isset($work_order['REQUESTED_BY_NAME']) ? htmlspecialchars($work_order['REQUESTED_BY_NAME'], ENT_QUOTES, 'UTF-8') : ''; ?>" 
+                                                   placeholder="Click button to select user">
+                                            <input type="hidden" name="WO_REQUESTED_BY" id="selected_user_id" 
+                                                   value="<?= isset($work_order['WO_REQUESTED_BY']) ? (int)$work_order['WO_REQUESTED_BY'] : ''; ?>">
+                                            <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#modalSelectUser">
+                                                <i class="fa fa-search"></i> Select
+                                            </button>
                                         </div>
                                     </div>
 
                                     <div class="form-group">
                                         <label>Department</label>
-                                        <input type="text" name="WO_DEPARTMENT" class="form-control" 
-                                               value="<?= isset($work_order['WO_DEPARTMENT']) ? htmlspecialchars($work_order['WO_DEPARTMENT'], ENT_QUOTES, 'UTF-8') : ''; ?>">
+                                        <div class="tool-id-input-group">
+                                            <input type="text" id="selected_dept_name" class="form-control" readonly 
+                                                   value="<?= isset($work_order['WO_DEPARTMENT']) ? htmlspecialchars($work_order['WO_DEPARTMENT'], ENT_QUOTES, 'UTF-8') : ''; ?>" 
+                                                   placeholder="Click button to select department">
+                                            <input type="hidden" name="WO_DEPARTMENT" id="selected_dept_name_hidden" 
+                                                   value="<?= isset($work_order['WO_DEPARTMENT']) ? htmlspecialchars($work_order['WO_DEPARTMENT'], ENT_QUOTES, 'UTF-8') : ''; ?>">
+                                            <input type="hidden" name="WO_DEPARTMENT_ID" id="selected_dept_id" value="">
+                                            <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#modalSelectDepartment">
+                                                <i class="fa fa-search"></i> Select
+                                            </button>
+                                        </div>
                                     </div>
 
                                     <div class="form-group">
@@ -134,14 +150,7 @@
 
                                     <div class="form-group">
                                         <label>Remarks</label>
-                                        <textarea name="WO_REMARKS" class="form-control" rows="3"><?= isset($work_order['WO_REMARKS']) ? htmlspecialchars($work_order['WO_REMARKS'], ENT_QUOTES, 'UTF-8') : ''; ?></textarea>
-                                    </div>
-
-                                    <div class="form-group">
-                                        <label>Quantity (pcs)</label>
-                                        <input type="number" name="WO_QTY" class="form-control" 
-                                               value="<?= isset($work_order['WO_QTY']) ? htmlspecialchars($work_order['WO_QTY'], ENT_QUOTES, 'UTF-8') : '1'; ?>" 
-                                               min="1">
+                                        <textarea name="WO_REMARKS" class="form-control" rows="2"><?= isset($work_order['WO_REMARKS']) ? htmlspecialchars($work_order['WO_REMARKS'], ENT_QUOTES, 'UTF-8') : ''; ?></textarea>
                                     </div>
 
                                     <div class="form-group">
@@ -194,6 +203,13 @@
                                 <!-- Kolom Kanan -->
                                 <div class="col-md-6">
                                     <div class="form-group">
+                                        <label>Quantity (pcs)</label>
+                                        <input type="number" name="WO_QTY" class="form-control" 
+                                               value="<?= isset($work_order['WO_QTY']) ? htmlspecialchars($work_order['WO_QTY'], ENT_QUOTES, 'UTF-8') : '1'; ?>" 
+                                               min="1">
+                                    </div>
+
+                                    <div class="form-group">
                                         <label>Target Completion Date</label>
                                         <input type="date" name="WO_TARGET_COM_DATE" class="form-control" 
                                                value="<?= isset($work_order['TARGET_COMPLETION_DATE']) && !empty($work_order['TARGET_COMPLETION_DATE']) ? date('Y-m-d', strtotime($work_order['TARGET_COMPLETION_DATE'])) : ''; ?>">
@@ -207,12 +223,9 @@
 
                                     <div class="form-group">
                                         <label>W/O Status</label>
-                                        <select name="WO_STATUS" class="form-control">
-                                            <option value="1" <?= (isset($work_order['WO_STATUS']) && (int)$work_order['WO_STATUS'] === 1) ? 'selected' : ''; ?>>Open</option>
-                                            <option value="2" <?= (isset($work_order['WO_STATUS']) && (int)$work_order['WO_STATUS'] === 2) ? 'selected' : ''; ?>>In Progress</option>
-                                            <option value="3" <?= (isset($work_order['WO_STATUS']) && (int)$work_order['WO_STATUS'] === 3) ? 'selected' : ''; ?>>Closed</option>
-                                            <option value="4" <?= (isset($work_order['WO_STATUS']) && (int)$work_order['WO_STATUS'] === 4) ? 'selected' : ''; ?>>Cancelled</option>
-                                        </select>
+                                        <div class="info-display">
+                                            <?= $this->tool_work_order->get_wo_status_badge(isset($work_order['WO_STATUS']) ? $work_order['WO_STATUS'] : 0); ?>
+                                        </div>
                                     </div>
 
                                     <div class="form-group">
@@ -315,6 +328,108 @@
             <?= isset($modal_logout) ? $modal_logout : ''; ?>
         </div>
         <?= isset($footer) ? $footer : ''; ?>
+    </div>
+</div>
+
+<!-- Modal Select User -->
+<div class="modal fade" id="modalSelectUser" tabindex="-1" role="dialog" aria-labelledby="modalSelectUserLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalSelectUserLabel">Select User</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="table-responsive">
+                    <table id="tableUsers" class="table table-bordered table-striped table-hover w-100">
+                        <thead>
+                            <tr class="text-center">
+                                <th>ID</th>
+                                <th>User</th>
+                                <th>Position</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php if (!empty($users)): ?>
+                                <?php foreach ($users as $user): ?>
+                                    <tr class="clickable-row" 
+                                        data-user-id="<?= isset($user['USR_ID']) ? (int)$user['USR_ID'] : 0; ?>"
+                                        data-user-name="<?= isset($user['USR_NAME']) ? htmlspecialchars($user['USR_NAME'], ENT_QUOTES, 'UTF-8') : ''; ?>">
+                                        <td><?= isset($user['USR_ID']) ? htmlspecialchars($user['USR_ID'], ENT_QUOTES, 'UTF-8') : ''; ?></td>
+                                        <td>
+                                            <a href="#" class="select-user-link text-primary" style="text-decoration: underline;">
+                                                <?= isset($user['USR_NAME']) ? htmlspecialchars($user['USR_NAME'], ENT_QUOTES, 'UTF-8') : ''; ?>
+                                            </a>
+                                        </td>
+                                        <td><?= isset($user['POSITION']) ? htmlspecialchars($user['POSITION'], ENT_QUOTES, 'UTF-8') : ''; ?></td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            <?php else: ?>
+                                <tr>
+                                    <td colspan="3" class="text-center">No users found</td>
+                                </tr>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Select Department -->
+<div class="modal fade" id="modalSelectDepartment" tabindex="-1" role="dialog" aria-labelledby="modalSelectDepartmentLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalSelectDepartmentLabel">Select Department</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="table-responsive">
+                    <table id="tableDepartments" class="table table-bordered table-striped table-hover w-100">
+                        <thead>
+                            <tr class="text-center">
+                                <th>ID</th>
+                                <th>Department</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php if (!empty($departments)): ?>
+                                <?php foreach ($departments as $dept): ?>
+                                    <tr class="clickable-row" 
+                                        data-dept-id="<?= isset($dept['DEPART_ID']) ? (int)$dept['DEPART_ID'] : 0; ?>"
+                                        data-dept-name="<?= isset($dept['DEPART_NAME']) ? htmlspecialchars($dept['DEPART_NAME'], ENT_QUOTES, 'UTF-8') : ''; ?>">
+                                        <td><?= isset($dept['DEPART_ID']) ? htmlspecialchars($dept['DEPART_ID'], ENT_QUOTES, 'UTF-8') : ''; ?></td>
+                                        <td>
+                                            <a href="#" class="select-dept-link text-primary" style="text-decoration: underline;">
+                                                <?= isset($dept['DEPART_NAME']) ? htmlspecialchars($dept['DEPART_NAME'], ENT_QUOTES, 'UTF-8') : ''; ?>
+                                            </a>
+                                        </td>
+                                        <td><?= isset($dept['DESCRIPTION']) ? htmlspecialchars($dept['DESCRIPTION'], ENT_QUOTES, 'UTF-8') : ''; ?></td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            <?php else: ?>
+                                <tr>
+                                    <td colspan="3" class="text-center">No departments found</td>
+                                </tr>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -426,6 +541,24 @@
 <script>
 (function($){
     $(function(){
+        // Initialize DataTable for users
+        if ($('#tableUsers tbody tr').length > 0) {
+            $('#tableUsers').DataTable({
+                pageLength: 10,
+                order: [[1, 'asc']],
+                autoWidth: false
+            });
+        }
+
+        // Initialize DataTable for departments
+        if ($('#tableDepartments tbody tr').length > 0) {
+            $('#tableDepartments').DataTable({
+                pageLength: 10,
+                order: [[1, 'asc']],
+                autoWidth: false
+            });
+        }
+
         // Initialize DataTable for external costs
         if ($('#table-external-costs tbody tr').length > 0) {
             $('#table-external-costs').DataTable({
@@ -435,6 +568,41 @@
                 scrollX: true
             });
         }
+
+        // Handle User Selection
+        $('#tableUsers tbody').on('click', 'tr.clickable-row', function(e) {
+            e.preventDefault();
+            var $row = $(this);
+            var userId = $row.data('user-id');
+            var userName = $row.data('user-name');
+
+            $('#selected_user_id').val(userId);
+            $('#selected_user_name').val(userName);
+            $('#modalSelectUser').modal('hide');
+        });
+
+        $('#tableUsers tbody').on('click', 'a.select-user-link', function(e) {
+            e.preventDefault();
+            $(this).closest('tr').trigger('click');
+        });
+
+        // Handle Department Selection
+        $('#tableDepartments tbody').on('click', 'tr.clickable-row', function(e) {
+            e.preventDefault();
+            var $row = $(this);
+            var deptId = $row.data('dept-id');
+            var deptName = $row.data('dept-name');
+
+            $('#selected_dept_id').val(deptId);
+            $('#selected_dept_name').val(deptName);
+            $('#selected_dept_name_hidden').val(deptName);
+            $('#modalSelectDepartment').modal('hide');
+        });
+
+        $('#tableDepartments tbody').on('click', 'a.select-dept-link', function(e) {
+            e.preventDefault();
+            $(this).closest('tr').trigger('click');
+        });
 
         // Calculate Sub Total
         function calculateSubTotal() {

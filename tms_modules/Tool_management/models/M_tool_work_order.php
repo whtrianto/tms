@@ -345,6 +345,37 @@ class M_tool_work_order extends CI_Model
     }
 
     /**
+     * Get Users with Position
+     */
+    public function get_users()
+    {
+        $sql = "SELECT 
+                    usr.USR_ID,
+                    usr.USR_NAME,
+                    ISNULL(pos.POS_NAME, '') AS POSITION
+                FROM {$this->t('MS_USERS')} usr
+                LEFT JOIN {$this->t('MS_POSITION')} pos ON pos.POS_ID = usr.USR_POS_ID
+                ORDER BY usr.USR_NAME ASC";
+        $q = $this->db_tms->query($sql);
+        return $q && $q->num_rows() > 0 ? $q->result_array() : array();
+    }
+
+    /**
+     * Get Departments
+     */
+    public function get_departments()
+    {
+        $sql = "SELECT 
+                    DEPART_ID,
+                    DEPART_NAME,
+                    ISNULL(DEPART_DESC, '') AS DESCRIPTION
+                FROM {$this->t('MS_DEPARTMENT')} 
+                ORDER BY DEPART_NAME ASC";
+        $q = $this->db_tms->query($sql);
+        return $q && $q->num_rows() > 0 ? $q->result_array() : array();
+    }
+
+    /**
      * Get External Cost by ID
      */
     public function get_external_cost_by_id($extcost_id)

@@ -177,7 +177,29 @@ class Tool_work_order extends MY_Controller
         $data['external_costs'] = $this->tool_work_order->get_external_costs($id);
         $data['work_activities'] = $this->tool_work_order->get_work_activities();
         $data['suppliers'] = $this->tool_work_order->get_suppliers();
+        $data['users'] = $this->tool_work_order->get_users();
+        $data['departments'] = $this->tool_work_order->get_departments();
         $this->view('edit_tool_work_order', $data, FALSE);
+    }
+
+    /**
+     * Get Users (AJAX)
+     */
+    public function get_users()
+    {
+        $this->output->set_content_type('application/json');
+        $users = $this->tool_work_order->get_users();
+        echo json_encode(array('success' => true, 'data' => $users));
+    }
+
+    /**
+     * Get Departments (AJAX)
+     */
+    public function get_departments()
+    {
+        $this->output->set_content_type('application/json');
+        $departments = $this->tool_work_order->get_departments();
+        echo json_encode(array('success' => true, 'data' => $departments));
     }
 
     /**
