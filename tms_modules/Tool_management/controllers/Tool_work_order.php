@@ -115,12 +115,13 @@ class Tool_work_order extends MY_Controller
 
         } catch (Exception $e) {
             log_message('error', '[Tool_work_order::get_data] Exception: ' . $e->getMessage());
+            log_message('error', '[Tool_work_order::get_data] Trace: ' . $e->getTraceAsString());
             $this->output->set_output(json_encode(array(
                 'draw' => isset($draw) ? $draw : 0,
                 'recordsTotal' => 0,
                 'recordsFiltered' => 0,
                 'data' => array(),
-                'error' => 'Error loading data.'
+                'error' => 'Error loading data: ' . $e->getMessage()
             )));
         }
     }

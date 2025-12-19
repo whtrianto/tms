@@ -43,7 +43,7 @@ class M_tool_work_order extends CI_Model
             9 => 'wo.WO_STATUS',
             10 => 'wo.WO_REASON',
             11 => 'tool_making_ml.ML_TOOL_DRAW_NO',
-            12 => 'ISNULL(rq.RQ_NO, ord.ORD_RQ_NO)'
+            12 => 'ISNULL(ISNULL(rq.RQ_INT_REQ_NO, ord.ORD_RQ_NO), \'\')'
         );
 
         $base_from = "
@@ -55,7 +55,7 @@ class M_tool_work_order extends CI_Model
             LEFT JOIN {$this->t('TMS_ORDERING_ITEMS')} ordi ON ordi.ORDI_ID = wo.WO_ORDI_ID
             LEFT JOIN {$this->t('TMS_REQUISITION')} rq ON rq.RQ_ID = ordi.ORDI_RQ_ID
             LEFT JOIN {$this->t('TMS_ORDERING')} ord ON ord.ORD_ID = ordi.ORDI_ORD_ID
-            LEFT JOIN {$this->t('TMS_TOOL_MASTER_LIST_REV')} tool_making_mlr ON tool_making_mlr.MLR_ID = wo.WO_MLR_ID AND wo.WO_TYPE = 4
+            LEFT JOIN {$this->t('TMS_TOOL_MASTER_LIST_REV')} tool_making_mlr ON tool_making_mlr.MLR_ID = wo.WO_MLR_ID
             LEFT JOIN {$this->t('TMS_TOOL_MASTER_LIST')} tool_making_ml ON tool_making_ml.ML_ID = tool_making_mlr.MLR_ML_ID";
 
         $where = " WHERE 1=1";
@@ -83,7 +83,7 @@ class M_tool_work_order extends CI_Model
             9 => 'wo.WO_STATUS',
             10 => 'wo.WO_REASON',
             11 => 'tool_making_ml.ML_TOOL_DRAW_NO',
-            12 => 'ISNULL(rq.RQ_NO, ord.ORD_RQ_NO)'
+            12 => 'ISNULL(ISNULL(rq.RQ_INT_REQ_NO, ord.ORD_RQ_NO), \'\')'
         );
 
         foreach ($column_search as $idx => $val) {
@@ -124,13 +124,36 @@ class M_tool_work_order extends CI_Model
                         wo.WO_STATUS,
                         wo.WO_REASON,
                         ISNULL(tool_making_ml.ML_TOOL_DRAW_NO, '') AS TOOL_MAKING_DRAW_NO,
-                        ISNULL(rq.RQ_NO, ord.ORD_RQ_NO) AS RQ_NO
+                        ISNULL(ISNULL(rq.RQ_INT_REQ_NO, ord.ORD_RQ_NO), '') AS RQ_NO
                     " . $base_from . $where . "
                     ORDER BY " . $order_column . " " . $order_direction . "
                     OFFSET " . (int)$start . " ROWS FETCH NEXT " . (int)$length . " ROWS ONLY";
 
-        $result = $this->db_tms->query($data_sql, $params);
-        $data = $result ? $result->result_array() : array();
+        $data = array();
+        try {
+            $result = $this->db_tms->query($data_sql, $params);
+            
+            if (!$result) {
+                $error = $this->db_tms->error();
+                log_message('error', '[M_tool_work_order::get_data_serverside] SQL Error: ' . (isset($error['message']) ? $error['message'] : 'Unknown error'));
+                log_message('error', '[M_tool_work_order::get_data_serverside] SQL: ' . $data_sql);
+                return array(
+                    'recordsTotal' => 0,
+                    'recordsFiltered' => 0,
+                    'data' => array()
+                );
+            }
+            
+            $data = $result->result_array();
+        } catch (Exception $e) {
+            log_message('error', '[M_tool_work_order::get_data_serverside] Exception: ' . $e->getMessage());
+            log_message('error', '[M_tool_work_order::get_data_serverside] SQL: ' . $data_sql);
+            return array(
+                'recordsTotal' => 0,
+                'recordsFiltered' => 0,
+                'data' => array()
+            );
+        }
 
         return array(
             'recordsTotal' => (int)$count_total,
