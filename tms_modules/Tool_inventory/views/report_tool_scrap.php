@@ -41,17 +41,32 @@
             border: 1px solid #000;
         }
         .report-table td {
-            padding: 4px 8px;
-            vertical-align: top;
+            padding: 8px 12px;
+            vertical-align: middle;
             border: 1px solid #000;
+            min-height: 35px;
         }
         .report-table .label {
             font-weight: bold;
-            width: 30%;
+            width: 20%;
             background-color: #f5f5f5;
+            text-align: left;
+            padding-left: 15px;
         }
         .report-table .value {
-            width: 35%;
+            width: 30%;
+            text-align: left;
+            padding-left: 15px;
+            word-wrap: break-word;
+        }
+        .report-table tr {
+            height: 40px;
+        }
+        .report-table tr:nth-child(even) .label {
+            background-color: #f9f9f9;
+        }
+        .report-table tr:nth-child(even) .value {
+            background-color: #ffffff;
         }
         .report-section {
             margin-top: 15px;
@@ -172,7 +187,7 @@
         <tr>
             <td class="label">Scrap No.</td>
             <td class="value"><strong><?= $scrap_no; ?></strong></td>
-            <td class="label" style="width: 25%;">Acc/ Scrap Date</td>
+            <td class="label">Acc/ Scrap Date</td>
             <td class="value"><?= $acc_scrap_date; ?></td>
         </tr>
         <tr>
@@ -191,25 +206,25 @@
             <td class="label">Tool ID</td>
             <td class="value"><?= $tool_id; ?></td>
             <td class="label">Std Qty</td>
-            <td class="value"><?= $std_qty; ?></td>
+            <td class="value"><?= number_format($std_qty, 0, ',', '.'); ?></td>
         </tr>
         <tr>
             <td class="label">Tool Name</td>
             <td class="value"><?= $tool_name; ?></td>
             <td class="label">Current Qty</td>
-            <td class="value"><?= $current_qty; ?></td>
+            <td class="value"><?= number_format($current_qty, 0, ',', '.'); ?></td>
         </tr>
         <tr>
             <td class="label">Tool Price</td>
-            <td class="value"><?= $tool_price; ?></td>
+            <td class="value"><?= !empty($tool_price) ? number_format((float)$tool_price, 2, ',', '.') : ''; ?></td>
             <td class="label">Not Received</td>
-            <td class="value"><?= $not_received; ?></td>
+            <td class="value"><?= number_format($not_received, 0, ',', '.'); ?></td>
         </tr>
         <tr>
             <td class="label">Tool Residue Value</td>
             <td class="value"><?= $tool_residue_value; ?></td>
             <td class="label">Pcs Produced</td>
-            <td class="value"><?= $pcs_produced; ?></td>
+            <td class="value"><strong><?= number_format($pcs_produced, 0, ',', '.'); ?></strong></td>
         </tr>
     </table>
 
@@ -230,14 +245,14 @@
     <table class="report-table" style="margin-top: 20px;">
         <tr>
             <td class="label">Suggestion</td>
-            <td class="value"><?= $suggestion; ?></td>
+            <td class="value"><strong><?= $suggestion; ?></strong></td>
             <td class="label">Approve By</td>
             <td class="value"><?= $approve_by; ?></td>
         </tr>
         <tr>
             <td class="label">To Order</td>
             <td class="value"><?= $to_order; ?></td>
-            <td class="label">Date</td>
+            <td class="label">Approve Date</td>
             <td class="value"><?= $approve_date; ?></td>
         </tr>
         <tr>
