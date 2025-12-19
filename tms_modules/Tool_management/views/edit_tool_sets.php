@@ -100,7 +100,18 @@
                                     <div class="form-group">
                                         <label class="label-required">Tool BOM No.</label>
                                         <div class="info-display">
-                                            <?= isset($tool_set['TOOL_BOM']) ? htmlspecialchars($tool_set['TOOL_BOM'], ENT_QUOTES, 'UTF-8') : ''; ?>
+                                            <?php 
+                                            $bom_mlr_id = isset($tool_set['TSET_BOM_MLR_ID']) ? (int)$tool_set['TSET_BOM_MLR_ID'] : 0;
+                                            $bom_no = isset($tool_set['TOOL_BOM']) ? htmlspecialchars($tool_set['TOOL_BOM'], ENT_QUOTES, 'UTF-8') : '';
+                                            if ($bom_mlr_id > 0 && !empty($bom_no)): 
+                                                $bom_detail_url = base_url('Tool_engineering/tool_bom_engin/detail_page/' . $bom_mlr_id);
+                                            ?>
+                                                <a href="<?= $bom_detail_url; ?>" class="text-primary" style="text-decoration: underline;" target="_blank">
+                                                    <?= $bom_no; ?>
+                                                </a>
+                                            <?php else: ?>
+                                                <?= $bom_no; ?>
+                                            <?php endif; ?>
                                         </div>
                                     </div>
 
@@ -192,11 +203,37 @@
                                             <tr>
                                                 <td><?= $no++; ?></td>
                                                 <td><?= isset($comp['TSCOMP_ID']) ? htmlspecialchars($comp['TSCOMP_ID'], ENT_QUOTES, 'UTF-8') : ''; ?></td>
-                                                <td><?= isset($comp['TOOL_DRAWING_NO']) ? htmlspecialchars($comp['TOOL_DRAWING_NO'], ENT_QUOTES, 'UTF-8') : ''; ?></td>
+                                                <td>
+                                                    <?php 
+                                                    $drawing_mlr_id = isset($comp['TSCOMP_MLR_ID']) ? (int)$comp['TSCOMP_MLR_ID'] : 0;
+                                                    $drawing_no = isset($comp['TOOL_DRAWING_NO']) ? htmlspecialchars($comp['TOOL_DRAWING_NO'], ENT_QUOTES, 'UTF-8') : '';
+                                                    if ($drawing_mlr_id > 0 && !empty($drawing_no)): 
+                                                        $drawing_detail_url = base_url('Tool_engineering/tool_draw_tooling/detail_page/' . $drawing_mlr_id);
+                                                    ?>
+                                                        <a href="<?= $drawing_detail_url; ?>" class="text-primary" style="text-decoration: underline;" target="_blank">
+                                                            <?= $drawing_no; ?>
+                                                        </a>
+                                                    <?php else: ?>
+                                                        <?= $drawing_no; ?>
+                                                    <?php endif; ?>
+                                                </td>
                                                 <td><?= isset($comp['REVISION']) ? htmlspecialchars($comp['REVISION'], ENT_QUOTES, 'UTF-8') : '0'; ?></td>
                                                 <td><?= isset($comp['TOOL_NAME']) ? htmlspecialchars($comp['TOOL_NAME'], ENT_QUOTES, 'UTF-8') : ''; ?></td>
                                                 <td><?= isset($comp['TSCOMP_STD_REQ']) ? htmlspecialchars($comp['TSCOMP_STD_REQ'], ENT_QUOTES, 'UTF-8') : ''; ?></td>
-                                                <td><?= isset($comp['TOOL_ID']) ? htmlspecialchars($comp['TOOL_ID'], ENT_QUOTES, 'UTF-8') : ''; ?></td>
+                                                <td>
+                                                    <?php 
+                                                    $tool_inv_id = isset($comp['TSCOMP_INV_ID']) ? (int)$comp['TSCOMP_INV_ID'] : 0;
+                                                    $tool_id = isset($comp['TOOL_ID']) ? htmlspecialchars($comp['TOOL_ID'], ENT_QUOTES, 'UTF-8') : '';
+                                                    if ($tool_inv_id > 0 && !empty($tool_id)): 
+                                                        $inventory_detail_url = base_url('Tool_inventory/tool_inventory/detail_page/' . $tool_inv_id);
+                                                    ?>
+                                                        <a href="<?= $inventory_detail_url; ?>" class="text-primary" style="text-decoration: underline;" target="_blank">
+                                                            <?= $tool_id; ?>
+                                                        </a>
+                                                    <?php else: ?>
+                                                        <?= $tool_id; ?>
+                                                    <?php endif; ?>
+                                                </td>
                                                 <td><?= isset($comp['STANDARD_TOOL_LIFE']) ? htmlspecialchars($comp['STANDARD_TOOL_LIFE'], ENT_QUOTES, 'UTF-8') : ''; ?></td>
                                                 <td><?= isset($comp['END_CYCLE']) ? htmlspecialchars($comp['END_CYCLE'], ENT_QUOTES, 'UTF-8') : '0'; ?></td>
                                                 <td><?= isset($comp['TSCOMP_REMARKS']) ? htmlspecialchars($comp['TSCOMP_REMARKS'], ENT_QUOTES, 'UTF-8') : ''; ?></td>
