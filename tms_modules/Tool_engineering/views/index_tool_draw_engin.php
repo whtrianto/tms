@@ -42,19 +42,8 @@
             gap: 4px;
             flex-wrap: wrap;
         }
-        .navbar { position: sticky; top: 0; z-index: 1030; }
-        #content-wrapper { min-height: calc(100vh - 56px); }
-        #container-wrapper { padding-bottom: 4rem; margin-bottom: 2rem; }
-        .card { margin-bottom: 2rem; }
-        .dataTables_wrapper { 
-            padding-bottom: 2rem !important; 
-        }
-        /* Prevent body overflow issues */
-        body {
-            overflow-x: hidden;
-        }
-        #wrapper {
-            overflow-x: hidden;
+        .dataTables_wrapper {
+            padding-bottom: 2rem !important;
         }
         /* Search row styling */
         .search-row th {
