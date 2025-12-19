@@ -16,14 +16,13 @@
         .navbar { position: sticky; top: 0; z-index: 1030; }
         #content-wrapper { min-height: calc(100vh - 56px); }
         #container-wrapper { 
-            padding-bottom: 6rem !important; 
-            margin-bottom: 4rem !important; 
+            padding-bottom: 2rem !important; 
         }
         .card { 
             margin-bottom: 2rem; 
         }
         .card-body {
-            padding-bottom: 3rem !important;
+            padding-bottom: 5rem !important;
         }
         .section-title {
             font-weight: bold;
