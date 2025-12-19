@@ -88,31 +88,6 @@
             color: #0056b3 !important;
             text-decoration: underline !important;
         }
-        /* Prevent double scrollbar: DataTables handles scrolling with scrollX */
-        .table-responsive {
-            overflow-x: hidden !important;
-            overflow-y: visible !important;
-        }
-        /* Ensure DataTables scroll wrapper handles scrolling */
-        .dataTables_wrapper .dataTables_scroll {
-            overflow-x: auto !important;
-            overflow-y: visible !important;
-        }
-        .dataTables_wrapper .dataTables_scrollBody {
-            overflow-x: auto !important;
-            overflow-y: visible !important;
-            border: 1px solid #dee2e6 !important;
-        }
-        .dataTables_wrapper .dataTables_scrollHead {
-            overflow-x: hidden !important;
-            overflow-y: visible !important;
-        }
-        .dataTables_wrapper .dataTables_scrollHeadInner {
-            overflow: visible !important;
-        }
-        .dataTables_wrapper .dataTables_scrollHeadInner table {
-            margin-bottom: 0 !important;
-        }
     </style>
 </head>
 <body id="page-top">
@@ -132,7 +107,7 @@
                         </a>
                     </div>
                     <div class="card-body">
-                        <div class="table-responsive" style="overflow-x: hidden;">
+                        <div class="table-responsive">
                             <table id="table-tool-draw-sql" class="table table-bordered table-striped w-100 text-center">
                                 <thead>
                                     <tr>
@@ -234,7 +209,6 @@
             order: [[0,'desc']],
             autoWidth: false,
             scrollX: true,
-            scrollCollapse: true,
             columnDefs: [
                 { orderable:false, targets:[10] },
                 { width:'50px', targets:0 },      // ID

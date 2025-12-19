@@ -291,8 +291,7 @@
                                     </div>
                                 </div>
                             </div>
-                            </div>
-
+                            
                             <div class="row mt-4">
                                 <div class="col-12">
                                     <div class="d-flex justify-content-end">
@@ -302,6 +301,8 @@
                                     </div>
                                 </div>
                             </div>
+                        </div>
+
                         </form>
                     </div>
                 </div>
