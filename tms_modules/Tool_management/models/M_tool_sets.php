@@ -153,10 +153,10 @@ class M_tool_sets extends CI_Model
     {
         $status = (int)$status;
         $status_map = array(
-            0 => 'Inactive',
-            1 => 'Active'
+            0 => 'Complete',
+            1 => 'Incomplete'
         );
-        return isset($status_map[$status]) ? $status_map[$status] : 'Unknown';
+        return isset($status_map[$status]) ? $status_map[$status] : 'Complete';
     }
 
     /**
@@ -166,7 +166,8 @@ class M_tool_sets extends CI_Model
     {
         $status = (int)$status;
         $status_name = $this->get_status_name($status);
-        $badge_class = $status == 1 ? 'badge-success' : 'badge-secondary';
+        // Complete (0) -> badge-success (green), Incomplete (1) -> badge-warning (yellow)
+        $badge_class = $status == 0 ? 'badge-success' : 'badge-warning';
         
         return '<span class="badge ' . $badge_class . '">' . htmlspecialchars($status_name, ENT_QUOTES, 'UTF-8') . '</span>';
     }

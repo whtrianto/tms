@@ -68,8 +68,8 @@ class Tool_scrap extends MY_Controller
                 $report_url = base_url('Tool_inventory/tool_scrap/report_page/' . $id);
                 
                 $action_html = '<div class="action-buttons">' .
-                    '<button class="btn btn-danger btn-sm btn-delete" data-id="' . $id . '" data-scrap-no="' . $scrap_no . '">Del</button> ' .
                     '<a href="' . $report_url . '" class="btn btn-info btn-sm" title="Report">Report</a>' .
+                    '<button class="btn btn-danger btn-sm btn-delete" data-id="' . $id . '" data-scrap-no="' . $scrap_no . '">Del</button> ' .
                     '</div>';
 
                 $formatted_data[] = array(
