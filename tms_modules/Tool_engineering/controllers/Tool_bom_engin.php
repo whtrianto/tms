@@ -137,6 +137,19 @@ class Tool_bom_engin extends MY_Controller
     }
 
     /**
+     * Add page
+     */
+    public function add_page()
+    {
+        $data = array();
+        $data['products'] = $this->tool_bom_engin->get_products();
+        $data['operations'] = $this->tool_bom_engin->get_operations();
+        $data['machine_groups'] = $this->tool_bom_engin->get_machine_groups();
+        
+        $this->view('add_tool_bom_engin', $data, FALSE);
+    }
+
+    /**
      * Edit page
      */
     public function edit_page($id = 0)
