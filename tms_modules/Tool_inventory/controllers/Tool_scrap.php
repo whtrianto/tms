@@ -65,11 +65,9 @@ class Tool_scrap extends MY_Controller
                 
                 $id = (int)$row['SCRAP_ID'];
                 $scrap_no = htmlspecialchars(isset($row['SCRAP_NO']) ? $row['SCRAP_NO'] : '', ENT_QUOTES, 'UTF-8');
-                $edit_url = base_url('Tool_inventory/tool_scrap/edit_page/' . $id);
                 $report_url = base_url('Tool_inventory/tool_scrap/report_page/' . $id);
                 
                 $action_html = '<div class="action-buttons">' .
-                    '<a href="' . $edit_url . '" class="btn btn-secondary btn-sm" title="Edit">Edit</a> ' .
                     '<button class="btn btn-danger btn-sm btn-delete" data-id="' . $id . '" data-scrap-no="' . $scrap_no . '">Del</button> ' .
                     '<a href="' . $report_url . '" class="btn btn-info btn-sm" title="Report">Report</a>' .
                     '</div>';

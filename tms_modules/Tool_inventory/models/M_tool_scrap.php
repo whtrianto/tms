@@ -195,15 +195,27 @@ class M_tool_scrap extends CI_Model
                     scrap.SCRAP_STATUS,
                     scrap.SCRAP_COUNTER_MEASURE,
                     scrap.SCRAP_CURRENT_QTY_THIS,
+                    scrap.SCRAP_STD_QTY_THIS,
+                    scrap.SCRAP_NRCV_QTY_THIS,
                     scrap.SCRAP_MAC_ID,
                     mac.MAC_NAME AS MACHINE,
                     scrap.SCRAP_CAUSE_REMARK,
                     scrap.SCRAP_OPERATOR,
+                    op_user.USR_NAME AS OPERATOR_NAME,
                     scrap.SCRAP_REQUESTED_BY,
+                    req_user.USR_NAME AS REQUESTED_BY_NAME,
                     scrap.SCRAP_APPROVED_BY,
+                    app_user.USR_NAME AS APPROVED_BY_NAME,
                     scrap.SCRAP_APPROVED_DATE,
+                    scrap.SCRAP_INVESTIGATED_BY,
+                    inv_user.USR_NAME AS INVESTIGATED_BY_NAME,
                     scrap.SCRAP_DISPOSITION,
-                    scrap.SCRAP_TO_ORDER
+                    scrap.SCRAP_TO_ORDER,
+                    scrap.SCRAP_CI_ID,
+                    ci.CI_NAME AS CAUSE_NAME,
+                    mlr.MLR_PRICE AS TOOL_PRICE,
+                    mlr.MLR_SKETCH AS SKETCH,
+                    ISNULL(pcs_produced.PCS_PRODUCED, 0) AS PCS_PRODUCED
                 FROM {$this->t('TMS_TOOL_SCRAP')} scrap
                 LEFT JOIN {$this->t('TMS_TOOL_INVENTORY')} inv ON inv.INV_ID = scrap.SCRAP_INV_ID
                 LEFT JOIN {$this->t('TMS_TOOL_MASTER_LIST_REV')} mlr ON mlr.MLR_ID = inv.INV_MLR_ID
@@ -211,6 +223,17 @@ class M_tool_scrap extends CI_Model
                 LEFT JOIN {$this->t('MS_TOOL_CLASS')} tc ON tc.TC_ID = mlr.MLR_TC_ID
                 LEFT JOIN {$this->t('MS_REASON')} reason ON reason.REASON_ID = scrap.SCRAP_REASON_ID
                 LEFT JOIN {$this->t('MS_MACHINES')} mac ON mac.MAC_ID = scrap.SCRAP_MAC_ID
+                LEFT JOIN {$this->t('MS_CAUSE_ITEM')} ci ON ci.CI_ID = scrap.SCRAP_CI_ID
+                LEFT JOIN {$this->t('MS_USERS')} op_user ON op_user.USR_ID = scrap.SCRAP_OPERATOR
+                LEFT JOIN {$this->t('MS_USERS')} req_user ON req_user.USR_ID = scrap.SCRAP_REQUESTED_BY
+                LEFT JOIN {$this->t('MS_USERS')} app_user ON app_user.USR_ID = scrap.SCRAP_APPROVED_BY
+                LEFT JOIN {$this->t('MS_USERS')} inv_user ON inv_user.USR_ID = scrap.SCRAP_INVESTIGATED_BY
+                LEFT JOIN (
+                    SELECT ASSGN_INV_ID, SUM(ISNULL(ASSGN_QTY_PRODUCED, 0)) AS PCS_PRODUCED
+                    FROM {$this->t('TMS_ASSIGNED_TOOLS')}
+                    WHERE ASSGN_INV_ID IS NOT NULL
+                    GROUP BY ASSGN_INV_ID
+                ) pcs_produced ON pcs_produced.ASSGN_INV_ID = scrap.SCRAP_INV_ID
                 WHERE scrap.SCRAP_ID = ?";
 
         $q = $this->db_tms->query($sql, array($id));
