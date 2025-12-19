@@ -250,7 +250,7 @@
                                                 <td>
                                                     <div class="action-buttons">
                                                         <a href="<?= base_url('Tool_management/tool_sets/edit_composition_page/' . (isset($comp['TSCOMP_ID']) ? $comp['TSCOMP_ID'] : 0)); ?>" class="btn btn-secondary btn-sm">Edit</a>
-                                                        <button class="btn btn-warning btn-sm btn-replace-comp" data-id="<?= isset($comp['TSCOMP_ID']) ? $comp['TSCOMP_ID'] : ''; ?>">Replace</button>
+                                                        <a href="<?= base_url('Tool_management/tool_sets/replace_composition_page/' . (isset($comp['TSCOMP_ID']) ? $comp['TSCOMP_ID'] : 0)); ?>" class="btn btn-warning btn-sm">Replace</a>
                                                     </div>
                                                 </td>
                                             </tr>
@@ -373,12 +373,6 @@
             alert('Delete assignment functionality will be implemented');
         });
 
-        // Replace Composition handler
-        $('.btn-replace-comp').on('click', function() {
-            var id = $(this).data('id');
-            // TODO: Implement replace composition
-            alert('Replace composition functionality will be implemented');
-        });
 
         // Form submit
         $('#formToolSet').on('submit', function(e) {

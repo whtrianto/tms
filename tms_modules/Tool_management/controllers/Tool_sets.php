@@ -204,5 +204,102 @@ class Tool_sets extends MY_Controller
             'message' => $this->tool_sets->messages
         ));
     }
+
+    /**
+     * Replace Composition page
+     */
+    public function replace_composition_page($comp_id = 0)
+    {
+        $comp_id = (int)$comp_id;
+        if ($comp_id <= 0) {
+            show_404();
+            return;
+        }
+
+        $comp = $this->tool_sets->get_composition_by_id($comp_id);
+        if (!$comp) {
+            show_404();
+            return;
+        }
+
+        // Get available tools for replace
+        $mlr_id = isset($comp['TSCOMP_MLR_ID']) ? (int)$comp['TSCOMP_MLR_ID'] : 0;
+        $exclude_inv_id = isset($comp['TSCOMP_INV_ID']) ? (int)$comp['TSCOMP_INV_ID'] : 0;
+        $available_tools = $this->tool_sets->get_available_tools_for_replace($mlr_id, $exclude_inv_id);
+
+        // Get tool set info for back link
+        $tset_id = isset($comp['TSCOMP_TSET_ID']) ? (int)$comp['TSCOMP_TSET_ID'] : 0;
+        $tool_set = $this->tool_sets->get_by_id($tset_id);
+
+        $data = array();
+        $data['composition'] = $comp;
+        $data['available_tools'] = $available_tools;
+        $data['tool_set'] = $tool_set;
+        $this->view('replace_tool_set_composition', $data, FALSE);
+    }
+
+    /**
+     * Get available tools for replace (AJAX)
+     */
+    public function get_available_tools()
+    {
+        $this->output->set_content_type('application/json');
+
+        $mlr_id = (int)$this->input->post('mlr_id', TRUE);
+        $exclude_inv_id = (int)$this->input->post('exclude_inv_id', TRUE);
+
+        if ($mlr_id <= 0) {
+            echo json_encode(array('success' => false, 'message' => 'MLR_ID tidak valid.', 'data' => array()));
+            return;
+        }
+
+        $tools = $this->tool_sets->get_available_tools_for_replace($mlr_id, $exclude_inv_id);
+        
+        // Format data for display
+        $formatted_tools = array();
+        foreach ($tools as $tool) {
+            $status = isset($tool['TOOL_STATUS']) ? (int)$tool['TOOL_STATUS'] : 0;
+            $status_map = array(1 => 'New', 2 => 'Allocated', 3 => 'Available', 4 => 'InUsed', 5 => 'Onhold', 6 => 'Scrapped', 7 => 'Repairing', 8 => 'Modifying', 9 => 'DesignChange');
+            $status_name = isset($status_map[$status]) ? $status_map[$status] : 'Unknown';
+
+            $formatted_tools[] = array(
+                'INV_ID' => (int)$tool['INV_ID'],
+                'TOOL_ID' => isset($tool['INV_TOOL_ID']) ? $tool['INV_TOOL_ID'] : '',
+                'TOOL_DRAWING_NO' => isset($tool['TOOL_DRAWING_NO']) ? $tool['TOOL_DRAWING_NO'] : '',
+                'REVISION' => isset($tool['REVISION']) ? $tool['REVISION'] : 0,
+                'STATUS' => $status_name,
+                'END_CYCLE' => isset($tool['END_CYCLE']) ? $tool['END_CYCLE'] : 0,
+                'STORAGE_LOCATION' => isset($tool['STORAGE_LOCATION']) ? $tool['STORAGE_LOCATION'] : ''
+            );
+        }
+
+        echo json_encode(array(
+            'success' => true,
+            'data' => $formatted_tools
+        ));
+    }
+
+    /**
+     * Submit Replace Composition data (AJAX)
+     */
+    public function submit_replace_composition_data()
+    {
+        $this->output->set_content_type('application/json');
+
+        $comp_id = (int)$this->input->post('TSCOMP_ID', TRUE);
+        $new_inv_id = (int)$this->input->post('NEW_INV_ID', TRUE);
+        if ($comp_id <= 0 || $new_inv_id <= 0) {
+            echo json_encode(array('success' => false, 'message' => 'ID tidak valid.'));
+            return;
+        }
+
+        $remarks = $this->input->post('TSCOMP_REMARKS', TRUE);
+
+        $ok = $this->tool_sets->replace_composition($comp_id, $new_inv_id, $remarks);
+        echo json_encode(array(
+            'success' => $ok,
+            'message' => $this->tool_sets->messages
+        ));
+    }
 }
 

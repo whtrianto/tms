@@ -374,5 +374,95 @@ class M_tool_sets extends CI_Model
             return false;
         }
     }
+
+    /**
+     * Get available tools for replace (same MLR_ID, different INV_ID)
+     */
+    public function get_available_tools_for_replace($mlr_id, $exclude_inv_id = 0)
+    {
+        $mlr_id = (int)$mlr_id;
+        $exclude_inv_id = (int)$exclude_inv_id;
+        if ($mlr_id <= 0) return array();
+
+        $sql = "SELECT 
+                    inv.INV_ID,
+                    inv.INV_TOOL_ID,
+                    ISNULL(ml.ML_TOOL_DRAW_NO, '') AS TOOL_DRAWING_NO,
+                    ISNULL(mlr.MLR_REV, 0) AS REVISION,
+                    inv.INV_STATUS AS TOOL_STATUS,
+                    ISNULL(inv.INV_END_CYCLE, 0) AS END_CYCLE,
+                    ISNULL(sl.SL_NAME, '') AS STORAGE_LOCATION
+                FROM {$this->t('TMS_TOOL_INVENTORY')} inv
+                LEFT JOIN {$this->t('TMS_TOOL_MASTER_LIST_REV')} mlr ON mlr.MLR_ID = inv.INV_MLR_ID
+                LEFT JOIN {$this->t('TMS_TOOL_MASTER_LIST')} ml ON ml.ML_ID = mlr.MLR_ML_ID
+                LEFT JOIN {$this->t('MS_STORAGE_LOCATION')} sl ON sl.SL_ID = inv.INV_SL_ID
+                WHERE inv.INV_MLR_ID = ? 
+                  AND inv.INV_STATUS <> 6 
+                  AND inv.INV_ID <> ?
+                ORDER BY inv.INV_TOOL_ID ASC";
+
+        $q = $this->db_tms->query($sql, array($mlr_id, $exclude_inv_id));
+        return $q && $q->num_rows() > 0 ? $q->result_array() : array();
+    }
+
+    /**
+     * Replace Composition (update INV_ID)
+     */
+    public function replace_composition($comp_id, $new_inv_id, $remarks)
+    {
+        $comp_id = (int)$comp_id;
+        $new_inv_id = (int)$new_inv_id;
+        if ($comp_id <= 0 || $new_inv_id <= 0) {
+            $this->messages = 'ID tidak valid.';
+            return false;
+        }
+
+        try {
+            // Get composition to verify
+            $comp = $this->get_composition_by_id($comp_id);
+            if (!$comp) {
+                $this->messages = 'Composition tidak ditemukan.';
+                return false;
+            }
+
+            // Verify new inventory exists and has same MLR_ID
+            $new_inv_sql = "SELECT INV_ID, INV_MLR_ID, INV_TOOL_ID FROM {$this->t('TMS_TOOL_INVENTORY')} WHERE INV_ID = ?";
+            $new_inv_result = $this->db_tms->query($new_inv_sql, array($new_inv_id));
+            if (!$new_inv_result || $new_inv_result->num_rows() === 0) {
+                $this->messages = 'Tool Inventory tidak ditemukan.';
+                return false;
+            }
+            $new_inv = $new_inv_result->row_array();
+
+            // Verify MLR_ID matches
+            if (isset($comp['TSCOMP_MLR_ID']) && (int)$comp['TSCOMP_MLR_ID'] !== (int)$new_inv['INV_MLR_ID']) {
+                $this->messages = 'Tool Inventory harus memiliki Tool Drawing yang sama.';
+                return false;
+            }
+
+            $this->db_tms->trans_start();
+
+            // Update TSCOMP_INV_ID and TSCOMP_REMARKS
+            $this->db_tms->where('TSCOMP_ID', $comp_id);
+            $this->db_tms->update($this->t('TMS_TOOLSET_COMPOSITIONS'), array(
+                'TSCOMP_INV_ID' => $new_inv_id,
+                'TSCOMP_REMARKS' => $remarks
+            ));
+
+            $this->db_tms->trans_complete();
+
+            if ($this->db_tms->trans_status() === FALSE) {
+                $this->messages = 'Gagal mengganti composition.';
+                return false;
+            }
+
+            $this->messages = 'Composition berhasil diganti.';
+            return true;
+        } catch (Exception $e) {
+            log_message('error', '[M_tool_sets::replace_composition] Exception: ' . $e->getMessage());
+            $this->messages = 'Error: ' . $e->getMessage();
+            return false;
+        }
+    }
 }
 
