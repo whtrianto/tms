@@ -133,17 +133,83 @@ class M_tool_sets extends CI_Model
                     tset.TSET_BOM_MLR_ID,
                     tset.TSET_STATUS,
                     ISNULL(ml.ML_TOOL_DRAW_NO, '') AS TOOL_BOM,
+                    ISNULL(mlr.MLR_DESC, '') AS TOOL_BOM_DESC,
                     ISNULL(part.PART_NAME, '') AS PRODUCT,
-                    ISNULL(mlr.MLR_REV, 0) AS REVISION
+                    ISNULL(mlr.MLR_REV, 0) AS REVISION,
+                    ISNULL(op.OP_NAME, '') AS PROCESS
                 FROM {$this->t('TMS_TOOLSETS')} tset
                 LEFT JOIN {$this->t('TMS_TOOL_MASTER_LIST_REV')} mlr ON mlr.MLR_ID = tset.TSET_BOM_MLR_ID
                 LEFT JOIN {$this->t('TMS_TOOL_MASTER_LIST')} ml ON ml.ML_ID = mlr.MLR_ML_ID
+                LEFT JOIN {$this->t('MS_OPERATION')} op ON op.OP_ID = mlr.MLR_OP_ID
                 LEFT JOIN {$this->t('TMS_TOOL_MASTER_LIST_PARTS')} mlparts ON mlparts.TMLP_ML_ID = ml.ML_ID
                 LEFT JOIN {$this->t('MS_PARTS')} part ON part.PART_ID = mlparts.TMLP_PART_ID
                 WHERE tset.TSET_ID = ?";
 
         $q = $this->db_tms->query($sql, array($id));
         return $q && $q->num_rows() > 0 ? $q->row_array() : null;
+    }
+
+    /**
+     * Get Toolset Compositions
+     */
+    public function get_compositions($tset_id)
+    {
+        $tset_id = (int)$tset_id;
+        if ($tset_id <= 0) return array();
+
+        $sql = "SELECT 
+                    tscomp.TSCOMP_ID,
+                    tscomp.TSCOMP_INV_ID,
+                    tscomp.TSCOMP_MLR_ID,
+                    tscomp.TSCOMP_STD_REQ,
+                    tscomp.TSCOMP_REMARKS,
+                    ISNULL(ml.ML_TOOL_DRAW_NO, '') AS TOOL_DRAWING_NO,
+                    ISNULL(mlr.MLR_REV, 0) AS REVISION,
+                    ISNULL(tc.TC_NAME, '') AS TOOL_NAME,
+                    ISNULL(inv.INV_TOOL_ID, '') AS TOOL_ID,
+                    ISNULL(mlr.MLR_STD_TL_LIFE, '') AS STANDARD_TOOL_LIFE,
+                    ISNULL(inv.INV_END_CYCLE, 0) AS END_CYCLE,
+                    inv.INV_STATUS AS TOOL_STATUS
+                FROM {$this->t('TMS_TOOLSET_COMPOSITIONS')} tscomp
+                LEFT JOIN {$this->t('TMS_TOOL_MASTER_LIST_REV')} mlr ON mlr.MLR_ID = tscomp.TSCOMP_MLR_ID
+                LEFT JOIN {$this->t('TMS_TOOL_MASTER_LIST')} ml ON ml.ML_ID = mlr.MLR_ML_ID
+                LEFT JOIN {$this->t('MS_TOOL_CLASS')} tc ON tc.TC_ID = mlr.MLR_TC_ID
+                LEFT JOIN {$this->t('TMS_TOOL_INVENTORY')} inv ON inv.INV_ID = tscomp.TSCOMP_INV_ID
+                WHERE tscomp.TSCOMP_TSET_ID = ?
+                ORDER BY tscomp.TSCOMP_ID ASC";
+
+        $q = $this->db_tms->query($sql, array($tset_id));
+        return $q && $q->num_rows() > 0 ? $q->result_array() : array();
+    }
+
+    /**
+     * Get Usage Assignments
+     */
+    public function get_usage_assignments($tset_id)
+    {
+        $tset_id = (int)$tset_id;
+        if ($tset_id <= 0) return array();
+
+        $sql = "SELECT 
+                    tasgn.TASGN_ID,
+                    ISNULL(op.OP_NAME, '') AS OPERATION_NAME,
+                    ISNULL(mac.MAC_NAME, '') AS MACHINE_NAME,
+                    ISNULL(part.PART_NAME, '') AS PRODUCT_NAME,
+                    CASE WHEN tasgn.TASGN_PROD_START IS NULL THEN '' 
+                         ELSE CONVERT(VARCHAR(19), tasgn.TASGN_PROD_START, 120) END AS PRODUCTION_START,
+                    CASE WHEN tasgn.TASGN_PROD_END IS NULL THEN '' 
+                         ELSE CONVERT(VARCHAR(19), tasgn.TASGN_PROD_END, 120) END AS PRODUCTION_END,
+                    tasgn.TASGN_LOT_PRODUCED AS USAGE,
+                    ISNULL(tasgn.TASGN_REMARKS, '') AS REMARKS
+                FROM {$this->t('TMS_TOOL_ASSIGNMENT')} tasgn
+                LEFT JOIN {$this->t('MS_OPERATION')} op ON op.OP_ID = tasgn.TASGN_OP_ID
+                LEFT JOIN {$this->t('MS_MACHINES')} mac ON mac.MAC_ID = tasgn.TASGN_MAC_ID
+                LEFT JOIN {$this->t('MS_PARTS')} part ON part.PART_ID = tasgn.TASGN_PART_ID
+                WHERE tasgn.TASGN_TSET_ID = ?
+                ORDER BY tasgn.TASGN_ID DESC";
+
+        $q = $this->db_tms->query($sql, array($tset_id));
+        return $q && $q->num_rows() > 0 ? $q->result_array() : array();
     }
 
     /**

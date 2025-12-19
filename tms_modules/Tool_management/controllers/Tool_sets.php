@@ -150,6 +150,8 @@ class Tool_sets extends MY_Controller
 
         $data = array();
         $data['tool_set'] = $row;
+        $data['compositions'] = $this->tool_sets->get_compositions($id);
+        $data['assignments'] = $this->tool_sets->get_usage_assignments($id);
         $this->view('edit_tool_sets', $data, FALSE);
     }
 }
