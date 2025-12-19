@@ -121,7 +121,7 @@
             },
             lengthMenu: [[10,25,50,100],[10,25,50,100]],
             pageLength: 25,
-            order: [[0,'desc']],
+            order: [[1,'asc']],
             autoWidth: false,
             scrollX: true,
             columnDefs: [

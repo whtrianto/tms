@@ -44,8 +44,8 @@ class Tool_sets extends MY_Controller
             $search = $this->input->post('search');
             $search_value = isset($search['value']) ? trim($search['value']) : '';
             $order = $this->input->post('order');
-            $order_column = isset($order[0]['column']) ? (int)$order[0]['column'] : 0;
-            $order_dir = isset($order[0]['dir']) ? $order[0]['dir'] : 'desc';
+            $order_column = isset($order[0]['column']) ? (int)$order[0]['column'] : 1;
+            $order_dir = isset($order[0]['dir']) ? $order[0]['dir'] : 'asc';
 
             $columns = $this->input->post('columns');
             $column_search = array();

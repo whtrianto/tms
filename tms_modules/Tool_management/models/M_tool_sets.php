@@ -94,8 +94,8 @@ class M_tool_sets extends CI_Model
         $count_filtered = $count_filtered_result && $count_filtered_result->num_rows() > 0 ? $count_filtered_result->row()->cnt : 0;
 
         // Order
-        $order_column = isset($columns[$order_col]) ? $columns[$order_col] : 'tset.TSET_ID';
-        $order_direction = strtoupper($order_dir) === 'ASC' ? 'ASC' : 'DESC';
+        $order_column = isset($columns[$order_col]) ? $columns[$order_col] : 'tset.TSET_NAME';
+        $order_direction = strtoupper($order_dir) === 'ASC' ? 'ASC' : (strtoupper($order_dir) === 'DESC' ? 'DESC' : 'ASC');
 
         // Data query
         $data_sql = "SELECT 
