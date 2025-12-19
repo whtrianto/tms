@@ -41,10 +41,10 @@ class M_tool_scrap extends CI_Model
             6 => 'reason.REASON_NAME',
             7 => 'scrap.SCRAP_STATUS',
             8 => 'scrap.SCRAP_COUNTER_MEASURE',
-            9 => 'scrap.SCRAP_CURRENT_QTY_THIS',
+            9 => 'ISNULL(pcs_produced.PCS_PRODUCED, 0)',
             10 => 'mac.MAC_NAME',
             11 => 'scrap.SCRAP_CAUSE_REMARK',
-            12 => 'scrap.SCRAP_COUNTER_MEASURE' // Suggestion - using Counter Measure for now
+            12 => '\'Scrap\'' // Suggestion - always "Scrap" (not orderable)
         );
 
         $base_from = "
@@ -54,7 +54,13 @@ class M_tool_scrap extends CI_Model
             LEFT JOIN {$this->t('TMS_TOOL_MASTER_LIST')} ml ON ml.ML_ID = mlr.MLR_ML_ID
             LEFT JOIN {$this->t('MS_TOOL_CLASS')} tc ON tc.TC_ID = mlr.MLR_TC_ID
             LEFT JOIN {$this->t('MS_REASON')} reason ON reason.REASON_ID = scrap.SCRAP_REASON_ID
-            LEFT JOIN {$this->t('MS_MACHINES')} mac ON mac.MAC_ID = scrap.SCRAP_MAC_ID";
+            LEFT JOIN {$this->t('MS_MACHINES')} mac ON mac.MAC_ID = scrap.SCRAP_MAC_ID
+            LEFT JOIN (
+                SELECT ASSGN_INV_ID, SUM(ISNULL(ASSGN_QTY_PRODUCED, 0)) AS PCS_PRODUCED
+                FROM {$this->t('TMS_ASSIGNED_TOOLS')}
+                WHERE ASSGN_INV_ID IS NOT NULL
+                GROUP BY ASSGN_INV_ID
+            ) pcs_produced ON pcs_produced.ASSGN_INV_ID = scrap.SCRAP_INV_ID";
 
         $where = " WHERE 1=1";
         $params = array();
@@ -71,7 +77,7 @@ class M_tool_scrap extends CI_Model
                 reason.REASON_NAME LIKE ? OR 
                 CAST(scrap.SCRAP_STATUS AS VARCHAR) LIKE ? OR 
                 scrap.SCRAP_COUNTER_MEASURE LIKE ? OR 
-                CAST(scrap.SCRAP_CURRENT_QTY_THIS AS VARCHAR) LIKE ? OR 
+                CAST(ISNULL(pcs_produced.PCS_PRODUCED, 0) AS VARCHAR) LIKE ? OR 
                 mac.MAC_NAME LIKE ? OR 
                 scrap.SCRAP_CAUSE_REMARK LIKE ?
             )";
@@ -92,16 +98,27 @@ class M_tool_scrap extends CI_Model
             6 => 'ISNULL(reason.REASON_NAME, \'\')',
             7 => 'CAST(ISNULL(scrap.SCRAP_STATUS, 0) AS VARCHAR)',
             8 => 'ISNULL(scrap.SCRAP_COUNTER_MEASURE, \'\')',
-            9 => 'CAST(ISNULL(scrap.SCRAP_CURRENT_QTY_THIS, 0) AS VARCHAR)',
+            9 => 'CAST(ISNULL(pcs_produced.PCS_PRODUCED, 0) AS VARCHAR)',
             10 => 'ISNULL(mac.MAC_NAME, \'\')',
             11 => 'ISNULL(scrap.SCRAP_CAUSE_REMARK, \'\')',
-            12 => 'ISNULL(scrap.SCRAP_COUNTER_MEASURE, \'\')' // Suggestion
+            12 => '\'Scrap\'' // Suggestion - always "Scrap", search for "Scrap" text
         );
         
         foreach ($column_search as $col_idx => $col_val) {
             if (!empty($col_val) && isset($col_search_map[$col_idx])) {
-                $where .= " AND " . $col_search_map[$col_idx] . " LIKE ?";
-                $params[] = '%' . $col_val . '%';
+                if ($col_idx == 12) {
+                    // Special handling for Suggestion column - search for "Scrap"
+                    if (stripos($col_val, 'Scrap') !== false || stripos($col_val, 'scrap') !== false) {
+                        // Always match if searching for "Scrap"
+                        // No WHERE clause needed as all rows will have 'Scrap'
+                    } else {
+                        // If searching for something else, no match
+                        $where .= " AND 1=0";
+                    }
+                } else {
+                    $where .= " AND " . $col_search_map[$col_idx] . " LIKE ?";
+                    $params[] = '%' . $col_val . '%';
+                }
             }
         }
 
@@ -116,7 +133,12 @@ class M_tool_scrap extends CI_Model
         $count_filtered = $count_filtered_result && $count_filtered_result->num_rows() > 0 ? $count_filtered_result->row()->cnt : 0;
 
         // Order
-        $order_column = isset($columns[$order_col]) ? $columns[$order_col] : 'scrap.SCRAP_ID';
+        // Special handling: column 12 (Suggestion) is always "Scrap", so order by ID instead
+        if ($order_col == 12) {
+            $order_column = 'scrap.SCRAP_ID';
+        } else {
+            $order_column = isset($columns[$order_col]) ? $columns[$order_col] : 'scrap.SCRAP_ID';
+        }
         $order_direction = strtoupper($order_dir) === 'ASC' ? 'ASC' : 'DESC';
 
         // Data query
@@ -132,10 +154,10 @@ class M_tool_scrap extends CI_Model
                         ISNULL(reason.REASON_NAME, '') AS REASON,
                         scrap.SCRAP_STATUS,
                         ISNULL(scrap.SCRAP_COUNTER_MEASURE, '') AS COUNTER_MEASURE,
-                        CAST(ISNULL(scrap.SCRAP_CURRENT_QTY_THIS, 0) AS VARCHAR) AS PCS_PRODUCED,
+                        CAST(ISNULL(pcs_produced.PCS_PRODUCED, 0) AS VARCHAR) AS PCS_PRODUCED,
                         ISNULL(mac.MAC_NAME, '') AS MACHINE,
                         ISNULL(scrap.SCRAP_CAUSE_REMARK, '') AS CAUSE_REMARK,
-                        ISNULL(scrap.SCRAP_COUNTER_MEASURE, '') AS SUGGESTION,
+                        'Scrap' AS SUGGESTION,
                         scrap.SCRAP_NO
                     " . $base_from . $where . "
                     ORDER BY " . $order_column . " " . $order_direction . "
@@ -198,7 +220,7 @@ class M_tool_scrap extends CI_Model
     /**
      * Get status name
      * Tool Scrap Status enum (typical values):
-     * 0=Pending, 1=Approved, 2=Rejected, etc. (may vary by system)
+     * 0=Pending, 1=Approved, 2=Closed, etc. (may vary by system)
      */
     public function get_status_name($status)
     {
@@ -206,7 +228,7 @@ class M_tool_scrap extends CI_Model
         $status_map = array(
             0 => 'Pending',
             1 => 'Approved',
-            2 => 'Rejected',
+            2 => 'Closed',
             3 => 'Cancelled'
         );
         return isset($status_map[$status]) ? $status_map[$status] : 'Unknown';
@@ -228,8 +250,8 @@ class M_tool_scrap extends CI_Model
             case 1: // Approved
                 $badge_class = 'badge-success';
                 break;
-            case 2: // Rejected
-                $badge_class = 'badge-danger';
+            case 2: // Closed
+                $badge_class = 'badge-secondary';
                 break;
             case 3: // Cancelled
                 $badge_class = 'badge-secondary';
