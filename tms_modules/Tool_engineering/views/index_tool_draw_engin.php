@@ -42,6 +42,7 @@
             gap: 4px;
             flex-wrap: wrap;
         }
+        .navbar { position: sticky; top: 0; z-index: 1030; }
         .dataTables_wrapper {
             padding-bottom: 2rem !important;
         }
