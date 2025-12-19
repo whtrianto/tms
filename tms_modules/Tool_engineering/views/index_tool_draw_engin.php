@@ -88,23 +88,30 @@
             color: #0056b3 !important;
             text-decoration: underline !important;
         }
-        /* Prevent double scrollbar: disable table-responsive overflow when using DataTables scrollX */
+        /* Prevent double scrollbar: DataTables handles scrolling with scrollX */
         .table-responsive {
-            overflow-x: visible !important;
-            overflow-y: visible !important;
-        }
-        /* Ensure DataTables scroll wrapper doesn't create extra scrollbar */
-        .dataTables_scroll {
-            overflow-x: auto !important;
-            overflow-y: visible !important;
-        }
-        .dataTables_scrollBody {
-            overflow-x: auto !important;
-            overflow-y: visible !important;
-        }
-        .dataTables_scrollHead {
             overflow-x: hidden !important;
             overflow-y: visible !important;
+        }
+        /* Ensure DataTables scroll wrapper handles scrolling */
+        .dataTables_wrapper .dataTables_scroll {
+            overflow-x: auto !important;
+            overflow-y: visible !important;
+        }
+        .dataTables_wrapper .dataTables_scrollBody {
+            overflow-x: auto !important;
+            overflow-y: visible !important;
+            border: 1px solid #dee2e6 !important;
+        }
+        .dataTables_wrapper .dataTables_scrollHead {
+            overflow-x: hidden !important;
+            overflow-y: visible !important;
+        }
+        .dataTables_wrapper .dataTables_scrollHeadInner {
+            overflow: visible !important;
+        }
+        .dataTables_wrapper .dataTables_scrollHeadInner table {
+            margin-bottom: 0 !important;
         }
     </style>
 </head>
@@ -125,7 +132,7 @@
                         </a>
                     </div>
                     <div class="card-body">
-                        <div class="table-responsive">
+                        <div class="table-responsive" style="overflow-x: hidden;">
                             <table id="table-tool-draw-sql" class="table table-bordered table-striped w-100 text-center">
                                 <thead>
                                     <tr>
