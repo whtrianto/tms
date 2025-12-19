@@ -166,8 +166,13 @@ class M_tool_sets extends CI_Model
     {
         $status = (int)$status;
         $status_name = $this->get_status_name($status);
-        // Complete (0) -> badge-success (green), Incomplete (1) -> badge-warning (yellow)
-        $badge_class = $status == 0 ? 'badge-success' : 'badge-warning';
+        
+        // Complete -> badge-success (green), Incomplete -> badge-warning (yellow)
+        if ($status_name === 'Complete') {
+            $badge_class = 'badge-success'; // Hijau untuk Complete
+        } else {
+            $badge_class = 'badge-warning'; // Kuning untuk Incomplete
+        }
         
         return '<span class="badge ' . $badge_class . '">' . htmlspecialchars($status_name, ENT_QUOTES, 'UTF-8') . '</span>';
     }
