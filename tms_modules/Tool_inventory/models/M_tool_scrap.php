@@ -317,12 +317,12 @@ class M_tool_scrap extends CI_Model
     public function get_users_for_modal()
     {
         $sql = "SELECT 
-                    USR_ID AS ID,
-                    USR_NAME AS [USER],
-                    ISNULL(USR_POSITION, '') AS POSITION
-                FROM {$this->t('MS_USERS')}
-                WHERE USR_IS_DELETED = 0 OR USR_IS_DELETED IS NULL
-                ORDER BY USR_NAME ASC";
+                    usr.USR_ID AS ID,
+                    usr.USR_NAME AS [USER],
+                    ISNULL(pos.POS_NAME, '') AS POSITION
+                FROM {$this->t('MS_USERS')} usr
+                LEFT JOIN {$this->t('MS_POSITION')} pos ON pos.POS_ID = usr.USR_POS_ID
+                ORDER BY usr.USR_NAME ASC";
         $q = $this->db_tms->query($sql);
         return $q && $q->num_rows() > 0 ? $q->result_array() : array();
     }
