@@ -558,10 +558,24 @@ class M_tool_draw_engin extends CI_Model
         // Update TMS_TOOL_MASTER_LIST_REV
         $modified_by = isset($this->uid) && $this->uid !== '' ? (string)$this->uid : 'SYSTEM';
         
+        // Get current values to preserve if new values are not provided
+        $current_tool_id = isset($current['TD_TOOL_ID']) ? (int)$current['TD_TOOL_ID'] : (isset($current['MLR_TC_ID']) ? (int)$current['MLR_TC_ID'] : null);
+        $current_material_id = isset($current['TD_MATERIAL_ID']) ? (int)$current['TD_MATERIAL_ID'] : (isset($current['MLR_MAT_ID']) ? (int)$current['MLR_MAT_ID'] : null);
+        $current_maker_id = isset($current['TD_MAKER_ID']) ? (int)$current['TD_MAKER_ID'] : (isset($current['MLR_MAKER_ID']) ? (int)$current['MLR_MAKER_ID'] : null);
+        $current_machine_group_id = isset($current['TD_MACHINE_GROUP_ID']) ? (int)$current['TD_MACHINE_GROUP_ID'] : (isset($current['MLR_MACG_ID']) ? (int)$current['MLR_MACG_ID'] : null);
+        $current_effective_date = isset($current['TD_EFFECTIVE_DATE']) ? $current['TD_EFFECTIVE_DATE'] : (isset($current['MLR_EFFECTIVE_DATE']) ? $current['MLR_EFFECTIVE_DATE'] : null);
+        
+        // Use provided values, or keep current values if not provided
+        $final_tool_id = ($tool_id !== null && $tool_id > 0) ? $tool_id : $current_tool_id;
+        $final_material_id = ($material_id !== null && $material_id > 0) ? $material_id : $current_material_id;
+        $final_maker_id = ($maker_id !== null && $maker_id > 0) ? $maker_id : $current_maker_id;
+        $final_machine_group_id = ($machine_group_id !== null && $machine_group_id > 0) ? $machine_group_id : $current_machine_group_id;
+        $final_effective_date = ($effective_date !== null && $effective_date !== '') ? $effective_date : $current_effective_date;
+        
         // Build effective date SQL
         $effective_date_sql = '';
-        if ($effective_date !== null) {
-            $effective_date_sql = ', MLR_EFFECTIVE_DATE = ?';
+        if ($final_effective_date !== null && $final_effective_date !== '') {
+            $effective_date_sql = ', MLR_EFFECTIVE_DATE = CONVERT(datetime, ?, 120)';
         }
         
         $update_rev_sql = "UPDATE {$this->t('TMS_TOOL_MASTER_LIST_REV')} 
@@ -569,9 +583,9 @@ class M_tool_draw_engin extends CI_Model
                               MLR_REV = ?, MLR_MODIFIED_DATE = GETDATE(), MLR_MODIFIED_BY = ?" . $effective_date_sql . "
                           WHERE MLR_ID = ?";
         
-        $params = array($process_id, $tool_id, $material_id, $maker_id, $machine_group_id, $status, $revision, $modified_by);
-        if ($effective_date !== null) {
-            $params[] = $effective_date;
+        $params = array($process_id, $final_tool_id, $final_material_id, $final_maker_id, $final_machine_group_id, $status, $revision, $modified_by);
+        if ($final_effective_date !== null && $final_effective_date !== '') {
+            $params[] = $final_effective_date;
         }
         $params[] = $id;
         

@@ -612,6 +612,7 @@ class M_tool_bom_engin extends CI_Model
                 child_rev.MLR_ID AS TD_ID,
                 child_ml.ML_TOOL_DRAW_NO AS TD_DRAWING_NO,
                 ISNULL(tc.TC_NAME, '') AS TD_TOOL_NAME,
+                ISNULL(child_rev.MLR_TC_ID, 0) AS TD_TOOL_ID,
                 child_rev.MLR_REV AS TD_REVISION,
                 child_rev.MLR_STATUS AS TD_STATUS,
                 ISNULL(members.TB_QTY, 0) AS TD_MIN_QTY,
@@ -621,8 +622,11 @@ class M_tool_bom_engin extends CI_Model
                 ISNULL(child_rev.MLR_DESC, '') AS TD_DESCRIPTION,
                 ISNULL(part.PART_ID, 0) AS TD_PRODUCT_ID,
                 ISNULL(op.OP_ID, 0) AS TD_PROCESS_ID,
-                ISNULL(mat.MAT_ID, 0) AS TD_MATERIAL_ID,
-                ISNULL(maker.MAKER_ID, 0) AS TD_MAKER_ID
+                ISNULL(child_rev.MLR_MAT_ID, 0) AS TD_MATERIAL_ID,
+                ISNULL(child_rev.MLR_MAKER_ID, 0) AS TD_MAKER_ID,
+                ISNULL(child_rev.MLR_MACG_ID, 0) AS TD_MACHINE_GROUP_ID,
+                CASE WHEN child_rev.MLR_EFFECTIVE_DATE IS NULL THEN '' 
+                     ELSE CONVERT(VARCHAR(19), child_rev.MLR_EFFECTIVE_DATE, 120) END AS TD_EFFECTIVE_DATE
             FROM {$this->t('TMS_TOOL_MASTER_LIST_MEMBERS')} members
             INNER JOIN {$this->t('TMS_TOOL_MASTER_LIST_REV')} child_rev 
                 ON child_rev.MLR_ID = members.TB_MLR_CHILD_ID

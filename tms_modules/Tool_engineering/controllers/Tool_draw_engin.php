@@ -322,12 +322,17 @@ class Tool_draw_engin extends MY_Controller
             }
 
             // TD_TOOL_NAME from form contains TOOL_ID (select)
-            $tool_id = (int)$this->input->post('TD_TOOL_NAME', TRUE);
-            $revision = (int)$this->input->post('TD_REVISION', TRUE);
+            $tool_id_post = $this->input->post('TD_TOOL_NAME', TRUE);
+            $tool_id = (!empty($tool_id_post) && $tool_id_post !== '' && $tool_id_post !== '0') ? (int)$tool_id_post : null;
+            $revision_post = $this->input->post('TD_REVISION', TRUE);
+            $revision = (!empty($revision_post) && $revision_post !== '' && $revision_post !== '0') ? (int)$revision_post : null;
             $status = (int)$this->input->post('TD_STATUS', TRUE);
-            $material_id = (int)$this->input->post('TD_MATERIAL_ID', TRUE);
-            $maker_id = (int)$this->input->post('TD_MAKER_ID', TRUE);
-            $machine_group_id = (int)$this->input->post('TD_MACG_ID', TRUE);
+            $material_id_post = $this->input->post('TD_MATERIAL_ID', TRUE);
+            $material_id = (!empty($material_id_post) && $material_id_post !== '' && $material_id_post !== '0') ? (int)$material_id_post : null;
+            $maker_id_post = $this->input->post('TD_MAKER_ID', TRUE);
+            $maker_id = (!empty($maker_id_post) && $maker_id_post !== '' && $maker_id_post !== '0') ? (int)$maker_id_post : null;
+            $machine_group_id_post = $this->input->post('TD_MACG_ID', TRUE);
+            $machine_group_id = (!empty($machine_group_id_post) && $machine_group_id_post !== '' && $machine_group_id_post !== '0') ? (int)$machine_group_id_post : null;
             $effective_date = trim($this->input->post('TD_EFFECTIVE_DATE', TRUE));
             if (empty($effective_date)) {
                 $effective_date = null;

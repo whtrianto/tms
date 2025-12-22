@@ -441,13 +441,21 @@
             f.reset();
             $('[name="action"]', f).val('ADD');
             $('[name="TD_ID"]', f).val('');
+            $('[name="TD_DRAWING_NO"]', f).val('');
             $('[name="TD_DRAWING_NO_OLD"]', f).val('');
             $('[name="TB_ID"]', f).val('');
+            $('[name="TD_TOOL_NAME"]', f).val('');
+            $('[name="TD_REVISION"]', f).val('0');
+            $('[name="TD_STATUS"]', f).val(2); // Pending by default
+            $('[name="TD_MIN_QTY"]', f).val('');
+            $('[name="TD_REPLENISH_QTY"]', f).val('');
+            $('[name="TD_SEQUENCE"]', f).val('');
+            $('[name="TD_REMARKS"]', f).val('');
+            $('[name="TD_MATERIAL_ID"]', f).val('');
+            $('[name="TD_MAKER_ID"]', f).val('');
             // default select product/process from BOM
             $('[name="TD_PRODUCT_ID"]', f).val('<?= isset($bom['PRODUCT_ID']) ? (int)$bom["PRODUCT_ID"] : '' ; ?>');
             $('[name="TD_PROCESS_ID"]', f).val('<?= isset($bom['PROCESS_ID']) ? (int)$bom["PROCESS_ID"] : '' ; ?>');
-            $('[name="TD_STATUS"]', f).val(2); // Pending by default
-            $('[name="TD_REMARKS"]', f).val('');
         }
 
         $('#btn-add-additional').on('click', function(){
@@ -466,12 +474,14 @@
             $('[name="TD_ID"]', '#formAdditional').val(raw.TD_ID || '');
             $('[name="TD_DRAWING_NO"]', '#formAdditional').val(raw.TD_DRAWING_NO || '');
             $('[name="TD_DRAWING_NO_OLD"]', '#formAdditional').val(raw.TD_DRAWING_NO || '');
-            $('[name="TD_TOOL_NAME"]', '#formAdditional').val(raw.TD_TOOL_NAME || '');
-            $('[name="TD_REVISION"]', '#formAdditional').val(raw.TD_REVISION || 0);
+            // Use TD_TOOL_ID (MLR_TC_ID) for select, fallback to TD_TOOL_NAME if ID not available
+            var toolId = raw.TD_TOOL_ID || (raw.TD_TOOL_NAME ? raw.TD_TOOL_NAME : '');
+            $('[name="TD_TOOL_NAME"]', '#formAdditional').val(toolId || '');
+            $('[name="TD_REVISION"]', '#formAdditional').val(raw.TD_REVISION !== undefined ? raw.TD_REVISION : 0);
             $('[name="TD_STATUS"]', '#formAdditional').val(raw.TD_STATUS !== undefined ? raw.TD_STATUS : 1);
-            $('[name="TD_MIN_QTY"]', '#formAdditional').val(raw.TD_MIN_QTY || '');
-            $('[name="TD_REPLENISH_QTY"]', '#formAdditional').val(raw.TD_REPLENISH_QTY || '');
-            $('[name="TD_SEQUENCE"]', '#formAdditional').val(raw.TD_SEQUENCE || '');
+            $('[name="TD_MIN_QTY"]', '#formAdditional').val(raw.TD_MIN_QTY !== undefined ? raw.TD_MIN_QTY : '');
+            $('[name="TD_REPLENISH_QTY"]', '#formAdditional').val(raw.TD_REPLENISH_QTY !== undefined ? raw.TD_REPLENISH_QTY : '');
+            $('[name="TD_SEQUENCE"]', '#formAdditional').val(raw.TD_SEQUENCE !== undefined ? raw.TD_SEQUENCE : '');
             $('[name="TD_REMARKS"]', '#formAdditional').val(raw.TD_REMARKS || '');
             $('[name="TD_PRODUCT_ID"]', '#formAdditional').val(raw.TD_PRODUCT_ID || '');
             $('[name="TD_PROCESS_ID"]', '#formAdditional').val(raw.TD_PROCESS_ID || '');
