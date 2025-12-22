@@ -442,24 +442,38 @@ class M_tool_scrap extends CI_Model
             }
             
             // Tool ID exists, now get full details with joins
-            // Following EXACTLY the same pattern as M_tool_inventory::get_by_id() which is proven to work
+            // Get data from multiple sources: Inventory, Master List Rev, Ordering, Requisition
             $sql = "SELECT TOP 1
                         inv.INV_ID,
                         inv.INV_TOOL_ID AS TOOL_ID,
                         inv.INV_MLR_ID,
-                        -- Drawing No: from TMS_TOOL_MASTER_LIST (same as get_by_id)
+                        -- Drawing No: from TMS_TOOL_MASTER_LIST
                         ISNULL(ml.ML_TOOL_DRAW_NO, '') AS TOOL_DRAWING_NO,
-                        -- Revision: from TMS_TOOL_MASTER_LIST_REV (same as get_by_id)
+                        -- Revision: from TMS_TOOL_MASTER_LIST_REV
                         ISNULL(mlr.MLR_REV, 0) AS REVISION,
-                        -- Tool Name: from MS_TOOL_CLASS via MLR_TC_ID (same as get_by_id)
+                        -- Tool Name: from MS_TOOL_CLASS via MLR_TC_ID
                         ISNULL(tc.TC_NAME, '') AS TOOL_NAME,
                         ISNULL(tc.TC_ID, 0) AS TOOL_NAME_ID,
-                        -- Material: from MS_MATERIAL via INV_MAT_ID ONLY (same as get_by_id - no fallback to MLR_MAT_ID)
-                        ISNULL(mat.MAT_NAME, '') AS MATERIAL,
-                        ISNULL(inv.INV_MAT_ID, 0) AS MATERIAL_ID,
-                        -- RQ No: from INV_RQ_NO (preferred) or TMS_ORDERING.ORD_RQ_NO (fallback) - EXACT same as get_by_id
-                        ISNULL(inv.INV_RQ_NO, ord.ORD_RQ_NO) AS RQ_NO,
-                        -- Tool Price: from INV_TOOL_COST (preferred) or MLR_PRICE (fallback)
+                        -- Material: from MS_MATERIAL via INV_MAT_ID (preferred) or MLR_MAT_ID (fallback from Master List Rev)
+                        CASE 
+                            WHEN inv.INV_MAT_ID IS NOT NULL AND inv_mat.MAT_NAME IS NOT NULL THEN inv_mat.MAT_NAME
+                            WHEN mlr.MLR_MAT_ID IS NOT NULL AND mlr_mat.MAT_NAME IS NOT NULL THEN mlr_mat.MAT_NAME
+                            ELSE ''
+                        END AS MATERIAL,
+                        CASE 
+                            WHEN inv.INV_MAT_ID IS NOT NULL THEN inv.INV_MAT_ID
+                            WHEN mlr.MLR_MAT_ID IS NOT NULL THEN mlr.MLR_MAT_ID
+                            ELSE 0
+                        END AS MATERIAL_ID,
+                        -- RQ No: from multiple sources - INV_RQ_NO (preferred), then TMS_ORDERING.ORD_RQ_NO, then TMS_REQUISITION.RQ_INT_REQ_NO (scalar subquery)
+                        ISNULL(
+                            ISNULL(
+                                ISNULL(inv.INV_RQ_NO, ord.ORD_RQ_NO),
+                                (SELECT TOP 1 RQ_INT_REQ_NO FROM {$this->t('TMS_REQUISITION')} WHERE RQ_DWG_MLR_ID = inv.INV_MLR_ID AND RQ_INT_REQ_NO IS NOT NULL AND RQ_INT_REQ_NO <> '' ORDER BY RQ_ID DESC)
+                            ),
+                            ''
+                        ) AS RQ_NO,
+                        -- Tool Price: from INV_TOOL_COST (preferred) or MLR_PRICE (fallback from Master List Rev)
                         ISNULL(ISNULL(inv.INV_TOOL_COST, mlr.MLR_PRICE), 0) AS TOOL_PRICE,
                         -- Tool Assignment No: from TMS_TOOL_ASSIGNMENT via TMS_ASSIGNED_TOOLS (scalar subquery)
                         ISNULL((
@@ -478,13 +492,17 @@ class M_tool_scrap extends CI_Model
                         ISNULL(inv.INV_STATUS, 0) AS STATUS,
                         ISNULL(inv.INV_END_CYCLE, 0) AS END_CYCLE
                     FROM {$this->t('TMS_TOOL_INVENTORY')} inv
-                    -- EXACT same JOIN order as get_by_id
+                    -- Join to TMS_TOOL_MASTER_LIST_REV (for Revision, Tool Name, Material fallback, Price fallback)
                     LEFT JOIN {$this->t('TMS_TOOL_MASTER_LIST_REV')} mlr ON mlr.MLR_ID = inv.INV_MLR_ID
+                    -- Join to TMS_TOOL_MASTER_LIST (for Drawing No)
                     LEFT JOIN {$this->t('TMS_TOOL_MASTER_LIST')} ml ON ml.ML_ID = mlr.MLR_ML_ID
+                    -- Join to MS_TOOL_CLASS (for Tool Name)
                     LEFT JOIN {$this->t('MS_TOOL_CLASS')} tc ON tc.TC_ID = mlr.MLR_TC_ID
-                    -- Material: ONLY from INV_MAT_ID (same as get_by_id)
-                    LEFT JOIN {$this->t('MS_MATERIAL')} mat ON mat.MAT_ID = inv.INV_MAT_ID
-                    -- Join to TMS_ORDERING_ITEMS and TMS_ORDERING (for RQ No) - same as get_by_id
+                    -- Join to MS_MATERIAL for inventory material (INV_MAT_ID)
+                    LEFT JOIN {$this->t('MS_MATERIAL')} inv_mat ON inv_mat.MAT_ID = inv.INV_MAT_ID
+                    -- Join to MS_MATERIAL for master list revision material (MLR_MAT_ID) as fallback
+                    LEFT JOIN {$this->t('MS_MATERIAL')} mlr_mat ON mlr_mat.MAT_ID = mlr.MLR_MAT_ID
+                    -- Join to TMS_ORDERING_ITEMS and TMS_ORDERING (for RQ No from Ordering)
                     LEFT JOIN {$this->t('TMS_ORDERING_ITEMS')} ordi ON ordi.ORDI_ID = inv.INV_ORDI_ID
                     LEFT JOIN {$this->t('TMS_ORDERING')} ord ON ord.ORD_ID = ordi.ORDI_ORD_ID
                     WHERE inv.INV_TOOL_ID = ?
