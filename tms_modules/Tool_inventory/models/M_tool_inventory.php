@@ -466,9 +466,9 @@ class M_tool_inventory extends CI_Model
         $limit = (int)$limit;
         if ($limit <= 0) $limit = 500;
         
-        // Optimized query: Get distinct Tool IDs with latest data only, ordered by INV_ID DESC (newest first)
-        // Using subquery to get latest record per Tool ID
-        $sql = "SELECT DISTINCT TOP {$limit}
+        // Optimized query: Get latest record per Tool ID using subquery
+        // This gets the most recent INV_ID for each Tool ID, then joins to get full data
+        $sql = "SELECT TOP {$limit}
                     inv.INV_TOOL_ID,
                     inv.INV_MLR_ID,
                     mlr.MLR_OP_ID AS PROCESS_ID,
@@ -479,6 +479,12 @@ class M_tool_inventory extends CI_Model
                 FROM {$this->t('TMS_TOOL_INVENTORY')} inv
                 INNER JOIN {$this->t('TMS_TOOL_MASTER_LIST_REV')} mlr ON mlr.MLR_ID = inv.INV_MLR_ID
                 INNER JOIN {$this->t('TMS_TOOL_MASTER_LIST')} ml ON ml.ML_ID = mlr.MLR_ML_ID
+                INNER JOIN (
+                    SELECT INV_TOOL_ID, MAX(INV_ID) AS MAX_INV_ID
+                    FROM {$this->t('TMS_TOOL_INVENTORY')}
+                    WHERE INV_TOOL_ID IS NOT NULL AND INV_TOOL_ID <> ''
+                    GROUP BY INV_TOOL_ID
+                ) latest ON latest.INV_TOOL_ID = inv.INV_TOOL_ID AND latest.MAX_INV_ID = inv.INV_ID
                 WHERE inv.INV_TOOL_ID IS NOT NULL AND inv.INV_TOOL_ID <> ''
                 ORDER BY inv.INV_ID DESC";
         $q = $this->db_tms->query($sql);
