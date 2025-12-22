@@ -202,6 +202,13 @@ class M_tool_inventory extends CI_Model
                     inv.INV_IN_TOOL_SET,
                     inv.INV_ASSETIZED,
                     inv.INV_PURCHASE_TYPE,
+                    CASE 
+                        WHEN inv.INV_PURCHASE_TYPE IS NULL THEN NULL
+                        WHEN inv.INV_PURCHASE_TYPE = 1 THEN 'Local'
+                        WHEN inv.INV_PURCHASE_TYPE = 2 THEN 'Overseas'
+                        WHEN inv.INV_PURCHASE_TYPE = 3 THEN 'Internal Fabrication'
+                        ELSE CAST(inv.INV_PURCHASE_TYPE AS VARCHAR)
+                    END AS INV_PURCHASE_TYPE_STRING,
                     maker.MAKER_CODE AS MAKER_CODE,
                     maker.MAKER_NAME AS MAKER_NAME
                 FROM {$this->t('TMS_TOOL_INVENTORY')} inv
@@ -752,6 +759,217 @@ class M_tool_inventory extends CI_Model
 
         $err = $this->db_tms->error();
         $this->messages = 'Gagal menambahkan Tool Inventory. ' . (isset($err['message']) ? $err['message'] : '');
+        return false;
+    }
+
+    /**
+     * Update Tool Inventory
+     */
+    public function update_data($data)
+    {
+        $this->db_tms->trans_start();
+
+        $inv_id = isset($data['inv_id']) ? (int)$data['inv_id'] : 0;
+        if ($inv_id <= 0) {
+            $this->messages = 'ID tidak valid.';
+            $this->db_tms->trans_rollback();
+            return false;
+        }
+
+        // Check if record exists
+        $check_sql = "SELECT INV_ID FROM {$this->t('TMS_TOOL_INVENTORY')} WHERE INV_ID = ?";
+        $check_q = $this->db_tms->query($check_sql, array($inv_id));
+        if (!$check_q || $check_q->num_rows() == 0) {
+            $this->messages = 'Data tidak ditemukan.';
+            $this->db_tms->trans_rollback();
+            return false;
+        }
+
+        // Prepare data
+        $mlr_id = isset($data['mlr_id']) ? (int)$data['mlr_id'] : 0;
+        $tool_id = isset($data['tool_id']) ? trim((string)$data['tool_id']) : '';
+        $tool_tag = isset($data['tool_tag']) ? trim((string)$data['tool_tag']) : '';
+        $tool_status = isset($data['tool_status']) ? (int)$data['tool_status'] : 1;
+        $storage_location_id = isset($data['storage_location_id']) && $data['storage_location_id'] > 0 ? (int)$data['storage_location_id'] : null;
+        $notes = isset($data['notes']) ? trim((string)$data['notes']) : null;
+        $rq_no = isset($data['rq_no']) && !empty($data['rq_no']) ? trim((string)$data['rq_no']) : null;
+        $maker_id = isset($data['maker_id']) && $data['maker_id'] > 0 ? (int)$data['maker_id'] : null;
+        $material_id = isset($data['material_id']) && $data['material_id'] > 0 ? (int)$data['material_id'] : null;
+        // INV_PURCHASE_TYPE is bigint in database, but form sends string like 'Local', 'Overseas'
+        $purchase_type = null;
+        if (isset($data['purchase_type']) && !empty($data['purchase_type'])) {
+            $pt = trim((string)$data['purchase_type']);
+            // Map string to bigint: Local=1, Overseas=2, Internal Fabrication=3
+            if ($pt === 'Local') {
+                $purchase_type = 1;
+            } elseif ($pt === 'Overseas') {
+                $purchase_type = 2;
+            } elseif ($pt === 'Internal Fabrication') {
+                $purchase_type = 3;
+            } elseif (is_numeric($pt)) {
+                $purchase_type = (int)$pt;
+            }
+        }
+        $do_no = isset($data['do_no']) && !empty($data['do_no']) ? trim((string)$data['do_no']) : null;
+        $received_date = isset($data['received_date']) && !empty($data['received_date']) ? trim((string)$data['received_date']) : null;
+        $tool_condition = isset($data['tool_condition']) && $data['tool_condition'] !== '' ? (int)$data['tool_condition'] : null;
+        $begin_cycle = isset($data['begin_cycle']) && $data['begin_cycle'] !== '' ? (int)$data['begin_cycle'] : null;
+        $end_cycle = isset($data['end_cycle']) && $data['end_cycle'] !== '' ? (int)$data['end_cycle'] : null;
+        $in_tool_set = isset($data['in_tool_set']) && $data['in_tool_set'] !== '' ? (int)$data['in_tool_set'] : null;
+        $assetized = isset($data['assetized']) && $data['assetized'] == '1' ? 1 : 0;
+
+        // Validation
+        if ($mlr_id <= 0) {
+            $this->messages = 'MLR ID tidak valid.';
+            $this->db_tms->trans_rollback();
+            return false;
+        }
+
+        if (empty($tool_id)) {
+            $this->messages = 'Tool ID tidak boleh kosong.';
+            $this->db_tms->trans_rollback();
+            return false;
+        }
+
+        if (empty($tool_tag)) {
+            $this->messages = 'Tool Tag tidak boleh kosong.';
+            $this->db_tms->trans_rollback();
+            return false;
+        }
+
+        // Check if Tool ID already exists (excluding current record)
+        $check_sql = "SELECT INV_ID FROM {$this->t('TMS_TOOL_INVENTORY')} WHERE INV_TOOL_ID = ? AND INV_ID <> ?";
+        $check_q = $this->db_tms->query($check_sql, array($tool_id, $inv_id));
+        if ($check_q && $check_q->num_rows() > 0) {
+            $this->messages = 'Tool ID sudah digunakan.';
+            $this->db_tms->trans_rollback();
+            return false;
+        }
+
+        // Build UPDATE query
+        $update_fields = array();
+        $update_params = array();
+
+        $update_fields[] = 'INV_TOOL_ID = ?';
+        $update_params[] = $tool_id;
+
+        $update_fields[] = 'INV_MLR_ID = ?';
+        $update_params[] = $mlr_id;
+
+        $update_fields[] = 'INV_TOOL_TAG = ?';
+        $update_params[] = $tool_tag;
+
+        $update_fields[] = 'INV_STATUS = ?';
+        $update_params[] = $tool_status;
+
+        if ($storage_location_id !== null) {
+            $update_fields[] = 'INV_SL_ID = ?';
+            $update_params[] = $storage_location_id;
+        } else {
+            $update_fields[] = 'INV_SL_ID = NULL';
+        }
+
+        if ($notes !== null) {
+            $update_fields[] = 'INV_NOTES = ?';
+            $update_params[] = $notes;
+        } else {
+            $update_fields[] = 'INV_NOTES = NULL';
+        }
+
+        if ($rq_no !== null) {
+            $update_fields[] = 'INV_RQ_NO = ?';
+            $update_params[] = $rq_no;
+        } else {
+            $update_fields[] = 'INV_RQ_NO = NULL';
+        }
+
+        if ($maker_id !== null) {
+            $update_fields[] = 'INV_MAKER_ID = ?';
+            $update_params[] = $maker_id;
+        } else {
+            $update_fields[] = 'INV_MAKER_ID = NULL';
+        }
+
+        if ($material_id !== null) {
+            $update_fields[] = 'INV_MAT_ID = ?';
+            $update_params[] = $material_id;
+        } else {
+            $update_fields[] = 'INV_MAT_ID = NULL';
+        }
+
+        if ($purchase_type !== null) {
+            $update_fields[] = 'INV_PURCHASE_TYPE = ?';
+            $update_params[] = $purchase_type;
+        } else {
+            $update_fields[] = 'INV_PURCHASE_TYPE = NULL';
+        }
+
+        if ($do_no !== null) {
+            $update_fields[] = 'INV_DO_NO = ?';
+            $update_params[] = $do_no;
+        } else {
+            $update_fields[] = 'INV_DO_NO = NULL';
+        }
+
+        if ($received_date !== null) {
+            $update_fields[] = 'INV_RECEIVED_DATE = CONVERT(datetime, ?, 120)';
+            $update_params[] = $received_date;
+        } else {
+            $update_fields[] = 'INV_RECEIVED_DATE = NULL';
+        }
+
+        if ($tool_condition !== null) {
+            $update_fields[] = 'INV_TOOL_CONDITION = ?';
+            $update_params[] = $tool_condition;
+        } else {
+            $update_fields[] = 'INV_TOOL_CONDITION = NULL';
+        }
+
+        if ($begin_cycle !== null) {
+            $update_fields[] = 'INV_BEGIN_CYCLE = ?';
+            $update_params[] = $begin_cycle;
+        } else {
+            $update_fields[] = 'INV_BEGIN_CYCLE = NULL';
+        }
+
+        if ($end_cycle !== null) {
+            $update_fields[] = 'INV_END_CYCLE = ?';
+            $update_params[] = $end_cycle;
+        } else {
+            $update_fields[] = 'INV_END_CYCLE = NULL';
+        }
+
+        if ($in_tool_set !== null) {
+            $update_fields[] = 'INV_IN_TOOL_SET = ?';
+            $update_params[] = $in_tool_set;
+        } else {
+            $update_fields[] = 'INV_IN_TOOL_SET = NULL';
+        }
+
+        $update_fields[] = 'INV_ASSETIZED = ?';
+        $update_params[] = $assetized;
+
+        $update_params[] = $inv_id; // For WHERE clause
+
+        $update_sql = "UPDATE {$this->t('TMS_TOOL_INVENTORY')} SET " . implode(', ', $update_fields) . " WHERE INV_ID = ?";
+        $update_q = $this->db_tms->query($update_sql, $update_params);
+
+        if (!$update_q) {
+            $this->db_tms->trans_rollback();
+            $err = $this->db_tms->error();
+            $this->messages = 'Gagal mengupdate Tool Inventory. ' . (isset($err['message']) ? $err['message'] : '');
+            return false;
+        }
+
+        $this->db_tms->trans_complete();
+
+        if ($this->db_tms->trans_status()) {
+            $this->messages = 'Tool Inventory berhasil diupdate.';
+            return true;
+        }
+
+        $err = $this->db_tms->error();
+        $this->messages = 'Gagal mengupdate Tool Inventory. ' . (isset($err['message']) ? $err['message'] : '');
         return false;
     }
 

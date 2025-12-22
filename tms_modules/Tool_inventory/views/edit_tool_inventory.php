@@ -278,9 +278,13 @@
                                                 <label>Purchase Type</label>
                                                 <select name="purchase_type" class="form-control">
                                                     <option value="">-- Select Purchase Type --</option>
-                                                    <option value="Local" <?= (isset($inventory['INV_PURCHASE_TYPE']) && $inventory['INV_PURCHASE_TYPE'] === 'Local') ? 'selected' : ''; ?>>Local</option>
-                                                    <option value="Overseas" <?= (isset($inventory['INV_PURCHASE_TYPE']) && $inventory['INV_PURCHASE_TYPE'] === 'Overseas') ? 'selected' : ''; ?>>Overseas</option>
-                                                    <option value="Internal Fabrication" <?= (isset($inventory['INV_PURCHASE_TYPE']) && $inventory['INV_PURCHASE_TYPE'] === 'Internal Fabrication') ? 'selected' : ''; ?>>Internal Fabrication</option>
+                                                    <?php 
+                                                    $purchase_type_value = isset($inventory['INV_PURCHASE_TYPE_STRING']) ? $inventory['INV_PURCHASE_TYPE_STRING'] : 
+                                                                          (isset($inventory['INV_PURCHASE_TYPE']) ? $inventory['INV_PURCHASE_TYPE'] : '');
+                                                    ?>
+                                                    <option value="Local" <?= ($purchase_type_value === 'Local' || $purchase_type_value === '1' || $purchase_type_value === 1) ? 'selected' : ''; ?>>Local</option>
+                                                    <option value="Overseas" <?= ($purchase_type_value === 'Overseas' || $purchase_type_value === '2' || $purchase_type_value === 2) ? 'selected' : ''; ?>>Overseas</option>
+                                                    <option value="Internal Fabrication" <?= ($purchase_type_value === 'Internal Fabrication' || $purchase_type_value === '3' || $purchase_type_value === 3) ? 'selected' : ''; ?>>Internal Fabrication</option>
                                                 </select>
                                             </div>
                                         </div>
@@ -542,13 +546,50 @@
             }
         });
 
-        // Form validation
+        // Form submit with AJAX
         $('#formToolInventory').on('submit', function(e) {
+            e.preventDefault();
+            
             if (!this.checkValidity()) {
-                e.preventDefault();
-                e.stopPropagation();
+                $(this).addClass('was-validated');
+                return;
             }
-            $(this).addClass('was-validated');
+
+            var formData = new FormData(this);
+            
+            $.ajax({
+                url: $(this).attr('action'),
+                type: 'POST',
+                data: formData,
+                dataType: 'json',
+                processData: false,
+                contentType: false,
+                cache: false,
+                timeout: 30000
+            }).done(function(res) {
+                if (res && res.success) {
+                    if (typeof toastr !== 'undefined') {
+                        toastr.success(res.message || 'Tool Inventory berhasil diupdate');
+                    } else {
+                        alert(res.message || 'Tool Inventory berhasil diupdate');
+                    }
+                    setTimeout(function() {
+                        window.location.href = '<?= base_url("Tool_inventory/tool_inventory"); ?>';
+                    }, 1000);
+                } else {
+                    if (typeof toastr !== 'undefined') {
+                        toastr.warning(res && res.message ? res.message : 'Gagal mengupdate Tool Inventory');
+                    } else {
+                        alert(res && res.message ? res.message : 'Gagal mengupdate Tool Inventory');
+                    }
+                }
+            }).fail(function(xhr, status, error) {
+                if (typeof toastr !== 'undefined') {
+                    toastr.error('Gagal mengupdate: ' + (error || status));
+                } else {
+                    alert('Gagal mengupdate: ' + (error || status));
+                }
+            });
         });
     });
 })(jQuery);

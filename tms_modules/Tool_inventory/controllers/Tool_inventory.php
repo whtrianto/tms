@@ -429,6 +429,62 @@ class Tool_inventory extends MY_Controller
                     $result['success'] = false;
                     $result['message'] = $this->tool_inventory->messages ?: 'Gagal menambahkan Tool Inventory.';
                 }
+            } elseif ($action === 'EDIT') {
+                $inv_id = (int)$this->input->post('INV_ID', TRUE);
+                if ($inv_id <= 0) {
+                    $result['message'] = 'ID tidak valid.';
+                    echo json_encode($result);
+                    return;
+                }
+
+                // Prepare data for model
+                $data = array(
+                    'inv_id' => $inv_id,
+                    'mlr_id' => $this->input->post('mlr_id', TRUE),
+                    'tool_id' => $this->input->post('tool_id', TRUE),
+                    'tool_tag' => $this->input->post('tool_tag', TRUE),
+                    'product_id' => $this->input->post('product_id', TRUE),
+                    'process_id' => $this->input->post('process_id', TRUE),
+                    'tool_name' => $this->input->post('tool_name', TRUE),
+                    'revision' => $this->input->post('revision', TRUE),
+                    'tool_status' => $this->input->post('tool_status', TRUE),
+                    'storage_location_id' => $this->input->post('storage_location_id', TRUE),
+                    'notes' => $this->input->post('notes', TRUE),
+                    'rq_no' => $this->input->post('rq_no', TRUE),
+                    'maker_id' => $this->input->post('maker_id', TRUE),
+                    'material_id' => $this->input->post('material_id', TRUE),
+                    'purchase_type' => $this->input->post('purchase_type', TRUE),
+                    'do_no' => $this->input->post('do_no', TRUE),
+                    'received_date' => $this->input->post('received_date', TRUE),
+                    'tool_condition' => $this->input->post('tool_condition', TRUE),
+                    'begin_cycle' => $this->input->post('begin_cycle', TRUE),
+                    'end_cycle' => $this->input->post('end_cycle', TRUE),
+                    'in_tool_set' => $this->input->post('in_tool_set', TRUE),
+                    'assetized' => $this->input->post('assetized', TRUE)
+                );
+
+                // Get MLR_ID from revision select if "Allow Select Old Revision" is checked
+                if ($this->input->post('allow_old_revision') == '1') {
+                    $mlr_id = (int)$this->input->post('mlr_revision', TRUE);
+                    if ($mlr_id > 0) {
+                        $data['mlr_id'] = $mlr_id;
+                    }
+                } else {
+                    // Use MLR_ID from hidden input
+                    $mlr_id = (int)$this->input->post('mlr_id', TRUE);
+                    if ($mlr_id > 0) {
+                        $data['mlr_id'] = $mlr_id;
+                    }
+                }
+
+                $ok = $this->tool_inventory->update_data($data);
+                if ($ok) {
+                    $result['success'] = true;
+                    $result['message'] = $this->tool_inventory->messages ?: 'Tool Inventory berhasil diupdate.';
+                } else {
+                    $result['success'] = false;
+                    $result['message'] = $this->tool_inventory->messages ?: 'Gagal mengupdate Tool Inventory.';
+                }
             } else {
                 $result['message'] = 'Action tidak valid.';
             }
