@@ -444,6 +444,8 @@ class M_tool_scrap extends CI_Model
             }
             
             // Tool ID exists, now get full details with joins
+            // Simplified query - ensure it always returns data if Tool ID exists
+            // All JOINs are LEFT JOIN so missing data in related tables won't prevent results
             $sql = "SELECT TOP 1
                         inv.INV_ID,
                         inv.INV_TOOL_ID AS TOOL_ID,
@@ -467,14 +469,19 @@ class M_tool_scrap extends CI_Model
                     LEFT JOIN {$this->t('MS_MATERIAL')} mat ON mat.MAT_ID = inv.INV_MAT_ID
                     LEFT JOIN {$this->t('TMS_ORDERING_ITEMS')} ordi ON ordi.ORDI_ID = inv.INV_ORDI_ID
                     LEFT JOIN {$this->t('TMS_ORDERING')} ord ON ord.ORD_ID = ordi.ORDI_ORD_ID
-                    LEFT JOIN {$this->t('TMS_ASSIGNED_TOOLS')} assgn ON assgn.ASSGN_ID = inv.INV_ASSGN_ID
-                    LEFT JOIN {$this->t('TMS_TOOL_ASSIGNMENT')} tasgn ON tasgn.TASGN_ID = assgn.ASSGN_TASGN_ID
                     LEFT JOIN (
                         SELECT ASSGN_INV_ID, SUM(ISNULL(ASSGN_QTY_PRODUCED, 0)) AS PCS_PRODUCED
                         FROM {$this->t('TMS_ASSIGNED_TOOLS')}
                         WHERE ASSGN_INV_ID IS NOT NULL
                         GROUP BY ASSGN_INV_ID
                     ) pcs_produced ON pcs_produced.ASSGN_INV_ID = inv.INV_ID
+                    LEFT JOIN (
+                        SELECT ASSGN_INV_ID, MAX(ASSGN_TASGN_ID) AS ASSGN_TASGN_ID
+                        FROM {$this->t('TMS_ASSIGNED_TOOLS')}
+                        WHERE ASSGN_INV_ID IS NOT NULL
+                        GROUP BY ASSGN_INV_ID
+                    ) assgn ON assgn.ASSGN_INV_ID = inv.INV_ID
+                    LEFT JOIN {$this->t('TMS_TOOL_ASSIGNMENT')} tasgn ON tasgn.TASGN_ID = assgn.ASSGN_TASGN_ID
                     WHERE inv.INV_TOOL_ID = {$tool_id_escaped}
                     ORDER BY inv.INV_ID DESC";
             
