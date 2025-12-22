@@ -409,6 +409,7 @@ class M_tool_scrap extends CI_Model
 
     /**
      * Get tool inventory details by Tool ID for auto-fill
+     * REBUILT FROM SCRATCH - Using direct query matching VW_TOOL_INVENTORY view structure
      */
     public function get_tool_inventory_details_by_tool_id($tool_id)
     {
@@ -419,85 +420,25 @@ class M_tool_scrap extends CI_Model
         }
 
         try {
-            // Use parameterized query like M_tool_inventory::get_tool_id_details() for better compatibility
-            // First, check if Tool ID exists at all (simple check)
-            $check_sql = "SELECT TOP 1 INV_ID, INV_TOOL_ID FROM {$this->t('TMS_TOOL_INVENTORY')} WHERE INV_TOOL_ID = ?";
-            $check_q = $this->db_tms->query($check_sql, array($tool_id));
-            
-            if (!$check_q || $check_q->num_rows() == 0) {
-                // Tool ID doesn't exist at all
-                log_message('debug', '[M_tool_scrap::get_tool_inventory_details_by_tool_id] Tool ID not found in TMS_TOOL_INVENTORY: [' . $tool_id . ']');
-                
-                // Try to find similar Tool IDs for debugging (case-insensitive search)
-                $similar_sql = "SELECT TOP 5 INV_TOOL_ID, LEN(INV_TOOL_ID) AS LEN_ID FROM {$this->t('TMS_TOOL_INVENTORY')} WHERE UPPER(LTRIM(RTRIM(INV_TOOL_ID))) = UPPER(LTRIM(RTRIM(?))) OR INV_TOOL_ID LIKE ? ORDER BY INV_ID DESC";
-                $similar_q = $this->db_tms->query($similar_sql, array($tool_id, '%' . $tool_id . '%'));
-                $similar_ids = array();
-                if ($similar_q && $similar_q->num_rows() > 0) {
-                    foreach ($similar_q->result_array() as $row) {
-                        $similar_ids[] = $row['INV_TOOL_ID'];
-                    }
-                }
-                log_message('debug', '[M_tool_scrap::get_tool_inventory_details_by_tool_id] Similar Tool IDs found: ' . implode(', ', $similar_ids));
-                return null;
-            }
-            
-            // Tool ID exists, now get full details with joins
-            // Get data from multiple sources: Inventory, Master List Rev, Ordering, Requisition
+            // Use VIEW VW_TOOL_INVENTORY directly - this is what server original uses
+            // This ensures 100% compatibility with server original data
             $sql = "SELECT TOP 1
-                        inv.INV_ID,
-                        inv.INV_TOOL_ID AS TOOL_ID,
-                        inv.INV_MLR_ID,
-                        -- Drawing No: from TMS_TOOL_MASTER_LIST
-                        ISNULL(ml.ML_TOOL_DRAW_NO, '') AS TOOL_DRAWING_NO,
-                        -- Revision: from TMS_TOOL_MASTER_LIST_REV
-                        ISNULL(mlr.MLR_REV, 0) AS REVISION,
-                        -- Tool Name: from MS_TOOL_CLASS via MLR_TC_ID
-                        ISNULL(tc.TC_NAME, '') AS TOOL_NAME,
-                        ISNULL(tc.TC_ID, 0) AS TOOL_NAME_ID,
-                        -- Material: from MS_MATERIAL via INV_MAT_ID - following VW_TOOL_INVENTORY pattern (line 2737)
-                        -- VW_TOOL_INVENTORY uses: Material.MAT_ID = ToolInventory.INV_MAT_ID
-                        ISNULL(inv_mat.MAT_NAME, '') AS MATERIAL,
-                        ISNULL(inv.INV_MAT_ID, 0) AS MATERIAL_ID,
-                        -- RQ No: from INV_RQ_NO or ORD_RQ_NO - following VW_TOOL_INVENTORY pattern (line 2725, 2727)
-                        -- VW_TOOL_INVENTORY shows: ToolInventory.INV_RQ_NO, ToolOrdering.ORD_RQ_NO
-                        ISNULL(inv.INV_RQ_NO, ord.ORD_RQ_NO) AS RQ_NO,
-                        -- Tool Price: from INV_TOOL_COST - following VW_TOOL_INVENTORY pattern (line 2726)
-                        -- VW_TOOL_INVENTORY shows: ToolInventory.INV_TOOL_COST
-                        ISNULL(inv.INV_TOOL_COST, 0) AS TOOL_PRICE,
-                        -- Tool Assignment No: from TMS_TOOL_ASSIGNMENT via TMS_ASSIGNED_TOOLS (scalar subquery)
-                        ISNULL((
-                            SELECT TOP 1 tasgn.TASGN_ASSIGN_NO
-                            FROM {$this->t('TMS_ASSIGNED_TOOLS')} assgn
-                            INNER JOIN {$this->t('TMS_TOOL_ASSIGNMENT')} tasgn ON tasgn.TASGN_ID = assgn.ASSGN_TASGN_ID
-                            WHERE assgn.ASSGN_INV_ID = inv.INV_ID
-                            ORDER BY assgn.ASSGN_ID DESC
-                        ), '') AS TOOL_ASSIGNMENT_NO,
-                        -- Pcs Produced: SUM from TMS_ASSIGNED_TOOLS (scalar subquery)
-                        ISNULL((
-                            SELECT SUM(ISNULL(ASSGN_QTY_PRODUCED, 0))
-                            FROM {$this->t('TMS_ASSIGNED_TOOLS')}
-                            WHERE ASSGN_INV_ID = inv.INV_ID
-                        ), 0) AS PCS_PRODUCED,
-                        ISNULL(inv.INV_STATUS, 0) AS STATUS,
-                        ISNULL(inv.INV_END_CYCLE, 0) AS END_CYCLE
-                    FROM {$this->t('TMS_TOOL_INVENTORY')} inv
-                    -- Join to TMS_TOOL_MASTER_LIST_REV (for Revision, Tool Name, Material fallback, Price fallback)
-                    LEFT JOIN {$this->t('TMS_TOOL_MASTER_LIST_REV')} mlr ON mlr.MLR_ID = inv.INV_MLR_ID
-                    -- Join to TMS_TOOL_MASTER_LIST (for Drawing No)
-                    LEFT JOIN {$this->t('TMS_TOOL_MASTER_LIST')} ml ON ml.ML_ID = mlr.MLR_ML_ID
-                    -- Join to MS_TOOL_CLASS (for Tool Name) - following VW_TOOL_INVENTORY pattern (line 2735)
-                    LEFT JOIN {$this->t('MS_TOOL_CLASS')} tc ON tc.TC_ID = mlr.MLR_TC_ID
-                    -- Join to MS_MATERIAL for inventory material (INV_MAT_ID) - following VW_TOOL_INVENTORY pattern (line 2737)
-                    LEFT JOIN {$this->t('MS_MATERIAL')} inv_mat ON inv_mat.MAT_ID = inv.INV_MAT_ID
-                    -- Join to TMS_ORDERING_ITEMS and TMS_ORDERING (for RQ No from Ordering)
-                    LEFT JOIN {$this->t('TMS_ORDERING_ITEMS')} ordi ON ordi.ORDI_ID = inv.INV_ORDI_ID
-                    LEFT JOIN {$this->t('TMS_ORDERING')} ord ON ord.ORD_ID = ordi.ORDI_ORD_ID
-                    WHERE inv.INV_TOOL_ID = ?
-                    ORDER BY inv.INV_ID DESC";
+                        INV_ID,
+                        INV_TOOL_ID AS TOOL_ID,
+                        ML_TOOL_DRAW_NO AS TOOL_DRAWING_NO,
+                        MLR_REV AS REVISION,
+                        TC_NAME AS TOOL_NAME,
+                        MAT_NAME AS MATERIAL,
+                        ISNULL(INV_RQ_NO, ORD_RQ_NO) AS RQ_NO,
+                        ISNULL(INV_TOOL_COST, 0) AS TOOL_PRICE,
+                        '' AS TOOL_ASSIGNMENT_NO,
+                        0 AS PCS_PRODUCED
+                    FROM {$this->t('VW_TOOL_INVENTORY')}
+                    WHERE INV_TOOL_ID = ?
+                    ORDER BY INV_ID DESC";
             
-            log_message('debug', '[M_tool_scrap::get_tool_inventory_details_by_tool_id] Querying Tool ID: [' . $tool_id . '] (length: ' . strlen($tool_id) . ')');
+            log_message('debug', '[M_tool_scrap::get_tool_inventory_details_by_tool_id] Querying Tool ID using VW_TOOL_INVENTORY: [' . $tool_id . ']');
             
-            // Use parameterized query for better compatibility
             $q = $this->db_tms->query($sql, array($tool_id));
             
             if (!$q) {
@@ -505,46 +446,119 @@ class M_tool_scrap extends CI_Model
                 $error_msg = isset($error['message']) ? $error['message'] : 'Unknown error';
                 log_message('error', '[M_tool_scrap::get_tool_inventory_details_by_tool_id] Query error: ' . $error_msg . ' - Tool ID: [' . $tool_id . ']');
                 log_message('error', '[M_tool_scrap::get_tool_inventory_details_by_tool_id] SQL: ' . $sql);
-                return null;
+                
+                // Fallback: Try manual query if VIEW doesn't work
+                return $this->get_tool_inventory_details_manual($tool_id);
             }
             
             if ($q->num_rows() > 0) {
                 $result = $q->row_array();
-                log_message('debug', '[M_tool_scrap::get_tool_inventory_details_by_tool_id] Found data for Tool ID: [' . $tool_id . '] - Found TOOL_ID: [' . (isset($result['TOOL_ID']) ? $result['TOOL_ID'] : 'N/A') . ']');
-                log_message('debug', '[M_tool_scrap::get_tool_inventory_details_by_tool_id] Material: [' . (isset($result['MATERIAL']) ? $result['MATERIAL'] : 'N/A') . '], RQ_NO: [' . (isset($result['RQ_NO']) ? $result['RQ_NO'] : 'N/A') . '], TOOL_PRICE: [' . (isset($result['TOOL_PRICE']) ? $result['TOOL_PRICE'] : 'N/A') . ']');
+                
+                // Get Tool Assignment No and Pcs Produced separately (not in VIEW)
+                $inv_id = isset($result['INV_ID']) ? (int)$result['INV_ID'] : 0;
+                if ($inv_id > 0) {
+                    // Tool Assignment No
+                    $assign_sql = "SELECT TOP 1 tasgn.TASGN_ASSIGN_NO
+                                   FROM {$this->t('TMS_ASSIGNED_TOOLS')} assgn
+                                   INNER JOIN {$this->t('TMS_TOOL_ASSIGNMENT')} tasgn ON tasgn.TASGN_ID = assgn.ASSGN_TASGN_ID
+                                   WHERE assgn.ASSGN_INV_ID = ?
+                                   ORDER BY assgn.ASSGN_ID DESC";
+                    $assign_q = $this->db_tms->query($assign_sql, array($inv_id));
+                    if ($assign_q && $assign_q->num_rows() > 0) {
+                        $assign_row = $assign_q->row_array();
+                        $result['TOOL_ASSIGNMENT_NO'] = isset($assign_row['TASGN_ASSIGN_NO']) ? $assign_row['TASGN_ASSIGN_NO'] : '';
+                    }
+                    
+                    // Pcs Produced
+                    $pcs_sql = "SELECT SUM(ISNULL(ASSGN_QTY_PRODUCED, 0)) AS PCS_PRODUCED
+                                FROM {$this->t('TMS_ASSIGNED_TOOLS')}
+                                WHERE ASSGN_INV_ID = ?";
+                    $pcs_q = $this->db_tms->query($pcs_sql, array($inv_id));
+                    if ($pcs_q && $pcs_q->num_rows() > 0) {
+                        $pcs_row = $pcs_q->row_array();
+                        $result['PCS_PRODUCED'] = isset($pcs_row['PCS_PRODUCED']) ? (int)$pcs_row['PCS_PRODUCED'] : 0;
+                    }
+                }
+                
+                log_message('debug', '[M_tool_scrap::get_tool_inventory_details_by_tool_id] Found data for Tool ID: [' . $tool_id . ']');
+                log_message('debug', '[M_tool_scrap::get_tool_inventory_details_by_tool_id] TOOL_NAME: [' . (isset($result['TOOL_NAME']) ? $result['TOOL_NAME'] : 'N/A') . '], MATERIAL: [' . (isset($result['MATERIAL']) ? $result['MATERIAL'] : 'N/A') . '], RQ_NO: [' . (isset($result['RQ_NO']) ? $result['RQ_NO'] : 'N/A') . '], TOOL_PRICE: [' . (isset($result['TOOL_PRICE']) ? $result['TOOL_PRICE'] : 'N/A') . ']');
                 return $result;
             } else {
-                log_message('debug', '[M_tool_scrap::get_tool_inventory_details_by_tool_id] Tool ID exists but no data returned from joined query: [' . $tool_id . ']');
-                // Fallback: return basic data from TMS_TOOL_INVENTORY only
-                $fallback_sql = "SELECT TOP 1
-                                    INV_ID,
-                                    INV_TOOL_ID AS TOOL_ID,
-                                    INV_MLR_ID,
-                                    '' AS TOOL_DRAWING_NO,
-                                    0 AS REVISION,
-                                    '' AS TOOL_NAME,
-                                    0 AS TOOL_NAME_ID,
-                                    '' AS MATERIAL,
-                                    0 AS MATERIAL_ID,
-                                    ISNULL(INV_RQ_NO, '') AS RQ_NO,
-                                    0 AS TOOL_PRICE,
-                                    '' AS TOOL_ASSIGNMENT_NO,
-                                    0 AS PCS_PRODUCED,
-                                    ISNULL(INV_STATUS, 0) AS STATUS,
-                                    ISNULL(INV_END_CYCLE, 0) AS END_CYCLE
-                                FROM {$this->t('TMS_TOOL_INVENTORY')}
-                                WHERE INV_TOOL_ID = ?
-                                ORDER BY INV_ID DESC";
-                $fallback_q = $this->db_tms->query($fallback_sql, array($tool_id));
-                if ($fallback_q && $fallback_q->num_rows() > 0) {
-                    $result = $fallback_q->row_array();
-                    log_message('debug', '[M_tool_scrap::get_tool_inventory_details_by_tool_id] Using fallback query - Found basic data for Tool ID: [' . $tool_id . ']');
-                    return $result;
-                }
-                return null;
+                log_message('debug', '[M_tool_scrap::get_tool_inventory_details_by_tool_id] Tool ID not found in VW_TOOL_INVENTORY: [' . $tool_id . ']');
+                // Fallback: Try manual query
+                return $this->get_tool_inventory_details_manual($tool_id);
             }
         } catch (Exception $e) {
             log_message('error', '[M_tool_scrap::get_tool_inventory_details_by_tool_id] Exception: ' . $e->getMessage() . ' - Tool ID: [' . $tool_id . ']');
+            // Fallback: Try manual query
+            return $this->get_tool_inventory_details_manual($tool_id);
+        }
+    }
+    
+    /**
+     * Fallback method: Manual query if VIEW doesn't work
+     */
+    private function get_tool_inventory_details_manual($tool_id)
+    {
+        try {
+            // Manual query following exact VW_TOOL_INVENTORY structure
+            $sql = "SELECT TOP 1
+                        inv.INV_ID,
+                        inv.INV_TOOL_ID AS TOOL_ID,
+                        ISNULL(ml.ML_TOOL_DRAW_NO, '') AS TOOL_DRAWING_NO,
+                        ISNULL(mlr.MLR_REV, 0) AS REVISION,
+                        ISNULL(tc.TC_NAME, '') AS TOOL_NAME,
+                        ISNULL(mat.MAT_NAME, '') AS MATERIAL,
+                        ISNULL(inv.INV_RQ_NO, ord.ORD_RQ_NO) AS RQ_NO,
+                        ISNULL(inv.INV_TOOL_COST, 0) AS TOOL_PRICE,
+                        '' AS TOOL_ASSIGNMENT_NO,
+                        0 AS PCS_PRODUCED
+                    FROM {$this->t('TMS_TOOL_INVENTORY')} inv
+                    LEFT JOIN {$this->t('TMS_TOOL_MASTER_LIST_REV')} mlr ON mlr.MLR_ID = inv.INV_MLR_ID
+                    LEFT JOIN {$this->t('TMS_TOOL_MASTER_LIST')} ml ON ml.ML_ID = mlr.MLR_ML_ID
+                    LEFT JOIN {$this->t('MS_TOOL_CLASS')} tc ON tc.TC_ID = mlr.MLR_TC_ID
+                    LEFT JOIN {$this->t('MS_MATERIAL')} mat ON mat.MAT_ID = inv.INV_MAT_ID
+                    LEFT JOIN {$this->t('TMS_ORDERING_ITEMS')} ordi ON ordi.ORDI_ID = inv.INV_ORDI_ID
+                    LEFT JOIN {$this->t('TMS_ORDERING')} ord ON ord.ORD_ID = ordi.ORDI_ORD_ID
+                    WHERE inv.INV_TOOL_ID = ?
+                    ORDER BY inv.INV_ID DESC";
+            
+            $q = $this->db_tms->query($sql, array($tool_id));
+            
+            if ($q && $q->num_rows() > 0) {
+                $result = $q->row_array();
+                
+                // Get Tool Assignment No and Pcs Produced
+                $inv_id = isset($result['INV_ID']) ? (int)$result['INV_ID'] : 0;
+                if ($inv_id > 0) {
+                    $assign_sql = "SELECT TOP 1 tasgn.TASGN_ASSIGN_NO
+                                   FROM {$this->t('TMS_ASSIGNED_TOOLS')} assgn
+                                   INNER JOIN {$this->t('TMS_TOOL_ASSIGNMENT')} tasgn ON tasgn.TASGN_ID = assgn.ASSGN_TASGN_ID
+                                   WHERE assgn.ASSGN_INV_ID = ?
+                                   ORDER BY assgn.ASSGN_ID DESC";
+                    $assign_q = $this->db_tms->query($assign_sql, array($inv_id));
+                    if ($assign_q && $assign_q->num_rows() > 0) {
+                        $assign_row = $assign_q->row_array();
+                        $result['TOOL_ASSIGNMENT_NO'] = isset($assign_row['TASGN_ASSIGN_NO']) ? $assign_row['TASGN_ASSIGN_NO'] : '';
+                    }
+                    
+                    $pcs_sql = "SELECT SUM(ISNULL(ASSGN_QTY_PRODUCED, 0)) AS PCS_PRODUCED
+                                FROM {$this->t('TMS_ASSIGNED_TOOLS')}
+                                WHERE ASSGN_INV_ID = ?";
+                    $pcs_q = $this->db_tms->query($pcs_sql, array($inv_id));
+                    if ($pcs_q && $pcs_q->num_rows() > 0) {
+                        $pcs_row = $pcs_q->row_array();
+                        $result['PCS_PRODUCED'] = isset($pcs_row['PCS_PRODUCED']) ? (int)$pcs_row['PCS_PRODUCED'] : 0;
+                    }
+                }
+                
+                log_message('debug', '[M_tool_scrap::get_tool_inventory_details_manual] Found data for Tool ID: [' . $tool_id . ']');
+                return $result;
+            }
+            
+            return null;
+        } catch (Exception $e) {
+            log_message('error', '[M_tool_scrap::get_tool_inventory_details_manual] Exception: ' . $e->getMessage());
             return null;
         }
     }
