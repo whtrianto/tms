@@ -445,7 +445,7 @@ class M_tool_scrap extends CI_Model
             
             // Tool ID exists, now get full details with joins
             // Simplified query - ensure it always returns data if Tool ID exists
-            // All JOINs are LEFT JOIN so missing data in related tables won't prevent results
+            // Use scalar subqueries for PCS_PRODUCED and TOOL_ASSIGNMENT_NO to avoid JOIN issues
             $sql = "SELECT TOP 1
                         inv.INV_ID,
                         inv.INV_TOOL_ID AS TOOL_ID,
@@ -458,8 +458,18 @@ class M_tool_scrap extends CI_Model
                         ISNULL(mat.MAT_ID, 0) AS MATERIAL_ID,
                         ISNULL(ISNULL(ord.ORD_RQ_NO, inv.INV_RQ_NO), '') AS RQ_NO,
                         ISNULL(mlr.MLR_PRICE, 0) AS TOOL_PRICE,
-                        ISNULL(tasgn.TASGN_ASSIGN_NO, '') AS TOOL_ASSIGNMENT_NO,
-                        ISNULL(pcs_produced.PCS_PRODUCED, 0) AS PCS_PRODUCED,
+                        ISNULL((
+                            SELECT TOP 1 tasgn.TASGN_ASSIGN_NO
+                            FROM {$this->t('TMS_ASSIGNED_TOOLS')} assgn
+                            INNER JOIN {$this->t('TMS_TOOL_ASSIGNMENT')} tasgn ON tasgn.TASGN_ID = assgn.ASSGN_TASGN_ID
+                            WHERE assgn.ASSGN_INV_ID = inv.INV_ID
+                            ORDER BY assgn.ASSGN_ID DESC
+                        ), '') AS TOOL_ASSIGNMENT_NO,
+                        ISNULL((
+                            SELECT SUM(ISNULL(ASSGN_QTY_PRODUCED, 0))
+                            FROM {$this->t('TMS_ASSIGNED_TOOLS')}
+                            WHERE ASSGN_INV_ID = inv.INV_ID
+                        ), 0) AS PCS_PRODUCED,
                         ISNULL(inv.INV_STATUS, 0) AS STATUS,
                         ISNULL(inv.INV_END_CYCLE, 0) AS END_CYCLE
                     FROM {$this->t('TMS_TOOL_INVENTORY')} inv
@@ -469,19 +479,6 @@ class M_tool_scrap extends CI_Model
                     LEFT JOIN {$this->t('MS_MATERIAL')} mat ON mat.MAT_ID = inv.INV_MAT_ID
                     LEFT JOIN {$this->t('TMS_ORDERING_ITEMS')} ordi ON ordi.ORDI_ID = inv.INV_ORDI_ID
                     LEFT JOIN {$this->t('TMS_ORDERING')} ord ON ord.ORD_ID = ordi.ORDI_ORD_ID
-                    LEFT JOIN (
-                        SELECT ASSGN_INV_ID, SUM(ISNULL(ASSGN_QTY_PRODUCED, 0)) AS PCS_PRODUCED
-                        FROM {$this->t('TMS_ASSIGNED_TOOLS')}
-                        WHERE ASSGN_INV_ID IS NOT NULL
-                        GROUP BY ASSGN_INV_ID
-                    ) pcs_produced ON pcs_produced.ASSGN_INV_ID = inv.INV_ID
-                    LEFT JOIN (
-                        SELECT ASSGN_INV_ID, MAX(ASSGN_TASGN_ID) AS ASSGN_TASGN_ID
-                        FROM {$this->t('TMS_ASSIGNED_TOOLS')}
-                        WHERE ASSGN_INV_ID IS NOT NULL
-                        GROUP BY ASSGN_INV_ID
-                    ) assgn ON assgn.ASSGN_INV_ID = inv.INV_ID
-                    LEFT JOIN {$this->t('TMS_TOOL_ASSIGNMENT')} tasgn ON tasgn.TASGN_ID = assgn.ASSGN_TASGN_ID
                     WHERE inv.INV_TOOL_ID = {$tool_id_escaped}
                     ORDER BY inv.INV_ID DESC";
             
@@ -503,6 +500,32 @@ class M_tool_scrap extends CI_Model
                 return $result;
             } else {
                 log_message('debug', '[M_tool_scrap::get_tool_inventory_details_by_tool_id] Tool ID exists but no data returned from joined query: [' . $tool_id . ']');
+                // Fallback: return basic data from TMS_TOOL_INVENTORY only
+                $fallback_sql = "SELECT TOP 1
+                                    INV_ID,
+                                    INV_TOOL_ID AS TOOL_ID,
+                                    INV_MLR_ID,
+                                    '' AS TOOL_DRAWING_NO,
+                                    0 AS REVISION,
+                                    '' AS TOOL_NAME,
+                                    0 AS TOOL_NAME_ID,
+                                    '' AS MATERIAL,
+                                    0 AS MATERIAL_ID,
+                                    ISNULL(INV_RQ_NO, '') AS RQ_NO,
+                                    0 AS TOOL_PRICE,
+                                    '' AS TOOL_ASSIGNMENT_NO,
+                                    0 AS PCS_PRODUCED,
+                                    ISNULL(INV_STATUS, 0) AS STATUS,
+                                    ISNULL(INV_END_CYCLE, 0) AS END_CYCLE
+                                FROM {$this->t('TMS_TOOL_INVENTORY')}
+                                WHERE INV_TOOL_ID = {$tool_id_escaped}
+                                ORDER BY INV_ID DESC";
+                $fallback_q = $this->db_tms->query($fallback_sql);
+                if ($fallback_q && $fallback_q->num_rows() > 0) {
+                    $result = $fallback_q->row_array();
+                    log_message('debug', '[M_tool_scrap::get_tool_inventory_details_by_tool_id] Using fallback query - Found basic data for Tool ID: [' . $tool_id . ']');
+                    return $result;
+                }
                 return null;
             }
         } catch (Exception $e) {
