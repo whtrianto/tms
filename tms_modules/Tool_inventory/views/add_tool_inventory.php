@@ -82,14 +82,16 @@
 
                                     <div class="form-group">
                                         <label class="label-required">Tool Drawing No.</label>
-                                        <select name="tool_drawing_no" id="tool_drawing_no" class="form-control" required>
-                                            <option value="">-- Select Tool Drawing No. --</option>
-                                            <?php foreach ($tool_drawing_nos as $tdn): ?>
-                                                <option value="<?= (int)$tdn['ML_ID']; ?>" data-mlr-id="<?= isset($tdn['LATEST_MLR_ID']) ? (int)$tdn['LATEST_MLR_ID'] : 0; ?>">
-                                                    <?= htmlspecialchars($tdn['ML_TOOL_DRAW_NO'], ENT_QUOTES, 'UTF-8'); ?>
-                                                </option>
-                                            <?php endforeach; ?>
-                                        </select>
+                                        <div class="input-group">
+                                            <input type="text" name="tool_drawing_no_display" id="tool_drawing_no_display" class="form-control" placeholder="Click to select Tool Drawing No." readonly required>
+                                            <input type="hidden" name="tool_drawing_no" id="tool_drawing_no" value="">
+                                            <input type="hidden" name="mlr_id" id="mlr_id_hidden" value="">
+                                            <div class="input-group-append">
+                                                <button type="button" class="btn btn-primary" id="btn-select-tool-drawing" data-toggle="modal" data-target="#modalToolDrawing">
+                                                    <i class="fa fa-search"></i> Select
+                                                </button>
+                                            </div>
+                                        </div>
                                         <select name="mlr_revision" id="mlr_revision" class="form-control mt-2" style="display:none;">
                                             <option value="">-- Select Revision --</option>
                                         </select>
@@ -199,14 +201,15 @@
 
                                     <div class="form-group">
                                         <label>Storage Location</label>
-                                        <select name="storage_location_id" class="form-control">
-                                            <option value="">-- Select Storage Location --</option>
-                                            <?php foreach ($storage_locations as $sl): ?>
-                                                <option value="<?= (int)$sl['STORAGE_LOCATION_ID']; ?>">
-                                                    <?= htmlspecialchars($sl['STORAGE_LOCATION_NAME'], ENT_QUOTES, 'UTF-8'); ?>
-                                                </option>
-                                            <?php endforeach; ?>
-                                        </select>
+                                        <div class="input-group">
+                                            <input type="text" name="storage_location_display" id="storage_location_display" class="form-control" placeholder="Click to select Storage Location" readonly>
+                                            <input type="hidden" name="storage_location_id" id="storage_location_id" value="">
+                                            <div class="input-group-append">
+                                                <button type="button" class="btn btn-primary" id="btn-select-storage-location" data-toggle="modal" data-target="#modalStorageLocation">
+                                                    <i class="fa fa-search"></i> Select
+                                                </button>
+                                            </div>
+                                        </div>
                                     </div>
 
                                     <div class="form-group">
@@ -250,14 +253,15 @@
                                         <div class="col-md-3">
                                             <div class="form-group">
                                                 <label>Maker</label>
-                                                <select name="maker_id" id="maker_id" class="form-control">
-                                                    <option value="">-- Select Maker --</option>
-                                                    <?php foreach ($makers as $mk): ?>
-                                                        <option value="<?= (int)$mk['MAKER_ID']; ?>" data-maker-code="<?= htmlspecialchars(isset($mk['MAKER_CODE']) ? $mk['MAKER_CODE'] : '', ENT_QUOTES, 'UTF-8'); ?>">
-                                                            <?= htmlspecialchars($mk['MAKER_NAME'], ENT_QUOTES, 'UTF-8'); ?>
-                                                        </option>
-                                                    <?php endforeach; ?>
-                                                </select>
+                                                <div class="input-group">
+                                                    <input type="text" name="maker_display" id="maker_display" class="form-control" placeholder="Click to select Maker" readonly>
+                                                    <input type="hidden" name="maker_id" id="maker_id" value="">
+                                                    <div class="input-group-append">
+                                                        <button type="button" class="btn btn-primary" id="btn-select-maker" data-toggle="modal" data-target="#modalMaker">
+                                                            <i class="fa fa-search"></i> Select
+                                                        </button>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
 
@@ -334,15 +338,289 @@
     </div>
 </div>
 
+<!-- Modal for Maker Selection -->
+<div class="modal fade" id="modalMaker" tabindex="-1" role="dialog" aria-labelledby="modalMakerLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalMakerLabel">Select Maker</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="table-responsive">
+                    <table id="table-maker-modal" class="table table-bordered table-striped table-hover w-100">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Name</th>
+                                <th>Description</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php if (isset($makers_modal) && is_array($makers_modal)): ?>
+                                <?php foreach ($makers_modal as $mk): ?>
+                                    <tr>
+                                        <td><?= htmlspecialchars($mk['ID'], ENT_QUOTES, 'UTF-8'); ?></td>
+                                        <td><?= htmlspecialchars($mk['NAME'], ENT_QUOTES, 'UTF-8'); ?></td>
+                                        <td><?= htmlspecialchars($mk['DESCRIPTION'], ENT_QUOTES, 'UTF-8'); ?></td>
+                                        <td>
+                                            <button type="button" class="btn btn-sm btn-primary btn-select-maker" 
+                                                    data-id="<?= htmlspecialchars($mk['ID'], ENT_QUOTES, 'UTF-8'); ?>"
+                                                    data-name="<?= htmlspecialchars($mk['NAME'], ENT_QUOTES, 'UTF-8'); ?>"
+                                                    data-maker-code="<?= htmlspecialchars($mk['MAKER_CODE'], ENT_QUOTES, 'UTF-8'); ?>">
+                                                Select
+                                            </button>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for Tool Drawing Selection -->
+<div class="modal fade" id="modalToolDrawing" tabindex="-1" role="dialog" aria-labelledby="modalToolDrawingLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalToolDrawingLabel">Select Tool Drawing No.</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="table-responsive">
+                    <table id="table-tool-drawing-modal" class="table table-bordered table-striped table-hover w-100">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Drawing No.</th>
+                                <th>Tool Name</th>
+                                <th>Revision</th>
+                                <th>Description</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php if (isset($tool_drawings_modal) && is_array($tool_drawings_modal)): ?>
+                                <?php foreach ($tool_drawings_modal as $td): ?>
+                                    <tr>
+                                        <td><?= htmlspecialchars($td['ID'], ENT_QUOTES, 'UTF-8'); ?></td>
+                                        <td><?= htmlspecialchars($td['DRAWING_NO'], ENT_QUOTES, 'UTF-8'); ?></td>
+                                        <td><?= htmlspecialchars($td['TOOL_NAME'], ENT_QUOTES, 'UTF-8'); ?></td>
+                                        <td><?= htmlspecialchars($td['REVISION'], ENT_QUOTES, 'UTF-8'); ?></td>
+                                        <td><?= htmlspecialchars($td['DESCRIPTION'], ENT_QUOTES, 'UTF-8'); ?></td>
+                                        <td>
+                                            <button type="button" class="btn btn-sm btn-primary btn-select-td" 
+                                                    data-ml-id="<?= htmlspecialchars($td['ML_ID'], ENT_QUOTES, 'UTF-8'); ?>"
+                                                    data-mlr-id="<?= htmlspecialchars($td['ID'], ENT_QUOTES, 'UTF-8'); ?>"
+                                                    data-drawing-no="<?= htmlspecialchars($td['DRAWING_NO'], ENT_QUOTES, 'UTF-8'); ?>">
+                                                Select
+                                            </button>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for Storage Location Selection -->
+<div class="modal fade" id="modalStorageLocation" tabindex="-1" role="dialog" aria-labelledby="modalStorageLocationLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalStorageLocationLabel">Select Storage Location</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="table-responsive">
+                    <table id="table-storage-location-modal" class="table table-bordered table-striped table-hover w-100">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Name</th>
+                                <th>Description</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php if (isset($storage_locations_modal) && is_array($storage_locations_modal)): ?>
+                                <?php foreach ($storage_locations_modal as $sl): ?>
+                                    <tr>
+                                        <td><?= htmlspecialchars($sl['ID'], ENT_QUOTES, 'UTF-8'); ?></td>
+                                        <td><?= htmlspecialchars($sl['NAME'], ENT_QUOTES, 'UTF-8'); ?></td>
+                                        <td><?= htmlspecialchars($sl['DESCRIPTION'], ENT_QUOTES, 'UTF-8'); ?></td>
+                                        <td>
+                                            <button type="button" class="btn btn-sm btn-primary btn-select-sl" 
+                                                    data-id="<?= htmlspecialchars($sl['ID'], ENT_QUOTES, 'UTF-8'); ?>"
+                                                    data-name="<?= htmlspecialchars($sl['NAME'], ENT_QUOTES, 'UTF-8'); ?>">
+                                                Select
+                                            </button>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <?= isset($foot) ? $foot : ''; ?>
+<link href="<?= base_url('assets/vendor/datatables/dataTables.bootstrap4.min.css'); ?>" rel="stylesheet">
+<link href="<?= base_url('assets/vendor/datatables/jquery.dataTables.min.css'); ?>" rel="stylesheet">
+<script src="<?= base_url('assets/vendor/datatables/jquery.dataTables.min.js'); ?>"></script>
+<script src="<?= base_url('assets/vendor/datatables/dataTables.bootstrap4.min.js'); ?>"></script>
 <script>
 (function($){
     $(function(){
-        // Handle Tool Drawing No change - load revisions if "Allow Select Old Revision" is checked
+        // Initialize DataTable for Maker Modal
+        var tableMaker = $('#table-maker-modal').DataTable({
+            lengthMenu: [[10, 25, 50, 100], [10, 25, 50, 100]],
+            pageLength: 10,
+            order: [[1, 'asc']], // Order by Name
+            columnDefs: [
+                { orderable: false, targets: [3] } // Action column not sortable
+            ]
+        });
+
+        // Handle Maker selection from modal
+        $(document).on('click', '.btn-select-maker', function() {
+            var makerId = $(this).data('id');
+            var makerName = $(this).data('name');
+            var makerCode = $(this).data('maker-code') || '';
+            
+            // Set values
+            $('#maker_id').val(makerId);
+            $('#maker_display').val(makerName);
+            $('#maker_code').val(makerCode);
+            
+            // Close modal
+            $('#modalMaker').modal('hide');
+        });
+
+        // Initialize DataTable for Storage Location Modal
+        var tableStorageLocation = $('#table-storage-location-modal').DataTable({
+            lengthMenu: [[10, 25, 50, 100], [10, 25, 50, 100]],
+            pageLength: 10,
+            order: [[1, 'asc']], // Order by Name
+            columnDefs: [
+                { orderable: false, targets: [3] } // Action column not sortable
+            ]
+        });
+
+        // Handle Storage Location selection from modal
+        $(document).on('click', '.btn-select-sl', function() {
+            var slId = $(this).data('id');
+            var slName = $(this).data('name');
+            
+            // Set values
+            $('#storage_location_id').val(slId);
+            $('#storage_location_display').val(slName);
+            
+            // Close modal
+            $('#modalStorageLocation').modal('hide');
+        });
+
+        // Initialize DataTable for Tool Drawing Modal
+        var tableToolDrawing = $('#table-tool-drawing-modal').DataTable({
+            lengthMenu: [[10, 25, 50, 100], [10, 25, 50, 100]],
+            pageLength: 10,
+            order: [[1, 'asc']], // Order by Drawing No.
+            columnDefs: [
+                { orderable: false, targets: [5] } // Action column not sortable
+            ]
+        });
+
+        // Handle Tool Drawing selection from modal
+        $(document).on('click', '.btn-select-td', function() {
+            var mlId = $(this).data('ml-id');
+            var mlrId = $(this).data('mlr-id');
+            var drawingNo = $(this).data('drawing-no');
+            
+            // Set values
+            $('#tool_drawing_no').val(mlId);
+            $('#tool_drawing_no_display').val(drawingNo);
+            $('#mlr_id_hidden').val(mlrId);
+            
+            // Close modal
+            $('#modalToolDrawing').modal('hide');
+            
+            // Auto-fill Product, Process, Tool Name, Revision
+            if (mlrId) {
+                loadToolDrawingDetails(mlrId);
+            }
+            
+            // Handle "Allow Select Old Revision" checkbox
+            var allowOld = $('#allowOldRevision').is(':checked');
+            if (allowOld && mlId) {
+                // Load revisions
+                loadRevisionsForToolDrawing(mlId);
+            } else {
+                $('#mlr_revision').hide().val('');
+            }
+        });
+
+        // Function to load revisions for Tool Drawing
+        function loadRevisionsForToolDrawing(mlId) {
+            var $revisionSelect = $('#mlr_revision');
+            $revisionSelect.html('<option value="">Loading...</option>').show();
+            
+            $.ajax({
+                url: '<?= base_url("Tool_inventory/tool_inventory/get_revisions"); ?>',
+                type: 'POST',
+                dataType: 'json',
+                data: { ml_id: mlId }
+            }).done(function(res) {
+                if (res && res.success && res.data && res.data.length > 0) {
+                    $revisionSelect.html('<option value="">-- Select Revision --</option>');
+                    $.each(res.data, function(i, rev) {
+                        $revisionSelect.append(
+                            '<option value="' + rev.MLR_ID + '">Revision ' + rev.MLR_REV + 
+                            (rev.MLR_STATUS === 2 ? ' (Active)' : '') + '</option>'
+                        );
+                    });
+                } else {
+                    $revisionSelect.html('<option value="">No revisions found</option>');
+                }
+            }).fail(function() {
+                $revisionSelect.html('<option value="">Error loading revisions</option>');
+            });
+        }
+
+        // Handle Tool Drawing No change (for backward compatibility if needed)
         $('#tool_drawing_no').on('change', function() {
             var mlId = $(this).val();
             var allowOld = $('#allowOldRevision').is(':checked');
             var $revisionSelect = $('#mlr_revision');
+            
+            // Remove existing mlr_id hidden input
+            $('input[name="mlr_id"]').remove();
             
             if (mlId && allowOld) {
                 // Show loading
@@ -375,16 +653,108 @@
                 if (mlId && !allowOld) {
                     var selectedOption = $('#tool_drawing_no option:selected');
                     var latestMlrId = selectedOption.data('mlr-id') || '';
-                    $('<input>').attr({
-                        type: 'hidden',
-                        name: 'mlr_id',
-                        value: latestMlrId
-                    }).appendTo('#formToolInventory');
+                    if (latestMlrId) {
+                        // Auto-fill Product, Process, Tool Name, Revision from Tool Drawing No
+                        loadToolDrawingDetails(latestMlrId);
+                        $('<input>').attr({
+                            type: 'hidden',
+                            name: 'mlr_id',
+                            value: latestMlrId
+                        }).appendTo('#formToolInventory');
+                    }
                 } else {
-                    $('input[name="mlr_id"]').remove();
+                    // Clear fields if no Tool Drawing No selected
+                    clearAutoFillFields();
                 }
             }
         });
+
+        // Handle Revision selection change (when "Allow Select Old Revision" is checked)
+        $('#mlr_revision').on('change', function() {
+            var mlrId = $(this).val();
+            if (mlrId) {
+                // Remove existing mlr_id hidden input
+                $('input[name="mlr_id"]').remove();
+                // Add new mlr_id hidden input
+                $('<input>').attr({
+                    type: 'hidden',
+                    name: 'mlr_id',
+                    value: mlrId
+                }).appendTo('#formToolInventory');
+                // Auto-fill Product, Process, Tool Name, Revision
+                loadToolDrawingDetails(mlrId);
+            } else {
+                clearAutoFillFields();
+            }
+        });
+
+        // Function to load Tool Drawing details and auto-fill fields
+        function loadToolDrawingDetails(mlrId) {
+            if (!mlrId || mlrId === '') {
+                clearAutoFillFields();
+                return;
+            }
+
+            $.ajax({
+                url: '<?= base_url("Tool_inventory/tool_inventory/get_tool_drawing_details"); ?>',
+                type: 'POST',
+                dataType: 'json',
+                data: { mlr_id: mlrId }
+            }).done(function(res) {
+                if (res && res.success && res.data) {
+                    var d = res.data;
+                    
+                    // Auto-fill Product
+                    if (d.PRODUCT_ID) {
+                        $('#product_id').val(d.PRODUCT_ID);
+                        $('#product_id_hidden').val(d.PRODUCT_ID);
+                    } else {
+                        $('#product_id').val('');
+                        $('#product_id_hidden').val('');
+                    }
+
+                    // Auto-fill Process
+                    if (d.PROCESS_ID) {
+                        $('#process_id').val(d.PROCESS_ID);
+                        $('#process_id_hidden').val(d.PROCESS_ID);
+                    } else {
+                        $('#process_id').val('');
+                        $('#process_id_hidden').val('');
+                    }
+
+                    // Auto-fill Tool Name
+                    if (d.TOOL_NAME_ID) {
+                        $('#tool_name').val(d.TOOL_NAME_ID);
+                        $('#tool_name_hidden').val(d.TOOL_NAME_ID);
+                    } else {
+                        $('#tool_name').val('');
+                        $('#tool_name_hidden').val('');
+                    }
+
+                    // Auto-fill Revision
+                    if (d.REVISION !== undefined && d.REVISION !== null) {
+                        $('#revision').val(d.REVISION);
+                    } else {
+                        $('#revision').val('0');
+                    }
+                } else {
+                    clearAutoFillFields();
+                }
+            }).fail(function() {
+                clearAutoFillFields();
+            });
+        }
+
+        // Function to clear auto-fill fields
+        function clearAutoFillFields() {
+            $('#product_id').val('');
+            $('#product_id_hidden').val('');
+            $('#process_id').val('');
+            $('#process_id_hidden').val('');
+            $('#tool_name').val('');
+            $('#tool_name_hidden').val('');
+            $('#revision').val('0');
+        }
 
         // Handle "Allow Select Old Revision" checkbox
         $('#allowOldRevision').on('change', function() {
@@ -393,69 +763,29 @@
                 $('#tool_drawing_no').trigger('change');
             } else {
                 $('#mlr_revision').hide().val('');
-                // If unchecking, use latest revision
+                // If unchecking, use latest revision and auto-fill
                 var mlId = $('#tool_drawing_no').val();
                 if (mlId) {
                     var selectedOption = $('#tool_drawing_no option:selected');
                     var latestMlrId = selectedOption.data('mlr-id') || '';
-                    $('<input>').attr({
-                        type: 'hidden',
-                        name: 'mlr_id',
-                        value: latestMlrId
-                    }).appendTo('#formToolInventory');
+                    if (latestMlrId) {
+                        loadToolDrawingDetails(latestMlrId);
+                        $('<input>').attr({
+                            type: 'hidden',
+                            name: 'mlr_id',
+                            value: latestMlrId
+                        }).appendTo('#formToolInventory');
+                    }
+                } else {
+                    clearAutoFillFields();
                 }
             }
         });
 
-        // Handle Tool ID selection - auto-fill Product, Process, Tool Name, and Revision
-        $('#tool_id').on('change', function() {
-            var selectedOption = $(this).find('option:selected');
-            var processId = selectedOption.data('process-id') || '';
-            var toolNameId = selectedOption.data('tool-name-id') || '';
-            var revision = selectedOption.data('revision') || '';
-            var productId = selectedOption.data('product-id') || '';
+        // Tool ID selection - no longer auto-fills Product, Process, Tool Name, Revision
+        // These fields are now filled from Tool Drawing No only
 
-            // Auto-fill Product (disabled select + hidden input)
-            if (productId) {
-                $('#product_id').val(productId);
-                $('#product_id_hidden').val(productId);
-            } else {
-                $('#product_id').val('');
-                $('#product_id_hidden').val('');
-            }
-
-            // Auto-fill Process (disabled select + hidden input)
-            if (processId) {
-                $('#process_id').val(processId);
-                $('#process_id_hidden').val(processId);
-            } else {
-                $('#process_id').val('');
-                $('#process_id_hidden').val('');
-            }
-
-            // Auto-fill Tool Name (disabled select + hidden input)
-            if (toolNameId) {
-                $('#tool_name').val(toolNameId);
-                $('#tool_name_hidden').val(toolNameId);
-            } else {
-                $('#tool_name').val('');
-                $('#tool_name_hidden').val('');
-            }
-
-            // Auto-fill Revision (readonly input)
-            if (revision !== '') {
-                $('#revision').val(revision);
-            } else {
-                $('#revision').val('0');
-            }
-        });
-
-        // Handle Maker selection - auto-fill Maker Code
-        $('#maker_id').on('change', function() {
-            var selectedOption = $(this).find('option:selected');
-            var makerCode = selectedOption.data('maker-code') || '';
-            $('#maker_code').val(makerCode);
-        });
+        // Maker selection is now handled via modal popup (see .btn-select-maker handler above)
 
         // Form submit with AJAX
         $('#formToolInventory').on('submit', function(e) {

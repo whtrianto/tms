@@ -372,6 +372,21 @@ class M_tool_inventory extends CI_Model
     }
 
     /**
+     * Get storage locations for modal popup (with ID, Name, Description)
+     */
+    public function get_storage_locations_for_modal()
+    {
+        $sql = "SELECT 
+                    SL_ID AS ID,
+                    SL_NAME AS NAME,
+                    ISNULL(SL_DESC, '') AS DESCRIPTION
+                FROM {$this->t('MS_STORAGE_LOCATION')} 
+                ORDER BY SL_NAME ASC";
+        $q = $this->db_tms->query($sql);
+        return $q && $q->num_rows() > 0 ? $q->result_array() : array();
+    }
+
+    /**
      * Get all materials from MS_MATERIAL
      */
     public function get_materials()
@@ -396,6 +411,22 @@ class M_tool_inventory extends CI_Model
     }
 
     /**
+     * Get makers for modal popup (with ID, Name, Description)
+     */
+    public function get_makers_for_modal()
+    {
+        $sql = "SELECT 
+                    MAKER_ID AS ID,
+                    MAKER_NAME AS NAME,
+                    ISNULL(MAKER_DESC, '') AS DESCRIPTION,
+                    ISNULL(MAKER_CODE, '') AS MAKER_CODE
+                FROM {$this->t('MS_MAKER')} 
+                ORDER BY MAKER_NAME ASC";
+        $q = $this->db_tms->query($sql);
+        return $q && $q->num_rows() > 0 ? $q->result_array() : array();
+    }
+
+    /**
      * Get tool drawing numbers from TMS_TOOL_MASTER_LIST (ML_TYPE = 1 for Engineering)
      */
     public function get_tool_drawing_nos()
@@ -408,6 +439,27 @@ class M_tool_inventory extends CI_Model
                 WHERE ml.ML_TYPE = 1
                 GROUP BY ml.ML_ID, ml.ML_TOOL_DRAW_NO, mlr.MLR_ID
                 ORDER BY ml.ML_TOOL_DRAW_NO ASC";
+        $q = $this->db_tms->query($sql);
+        return $q && $q->num_rows() > 0 ? $q->result_array() : array();
+    }
+
+    /**
+     * Get tool drawing data for modal popup (with ID, Drawing No., Tool Name, Revision, Description)
+     */
+    public function get_tool_drawings_for_modal()
+    {
+        $sql = "SELECT 
+                    mlr.MLR_ID AS ID,
+                    ml.ML_TOOL_DRAW_NO AS DRAWING_NO,
+                    ISNULL(tc.TC_NAME, '') AS TOOL_NAME,
+                    mlr.MLR_REV AS REVISION,
+                    ISNULL(mlr.MLR_DESC, '') AS DESCRIPTION,
+                    ml.ML_ID AS ML_ID
+                FROM {$this->t('TMS_TOOL_MASTER_LIST')} ml
+                INNER JOIN {$this->t('TMS_TOOL_MASTER_LIST_REV')} mlr ON mlr.MLR_ML_ID = ml.ML_ID
+                LEFT JOIN {$this->t('MS_TOOL_CLASS')} tc ON tc.TC_ID = mlr.MLR_TC_ID
+                WHERE ml.ML_TYPE = 1
+                ORDER BY ml.ML_TOOL_DRAW_NO ASC, mlr.MLR_REV DESC";
         $q = $this->db_tms->query($sql);
         return $q && $q->num_rows() > 0 ? $q->result_array() : array();
     }
@@ -426,6 +478,27 @@ class M_tool_inventory extends CI_Model
                 ORDER BY mlr.MLR_REV DESC";
         $q = $this->db_tms->query($sql, array($ml_id));
         return $q && $q->num_rows() > 0 ? $q->result_array() : array();
+    }
+
+    /**
+     * Get Tool Drawing details by MLR_ID (for auto-fill Product, Process, Tool Name, Revision)
+     */
+    public function get_tool_drawing_details_by_mlr_id($mlr_id)
+    {
+        $mlr_id = (int)$mlr_id;
+        if ($mlr_id <= 0) return null;
+
+        $sql = "SELECT 
+                    mlr.MLR_ID,
+                    mlr.MLR_REV AS REVISION,
+                    mlr.MLR_OP_ID AS PROCESS_ID,
+                    mlr.MLR_TC_ID AS TOOL_NAME_ID,
+                    (SELECT TOP 1 TMLP_PART_ID FROM {$this->t('TMS_TOOL_MASTER_LIST_PARTS')} WHERE TMLP_ML_ID = ml.ML_ID) AS PRODUCT_ID
+                FROM {$this->t('TMS_TOOL_MASTER_LIST_REV')} mlr
+                INNER JOIN {$this->t('TMS_TOOL_MASTER_LIST')} ml ON ml.ML_ID = mlr.MLR_ML_ID
+                WHERE mlr.MLR_ID = ?";
+        $q = $this->db_tms->query($sql, array($mlr_id));
+        return $q && $q->num_rows() > 0 ? $q->row_array() : null;
     }
 
     /**

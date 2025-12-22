@@ -160,6 +160,9 @@ class Tool_inventory extends MY_Controller
         $data['rq_numbers'] = $this->tool_inventory->get_rq_numbers();
         $data['next_tool_tag'] = $this->tool_inventory->get_next_tool_tag();
         $data['existing_tool_ids'] = $this->tool_inventory->get_existing_tool_ids();
+        $data['tool_drawings_modal'] = $this->tool_inventory->get_tool_drawings_for_modal();
+        $data['storage_locations_modal'] = $this->tool_inventory->get_storage_locations_for_modal();
+        $data['makers_modal'] = $this->tool_inventory->get_makers_for_modal();
         $this->view('add_tool_inventory', $data, FALSE);
     }
 
@@ -318,20 +321,20 @@ class Tool_inventory extends MY_Controller
     }
 
     /**
-     * Get Tool ID details for auto-fill
+     * Get Tool Drawing details by MLR_ID for auto-fill
      */
-    public function get_tool_id_details()
+    public function get_tool_drawing_details()
     {
         if (ob_get_level()) ob_clean();
         $this->output->set_content_type('application/json', 'UTF-8');
         
-        $tool_id = $this->input->post('tool_id', TRUE);
-        if (empty($tool_id)) {
-            echo json_encode(array('success' => false, 'message' => 'Tool ID tidak boleh kosong.'));
+        $mlr_id = (int)$this->input->post('mlr_id', TRUE);
+        if ($mlr_id <= 0) {
+            echo json_encode(array('success' => false, 'message' => 'MLR ID tidak valid.'));
             return;
         }
 
-        $data = $this->tool_inventory->get_tool_id_details($tool_id);
+        $data = $this->tool_inventory->get_tool_drawing_details_by_mlr_id($mlr_id);
         if ($data) {
             echo json_encode(array(
                 'success' => true,
