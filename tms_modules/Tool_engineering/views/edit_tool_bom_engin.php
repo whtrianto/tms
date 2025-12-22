@@ -30,7 +30,7 @@
                             <div class="small text-muted">ID: <?= htmlspecialchars($bom['ID']); ?></div>
                         </div>
                         <div>
-                            <a href="<?= base_url('tool_engineering/tool_bom_engin'); ?>" class="btn btn-sm btn-outline-primary shadow-sm">
+                            <a href="<?= base_url('Tool_engineering/tool_bom_engin'); ?>" class="btn btn-sm btn-outline-primary shadow-sm">
                                 <i class="fa fa-arrow-left"></i> Back
                             </a>
                         </div>

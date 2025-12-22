@@ -252,6 +252,116 @@ class Tool_bom_engin extends MY_Controller
     }
 
     /**
+     * Submit data: ADD / EDIT Tool BOM (AJAX)
+     */
+    public function submit_data()
+    {
+        if (ob_get_level()) ob_clean();
+        
+        $this->output->set_content_type('application/json');
+        $result = array('success' => false, 'message' => '');
+        
+        try {
+            $action = strtoupper($this->input->post('action', TRUE));
+            $id = (int)$this->input->post('ID', TRUE);
+
+            // Validation rules
+            $this->form_validation->set_rules('TOOL_BOM', 'Tool BOM', 'required|trim');
+            $this->form_validation->set_rules('PRODUCT_ID', 'Product ID', 'required|integer');
+            $this->form_validation->set_rules('PROCESS_ID', 'Process ID', 'integer');
+            $this->form_validation->set_rules('REVISION', 'Revision', 'integer');
+            $this->form_validation->set_rules('STATUS', 'Status', 'integer');
+
+            if ($this->form_validation->run() == FALSE) {
+                $this->form_validation->set_error_delimiters('', '');
+                $result['message'] = validation_errors() ?: 'Data tidak valid.';
+                echo json_encode($result);
+                return;
+            }
+
+            $tool_bom = trim($this->input->post('TOOL_BOM', TRUE));
+            $product_id = (int)$this->input->post('PRODUCT_ID', TRUE);
+            $process_id = (int)$this->input->post('PROCESS_ID', TRUE);
+            $machine_group_id = (int)$this->input->post('MACHINE_GROUP_ID', TRUE);
+            $revision = (int)$this->input->post('REVISION', TRUE);
+            $status = (int)$this->input->post('STATUS', TRUE);
+            $description = trim($this->input->post('DESCRIPTION', TRUE));
+            $effective_date = trim($this->input->post('EFFECTIVE_DATE', TRUE));
+            $change_summary = trim($this->input->post('CHANGE_SUMMARY', TRUE));
+            $is_trial_bom = $this->input->post('IS_TRIAL_BOM', TRUE) == '1' ? 1 : 0;
+
+            // Handle file uploads
+            $drawing_file = null;
+            $sketch_file = null;
+            
+            if (!empty($_FILES) && isset($_FILES['DRAWING_FILE']) && !empty($_FILES['DRAWING_FILE']['name'])) {
+                $uploadDir = FCPATH . 'tool_drawing/img/';
+                if (!is_dir($uploadDir)) {
+                    @mkdir($uploadDir, 0755, true);
+                }
+                $origName = $_FILES['DRAWING_FILE']['name'];
+                $safeName = preg_replace('/[^A-Za-z0-9_\-\.]/', '_', basename($origName));
+                $fileExt = pathinfo($origName, PATHINFO_EXTENSION);
+                $fileName = $tool_bom . '_drawing_' . time() . ($fileExt ? '.' . $fileExt : '');
+                $target = $uploadDir . $fileName;
+                if (move_uploaded_file($_FILES['DRAWING_FILE']['tmp_name'], $target)) {
+                    $drawing_file = $fileName;
+                }
+            }
+            
+            if (!empty($_FILES) && isset($_FILES['SKETCH_FILE']) && !empty($_FILES['SKETCH_FILE']['name'])) {
+                $uploadDir = FCPATH . 'tool_drawing/img/';
+                if (!is_dir($uploadDir)) {
+                    @mkdir($uploadDir, 0755, true);
+                }
+                $origName = $_FILES['SKETCH_FILE']['name'];
+                $safeName = preg_replace('/[^A-Za-z0-9_\-\.]/', '_', basename($origName));
+                $fileExt = pathinfo($origName, PATHINFO_EXTENSION);
+                $fileName = $tool_bom . '_sketch_' . time() . ($fileExt ? '.' . $fileExt : '');
+                $target = $uploadDir . $fileName;
+                if (move_uploaded_file($_FILES['SKETCH_FILE']['tmp_name'], $target)) {
+                    $sketch_file = $fileName;
+                }
+            }
+
+            if ($action === 'ADD') {
+                $ok = $this->tool_bom_engin->add_data(
+                    $tool_bom, $product_id, $process_id, $machine_group_id, $revision, $status,
+                    $description, $effective_date, $change_summary, $is_trial_bom, $drawing_file, $sketch_file
+                );
+                if ($ok) {
+                    $result['success'] = true;
+                    $result['message'] = $this->tool_bom_engin->messages ?: 'Tool BOM berhasil ditambahkan.';
+                } else {
+                    $result['success'] = false;
+                    $result['message'] = $this->tool_bom_engin->messages ?: 'Gagal menambahkan Tool BOM.';
+                }
+            } elseif ($action === 'EDIT' && $id > 0) {
+                $ok = $this->tool_bom_engin->update_data(
+                    $id, $tool_bom, $product_id, $process_id, $machine_group_id, $revision, $status,
+                    $description, $effective_date, $change_summary, $is_trial_bom, $drawing_file, $sketch_file
+                );
+                if ($ok) {
+                    $result['success'] = true;
+                    $result['message'] = $this->tool_bom_engin->messages ?: 'Tool BOM berhasil diubah.';
+                } else {
+                    $result['success'] = false;
+                    $result['message'] = $this->tool_bom_engin->messages ?: 'Gagal mengubah Tool BOM.';
+                }
+            } else {
+                $result['message'] = 'Action tidak valid.';
+            }
+            
+            echo json_encode($result);
+            
+        } catch (Exception $e) {
+            log_message('error', '[Tool_bom_engin::submit_data] Exception: ' . $e->getMessage());
+            $result['message'] = 'Terjadi kesalahan: ' . $e->getMessage();
+            echo json_encode($result);
+        }
+    }
+
+    /**
      * Detail page
      */
     public function detail_page($id = 0)

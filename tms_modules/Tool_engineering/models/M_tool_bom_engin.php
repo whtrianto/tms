@@ -367,6 +367,237 @@ class M_tool_bom_engin extends CI_Model
     }
 
     /**
+     * Add new Tool BOM
+     */
+    public function add_data($tool_bom, $product_id, $process_id, $machine_group_id, $revision, $status, $description, $effective_date, $change_summary, $is_trial_bom, $drawing_file = null, $sketch_file = null)
+    {
+        $tool_bom = trim((string)$tool_bom);
+        $product_id = (int)$product_id;
+        $process_id = (int)$process_id;
+        $machine_group_id = ($machine_group_id > 0) ? (int)$machine_group_id : null;
+        $revision = (int)$revision;
+        $status = (int)$status;
+        $description = trim((string)$description);
+        $effective_date = !empty($effective_date) ? trim((string)$effective_date) : null;
+        $change_summary = trim((string)$change_summary);
+        $is_trial_bom = (int)$is_trial_bom;
+        
+        if ($tool_bom === '') {
+            $this->messages = 'Tool BOM tidak boleh kosong.';
+            return false;
+        }
+
+        if ($product_id <= 0 || $process_id <= 0) {
+            $this->messages = 'Product ID dan Process ID harus lebih dari 0.';
+            return false;
+        }
+
+        $this->db_tms->trans_start();
+
+        // Check if ML_TOOL_DRAW_NO already exists
+        $check_sql = "SELECT ML_ID FROM {$this->t('TMS_TOOL_MASTER_LIST')} WHERE ML_TOOL_DRAW_NO = ?";
+        $check_q = $this->db_tms->query($check_sql, array($tool_bom));
+        $ml_id = null;
+
+        if ($check_q && $check_q->num_rows() > 0) {
+            // Use existing ML_ID
+            $ml_id = (int)$check_q->row()->ML_ID;
+            // Update ML_TRIAL if needed
+            if ($is_trial_bom > 0) {
+                $this->db_tms->query("UPDATE {$this->t('TMS_TOOL_MASTER_LIST')} SET ML_TRIAL = 1 WHERE ML_ID = ?", array($ml_id));
+            }
+        } else {
+            // Insert new TMS_TOOL_MASTER_LIST
+            $ml_insert_sql = "INSERT INTO {$this->t('TMS_TOOL_MASTER_LIST')} (ML_TOOL_DRAW_NO, ML_TYPE, ML_TRIAL) VALUES (?, 2, ?)";
+            $ml_insert_q = $this->db_tms->query($ml_insert_sql, array($tool_bom, $is_trial_bom > 0 ? 1 : 0));
+            if (!$ml_insert_q) {
+                $this->db_tms->trans_rollback();
+                $err = $this->db_tms->error();
+                $this->messages = 'Gagal menambahkan Tool BOM. ' . (isset($err['message']) ? $err['message'] : '');
+                return false;
+            }
+            // Get the inserted ML_ID
+            $ml_id_q = $this->db_tms->query("SELECT IDENT_CURRENT('TMS_TOOL_MASTER_LIST') AS ML_ID");
+            if ($ml_id_q && $ml_id_q->num_rows() > 0) {
+                $ml_id = (int)$ml_id_q->row()->ML_ID;
+            } else {
+                $this->db_tms->trans_rollback();
+                $this->messages = 'Gagal mendapatkan ML_ID.';
+                return false;
+            }
+        }
+
+        // Insert into TMS_TOOL_MASTER_LIST_PARTS
+        $part_check_sql = "SELECT TMLP_ID FROM {$this->t('TMS_TOOL_MASTER_LIST_PARTS')} WHERE TMLP_ML_ID = ? AND TMLP_PART_ID = ?";
+        $part_check_q = $this->db_tms->query($part_check_sql, array($ml_id, $product_id));
+        if (!$part_check_q || $part_check_q->num_rows() === 0) {
+            $part_insert_sql = "INSERT INTO {$this->t('TMS_TOOL_MASTER_LIST_PARTS')} (TMLP_ID, TMLP_ML_ID, TMLP_PART_ID) VALUES (NEWID(), ?, ?)";
+            $this->db_tms->query($part_insert_sql, array($ml_id, $product_id));
+        }
+
+        // Get user ID
+        $user_id = 1; // Default
+        if (!empty($this->uid) && $this->uid !== 'SYSTEM') {
+            $user_sql = "SELECT USR_ID FROM {$this->t('MS_USERS')} WHERE USR_NAME = ?";
+            $user_q = $this->db_tms->query($user_sql, array($this->uid));
+            if ($user_q && $user_q->num_rows() > 0) {
+                $user_id = (int)$user_q->row()->USR_ID;
+            }
+        }
+
+        // Insert into TMS_TOOL_MASTER_LIST_REV
+        $effective_date_sql = $effective_date ? "CONVERT(datetime, ?, 120)" : "GETDATE()";
+        $effective_date_param = $effective_date ? array($effective_date) : array();
+        
+        $rev_insert_sql = "INSERT INTO {$this->t('TMS_TOOL_MASTER_LIST_REV')} 
+            (MLR_ML_ID, MLR_OP_ID, MLR_MACG_ID, MLR_DESC, MLR_REV, MLR_STATUS, MLR_EFFECTIVE_DATE, MLR_MODIFIED_DATE, MLR_MODIFIED_BY, MLR_CHANGE_SUMMARY, MLR_DRAWING, MLR_SKETCH)
+            VALUES (?, ?, ?, ?, ?, ?, " . $effective_date_sql . ", GETDATE(), ?, ?, ?, ?)";
+        
+        $rev_params = array($ml_id, $process_id, $machine_group_id, $description, $revision, $status);
+        $rev_params = array_merge($rev_params, $effective_date_param);
+        $rev_params = array_merge($rev_params, array($user_id, $change_summary, $drawing_file, $sketch_file));
+        
+        $rev_insert_q = $this->db_tms->query($rev_insert_sql, $rev_params);
+        
+        if (!$rev_insert_q) {
+            $this->db_tms->trans_rollback();
+            $err = $this->db_tms->error();
+            $this->messages = 'Gagal menambahkan revision. ' . (isset($err['message']) ? $err['message'] : '');
+            return false;
+        }
+
+        $this->db_tms->trans_complete();
+
+        if ($this->db_tms->trans_status()) {
+            $this->messages = 'Tool BOM berhasil ditambahkan.';
+            return true;
+        }
+        
+        $err = $this->db_tms->error();
+        $this->messages = 'Gagal menambahkan Tool BOM. ' . (isset($err['message']) ? $err['message'] : '');
+        return false;
+    }
+
+    /**
+     * Update Tool BOM
+     */
+    public function update_data($id, $tool_bom, $product_id, $process_id, $machine_group_id, $revision, $status, $description, $effective_date, $change_summary, $is_trial_bom, $drawing_file = null, $sketch_file = null)
+    {
+        $id = (int)$id;
+        $row = $this->get_by_id($id);
+        if (!$row) {
+            $this->messages = 'Data tidak ditemukan.';
+            return false;
+        }
+
+        $tool_bom = trim((string)$tool_bom);
+        $product_id = (int)$product_id;
+        $process_id = (int)$process_id;
+        $machine_group_id = ($machine_group_id > 0) ? (int)$machine_group_id : null;
+        $revision = (int)$revision;
+        $status = (int)$status;
+        $description = trim((string)$description);
+        $effective_date = !empty($effective_date) ? trim((string)$effective_date) : null;
+        $change_summary = trim((string)$change_summary);
+        $is_trial_bom = (int)$is_trial_bom;
+
+        if ($tool_bom === '') {
+            $this->messages = 'Tool BOM tidak boleh kosong.';
+            return false;
+        }
+
+        $ml_id = isset($row['MLR_ML_ID']) ? (int)$row['MLR_ML_ID'] : 0;
+        if ($ml_id <= 0) {
+            $this->messages = 'ML_ID tidak valid.';
+            return false;
+        }
+
+        $this->db_tms->trans_start();
+
+        // Update TMS_TOOL_MASTER_LIST
+        $ml_update_sql = "UPDATE {$this->t('TMS_TOOL_MASTER_LIST')} SET ML_TOOL_DRAW_NO = ?, ML_TRIAL = ? WHERE ML_ID = ?";
+        $this->db_tms->query($ml_update_sql, array($tool_bom, $is_trial_bom > 0 ? 1 : 0, $ml_id));
+
+        // Update TMS_TOOL_MASTER_LIST_PARTS
+        $part_check_sql = "SELECT TMLP_ID FROM {$this->t('TMS_TOOL_MASTER_LIST_PARTS')} WHERE TMLP_ML_ID = ? AND TMLP_PART_ID = ?";
+        $part_check_q = $this->db_tms->query($part_check_sql, array($ml_id, $product_id));
+        if (!$part_check_q || $part_check_q->num_rows() === 0) {
+            // Delete old parts
+            $this->db_tms->query("DELETE FROM {$this->t('TMS_TOOL_MASTER_LIST_PARTS')} WHERE TMLP_ML_ID = ?", array($ml_id));
+            // Insert new part
+            $part_insert_sql = "INSERT INTO {$this->t('TMS_TOOL_MASTER_LIST_PARTS')} (TMLP_ID, TMLP_ML_ID, TMLP_PART_ID) VALUES (NEWID(), ?, ?)";
+            $this->db_tms->query($part_insert_sql, array($ml_id, $product_id));
+        }
+
+        // Get user ID
+        $user_id = 1;
+        if (!empty($this->uid) && $this->uid !== 'SYSTEM') {
+            $user_sql = "SELECT USR_ID FROM {$this->t('MS_USERS')} WHERE USR_NAME = ?";
+            $user_q = $this->db_tms->query($user_sql, array($this->uid));
+            if ($user_q && $user_q->num_rows() > 0) {
+                $user_id = (int)$user_q->row()->USR_ID;
+            }
+        }
+
+        // Update TMS_TOOL_MASTER_LIST_REV
+        $update_fields = array();
+        $update_params = array();
+        
+        $update_fields[] = "MLR_OP_ID = ?";
+        $update_params[] = $process_id;
+        
+        $update_fields[] = "MLR_MACG_ID = ?";
+        $update_params[] = $machine_group_id;
+        
+        $update_fields[] = "MLR_DESC = ?";
+        $update_params[] = $description;
+        
+        $update_fields[] = "MLR_REV = ?";
+        $update_params[] = $revision;
+        
+        $update_fields[] = "MLR_STATUS = ?";
+        $update_params[] = $status;
+        
+        if ($effective_date) {
+            $update_fields[] = "MLR_EFFECTIVE_DATE = CONVERT(datetime, ?, 120)";
+            $update_params[] = $effective_date;
+        }
+        
+        $update_fields[] = "MLR_MODIFIED_DATE = GETDATE()";
+        $update_fields[] = "MLR_MODIFIED_BY = ?";
+        $update_params[] = $user_id;
+        
+        $update_fields[] = "MLR_CHANGE_SUMMARY = ?";
+        $update_params[] = $change_summary;
+        
+        if ($drawing_file !== null) {
+            $update_fields[] = "MLR_DRAWING = ?";
+            $update_params[] = $drawing_file;
+        }
+        
+        if ($sketch_file !== null) {
+            $update_fields[] = "MLR_SKETCH = ?";
+            $update_params[] = $sketch_file;
+        }
+        
+        $update_params[] = $id;
+        
+        $rev_update_sql = "UPDATE {$this->t('TMS_TOOL_MASTER_LIST_REV')} SET " . implode(', ', $update_fields) . " WHERE MLR_ID = ?";
+        $this->db_tms->query($rev_update_sql, $update_params);
+
+        $this->db_tms->trans_complete();
+
+        if ($this->db_tms->trans_status()) {
+            $this->messages = 'Tool BOM berhasil diubah.';
+            return true;
+        }
+        
+        $err = $this->db_tms->error();
+        $this->messages = 'Gagal mengubah Tool BOM. ' . (isset($err['message']) ? $err['message'] : '');
+        return false;
+    }
+
+    /**
      * Get additional information (Tool Drawing Engineering members) for BOM
      * Returns Tool Drawing Engineering data that are children of this BOM
      */
