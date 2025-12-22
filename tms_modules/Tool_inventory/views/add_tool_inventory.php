@@ -99,7 +99,7 @@
                                         <label class="label-required">Tool ID</label>
                                         <select name="tool_id" id="tool_id" class="form-control" required>
                                             <option value="">-- Select Tool ID --</option>
-                                            <?php if (isset($existing_tool_ids) && is_array($existing_tool_ids)): ?>
+                                            <?php if (isset($existing_tool_ids) && is_array($existing_tool_ids) && count($existing_tool_ids) > 0): ?>
                                                 <?php foreach ($existing_tool_ids as $tid): ?>
                                                     <option value="<?= htmlspecialchars($tid['INV_TOOL_ID'], ENT_QUOTES, 'UTF-8'); ?>"
                                                             data-process-id="<?= isset($tid['PROCESS_ID']) ? (int)$tid['PROCESS_ID'] : ''; ?>"
@@ -111,12 +111,12 @@
                                                 <?php endforeach; ?>
                                             <?php endif; ?>
                                         </select>
-                                        <small class="form-text text-muted">Pilih Tool ID yang sudah ada untuk auto-fill data.</small>
+                                        <small class="form-text text-muted">Pilih Tool ID yang sudah ada untuk auto-fill data. (Menampilkan maksimal 500 Tool ID terbaru)</small>
                                     </div>
 
                                     <div class="form-group">
                                         <label class="label-required">Product</label>
-                                        <select name="product_id" class="form-control" required>
+                                        <select name="product_id" id="product_id" class="form-control" required disabled>
                                             <option value="">-- Select Product --</option>
                                             <?php foreach ($products as $p): ?>
                                                 <option value="<?= (int)$p['PRODUCT_ID']; ?>">
@@ -124,11 +124,12 @@
                                                 </option>
                                             <?php endforeach; ?>
                                         </select>
+                                        <input type="hidden" name="product_id" id="product_id_hidden" value="">
                                     </div>
 
                                     <div class="form-group">
                                         <label class="label-required">Process</label>
-                                        <select name="process_id" class="form-control" required>
+                                        <select name="process_id" id="process_id" class="form-control" required disabled>
                                             <option value="">-- Select Process --</option>
                                             <?php foreach ($operations as $o): ?>
                                                 <option value="<?= (int)$o['OPERATION_ID']; ?>">
@@ -136,11 +137,12 @@
                                                 </option>
                                             <?php endforeach; ?>
                                         </select>
+                                        <input type="hidden" name="process_id" id="process_id_hidden" value="">
                                     </div>
 
                                     <div class="form-group">
                                         <label class="label-required">Tool Name</label>
-                                        <select name="tool_name" class="form-control" required>
+                                        <select name="tool_name" id="tool_name" class="form-control" required disabled>
                                             <option value="">-- Select Tool Name --</option>
                                             <?php foreach ($tools as $t): ?>
                                                 <option value="<?= (int)$t['TOOL_ID']; ?>">
@@ -148,11 +150,12 @@
                                                 </option>
                                             <?php endforeach; ?>
                                         </select>
+                                        <input type="hidden" name="tool_name" id="tool_name_hidden" value="">
                                     </div>
 
                                     <div class="form-group">
                                         <label>Revision</label>
-                                        <input type="number" name="revision" class="form-control" placeholder="Enter Revision" min="0" value="0">
+                                        <input type="number" name="revision" id="revision" class="form-control" placeholder="Enter Revision" min="0" value="0" readonly>
                                     </div>
 
                                     <div class="form-group">
@@ -408,24 +411,38 @@
             var revision = selectedOption.data('revision') || '';
             var productId = selectedOption.data('product-id') || '';
 
-            // Auto-fill Product
+            // Auto-fill Product (disabled select + hidden input)
             if (productId) {
-                $('[name="product_id"]').val(productId);
+                $('#product_id').val(productId);
+                $('#product_id_hidden').val(productId);
+            } else {
+                $('#product_id').val('');
+                $('#product_id_hidden').val('');
             }
 
-            // Auto-fill Process
+            // Auto-fill Process (disabled select + hidden input)
             if (processId) {
-                $('[name="process_id"]').val(processId);
+                $('#process_id').val(processId);
+                $('#process_id_hidden').val(processId);
+            } else {
+                $('#process_id').val('');
+                $('#process_id_hidden').val('');
             }
 
-            // Auto-fill Tool Name
+            // Auto-fill Tool Name (disabled select + hidden input)
             if (toolNameId) {
-                $('[name="tool_name"]').val(toolNameId);
+                $('#tool_name').val(toolNameId);
+                $('#tool_name_hidden').val(toolNameId);
+            } else {
+                $('#tool_name').val('');
+                $('#tool_name_hidden').val('');
             }
 
-            // Auto-fill Revision
+            // Auto-fill Revision (readonly input)
             if (revision !== '') {
-                $('[name="revision"]').val(revision);
+                $('#revision').val(revision);
+            } else {
+                $('#revision').val('0');
             }
         });
 

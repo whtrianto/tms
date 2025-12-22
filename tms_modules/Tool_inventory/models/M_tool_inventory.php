@@ -459,11 +459,16 @@ class M_tool_inventory extends CI_Model
     }
 
     /**
-     * Get existing Tool IDs for dropdown
+     * Get existing Tool IDs for dropdown (optimized with limit and latest records first)
      */
-    public function get_existing_tool_ids()
+    public function get_existing_tool_ids($limit = 500)
     {
-        $sql = "SELECT DISTINCT 
+        $limit = (int)$limit;
+        if ($limit <= 0) $limit = 500;
+        
+        // Optimized query: Get distinct Tool IDs with latest data only, ordered by INV_ID DESC (newest first)
+        // Using subquery to get latest record per Tool ID
+        $sql = "SELECT DISTINCT TOP {$limit}
                     inv.INV_TOOL_ID,
                     inv.INV_MLR_ID,
                     mlr.MLR_OP_ID AS PROCESS_ID,
@@ -475,7 +480,7 @@ class M_tool_inventory extends CI_Model
                 INNER JOIN {$this->t('TMS_TOOL_MASTER_LIST_REV')} mlr ON mlr.MLR_ID = inv.INV_MLR_ID
                 INNER JOIN {$this->t('TMS_TOOL_MASTER_LIST')} ml ON ml.ML_ID = mlr.MLR_ML_ID
                 WHERE inv.INV_TOOL_ID IS NOT NULL AND inv.INV_TOOL_ID <> ''
-                ORDER BY inv.INV_TOOL_ID ASC";
+                ORDER BY inv.INV_ID DESC";
         $q = $this->db_tms->query($sql);
         return $q && $q->num_rows() > 0 ? $q->result_array() : array();
     }
