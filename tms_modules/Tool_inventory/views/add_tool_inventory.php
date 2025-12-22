@@ -99,21 +99,8 @@
 
                                     <div class="form-group">
                                         <label class="label-required">Tool ID</label>
-                                        <select name="tool_id" id="tool_id" class="form-control" required>
-                                            <option value="">-- Select Tool ID --</option>
-                                            <?php if (isset($existing_tool_ids) && is_array($existing_tool_ids) && count($existing_tool_ids) > 0): ?>
-                                                <?php foreach ($existing_tool_ids as $tid): ?>
-                                                    <option value="<?= htmlspecialchars($tid['INV_TOOL_ID'], ENT_QUOTES, 'UTF-8'); ?>"
-                                                            data-process-id="<?= isset($tid['PROCESS_ID']) ? (int)$tid['PROCESS_ID'] : ''; ?>"
-                                                            data-tool-name-id="<?= isset($tid['TOOL_NAME_ID']) ? (int)$tid['TOOL_NAME_ID'] : ''; ?>"
-                                                            data-revision="<?= isset($tid['REVISION']) ? (int)$tid['REVISION'] : ''; ?>"
-                                                            data-product-id="<?= isset($tid['PRODUCT_ID']) ? (int)$tid['PRODUCT_ID'] : ''; ?>">
-                                                        <?= htmlspecialchars($tid['INV_TOOL_ID'], ENT_QUOTES, 'UTF-8'); ?>
-                                                    </option>
-                                                <?php endforeach; ?>
-                                            <?php endif; ?>
-                                        </select>
-                                        <small class="form-text text-muted">Pilih Tool ID yang sudah ada untuk auto-fill data. (Menampilkan maksimal 500 Tool ID terbaru)</small>
+                                        <input type="text" name="tool_id" id="tool_id" class="form-control" placeholder="Auto-generated from Tool Drawing No." required readonly>
+                                        <small class="form-text text-muted">Tool ID akan terisi otomatis dari Tool Drawing No. yang dipilih.</small>
                                     </div>
 
                                     <div class="form-group">
@@ -571,6 +558,9 @@
             // Close modal
             $('#modalToolDrawing').modal('hide');
             
+            // Auto-generate Tool ID from Drawing No and Tool Tag
+            generateToolId(drawingNo);
+            
             // Auto-fill Product, Process, Tool Name, Revision
             if (mlrId) {
                 loadToolDrawingDetails(mlrId);
@@ -653,7 +643,12 @@
                 if (mlId && !allowOld) {
                     var selectedOption = $('#tool_drawing_no option:selected');
                     var latestMlrId = selectedOption.data('mlr-id') || '';
+                    var drawingNo = $('#tool_drawing_no_display').val();
                     if (latestMlrId) {
+                        // Auto-generate Tool ID
+                        if (drawingNo) {
+                            generateToolId(drawingNo);
+                        }
                         // Auto-fill Product, Process, Tool Name, Revision from Tool Drawing No
                         loadToolDrawingDetails(latestMlrId);
                         $('<input>').attr({
@@ -681,10 +676,40 @@
                     name: 'mlr_id',
                     value: mlrId
                 }).appendTo('#formToolInventory');
+                // Auto-generate Tool ID
+                var drawingNo = $('#tool_drawing_no_display').val();
+                if (drawingNo) {
+                    generateToolId(drawingNo);
+                }
                 // Auto-fill Product, Process, Tool Name, Revision
                 loadToolDrawingDetails(mlrId);
             } else {
                 clearAutoFillFields();
+            }
+        });
+
+        // Function to generate Tool ID from Drawing No and Tool Tag
+        function generateToolId(drawingNo) {
+            if (!drawingNo || drawingNo === '') {
+                $('#tool_id').val('');
+                return;
+            }
+            
+            var toolTag = $('#tool_tag').val() || '';
+            if (toolTag === '') {
+                // If Tool Tag is empty, use Drawing No only
+                $('#tool_id').val(drawingNo);
+            } else {
+                // Generate Tool ID: Drawing No + "-" + Tool Tag
+                $('#tool_id').val(drawingNo + '-' + toolTag);
+            }
+        }
+
+        // Handle Tool Tag change - regenerate Tool ID
+        $('#tool_tag').on('input change', function() {
+            var drawingNo = $('#tool_drawing_no_display').val();
+            if (drawingNo) {
+                generateToolId(drawingNo);
             }
         });
 
@@ -754,6 +779,7 @@
             $('#tool_name').val('');
             $('#tool_name_hidden').val('');
             $('#revision').val('0');
+            $('#tool_id').val('');
         }
 
         // Handle "Allow Select Old Revision" checkbox
@@ -768,7 +794,12 @@
                 if (mlId) {
                     var selectedOption = $('#tool_drawing_no option:selected');
                     var latestMlrId = selectedOption.data('mlr-id') || '';
+                    var drawingNo = $('#tool_drawing_no_display').val();
                     if (latestMlrId) {
+                        // Auto-generate Tool ID
+                        if (drawingNo) {
+                            generateToolId(drawingNo);
+                        }
                         loadToolDrawingDetails(latestMlrId);
                         $('<input>').attr({
                             type: 'hidden',

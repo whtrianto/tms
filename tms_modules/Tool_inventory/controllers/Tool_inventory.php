@@ -499,6 +499,8 @@ class Tool_inventory extends MY_Controller
         $data['makers'] = $this->tool_inventory->get_makers();
         $data['tool_drawing_nos'] = $this->tool_inventory->get_tool_drawing_nos();
         $data['rq_numbers'] = $this->tool_inventory->get_rq_numbers();
+        $data['makers_modal'] = $this->tool_inventory->get_makers_for_modal();
+        $data['storage_locations_modal'] = $this->tool_inventory->get_storage_locations_for_modal();
         $this->view('edit_tool_inventory', $data, FALSE);
     }
 }

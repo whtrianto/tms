@@ -86,30 +86,19 @@
 
                                     <div class="form-group">
                                         <label class="label-required">Tool Drawing No.</label>
-                                        <select name="tool_drawing_no" id="tool_drawing_no" class="form-control" required>
-                                            <option value="">-- Select Tool Drawing No. --</option>
-                                            <?php foreach ($tool_drawing_nos as $tdn): ?>
-                                                <option value="<?= (int)$tdn['ML_ID']; ?>" 
-                                                    data-mlr-id="<?= isset($tdn['LATEST_MLR_ID']) ? (int)$tdn['LATEST_MLR_ID'] : 0; ?>"
-                                                    <?= (isset($inventory['TOOL_DRAWING_ML_ID']) && (int)$inventory['TOOL_DRAWING_ML_ID'] === (int)$tdn['ML_ID']) ? 'selected' : ''; ?>>
-                                                    <?= htmlspecialchars($tdn['ML_TOOL_DRAW_NO'], ENT_QUOTES, 'UTF-8'); ?>
-                                                </option>
-                                            <?php endforeach; ?>
-                                        </select>
-                                        <select name="mlr_revision" id="mlr_revision" class="form-control mt-2" style="display:none;">
-                                            <option value="">-- Select Revision --</option>
-                                        </select>
+                                        <input type="text" class="form-control" value="<?= isset($inventory['TOOL_DRAWING_NO']) ? htmlspecialchars($inventory['TOOL_DRAWING_NO'], ENT_QUOTES, 'UTF-8') : ''; ?>" readonly>
+                                        <input type="hidden" name="tool_drawing_no" id="tool_drawing_no" value="<?= isset($inventory['TOOL_DRAWING_ML_ID']) ? (int)$inventory['TOOL_DRAWING_ML_ID'] : ''; ?>">
                                         <input type="hidden" name="mlr_id" id="mlr_id" value="<?= isset($inventory['INV_MLR_ID']) ? (int)$inventory['INV_MLR_ID'] : ''; ?>">
                                     </div>
 
                                     <div class="form-group">
                                         <label class="label-required">Tool ID</label>
-                                        <input type="text" name="tool_id" class="form-control" placeholder="Enter Tool ID" value="<?= isset($inventory['INV_TOOL_ID']) ? htmlspecialchars($inventory['INV_TOOL_ID'], ENT_QUOTES, 'UTF-8') : ''; ?>" required>
+                                        <input type="text" name="tool_id" id="tool_id" class="form-control" placeholder="Enter Tool ID" value="<?= isset($inventory['INV_TOOL_ID']) ? htmlspecialchars($inventory['INV_TOOL_ID'], ENT_QUOTES, 'UTF-8') : ''; ?>" readonly>
                                     </div>
 
                                     <div class="form-group">
                                         <label class="label-required">Product</label>
-                                        <select name="product_id" class="form-control" required>
+                                        <select name="product_id" id="product_id" class="form-control" required disabled>
                                             <option value="">-- Select Product --</option>
                                             <?php foreach ($products as $p): ?>
                                                 <option value="<?= (int)$p['PRODUCT_ID']; ?>" <?= (isset($inventory['PRODUCT_ID']) && (int)$inventory['PRODUCT_ID'] === (int)$p['PRODUCT_ID']) ? 'selected' : ''; ?>>
@@ -117,11 +106,12 @@
                                                 </option>
                                             <?php endforeach; ?>
                                         </select>
+                                        <input type="hidden" name="product_id" id="product_id_hidden" value="<?= isset($inventory['PRODUCT_ID']) ? (int)$inventory['PRODUCT_ID'] : ''; ?>">
                                     </div>
 
                                     <div class="form-group">
                                         <label class="label-required">Process</label>
-                                        <select name="process_id" class="form-control" required>
+                                        <select name="process_id" id="process_id" class="form-control" required disabled>
                                             <option value="">-- Select Process --</option>
                                             <?php foreach ($operations as $o): ?>
                                                 <option value="<?= (int)$o['OPERATION_ID']; ?>" <?= (isset($inventory['PROCESS_ID']) && (int)$inventory['PROCESS_ID'] === (int)$o['OPERATION_ID']) ? 'selected' : ''; ?>>
@@ -129,11 +119,12 @@
                                                 </option>
                                             <?php endforeach; ?>
                                         </select>
+                                        <input type="hidden" name="process_id" id="process_id_hidden" value="<?= isset($inventory['PROCESS_ID']) ? (int)$inventory['PROCESS_ID'] : ''; ?>">
                                     </div>
 
                                     <div class="form-group">
                                         <label class="label-required">Tool Name</label>
-                                        <select name="tool_name" class="form-control" required>
+                                        <select name="tool_name" id="tool_name" class="form-control" required disabled>
                                             <option value="">-- Select Tool Name --</option>
                                             <?php foreach ($tools as $t): ?>
                                                 <option value="<?= (int)$t['TOOL_ID']; ?>" <?= (isset($inventory['TOOL_NAME_ID']) && (int)$inventory['TOOL_NAME_ID'] === (int)$t['TOOL_ID']) ? 'selected' : ''; ?>>
@@ -141,39 +132,16 @@
                                                 </option>
                                             <?php endforeach; ?>
                                         </select>
+                                        <input type="hidden" name="tool_name" id="tool_name_hidden" value="<?= isset($inventory['TOOL_NAME_ID']) ? (int)$inventory['TOOL_NAME_ID'] : ''; ?>">
                                     </div>
 
                                     <div class="form-group">
                                         <label>Revision</label>
-                                        <input type="number" name="revision" class="form-control" placeholder="Enter Revision" min="0" value="<?= isset($inventory['REVISION']) ? htmlspecialchars($inventory['REVISION'], ENT_QUOTES, 'UTF-8') : '0'; ?>">
+                                        <input type="number" name="revision" id="revision" class="form-control" placeholder="Enter Revision" min="0" value="<?= isset($inventory['REVISION']) ? htmlspecialchars($inventory['REVISION'], ENT_QUOTES, 'UTF-8') : '0'; ?>" readonly>
                                     </div>
 
-                                    <div class="form-group">
-                                        <label class="label-required">Tool Tag</label>
-                                        <input type="text" name="tool_tag" id="tool_tag" class="form-control" placeholder="Enter Tool Tag" value="<?= isset($inventory['INV_TOOL_TAG']) ? htmlspecialchars($inventory['INV_TOOL_TAG'], ENT_QUOTES, 'UTF-8') : ''; ?>" required>
-                                    </div>
-
-                                    <div class="form-group">
-                                        <label class="label-required">Tool Status</label>
-                                        <select name="tool_status" class="form-control" required>
-                                            <option value="1" <?= (isset($inventory['INV_STATUS']) && (int)$inventory['INV_STATUS'] === 1) ? 'selected' : ''; ?>>New</option>
-                                            <option value="2" <?= (isset($inventory['INV_STATUS']) && (int)$inventory['INV_STATUS'] === 2) ? 'selected' : ''; ?>>Allocated</option>
-                                            <option value="3" <?= (isset($inventory['INV_STATUS']) && (int)$inventory['INV_STATUS'] === 3) ? 'selected' : ''; ?>>Available</option>
-                                            <option value="4" <?= (isset($inventory['INV_STATUS']) && (int)$inventory['INV_STATUS'] === 4) ? 'selected' : ''; ?>>InUsed</option>
-                                            <option value="5" <?= (isset($inventory['INV_STATUS']) && (int)$inventory['INV_STATUS'] === 5) ? 'selected' : ''; ?>>Onhold</option>
-                                            <option value="6" <?= (isset($inventory['INV_STATUS']) && (int)$inventory['INV_STATUS'] === 6) ? 'selected' : ''; ?>>Scrapped</option>
-                                            <option value="7" <?= (isset($inventory['INV_STATUS']) && (int)$inventory['INV_STATUS'] === 7) ? 'selected' : ''; ?>>Repairing</option>
-                                            <option value="8" <?= (isset($inventory['INV_STATUS']) && (int)$inventory['INV_STATUS'] === 8) ? 'selected' : ''; ?>>Modifying</option>
-                                            <option value="9" <?= (isset($inventory['INV_STATUS']) && (int)$inventory['INV_STATUS'] === 9) ? 'selected' : ''; ?>>DesignChange</option>
-                                        </select>
-                                    </div>
-
-                                    <div class="form-group">
-                                        <label>Tool Condition</label>
-                                        <input type="number" name="tool_condition" class="form-control" placeholder="Enter Tool Condition" min="0" value="<?= isset($inventory['INV_TOOL_CONDITION']) ? htmlspecialchars($inventory['INV_TOOL_CONDITION'], ENT_QUOTES, 'UTF-8') : '0'; ?>">
-                                    </div>
                                 </div>
-
+                                
                                 <!-- Right Column -->
                                 <div class="col-md-6">
                                     <div class="form-group form-check-inline-custom">
@@ -182,20 +150,51 @@
                                     </div>
 
                                     <div class="form-group">
+                                        <label class="label-required">Tool Tag</label>
+                                        <input type="text" name="tool_tag" id="tool_tag" class="form-control" placeholder="Enter Tool Tag" value="<?= isset($inventory['INV_TOOL_TAG']) ? htmlspecialchars($inventory['INV_TOOL_TAG'], ENT_QUOTES, 'UTF-8') : ''; ?>" readonly>
+                                    </div>
+    
+                                    <div class="form-group">
+                                        <label class="label-required">Tool Status</label>
+                                        <input type="text" class="form-control" value="<?php
+                                            $status_map = array(
+                                                1 => 'New',
+                                                2 => 'Allocated',
+                                                3 => 'Available',
+                                                4 => 'InUsed',
+                                                5 => 'Onhold',
+                                                6 => 'Scrapped',
+                                                7 => 'Repairing',
+                                                8 => 'Modifying',
+                                                9 => 'DesignChange'
+                                            );
+                                            $status = isset($inventory['INV_STATUS']) ? (int)$inventory['INV_STATUS'] : 1;
+                                            echo htmlspecialchars(isset($status_map[$status]) ? $status_map[$status] : 'New', ENT_QUOTES, 'UTF-8');
+                                        ?>" readonly>
+                                        <input type="hidden" name="tool_status" value="<?= isset($inventory['INV_STATUS']) ? (int)$inventory['INV_STATUS'] : 1; ?>">
+                                    </div>
+    
+                                    <div class="form-group">
+                                        <label>Tool Condition</label>
+                                        <input type="number" name="tool_condition" class="form-control" placeholder="Enter Tool Condition" min="0" value="<?= isset($inventory['INV_TOOL_CONDITION']) ? htmlspecialchars($inventory['INV_TOOL_CONDITION'], ENT_QUOTES, 'UTF-8') : '0'; ?>" readonly>
+                                    </div>
+
+                                    <div class="form-group">
                                         <label>In Tool Set</label>
-                                        <input type="number" name="in_tool_set" class="form-control" placeholder="Enter In Tool Set" min="0" value="<?= isset($inventory['INV_IN_TOOL_SET']) ? htmlspecialchars($inventory['INV_IN_TOOL_SET'], ENT_QUOTES, 'UTF-8') : '0'; ?>">
+                                        <input type="number" name="in_tool_set" class="form-control" placeholder="Enter In Tool Set" min="0" value="<?= isset($inventory['INV_IN_TOOL_SET']) ? htmlspecialchars($inventory['INV_IN_TOOL_SET'], ENT_QUOTES, 'UTF-8') : '0'; ?>" readonly>
                                     </div>
 
                                     <div class="form-group">
                                         <label>Storage Location</label>
-                                        <select name="storage_location_id" class="form-control">
-                                            <option value="">-- Select Storage Location --</option>
-                                            <?php foreach ($storage_locations as $sl): ?>
-                                                <option value="<?= (int)$sl['STORAGE_LOCATION_ID']; ?>" <?= (isset($inventory['STORAGE_LOCATION_ID']) && (int)$inventory['STORAGE_LOCATION_ID'] === (int)$sl['STORAGE_LOCATION_ID']) ? 'selected' : ''; ?>>
-                                                    <?= htmlspecialchars($sl['STORAGE_LOCATION_NAME'], ENT_QUOTES, 'UTF-8'); ?>
-                                                </option>
-                                            <?php endforeach; ?>
-                                        </select>
+                                        <div class="input-group">
+                                            <input type="text" name="storage_location_display" id="storage_location_display" class="form-control" placeholder="Click to select Storage Location" readonly value="<?= isset($inventory['STORAGE_LOCATION_NAME']) ? htmlspecialchars($inventory['STORAGE_LOCATION_NAME'], ENT_QUOTES, 'UTF-8') : ''; ?>">
+                                            <input type="hidden" name="storage_location_id" id="storage_location_id" value="<?= isset($inventory['STORAGE_LOCATION_ID']) ? (int)$inventory['STORAGE_LOCATION_ID'] : ''; ?>">
+                                            <div class="input-group-append">
+                                                <button type="button" class="btn btn-primary" id="btn-select-storage-location" data-toggle="modal" data-target="#modalStorageLocation">
+                                                    <i class="fa fa-search"></i> Select
+                                                </button>
+                                            </div>
+                                        </div>
                                     </div>
 
                                     <div class="form-group">
@@ -212,16 +211,6 @@
                                         <label>End Cycle</label>
                                         <input type="number" name="end_cycle" class="form-control" placeholder="Enter End Cycle" min="0" value="<?= isset($inventory['END_CYCLE']) ? htmlspecialchars($inventory['END_CYCLE'], ENT_QUOTES, 'UTF-8') : '0'; ?>" readonly>
                                         <small class="form-text text-muted">Automatically calculated</small>
-                                    </div>
-
-                                    <div class="form-group">
-                                        <label>Received Date</label>
-                                        <input type="date" name="received_date" class="form-control" value="<?= isset($inventory['RECEIVED_DATE']) && !empty($inventory['RECEIVED_DATE']) ? date('Y-m-d', strtotime($inventory['RECEIVED_DATE'])) : ''; ?>">
-                                    </div>
-
-                                    <div class="form-group">
-                                        <label>Do No.</label>
-                                        <input type="text" name="do_no" class="form-control" placeholder="Enter Do No." value="<?= isset($inventory['DO_NO']) ? htmlspecialchars($inventory['DO_NO'], ENT_QUOTES, 'UTF-8') : ''; ?>">
                                     </div>
                                 </div>
                             </div>
@@ -249,23 +238,22 @@
                                         <div class="col-md-3">
                                             <div class="form-group">
                                                 <label>Maker</label>
-                                                <select name="maker_id" id="maker_id" class="form-control">
-                                                    <option value="">-- Select Maker --</option>
-                                                    <?php foreach ($makers as $mk): ?>
-                                                        <option value="<?= (int)$mk['MAKER_ID']; ?>" 
-                                                            data-maker-code="<?= htmlspecialchars(isset($mk['MAKER_CODE']) ? $mk['MAKER_CODE'] : '', ENT_QUOTES, 'UTF-8'); ?>"
-                                                            <?= (isset($inventory['INV_MAKER_ID']) && (int)$inventory['INV_MAKER_ID'] === (int)$mk['MAKER_ID']) ? 'selected' : ''; ?>>
-                                                            <?= htmlspecialchars($mk['MAKER_NAME'], ENT_QUOTES, 'UTF-8'); ?>
-                                                        </option>
-                                                    <?php endforeach; ?>
-                                                </select>
+                                                <div class="input-group">
+                                                    <input type="text" name="maker_display" id="maker_display" class="form-control" placeholder="Click to select Maker" readonly value="<?= isset($inventory['MAKER_NAME']) ? htmlspecialchars($inventory['MAKER_NAME'], ENT_QUOTES, 'UTF-8') : ''; ?>">
+                                                    <input type="hidden" name="maker_id" id="maker_id" value="<?= isset($inventory['INV_MAKER_ID']) ? (int)$inventory['INV_MAKER_ID'] : ''; ?>">
+                                                    <div class="input-group-append">
+                                                        <button type="button" class="btn btn-primary" id="btn-select-maker" data-toggle="modal" data-target="#modalMaker">
+                                                            <i class="fa fa-search"></i> Select
+                                                        </button>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
 
                                         <div class="col-md-3">
                                             <div class="form-group">
                                                 <label>Maker Code</label>
-                                                <input type="text" name="maker_code" id="maker_code" class="form-control" placeholder="Maker Code" value="<?= isset($inventory['MAKER_CODE']) ? htmlspecialchars($inventory['MAKER_CODE'], ENT_QUOTES, 'UTF-8') : ''; ?>" readonly>
+                                                <input type="text" name="maker_code" id="maker_code" class="form-control" placeholder="Maker Code" readonly value="<?= isset($inventory['MAKER_CODE']) ? htmlspecialchars($inventory['MAKER_CODE'], ENT_QUOTES, 'UTF-8') : ''; ?>">
                                             </div>
                                         </div>
 
@@ -296,6 +284,20 @@
                                                 </select>
                                             </div>
                                         </div>
+
+                                        <div class="col-md-3">
+                                            <div class="form-group">
+                                                <label>Received Date</label>
+                                                <input type="date" name="received_date" class="form-control" value="<?= isset($inventory['RECEIVED_DATE']) && !empty($inventory['RECEIVED_DATE']) ? date('Y-m-d', strtotime($inventory['RECEIVED_DATE'])) : ''; ?>">
+                                            </div>
+                                        </div>
+
+                                        <div class="col-md-3">
+                                            <div class="form-group">
+                                                <label>Do No.</label>
+                                                <input type="text" name="do_no" class="form-control" placeholder="Enter Do No." value="<?= isset($inventory['DO_NO']) ? htmlspecialchars($inventory['DO_NO'], ENT_QUOTES, 'UTF-8') : ''; ?>">
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -319,16 +321,160 @@
     </div>
 </div>
 
+<!-- Modal for Maker Selection -->
+<div class="modal fade" id="modalMaker" tabindex="-1" role="dialog" aria-labelledby="modalMakerLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalMakerLabel">Select Maker</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="table-responsive">
+                    <table id="table-maker-modal" class="table table-bordered table-striped table-hover w-100">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Name</th>
+                                <th>Description</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php if (isset($makers_modal) && is_array($makers_modal)): ?>
+                                <?php foreach ($makers_modal as $mk): ?>
+                                    <tr>
+                                        <td><?= htmlspecialchars($mk['ID'], ENT_QUOTES, 'UTF-8'); ?></td>
+                                        <td><?= htmlspecialchars($mk['NAME'], ENT_QUOTES, 'UTF-8'); ?></td>
+                                        <td><?= htmlspecialchars($mk['DESCRIPTION'], ENT_QUOTES, 'UTF-8'); ?></td>
+                                        <td>
+                                            <button type="button" class="btn btn-sm btn-primary btn-select-maker" 
+                                                    data-id="<?= htmlspecialchars($mk['ID'], ENT_QUOTES, 'UTF-8'); ?>"
+                                                    data-name="<?= htmlspecialchars($mk['NAME'], ENT_QUOTES, 'UTF-8'); ?>"
+                                                    data-maker-code="<?= htmlspecialchars($mk['MAKER_CODE'], ENT_QUOTES, 'UTF-8'); ?>">
+                                                Select
+                                            </button>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for Storage Location Selection -->
+<div class="modal fade" id="modalStorageLocation" tabindex="-1" role="dialog" aria-labelledby="modalStorageLocationLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalStorageLocationLabel">Select Storage Location</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="table-responsive">
+                    <table id="table-storage-location-modal" class="table table-bordered table-striped table-hover w-100">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Name</th>
+                                <th>Description</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php if (isset($storage_locations_modal) && is_array($storage_locations_modal)): ?>
+                                <?php foreach ($storage_locations_modal as $sl): ?>
+                                    <tr>
+                                        <td><?= htmlspecialchars($sl['ID'], ENT_QUOTES, 'UTF-8'); ?></td>
+                                        <td><?= htmlspecialchars($sl['NAME'], ENT_QUOTES, 'UTF-8'); ?></td>
+                                        <td><?= htmlspecialchars($sl['DESCRIPTION'], ENT_QUOTES, 'UTF-8'); ?></td>
+                                        <td>
+                                            <button type="button" class="btn btn-sm btn-primary btn-select-sl" 
+                                                    data-id="<?= htmlspecialchars($sl['ID'], ENT_QUOTES, 'UTF-8'); ?>"
+                                                    data-name="<?= htmlspecialchars($sl['NAME'], ENT_QUOTES, 'UTF-8'); ?>">
+                                                Select
+                                            </button>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <?= isset($foot) ? $foot : ''; ?>
+<link href="<?= base_url('assets/vendor/datatables/dataTables.bootstrap4.min.css'); ?>" rel="stylesheet">
+<link href="<?= base_url('assets/vendor/datatables/jquery.dataTables.min.css'); ?>" rel="stylesheet">
+<script src="<?= base_url('assets/vendor/datatables/jquery.dataTables.min.js'); ?>"></script>
+<script src="<?= base_url('assets/vendor/datatables/dataTables.bootstrap4.min.js'); ?>"></script>
 <script>
 (function($){
     $(function(){
-        // Initialize maker code on page load if maker is selected
-        var selectedMaker = $('#maker_id option:selected');
-        if (selectedMaker.length && selectedMaker.val()) {
-            var makerCode = selectedMaker.data('maker-code') || '';
+        // Initialize DataTable for Maker Modal
+        var tableMaker = $('#table-maker-modal').DataTable({
+            lengthMenu: [[10, 25, 50, 100], [10, 25, 50, 100]],
+            pageLength: 10,
+            order: [[1, 'asc']], // Order by Name
+            columnDefs: [
+                { orderable: false, targets: [3] } // Action column not sortable
+            ]
+        });
+
+        // Handle Maker selection from modal
+        $(document).on('click', '.btn-select-maker', function() {
+            var makerId = $(this).data('id');
+            var makerName = $(this).data('name');
+            var makerCode = $(this).data('maker-code') || '';
+            
+            // Set values
+            $('#maker_id').val(makerId);
+            $('#maker_display').val(makerName);
             $('#maker_code').val(makerCode);
-        }
+            
+            // Close modal
+            $('#modalMaker').modal('hide');
+        });
+
+        // Initialize DataTable for Storage Location Modal
+        var tableStorageLocation = $('#table-storage-location-modal').DataTable({
+            lengthMenu: [[10, 25, 50, 100], [10, 25, 50, 100]],
+            pageLength: 10,
+            order: [[1, 'asc']], // Order by Name
+            columnDefs: [
+                { orderable: false, targets: [3] } // Action column not sortable
+            ]
+        });
+
+        // Handle Storage Location selection from modal
+        $(document).on('click', '.btn-select-sl', function() {
+            var slId = $(this).data('id');
+            var slName = $(this).data('name');
+            
+            // Set values
+            $('#storage_location_id').val(slId);
+            $('#storage_location_display').val(slName);
+            
+            // Close modal
+            $('#modalStorageLocation').modal('hide');
+        });
 
         // Handle Tool Drawing No change - load revisions if "Allow Select Old Revision" is checked
         $('#tool_drawing_no').on('change', function() {
@@ -396,13 +542,6 @@
             }
         });
 
-        // Handle Maker selection - auto-fill Maker Code
-        $('#maker_id').on('change', function() {
-            var selectedOption = $(this).find('option:selected');
-            var makerCode = selectedOption.data('maker-code') || '';
-            $('#maker_code').val(makerCode);
-        });
-
         // Form validation
         $('#formToolInventory').on('submit', function(e) {
             if (!this.checkValidity()) {
@@ -416,4 +555,3 @@
 </script>
 </body>
 </html>
-
