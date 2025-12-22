@@ -335,7 +335,7 @@ class M_tool_scrap extends CI_Model
         $sql = "SELECT 
                     MAC_ID AS ID,
                     MAC_NAME AS NAME,
-                    ISNULL(MAC_DESC, '') AS DESCRIPTION
+                    '' AS DESCRIPTION
                 FROM {$this->t('MS_MACHINES')}
                 ORDER BY MAC_NAME ASC";
         $q = $this->db_tms->query($sql);
@@ -350,7 +350,7 @@ class M_tool_scrap extends CI_Model
         $sql = "SELECT 
                     REASON_ID AS ID,
                     REASON_NAME AS NAME,
-                    ISNULL(REASON_DESC, '') AS DESCRIPTION
+                    ISNULL(REASON_CODE, '') AS DESCRIPTION
                 FROM {$this->t('MS_REASON')}
                 ORDER BY REASON_NAME ASC";
         $q = $this->db_tms->query($sql);
@@ -365,7 +365,7 @@ class M_tool_scrap extends CI_Model
         $sql = "SELECT 
                     CI_ID AS ID,
                     CI_NAME AS NAME,
-                    ISNULL(CI_DESC, '') AS DESCRIPTION
+                    ISNULL(CI_CODE, '') AS DESCRIPTION
                 FROM {$this->t('MS_CAUSE_ITEM')}
                 ORDER BY CI_NAME ASC";
         $q = $this->db_tms->query($sql);
