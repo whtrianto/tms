@@ -316,7 +316,7 @@ class M_tool_scrap extends CI_Model
      */
     public function get_users_for_modal()
     {
-        $sql = "SELECT 
+        $sql = "SELECT TOP 500
                     usr.USR_ID AS ID,
                     usr.USR_NAME AS [USER],
                     ISNULL(pos.POS_NAME, '') AS POSITION
@@ -332,7 +332,7 @@ class M_tool_scrap extends CI_Model
      */
     public function get_machines_for_modal()
     {
-        $sql = "SELECT 
+        $sql = "SELECT TOP 500
                     MAC_ID AS ID,
                     MAC_NAME AS NAME,
                     '' AS DESCRIPTION
@@ -347,7 +347,7 @@ class M_tool_scrap extends CI_Model
      */
     public function get_reasons_for_modal()
     {
-        $sql = "SELECT 
+        $sql = "SELECT TOP 500
                     REASON_ID AS ID,
                     REASON_NAME AS NAME,
                     ISNULL(REASON_CODE, '') AS DESCRIPTION
@@ -362,7 +362,7 @@ class M_tool_scrap extends CI_Model
      */
     public function get_causes_for_modal()
     {
-        $sql = "SELECT 
+        $sql = "SELECT TOP 500
                     CI_ID AS ID,
                     CI_NAME AS NAME,
                     ISNULL(CI_CODE, '') AS DESCRIPTION
@@ -377,7 +377,7 @@ class M_tool_scrap extends CI_Model
      */
     public function get_tool_inventory_for_modal()
     {
-        $sql = "SELECT 
+        $sql = "SELECT TOP 500
                     inv.INV_ID,
                     inv.INV_TOOL_ID AS TOOL_ID,
                     ml.ML_TOOL_DRAW_NO AS TOOL_DRAWING_NO,
