@@ -454,27 +454,16 @@ class M_tool_scrap extends CI_Model
                         -- Tool Name: from MS_TOOL_CLASS via MLR_TC_ID
                         ISNULL(tc.TC_NAME, '') AS TOOL_NAME,
                         ISNULL(tc.TC_ID, 0) AS TOOL_NAME_ID,
-                        -- Material: from MS_MATERIAL via INV_MAT_ID (preferred) or MLR_MAT_ID (fallback from Master List Rev)
-                        CASE 
-                            WHEN inv.INV_MAT_ID IS NOT NULL AND inv_mat.MAT_NAME IS NOT NULL THEN inv_mat.MAT_NAME
-                            WHEN mlr.MLR_MAT_ID IS NOT NULL AND mlr_mat.MAT_NAME IS NOT NULL THEN mlr_mat.MAT_NAME
-                            ELSE ''
-                        END AS MATERIAL,
-                        CASE 
-                            WHEN inv.INV_MAT_ID IS NOT NULL THEN inv.INV_MAT_ID
-                            WHEN mlr.MLR_MAT_ID IS NOT NULL THEN mlr.MLR_MAT_ID
-                            ELSE 0
-                        END AS MATERIAL_ID,
-                        -- RQ No: from multiple sources - INV_RQ_NO (preferred), then TMS_ORDERING.ORD_RQ_NO, then TMS_REQUISITION.RQ_INT_REQ_NO (scalar subquery)
-                        ISNULL(
-                            ISNULL(
-                                ISNULL(inv.INV_RQ_NO, ord.ORD_RQ_NO),
-                                (SELECT TOP 1 RQ_INT_REQ_NO FROM {$this->t('TMS_REQUISITION')} WHERE RQ_DWG_MLR_ID = inv.INV_MLR_ID AND RQ_INT_REQ_NO IS NOT NULL AND RQ_INT_REQ_NO <> '' ORDER BY RQ_ID DESC)
-                            ),
-                            ''
-                        ) AS RQ_NO,
-                        -- Tool Price: from INV_TOOL_COST (preferred) or MLR_PRICE (fallback from Master List Rev)
-                        ISNULL(ISNULL(inv.INV_TOOL_COST, mlr.MLR_PRICE), 0) AS TOOL_PRICE,
+                        -- Material: from MS_MATERIAL via INV_MAT_ID - following VW_TOOL_INVENTORY pattern (line 2737)
+                        -- VW_TOOL_INVENTORY uses: Material.MAT_ID = ToolInventory.INV_MAT_ID
+                        ISNULL(inv_mat.MAT_NAME, '') AS MATERIAL,
+                        ISNULL(inv.INV_MAT_ID, 0) AS MATERIAL_ID,
+                        -- RQ No: from INV_RQ_NO or ORD_RQ_NO - following VW_TOOL_INVENTORY pattern (line 2725, 2727)
+                        -- VW_TOOL_INVENTORY shows: ToolInventory.INV_RQ_NO, ToolOrdering.ORD_RQ_NO
+                        ISNULL(inv.INV_RQ_NO, ord.ORD_RQ_NO) AS RQ_NO,
+                        -- Tool Price: from INV_TOOL_COST - following VW_TOOL_INVENTORY pattern (line 2726)
+                        -- VW_TOOL_INVENTORY shows: ToolInventory.INV_TOOL_COST
+                        ISNULL(inv.INV_TOOL_COST, 0) AS TOOL_PRICE,
                         -- Tool Assignment No: from TMS_TOOL_ASSIGNMENT via TMS_ASSIGNED_TOOLS (scalar subquery)
                         ISNULL((
                             SELECT TOP 1 tasgn.TASGN_ASSIGN_NO
@@ -496,12 +485,10 @@ class M_tool_scrap extends CI_Model
                     LEFT JOIN {$this->t('TMS_TOOL_MASTER_LIST_REV')} mlr ON mlr.MLR_ID = inv.INV_MLR_ID
                     -- Join to TMS_TOOL_MASTER_LIST (for Drawing No)
                     LEFT JOIN {$this->t('TMS_TOOL_MASTER_LIST')} ml ON ml.ML_ID = mlr.MLR_ML_ID
-                    -- Join to MS_TOOL_CLASS (for Tool Name)
+                    -- Join to MS_TOOL_CLASS (for Tool Name) - following VW_TOOL_INVENTORY pattern (line 2735)
                     LEFT JOIN {$this->t('MS_TOOL_CLASS')} tc ON tc.TC_ID = mlr.MLR_TC_ID
-                    -- Join to MS_MATERIAL for inventory material (INV_MAT_ID)
+                    -- Join to MS_MATERIAL for inventory material (INV_MAT_ID) - following VW_TOOL_INVENTORY pattern (line 2737)
                     LEFT JOIN {$this->t('MS_MATERIAL')} inv_mat ON inv_mat.MAT_ID = inv.INV_MAT_ID
-                    -- Join to MS_MATERIAL for master list revision material (MLR_MAT_ID) as fallback
-                    LEFT JOIN {$this->t('MS_MATERIAL')} mlr_mat ON mlr_mat.MAT_ID = mlr.MLR_MAT_ID
                     -- Join to TMS_ORDERING_ITEMS and TMS_ORDERING (for RQ No from Ordering)
                     LEFT JOIN {$this->t('TMS_ORDERING_ITEMS')} ordi ON ordi.ORDI_ID = inv.INV_ORDI_ID
                     LEFT JOIN {$this->t('TMS_ORDERING')} ord ON ord.ORD_ID = ordi.ORDI_ORD_ID
