@@ -589,6 +589,90 @@ class M_tool_draw_engin extends CI_Model
     }
 
     /**
+     * Save or update TMS_TOOL_MASTER_LIST_MEMBERS (relationship between BOM and Tool Drawing)
+     */
+    public function save_bom_member($parent_mlr_id, $child_mlr_id, $qty, $std_qty, $seq, $remark, $tb_id = null)
+    {
+        $parent_mlr_id = (int)$parent_mlr_id;
+        $child_mlr_id = (int)$child_mlr_id;
+        $qty = (int)$qty;
+        $std_qty = ($std_qty !== null && $std_qty !== '') ? (int)$std_qty : null;
+        $seq = (int)$seq;
+        $remark = trim((string)$remark);
+        $tb_id = ($tb_id > 0) ? (int)$tb_id : null;
+
+        if ($parent_mlr_id <= 0 || $child_mlr_id <= 0) {
+            $this->messages = 'Parent ID dan Child ID harus lebih dari 0.';
+            return false;
+        }
+
+        // Check if relationship already exists
+        $check_sql = "SELECT TB_ID FROM {$this->t('TMS_TOOL_MASTER_LIST_MEMBERS')} WHERE TB_MLR_PARENT_ID = ? AND TB_MLR_CHILD_ID = ?";
+        $check_q = $this->db_tms->query($check_sql, array($parent_mlr_id, $child_mlr_id));
+        
+        if ($check_q && $check_q->num_rows() > 0) {
+            // Update existing
+            $existing_tb_id = (int)$check_q->row()->TB_ID;
+            $update_sql = "UPDATE {$this->t('TMS_TOOL_MASTER_LIST_MEMBERS')} 
+                          SET TB_QTY = ?, TB_STD_QTY = ?, TB_SEQ = ?, TB_REMARK = ? 
+                          WHERE TB_ID = ?";
+            $update_params = array($qty, $std_qty, $seq, $remark, $existing_tb_id);
+            $ok = $this->db_tms->query($update_sql, $update_params);
+            if ($ok) {
+                $this->messages = 'Relasi BOM member berhasil diperbarui.';
+                return true;
+            }
+        } else {
+            // Insert new
+            $insert_sql = "INSERT INTO {$this->t('TMS_TOOL_MASTER_LIST_MEMBERS')} 
+                          (TB_MLR_PARENT_ID, TB_MLR_CHILD_ID, TB_QTY, TB_STD_QTY, TB_SEQ, TB_REMARK) 
+                          VALUES (?, ?, ?, ?, ?, ?)";
+            $insert_params = array($parent_mlr_id, $child_mlr_id, $qty, $std_qty, $seq, $remark);
+            $ok = $this->db_tms->query($insert_sql, $insert_params);
+            if ($ok) {
+                $this->messages = 'Relasi BOM member berhasil ditambahkan.';
+                return true;
+            }
+        }
+
+        $err = $this->db_tms->error();
+        $this->messages = 'Gagal menyimpan relasi BOM member. ' . (isset($err['message']) ? $err['message'] : '');
+        return false;
+    }
+
+    /**
+     * Get MLR_ID by drawing_no and revision
+     */
+    public function get_mlr_id_by_drawing_no($drawing_no, $revision = 0)
+    {
+        $drawing_no = trim((string)$drawing_no);
+        $revision = (int)$revision;
+        
+        if ($drawing_no === '') {
+            return 0;
+        }
+
+        $sql = "SELECT TOP 1 rev.MLR_ID 
+                FROM {$this->t('TMS_TOOL_MASTER_LIST_REV')} rev
+                INNER JOIN {$this->t('TMS_TOOL_MASTER_LIST')} ml ON ml.ML_ID = rev.MLR_ML_ID
+                WHERE ml.ML_TOOL_DRAW_NO = ? AND ml.ML_TYPE = 1";
+        $params = array($drawing_no);
+        
+        if ($revision > 0) {
+            $sql .= " AND rev.MLR_REV = ?";
+            $params[] = $revision;
+        }
+        
+        $sql .= " ORDER BY rev.MLR_REV DESC";
+        
+        $q = $this->db_tms->query($sql, $params);
+        if ($q && $q->num_rows() > 0) {
+            return (int)$q->row()->MLR_ID;
+        }
+        return 0;
+    }
+
+    /**
      * Delete tool drawing
      */
     public function delete_data($id)

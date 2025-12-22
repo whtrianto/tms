@@ -377,6 +377,21 @@ class Tool_draw_engin extends MY_Controller
                         log_message('warning', '[Tool_draw_engin::submit_data] Cannot move file - ML_ID: ' . $ml_id . ', Uploaded file path exists: ' . ($uploaded_file_path && file_exists($uploaded_file_path) ? 'YES' : 'NO'));
                     }
                     
+                    // Save to TMS_TOOL_MASTER_LIST_MEMBERS if parent BOM ID is provided
+                    $parent_mlr_id = (int)$this->input->post('TB_MLR_PARENT_ID', TRUE);
+                    if ($parent_mlr_id > 0) {
+                        // Get child MLR_ID from the newly created drawing
+                        $child_mlr_id = $this->tool_draw_engin->get_mlr_id_by_drawing_no($drawing_no, $revision);
+                        if ($child_mlr_id > 0) {
+                            $qty = (int)$this->input->post('TD_MIN_QTY', TRUE);
+                            $std_qty = $this->input->post('TD_REPLENISH_QTY', TRUE);
+                            $seq = (int)$this->input->post('TD_SEQUENCE', TRUE);
+                            $remark = trim($this->input->post('TD_REMARKS', TRUE));
+                            
+                            $this->tool_draw_engin->save_bom_member($parent_mlr_id, $child_mlr_id, $qty, $std_qty, $seq, $remark);
+                        }
+                    }
+                    
                     $result['success'] = true;
                     $result['message'] = $this->tool_draw_engin->messages ?: 'Tool Drawing Engineering berhasil ditambahkan.';
                 } else {
@@ -419,6 +434,18 @@ class Tool_draw_engin extends MY_Controller
                     $revision
                 );
                 if ($ok === true) {
+                    // Update TMS_TOOL_MASTER_LIST_MEMBERS if parent BOM ID is provided
+                    $parent_mlr_id = (int)$this->input->post('TB_MLR_PARENT_ID', TRUE);
+                    $tb_id = (int)$this->input->post('TB_ID', TRUE);
+                    if ($parent_mlr_id > 0) {
+                        $qty = (int)$this->input->post('TD_MIN_QTY', TRUE);
+                        $std_qty = $this->input->post('TD_REPLENISH_QTY', TRUE);
+                        $seq = (int)$this->input->post('TD_SEQUENCE', TRUE);
+                        $remark = trim($this->input->post('TD_REMARKS', TRUE));
+                        
+                        $this->tool_draw_engin->save_bom_member($parent_mlr_id, $id, $qty, $std_qty, $seq, $remark, $tb_id);
+                    }
+                    
                     $result['success'] = true;
                     $result['message'] = $this->tool_draw_engin->messages ?: 'Tool Drawing Engineering berhasil diperbarui.';
                 } else {

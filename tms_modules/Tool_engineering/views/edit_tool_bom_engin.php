@@ -231,6 +231,8 @@
                                     <input type="hidden" name="action" value="ADD">
                                     <input type="hidden" name="TD_ID" value="">
                                     <input type="hidden" name="TD_DRAWING_NO_OLD" value="">
+                                    <input type="hidden" name="TB_MLR_PARENT_ID" value="<?= htmlspecialchars($bom['ID']); ?>">
+                                    <input type="hidden" name="TB_ID" value="">
 
                                     <div class="form-row">
                                         <div class="form-group col-md-6">
@@ -357,7 +359,7 @@
                                         </div>
                                         <div class="form-group col-md-6">
                                             <label>Remarks</label>
-                                            <textarea name="TD_DESCRIPTION" class="form-control" rows="2"></textarea>
+                                            <textarea name="TD_REMARKS" class="form-control" rows="2"></textarea>
                                         </div>
                                     </div>
 
@@ -440,10 +442,12 @@
             $('[name="action"]', f).val('ADD');
             $('[name="TD_ID"]', f).val('');
             $('[name="TD_DRAWING_NO_OLD"]', f).val('');
+            $('[name="TB_ID"]', f).val('');
             // default select product/process from BOM
             $('[name="TD_PRODUCT_ID"]', f).val('<?= isset($bom['PRODUCT_ID']) ? (int)$bom["PRODUCT_ID"] : '' ; ?>');
             $('[name="TD_PROCESS_ID"]', f).val('<?= isset($bom['PROCESS_ID']) ? (int)$bom["PROCESS_ID"] : '' ; ?>');
             $('[name="TD_STATUS"]', f).val(2); // Pending by default
+            $('[name="TD_REMARKS"]', f).val('');
         }
 
         $('#btn-add-additional').on('click', function(){
@@ -468,11 +472,13 @@
             $('[name="TD_MIN_QTY"]', '#formAdditional').val(raw.TD_MIN_QTY || '');
             $('[name="TD_REPLENISH_QTY"]', '#formAdditional').val(raw.TD_REPLENISH_QTY || '');
             $('[name="TD_SEQUENCE"]', '#formAdditional').val(raw.TD_SEQUENCE || '');
-            $('[name="TD_DESCRIPTION"]', '#formAdditional').val(raw.TD_DESCRIPTION || '');
+            $('[name="TD_REMARKS"]', '#formAdditional').val(raw.TD_REMARKS || '');
             $('[name="TD_PRODUCT_ID"]', '#formAdditional').val(raw.TD_PRODUCT_ID || '');
             $('[name="TD_PROCESS_ID"]', '#formAdditional').val(raw.TD_PROCESS_ID || '');
             $('[name="TD_MATERIAL_ID"]', '#formAdditional').val(raw.TD_MATERIAL_ID || '');
             $('[name="TD_MAKER_ID"]', '#formAdditional').val(raw.TD_MAKER_ID || '');
+            // Get TB_ID from data
+            $('[name="TB_ID"]', '#formAdditional').val(raw.TB_ID || '');
             $('#modalAdditional').modal('show');
         });
 

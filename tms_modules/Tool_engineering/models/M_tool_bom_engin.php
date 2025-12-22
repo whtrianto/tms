@@ -608,6 +608,7 @@ class M_tool_bom_engin extends CI_Model
 
         $sql = "
             SELECT 
+                members.TB_ID,
                 child_rev.MLR_ID AS TD_ID,
                 child_ml.ML_TOOL_DRAW_NO AS TD_DRAWING_NO,
                 ISNULL(tc.TC_NAME, '') AS TD_TOOL_NAME,
