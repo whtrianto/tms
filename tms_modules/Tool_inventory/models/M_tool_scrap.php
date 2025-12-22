@@ -444,8 +444,9 @@ class M_tool_scrap extends CI_Model
             }
             
             // Tool ID exists, now get full details with joins
-            // Simplified query - ensure it always returns data if Tool ID exists
-            // Use scalar subqueries for PCS_PRODUCED and TOOL_ASSIGNMENT_NO to avoid JOIN issues
+            // Material: Use INV_MAT_ID first, fallback to MLR_MAT_ID if NULL
+            // RQ No: Use ORD_RQ_NO from TMS_ORDERING first, fallback to INV_RQ_NO
+            // Tool Price: Use INV_TOOL_COST if available, fallback to MLR_PRICE
             $sql = "SELECT TOP 1
                         inv.INV_ID,
                         inv.INV_TOOL_ID AS TOOL_ID,
@@ -454,10 +455,10 @@ class M_tool_scrap extends CI_Model
                         ISNULL(mlr.MLR_REV, 0) AS REVISION,
                         ISNULL(tc.TC_NAME, '') AS TOOL_NAME,
                         ISNULL(tc.TC_ID, 0) AS TOOL_NAME_ID,
-                        ISNULL(mat.MAT_NAME, '') AS MATERIAL,
-                        ISNULL(mat.MAT_ID, 0) AS MATERIAL_ID,
+                        ISNULL(ISNULL(inv_mat.MAT_NAME, mlr_mat.MAT_NAME), '') AS MATERIAL,
+                        ISNULL(ISNULL(inv.INV_MAT_ID, mlr.MLR_MAT_ID), 0) AS MATERIAL_ID,
                         ISNULL(ISNULL(ord.ORD_RQ_NO, inv.INV_RQ_NO), '') AS RQ_NO,
-                        ISNULL(mlr.MLR_PRICE, 0) AS TOOL_PRICE,
+                        ISNULL(ISNULL(inv.INV_TOOL_COST, mlr.MLR_PRICE), 0) AS TOOL_PRICE,
                         ISNULL((
                             SELECT TOP 1 tasgn.TASGN_ASSIGN_NO
                             FROM {$this->t('TMS_ASSIGNED_TOOLS')} assgn
@@ -476,7 +477,8 @@ class M_tool_scrap extends CI_Model
                     LEFT JOIN {$this->t('TMS_TOOL_MASTER_LIST_REV')} mlr ON mlr.MLR_ID = inv.INV_MLR_ID
                     LEFT JOIN {$this->t('TMS_TOOL_MASTER_LIST')} ml ON ml.ML_ID = mlr.MLR_ML_ID
                     LEFT JOIN {$this->t('MS_TOOL_CLASS')} tc ON tc.TC_ID = mlr.MLR_TC_ID
-                    LEFT JOIN {$this->t('MS_MATERIAL')} mat ON mat.MAT_ID = inv.INV_MAT_ID
+                    LEFT JOIN {$this->t('MS_MATERIAL')} inv_mat ON inv_mat.MAT_ID = inv.INV_MAT_ID
+                    LEFT JOIN {$this->t('MS_MATERIAL')} mlr_mat ON mlr_mat.MAT_ID = mlr.MLR_MAT_ID
                     LEFT JOIN {$this->t('TMS_ORDERING_ITEMS')} ordi ON ordi.ORDI_ID = inv.INV_ORDI_ID
                     LEFT JOIN {$this->t('TMS_ORDERING')} ord ON ord.ORD_ID = ordi.ORDI_ORD_ID
                     WHERE inv.INV_TOOL_ID = {$tool_id_escaped}
