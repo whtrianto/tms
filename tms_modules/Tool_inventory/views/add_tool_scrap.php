@@ -869,13 +869,22 @@
             var invId = $(this).data('inv-id');
             var toolId = $(this).data('tool-id');
             
-            $('#inv_id').val(invId);
+            if (!toolId || toolId === '') {
+                if (typeof toastr !== 'undefined') {
+                    toastr.warning('Tool ID tidak valid');
+                }
+                return;
+            }
+            
+            // Set values
+            $('#inv_id').val(invId || '');
             $('#tool_id').val(toolId);
             $('#tool_id_display').val(toolId);
             
+            // Close modal
             $('#modalToolInventory').modal('hide');
             
-            // Load tool inventory details
+            // Load tool inventory details to auto-fill all fields
             loadToolInventoryDetails(toolId);
         });
 
@@ -908,32 +917,56 @@
                 return;
             }
 
+            // Show loading indicator
+            var $toolIdDisplay = $('#tool_id_display');
+            var originalVal = $toolIdDisplay.val();
+            $toolIdDisplay.val('Loading...');
+
             $.ajax({
                 url: '<?= base_url("Tool_inventory/tool_scrap/get_tool_inventory_details"); ?>',
                 type: 'POST',
                 dataType: 'json',
                 data: { tool_id: toolId }
             }).done(function(res) {
+                $toolIdDisplay.val(originalVal); // Restore original value
+                
                 if (res && res.success && res.data) {
                     var d = res.data;
                     
-                    // Auto-fill fields
+                    // Auto-fill all Tool Information fields
                     $('#tool_name').val(d.TOOL_NAME || '');
                     $('#material').val(d.MATERIAL || '');
                     $('#rq_no').val(d.RQ_NO || '');
-                    $('#tool_price').val(d.TOOL_PRICE || '');
+                    $('#tool_price').val(d.TOOL_PRICE || '0');
                     $('#drawing_no').val(d.TOOL_DRAWING_NO || '');
                     $('#revision').val(d.REVISION || '0');
                     $('#tool_assignment_no').val(d.TOOL_ASSIGNMENT_NO || '');
                     $('#pcs_produced').val(d.PCS_PRODUCED || '0');
                     
-                    // Tool Inventory Status (will be calculated/loaded separately if needed)
-                    // For now, leave empty or set default values
+                    // Tool Residue Value - calculate if needed (can be 0 or calculated from tool price)
+                    // For now, set to 0 or leave empty
+                    $('#tool_residue_value').val('0');
+                    
+                    // Show success message
+                    if (typeof toastr !== 'undefined') {
+                        toastr.success('Tool Information loaded successfully');
+                    }
                 } else {
                     clearToolFields();
+                    if (typeof toastr !== 'undefined') {
+                        toastr.warning(res && res.message ? res.message : 'Tool ID tidak ditemukan');
+                    } else {
+                        alert(res && res.message ? res.message : 'Tool ID tidak ditemukan');
+                    }
                 }
-            }).fail(function() {
+            }).fail(function(xhr, status, error) {
+                $toolIdDisplay.val(originalVal); // Restore original value
                 clearToolFields();
+                if (typeof toastr !== 'undefined') {
+                    toastr.error('Gagal memuat data Tool Information: ' + (error || status));
+                } else {
+                    alert('Gagal memuat data Tool Information: ' + (error || status));
+                }
             });
         }
 
@@ -942,11 +975,12 @@
             $('#tool_name').val('');
             $('#material').val('');
             $('#rq_no').val('');
-            $('#tool_price').val('');
+            $('#tool_price').val('0');
             $('#drawing_no').val('');
             $('#revision').val('0');
             $('#tool_assignment_no').val('');
             $('#pcs_produced').val('0');
+            $('#tool_residue_value').val('0');
         }
 
         // Form submit with AJAX
