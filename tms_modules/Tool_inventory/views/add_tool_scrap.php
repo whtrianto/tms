@@ -482,8 +482,8 @@
                         <thead>
                             <tr>
                                 <th>ID</th>
-                                <th>Name</th>
-                                <th>Description</th>
+                                <th>Machine</th>
+                                <th>Operation</th>
                                 <th>Action</th>
                             </tr>
                         </thead>
@@ -492,12 +492,12 @@
                                 <?php foreach ($machines_modal as $m): ?>
                                     <tr>
                                         <td><?= htmlspecialchars($m['ID'], ENT_QUOTES, 'UTF-8'); ?></td>
-                                        <td><?= htmlspecialchars($m['NAME'], ENT_QUOTES, 'UTF-8'); ?></td>
-                                        <td><?= htmlspecialchars($m['DESCRIPTION'], ENT_QUOTES, 'UTF-8'); ?></td>
+                                        <td><?= htmlspecialchars($m['MACHINE'], ENT_QUOTES, 'UTF-8'); ?></td>
+                                        <td><?= htmlspecialchars($m['OPERATION'], ENT_QUOTES, 'UTF-8'); ?></td>
                                         <td>
                                             <button type="button" class="btn btn-sm btn-primary btn-select-machine" 
                                                     data-id="<?= htmlspecialchars($m['ID'], ENT_QUOTES, 'UTF-8'); ?>"
-                                                    data-name="<?= htmlspecialchars($m['NAME'], ENT_QUOTES, 'UTF-8'); ?>">
+                                                    data-name="<?= htmlspecialchars($m['MACHINE'], ENT_QUOTES, 'UTF-8'); ?>">
                                                 Select
                                             </button>
                                         </td>
@@ -530,12 +530,13 @@
                     <table id="table-tool-inventory-modal" class="table table-bordered table-striped table-hover w-100">
                         <thead>
                             <tr>
+                                <th>ID</th>
                                 <th>Tool ID</th>
                                 <th>Tool Drawing No</th>
                                 <th>Revision</th>
-                                <th>Status</th>
-                                <th>EndCycle</th>
-                                <th>Storage Location</th>
+                                <th>Tool Name</th>
+                                <th>Tool Status</th>
+                                <th>Remarks</th>
                                 <th>Action</th>
                             </tr>
                         </thead>
@@ -543,9 +544,10 @@
                             <?php if (isset($tool_inventory_modal) && is_array($tool_inventory_modal)): ?>
                                 <?php foreach ($tool_inventory_modal as $ti): ?>
                                     <tr>
+                                        <td><?= htmlspecialchars($ti['ID'], ENT_QUOTES, 'UTF-8'); ?></td>
                                         <td>
                                             <a href="#" class="btn-select-tool-id-link text-primary" 
-                                               data-inv-id="<?= htmlspecialchars($ti['INV_ID'], ENT_QUOTES, 'UTF-8'); ?>"
+                                               data-inv-id="<?= htmlspecialchars($ti['ID'], ENT_QUOTES, 'UTF-8'); ?>"
                                                data-tool-id="<?= htmlspecialchars($ti['TOOL_ID'], ENT_QUOTES, 'UTF-8'); ?>"
                                                style="text-decoration: underline; cursor: pointer;">
                                                 <?= htmlspecialchars($ti['TOOL_ID'], ENT_QUOTES, 'UTF-8'); ?>
@@ -553,12 +555,12 @@
                                         </td>
                                         <td><?= htmlspecialchars($ti['TOOL_DRAWING_NO'], ENT_QUOTES, 'UTF-8'); ?></td>
                                         <td><?= htmlspecialchars($ti['REVISION'], ENT_QUOTES, 'UTF-8'); ?></td>
-                                        <td><?= htmlspecialchars($ti['STATUS'], ENT_QUOTES, 'UTF-8'); ?></td>
-                                        <td><?= htmlspecialchars($ti['END_CYCLE'], ENT_QUOTES, 'UTF-8'); ?></td>
-                                        <td><?= htmlspecialchars($ti['STORAGE_LOCATION'], ENT_QUOTES, 'UTF-8'); ?></td>
+                                        <td><?= htmlspecialchars($ti['TOOL_NAME'], ENT_QUOTES, 'UTF-8'); ?></td>
+                                        <td><?= htmlspecialchars($ti['TOOL_STATUS'], ENT_QUOTES, 'UTF-8'); ?></td>
+                                        <td><?= htmlspecialchars($ti['REMARKS'], ENT_QUOTES, 'UTF-8'); ?></td>
                                         <td>
                                             <button type="button" class="btn btn-sm btn-primary btn-select-tool-id" 
-                                                    data-inv-id="<?= htmlspecialchars($ti['INV_ID'], ENT_QUOTES, 'UTF-8'); ?>"
+                                                    data-inv-id="<?= htmlspecialchars($ti['ID'], ENT_QUOTES, 'UTF-8'); ?>"
                                                     data-tool-id="<?= htmlspecialchars($ti['TOOL_ID'], ENT_QUOTES, 'UTF-8'); ?>">
                                                 Select
                                             </button>
@@ -801,15 +803,15 @@
         var tableMachine = $('#table-machine-modal').DataTable({
             lengthMenu: [[10, 25, 50, 100], [10, 25, 50, 100]],
             pageLength: 10,
-            order: [[1, 'asc']],
-            columnDefs: [{ orderable: false, targets: [3] }]
+            order: [[0, 'asc']], // Order by ID (column index 0) from small to large
+            columnDefs: [{ orderable: false, targets: [3] }] // Action column is not sortable
         });
 
         var tableToolInventory = $('#table-tool-inventory-modal').DataTable({
             lengthMenu: [[10, 25, 50, 100], [10, 25, 50, 100]],
             pageLength: 10,
-            order: [[0, 'asc']], // Order by Tool ID
-            columnDefs: [{ orderable: false, targets: [6] }]
+            order: [[1, 'asc']], // Order by Tool ID (column index 1)
+            columnDefs: [{ orderable: false, targets: [7] }] // Action column is not sortable
         });
 
         var tableReason = $('#table-reason-modal').DataTable({

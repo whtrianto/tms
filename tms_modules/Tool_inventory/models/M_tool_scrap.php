@@ -328,16 +328,17 @@ class M_tool_scrap extends CI_Model
     }
 
     /**
-     * Get machines for modal popup (ID, Name, Description)
+     * Get machines for modal popup (ID, Machine, Operation)
      */
     public function get_machines_for_modal()
     {
         $sql = "SELECT TOP 500
-                    MAC_ID AS ID,
-                    MAC_NAME AS NAME,
-                    '' AS DESCRIPTION
-                FROM {$this->t('MS_MACHINES')}
-                ORDER BY MAC_NAME ASC";
+                    mac.MAC_ID AS ID,
+                    mac.MAC_NAME AS MACHINE,
+                    ISNULL(op.OP_NAME, '') AS OPERATION
+                FROM {$this->t('MS_MACHINES')} mac
+                LEFT JOIN {$this->t('MS_OPERATION')} op ON op.OP_ID = mac.MAC_OP_ID
+                ORDER BY mac.MAC_ID ASC";
         $q = $this->db_tms->query($sql);
         return $q && $q->num_rows() > 0 ? $q->result_array() : array();
     }
@@ -373,22 +374,22 @@ class M_tool_scrap extends CI_Model
     }
 
     /**
-     * Get tool inventory for modal popup (Tool ID, Tool Drawing No, Revision, Status, EndCycle, Storage Location)
+     * Get tool inventory for modal popup (ID, Tool ID, Tool Drawing No, Revision, Tool Name, Tool Status, Remarks)
      */
     public function get_tool_inventory_for_modal()
     {
         $sql = "SELECT TOP 500
-                    inv.INV_ID,
+                    inv.INV_ID AS ID,
                     inv.INV_TOOL_ID AS TOOL_ID,
                     ml.ML_TOOL_DRAW_NO AS TOOL_DRAWING_NO,
                     mlr.MLR_REV AS REVISION,
-                    inv.INV_STATUS AS STATUS,
-                    ISNULL(inv.INV_END_CYCLE, 0) AS END_CYCLE,
-                    ISNULL(sl.SL_NAME, '') AS STORAGE_LOCATION
+                    ISNULL(tc.TC_NAME, '') AS TOOL_NAME,
+                    inv.INV_STATUS AS TOOL_STATUS,
+                    ISNULL(inv.INV_NOTES, '') AS REMARKS
                 FROM {$this->t('TMS_TOOL_INVENTORY')} inv
                 INNER JOIN {$this->t('TMS_TOOL_MASTER_LIST_REV')} mlr ON mlr.MLR_ID = inv.INV_MLR_ID
                 INNER JOIN {$this->t('TMS_TOOL_MASTER_LIST')} ml ON ml.ML_ID = mlr.MLR_ML_ID
-                LEFT JOIN {$this->t('MS_STORAGE_LOCATION')} sl ON sl.SL_ID = inv.INV_SL_ID
+                LEFT JOIN {$this->t('MS_TOOL_CLASS')} tc ON tc.TC_ID = mlr.MLR_TC_ID
                 WHERE inv.INV_TOOL_ID IS NOT NULL AND inv.INV_TOOL_ID <> ''
                 ORDER BY inv.INV_TOOL_ID ASC";
         $q = $this->db_tms->query($sql);
