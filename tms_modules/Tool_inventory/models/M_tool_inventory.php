@@ -190,6 +190,7 @@ class M_tool_inventory extends CI_Model
                     inv.INV_STATUS,
                     ISNULL(inv.INV_NOTES, '') AS NOTES,
                     ISNULL(sl.SL_NAME, '') AS STORAGE_LOCATION,
+                    ISNULL(sl.SL_NAME, '') AS STORAGE_LOCATION_NAME,
                     inv.INV_SL_ID AS STORAGE_LOCATION_ID,
                     ISNULL(mat.MAT_NAME, '') AS MATERIAL,
                     inv.INV_MAT_ID AS MATERIAL_ID,

@@ -143,6 +143,14 @@
                                     <label>Revision</label>
                                     <input type="number" class="form-control" value="<?= isset($inventory['REVISION']) ? htmlspecialchars($inventory['REVISION'], ENT_QUOTES, 'UTF-8') : '0'; ?>" readonly>
                                 </div>
+                            </div>
+                                
+                            <!-- Right Column -->
+                            <div class="col-md-6">
+                                <div class="form-group form-check-inline-custom">
+                                    <label class="form-check-label" for="assetized">Assetized</label>
+                                    <input type="checkbox" class="form-check-input" id="assetized" disabled <?= (isset($inventory['INV_ASSETIZED']) && $inventory['INV_ASSETIZED'] == 1) ? 'checked' : ''; ?>>
+                                </div>
 
                                 <div class="form-group">
                                     <label>Tool Tag</label>
@@ -168,14 +176,6 @@
                                     <label>Tool Condition</label>
                                     <input type="number" class="form-control" value="<?= isset($inventory['INV_TOOL_CONDITION']) ? htmlspecialchars($inventory['INV_TOOL_CONDITION'], ENT_QUOTES, 'UTF-8') : '0'; ?>" readonly>
                                 </div>
-                            </div>
-
-                            <!-- Right Column -->
-                            <div class="col-md-6">
-                                <div class="form-group form-check-inline-custom">
-                                    <label class="form-check-label" for="assetized">Assetized</label>
-                                    <input type="checkbox" class="form-check-input" id="assetized" disabled <?= (isset($inventory['INV_ASSETIZED']) && $inventory['INV_ASSETIZED'] == 1) ? 'checked' : ''; ?>>
-                                </div>
 
                                 <div class="form-group">
                                     <label>In Tool Set</label>
@@ -184,14 +184,7 @@
 
                                 <div class="form-group">
                                     <label>Storage Location</label>
-                                    <select class="form-control" disabled>
-                                        <option value="">-- Select Storage Location --</option>
-                                        <?php foreach ($storage_locations as $sl): ?>
-                                            <option value="<?= (int)$sl['STORAGE_LOCATION_ID']; ?>" <?= (isset($inventory['STORAGE_LOCATION_ID']) && (int)$inventory['STORAGE_LOCATION_ID'] === (int)$sl['STORAGE_LOCATION_ID']) ? 'selected' : ''; ?>>
-                                                <?= htmlspecialchars($sl['STORAGE_LOCATION_NAME'], ENT_QUOTES, 'UTF-8'); ?>
-                                            </option>
-                                        <?php endforeach; ?>
-                                    </select>
+                                    <input type="text" class="form-control" value="<?= isset($inventory['STORAGE_LOCATION_NAME']) ? htmlspecialchars($inventory['STORAGE_LOCATION_NAME'], ENT_QUOTES, 'UTF-8') : (isset($inventory['STORAGE_LOCATION']) ? htmlspecialchars($inventory['STORAGE_LOCATION'], ENT_QUOTES, 'UTF-8') : ''); ?>" readonly>
                                 </div>
 
                                 <div class="form-group">
@@ -208,16 +201,6 @@
                                     <label>End Cycle</label>
                                     <input type="number" class="form-control" value="<?= isset($inventory['END_CYCLE']) ? htmlspecialchars($inventory['END_CYCLE'], ENT_QUOTES, 'UTF-8') : '0'; ?>" readonly>
                                     <small class="form-text text-muted">Automatically calculated</small>
-                                </div>
-
-                                <div class="form-group">
-                                    <label>Received Date</label>
-                                    <input type="date" class="form-control" value="<?= isset($inventory['RECEIVED_DATE']) && !empty($inventory['RECEIVED_DATE']) ? date('Y-m-d', strtotime($inventory['RECEIVED_DATE'])) : ''; ?>" readonly>
-                                </div>
-
-                                <div class="form-group">
-                                    <label>Do No.</label>
-                                    <input type="text" class="form-control" value="<?= isset($inventory['DO_NO']) ? htmlspecialchars($inventory['DO_NO'], ENT_QUOTES, 'UTF-8') : ''; ?>" readonly>
                                 </div>
                             </div>
                         </div>
@@ -288,6 +271,20 @@
                                                 <option value="Overseas" <?= (isset($inventory['INV_PURCHASE_TYPE']) && $inventory['INV_PURCHASE_TYPE'] === 'Overseas') ? 'selected' : ''; ?>>Overseas</option>
                                                 <option value="Internal Fabrication" <?= (isset($inventory['INV_PURCHASE_TYPE']) && $inventory['INV_PURCHASE_TYPE'] === 'Internal Fabrication') ? 'selected' : ''; ?>>Internal Fabrication</option>
                                             </select>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-md-3">
+                                        <div class="form-group">
+                                            <label>Received Date</label>
+                                            <input type="date" class="form-control" value="<?= isset($inventory['RECEIVED_DATE']) && !empty($inventory['RECEIVED_DATE']) ? date('Y-m-d', strtotime($inventory['RECEIVED_DATE'])) : ''; ?>" readonly>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-md-3">
+                                        <div class="form-group">
+                                            <label>Do No.</label>
+                                            <input type="text" class="form-control" value="<?= isset($inventory['DO_NO']) ? htmlspecialchars($inventory['DO_NO'], ENT_QUOTES, 'UTF-8') : ''; ?>" readonly>
                                         </div>
                                     </div>
                                 </div>
