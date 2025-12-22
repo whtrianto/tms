@@ -318,7 +318,7 @@ class M_tool_scrap extends CI_Model
     {
         $sql = "SELECT 
                     USR_ID AS ID,
-                    USR_NAME AS USER,
+                    USR_NAME AS [USER],
                     ISNULL(USR_POSITION, '') AS POSITION
                 FROM {$this->t('MS_USERS')}
                 WHERE USR_IS_DELETED = 0 OR USR_IS_DELETED IS NULL
