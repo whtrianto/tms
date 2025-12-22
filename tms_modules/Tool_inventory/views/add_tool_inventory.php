@@ -158,12 +158,21 @@
                                         <input type="number" name="revision" id="revision" class="form-control" placeholder="Enter Revision" min="0" value="0" readonly>
                                     </div>
 
+                                </div>
+                                
+                                <!-- Right Column -->
+                                <div class="col-md-6">
+                                    <div class="form-group form-check-inline-custom">
+                                        <label class="form-check-label" for="assetized">Assetized</label>
+                                        <input type="checkbox" class="form-check-input" id="assetized" name="assetized" value="1">
+                                    </div>
+                                    
                                     <div class="form-group">
                                         <label class="label-required">Tool Tag</label>
                                         <input type="text" name="tool_tag" id="tool_tag" class="form-control" placeholder="Enter Tool Tag" value="<?= isset($next_tool_tag) ? htmlspecialchars($next_tool_tag, ENT_QUOTES, 'UTF-8') : '1'; ?>" required>
                                         <small class="form-text text-muted">Auto-generated from latest number</small>
                                     </div>
-
+    
                                     <div class="form-group">
                                         <label class="label-required">Tool Status</label>
                                         <select name="tool_status" class="form-control" required>
@@ -178,20 +187,11 @@
                                             <option value="9">DesignChange</option>
                                         </select>
                                     </div>
-
+    
                                     <div class="form-group">
                                         <label>Tool Condition</label>
                                         <input type="number" name="tool_condition" class="form-control" placeholder="Enter Tool Condition" min="0">
                                     </div>
-                                </div>
-
-                                <!-- Right Column -->
-                                <div class="col-md-6">
-                                    <div class="form-group form-check-inline-custom">
-                                        <label class="form-check-label" for="assetized">Assetized</label>
-                                        <input type="checkbox" class="form-check-input" id="assetized" name="assetized" value="1">
-                                    </div>
-
                                     <div class="form-group">
                                         <label>In Tool Set</label>
                                         <input type="number" name="in_tool_set" class="form-control" placeholder="Enter In Tool Set" min="0">
@@ -223,16 +223,6 @@
                                         <label>End Cycle</label>
                                         <input type="number" name="end_cycle" class="form-control" placeholder="Enter End Cycle" min="0" value="0" readonly>
                                         <small class="form-text text-muted">Automatically calculated</small>
-                                    </div>
-
-                                    <div class="form-group">
-                                        <label>Received Date</label>
-                                        <input type="date" name="received_date" class="form-control">
-                                    </div>
-
-                                    <div class="form-group">
-                                        <label>Do No.</label>
-                                        <input type="text" name="do_no" class="form-control" placeholder="Enter Do No.">
                                     </div>
                                 </div>
                             </div>
@@ -303,6 +293,20 @@
                                                     <option value="Overseas">Overseas</option>
                                                     <option value="Internal Fabrication">Internal Fabrication</option>
                                                 </select>
+                                            </div>
+                                        </div>
+
+                                        <div class="col-md-3">
+                                            <div class="form-group">
+                                                <label>Received Date</label>
+                                                <input type="date" name="received_date" class="form-control">
+                                            </div>
+                                        </div>
+
+                                        <div class="col-md-3">
+                                            <div class="form-group">
+                                                <label>Do No.</label>
+                                                <input type="text" name="do_no" class="form-control" placeholder="Enter Do No.">
                                             </div>
                                         </div>
                                     </div>
