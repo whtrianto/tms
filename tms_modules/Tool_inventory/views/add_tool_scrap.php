@@ -307,9 +307,11 @@
                                         <label class="label-required">Suggestion</label>
                                         <select name="suggestion" id="suggestion" class="form-control" required>
                                             <option value="">-- Select Suggestion --</option>
-                                            <option value="Scrap" selected>Scrap</option>
+                                            <option value="Scrap">Scrap</option>
+                                            <option value="Can Use">Can Use</option>
+                                            <option value="On Hold">On Hold</option>
                                             <option value="Repair">Repair</option>
-                                            <option value="Replace">Replace</option>
+                                            <option value="Other">Other</option>
                                         </select>
                                     </div>
 

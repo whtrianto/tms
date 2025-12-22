@@ -415,7 +415,7 @@ class M_tool_scrap extends CI_Model
                     mat.MAT_ID AS MATERIAL_ID,
                     ISNULL(ord.ORD_RQ_NO, inv.INV_RQ_NO) AS RQ_NO,
                     mlr.MLR_PRICE AS TOOL_PRICE,
-                    inv.INV_ASSIGN_NO AS TOOL_ASSIGNMENT_NO,
+                    ISNULL(tasgn.TASGN_ASSIGN_NO, '') AS TOOL_ASSIGNMENT_NO,
                     ISNULL(pcs_produced.PCS_PRODUCED, 0) AS PCS_PRODUCED,
                     inv.INV_STATUS AS STATUS,
                     ISNULL(inv.INV_END_CYCLE, 0) AS END_CYCLE
@@ -426,6 +426,8 @@ class M_tool_scrap extends CI_Model
                 LEFT JOIN {$this->t('MS_MATERIAL')} mat ON mat.MAT_ID = inv.INV_MAT_ID
                 LEFT JOIN {$this->t('TMS_ORDERING_ITEMS')} ordi ON ordi.ORDI_ID = inv.INV_ORDI_ID
                 LEFT JOIN {$this->t('TMS_ORDERING')} ord ON ord.ORD_ID = ordi.ORDI_ORD_ID
+                LEFT JOIN {$this->t('TMS_ASSIGNED_TOOLS')} assgn ON assgn.ASSGN_ID = inv.INV_ASSGN_ID
+                LEFT JOIN {$this->t('TMS_TOOL_ASSIGNMENT')} tasgn ON tasgn.TASGN_ID = assgn.ASSGN_TASGN_ID
                 LEFT JOIN (
                     SELECT ASSGN_INV_ID, SUM(ISNULL(ASSGN_QTY_PRODUCED, 0)) AS PCS_PRODUCED
                     FROM {$this->t('TMS_ASSIGNED_TOOLS')}
