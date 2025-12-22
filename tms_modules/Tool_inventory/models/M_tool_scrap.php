@@ -401,43 +401,69 @@ class M_tool_scrap extends CI_Model
     public function get_tool_inventory_details_by_tool_id($tool_id)
     {
         $tool_id = trim((string)$tool_id);
-        if (empty($tool_id)) return null;
+        if (empty($tool_id)) {
+            log_message('debug', '[M_tool_scrap::get_tool_inventory_details_by_tool_id] Tool ID is empty');
+            return null;
+        }
 
-        $sql = "SELECT TOP 1
-                    inv.INV_ID,
-                    inv.INV_TOOL_ID AS TOOL_ID,
-                    inv.INV_MLR_ID,
-                    ml.ML_TOOL_DRAW_NO AS TOOL_DRAWING_NO,
-                    mlr.MLR_REV AS REVISION,
-                    tc.TC_NAME AS TOOL_NAME,
-                    tc.TC_ID AS TOOL_NAME_ID,
-                    mat.MAT_NAME AS MATERIAL,
-                    mat.MAT_ID AS MATERIAL_ID,
-                    ISNULL(ord.ORD_RQ_NO, inv.INV_RQ_NO) AS RQ_NO,
-                    mlr.MLR_PRICE AS TOOL_PRICE,
-                    ISNULL(tasgn.TASGN_ASSIGN_NO, '') AS TOOL_ASSIGNMENT_NO,
-                    ISNULL(pcs_produced.PCS_PRODUCED, 0) AS PCS_PRODUCED,
-                    inv.INV_STATUS AS STATUS,
-                    ISNULL(inv.INV_END_CYCLE, 0) AS END_CYCLE
-                FROM {$this->t('TMS_TOOL_INVENTORY')} inv
-                INNER JOIN {$this->t('TMS_TOOL_MASTER_LIST_REV')} mlr ON mlr.MLR_ID = inv.INV_MLR_ID
-                INNER JOIN {$this->t('TMS_TOOL_MASTER_LIST')} ml ON ml.ML_ID = mlr.MLR_ML_ID
-                LEFT JOIN {$this->t('MS_TOOL_CLASS')} tc ON tc.TC_ID = mlr.MLR_TC_ID
-                LEFT JOIN {$this->t('MS_MATERIAL')} mat ON mat.MAT_ID = inv.INV_MAT_ID
-                LEFT JOIN {$this->t('TMS_ORDERING_ITEMS')} ordi ON ordi.ORDI_ID = inv.INV_ORDI_ID
-                LEFT JOIN {$this->t('TMS_ORDERING')} ord ON ord.ORD_ID = ordi.ORDI_ORD_ID
-                LEFT JOIN {$this->t('TMS_ASSIGNED_TOOLS')} assgn ON assgn.ASSGN_ID = inv.INV_ASSGN_ID
-                LEFT JOIN {$this->t('TMS_TOOL_ASSIGNMENT')} tasgn ON tasgn.TASGN_ID = assgn.ASSGN_TASGN_ID
-                LEFT JOIN (
-                    SELECT ASSGN_INV_ID, SUM(ISNULL(ASSGN_QTY_PRODUCED, 0)) AS PCS_PRODUCED
-                    FROM {$this->t('TMS_ASSIGNED_TOOLS')}
-                    WHERE ASSGN_INV_ID IS NOT NULL
-                    GROUP BY ASSGN_INV_ID
-                ) pcs_produced ON pcs_produced.ASSGN_INV_ID = inv.INV_ID
-                WHERE inv.INV_TOOL_ID = ?
-                ORDER BY inv.INV_ID DESC";
-        $q = $this->db_tms->query($sql, array($tool_id));
-        return $q && $q->num_rows() > 0 ? $q->row_array() : null;
+        try {
+            // Escape tool_id to prevent SQL injection
+            $tool_id_escaped = $this->db_tms->escape_str($tool_id);
+            
+            $sql = "SELECT TOP 1
+                        inv.INV_ID,
+                        inv.INV_TOOL_ID AS TOOL_ID,
+                        inv.INV_MLR_ID,
+                        ml.ML_TOOL_DRAW_NO AS TOOL_DRAWING_NO,
+                        mlr.MLR_REV AS REVISION,
+                        tc.TC_NAME AS TOOL_NAME,
+                        tc.TC_ID AS TOOL_NAME_ID,
+                        mat.MAT_NAME AS MATERIAL,
+                        mat.MAT_ID AS MATERIAL_ID,
+                        ISNULL(ord.ORD_RQ_NO, inv.INV_RQ_NO) AS RQ_NO,
+                        mlr.MLR_PRICE AS TOOL_PRICE,
+                        ISNULL(tasgn.TASGN_ASSIGN_NO, '') AS TOOL_ASSIGNMENT_NO,
+                        ISNULL(pcs_produced.PCS_PRODUCED, 0) AS PCS_PRODUCED,
+                        inv.INV_STATUS AS STATUS,
+                        ISNULL(inv.INV_END_CYCLE, 0) AS END_CYCLE
+                    FROM {$this->t('TMS_TOOL_INVENTORY')} inv
+                    INNER JOIN {$this->t('TMS_TOOL_MASTER_LIST_REV')} mlr ON mlr.MLR_ID = inv.INV_MLR_ID
+                    INNER JOIN {$this->t('TMS_TOOL_MASTER_LIST')} ml ON ml.ML_ID = mlr.MLR_ML_ID
+                    LEFT JOIN {$this->t('MS_TOOL_CLASS')} tc ON tc.TC_ID = mlr.MLR_TC_ID
+                    LEFT JOIN {$this->t('MS_MATERIAL')} mat ON mat.MAT_ID = inv.INV_MAT_ID
+                    LEFT JOIN {$this->t('TMS_ORDERING_ITEMS')} ordi ON ordi.ORDI_ID = inv.INV_ORDI_ID
+                    LEFT JOIN {$this->t('TMS_ORDERING')} ord ON ord.ORD_ID = ordi.ORDI_ORD_ID
+                    LEFT JOIN {$this->t('TMS_ASSIGNED_TOOLS')} assgn ON assgn.ASSGN_ID = inv.INV_ASSGN_ID
+                    LEFT JOIN {$this->t('TMS_TOOL_ASSIGNMENT')} tasgn ON tasgn.TASGN_ID = assgn.ASSGN_TASGN_ID
+                    LEFT JOIN (
+                        SELECT ASSGN_INV_ID, SUM(ISNULL(ASSGN_QTY_PRODUCED, 0)) AS PCS_PRODUCED
+                        FROM {$this->t('TMS_ASSIGNED_TOOLS')}
+                        WHERE ASSGN_INV_ID IS NOT NULL
+                        GROUP BY ASSGN_INV_ID
+                    ) pcs_produced ON pcs_produced.ASSGN_INV_ID = inv.INV_ID
+                    WHERE inv.INV_TOOL_ID = '{$tool_id_escaped}'
+                    ORDER BY inv.INV_ID DESC";
+            
+            $q = $this->db_tms->query($sql);
+            
+            if (!$q) {
+                $error = $this->db_tms->error();
+                log_message('error', '[M_tool_scrap::get_tool_inventory_details_by_tool_id] Query error: ' . (isset($error['message']) ? $error['message'] : 'Unknown error') . ' - Tool ID: ' . $tool_id);
+                return null;
+            }
+            
+            if ($q->num_rows() > 0) {
+                $result = $q->row_array();
+                log_message('debug', '[M_tool_scrap::get_tool_inventory_details_by_tool_id] Found data for Tool ID: ' . $tool_id);
+                return $result;
+            } else {
+                log_message('debug', '[M_tool_scrap::get_tool_inventory_details_by_tool_id] No data found for Tool ID: ' . $tool_id);
+                return null;
+            }
+        } catch (Exception $e) {
+            log_message('error', '[M_tool_scrap::get_tool_inventory_details_by_tool_id] Exception: ' . $e->getMessage() . ' - Tool ID: ' . $tool_id);
+            return null;
+        }
     }
 
     /**

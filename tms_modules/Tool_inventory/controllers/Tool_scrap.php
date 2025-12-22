@@ -154,17 +154,26 @@ class Tool_scrap extends MY_Controller
         if (ob_get_level()) ob_clean();
         $this->output->set_content_type('application/json', 'UTF-8');
 
-        $tool_id = $this->input->post('tool_id', TRUE);
-        if (empty($tool_id)) {
-            echo json_encode(array('success' => false, 'message' => 'Tool ID tidak boleh kosong.'));
-            return;
-        }
+        try {
+            $tool_id = $this->input->post('tool_id', TRUE);
+            if (empty($tool_id)) {
+                echo json_encode(array('success' => false, 'message' => 'Tool ID tidak boleh kosong.'));
+                return;
+            }
 
-        $details = $this->tool_scrap->get_tool_inventory_details_by_tool_id($tool_id);
-        if ($details) {
-            echo json_encode(array('success' => true, 'data' => $details));
-        } else {
-            echo json_encode(array('success' => false, 'message' => 'Tool ID tidak ditemukan.'));
+            log_message('debug', '[Tool_scrap::get_tool_inventory_details] Requested Tool ID: ' . $tool_id);
+
+            $details = $this->tool_scrap->get_tool_inventory_details_by_tool_id($tool_id);
+            if ($details) {
+                log_message('debug', '[Tool_scrap::get_tool_inventory_details] Data found for Tool ID: ' . $tool_id);
+                echo json_encode(array('success' => true, 'data' => $details), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+            } else {
+                log_message('debug', '[Tool_scrap::get_tool_inventory_details] No data found for Tool ID: ' . $tool_id);
+                echo json_encode(array('success' => false, 'message' => 'Tool ID tidak ditemukan di database.'));
+            }
+        } catch (Exception $e) {
+            log_message('error', '[Tool_scrap::get_tool_inventory_details] Exception: ' . $e->getMessage());
+            echo json_encode(array('success' => false, 'message' => 'Error: ' . $e->getMessage()));
         }
     }
 

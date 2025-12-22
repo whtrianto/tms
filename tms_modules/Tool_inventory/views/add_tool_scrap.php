@@ -926,8 +926,14 @@
                 url: '<?= base_url("Tool_inventory/tool_scrap/get_tool_inventory_details"); ?>',
                 type: 'POST',
                 dataType: 'json',
-                data: { tool_id: toolId }
+                data: { 
+                    tool_id: toolId 
+                },
+                beforeSend: function() {
+                    console.log('Loading Tool ID:', toolId);
+                }
             }).done(function(res) {
+                console.log('Response:', res);
                 $toolIdDisplay.val(originalVal); // Restore original value
                 
                 if (res && res.success && res.data) {
