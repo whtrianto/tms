@@ -135,8 +135,37 @@ class Tool_scrap extends MY_Controller
     public function add_page()
     {
         $data = array();
-        // TODO: Load dropdown data for add page
+        $data['users_modal'] = $this->tool_scrap->get_users_for_modal();
+        $data['machines_modal'] = $this->tool_scrap->get_machines_for_modal();
+        $data['reasons_modal'] = $this->tool_scrap->get_reasons_for_modal();
+        $data['causes_modal'] = $this->tool_scrap->get_causes_for_modal();
+        $data['tool_inventory_modal'] = $this->tool_scrap->get_tool_inventory_for_modal();
+        $data['materials'] = $this->tool_scrap->get_materials();
+        $data['rq_numbers'] = $this->tool_scrap->get_rq_numbers();
+        $data['next_scrap_no'] = $this->tool_scrap->get_next_scrap_no();
         $this->view('add_tool_scrap', $data, FALSE);
+    }
+
+    /**
+     * Get tool inventory details by Tool ID (AJAX)
+     */
+    public function get_tool_inventory_details()
+    {
+        if (ob_get_level()) ob_clean();
+        $this->output->set_content_type('application/json', 'UTF-8');
+
+        $tool_id = $this->input->post('tool_id', TRUE);
+        if (empty($tool_id)) {
+            echo json_encode(array('success' => false, 'message' => 'Tool ID tidak boleh kosong.'));
+            return;
+        }
+
+        $details = $this->tool_scrap->get_tool_inventory_details_by_tool_id($tool_id);
+        if ($details) {
+            echo json_encode(array('success' => true, 'data' => $details));
+        } else {
+            echo json_encode(array('success' => false, 'message' => 'Tool ID tidak ditemukan.'));
+        }
     }
 
     /**

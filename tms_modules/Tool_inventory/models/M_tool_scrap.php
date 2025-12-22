@@ -310,5 +310,176 @@ class M_tool_scrap extends CI_Model
         $this->messages = 'Gagal menghapus. ' . (isset($err['message']) ? $err['message'] : '');
         return false;
     }
+
+    /**
+     * Get users for modal popup (ID, User, Position)
+     */
+    public function get_users_for_modal()
+    {
+        $sql = "SELECT 
+                    USR_ID AS ID,
+                    USR_NAME AS USER,
+                    ISNULL(USR_POSITION, '') AS POSITION
+                FROM {$this->t('MS_USERS')}
+                WHERE USR_IS_DELETED = 0 OR USR_IS_DELETED IS NULL
+                ORDER BY USR_NAME ASC";
+        $q = $this->db_tms->query($sql);
+        return $q && $q->num_rows() > 0 ? $q->result_array() : array();
+    }
+
+    /**
+     * Get machines for modal popup (ID, Name, Description)
+     */
+    public function get_machines_for_modal()
+    {
+        $sql = "SELECT 
+                    MAC_ID AS ID,
+                    MAC_NAME AS NAME,
+                    ISNULL(MAC_DESC, '') AS DESCRIPTION
+                FROM {$this->t('MS_MACHINES')}
+                ORDER BY MAC_NAME ASC";
+        $q = $this->db_tms->query($sql);
+        return $q && $q->num_rows() > 0 ? $q->result_array() : array();
+    }
+
+    /**
+     * Get reasons for modal popup (ID, Name, Description)
+     */
+    public function get_reasons_for_modal()
+    {
+        $sql = "SELECT 
+                    REASON_ID AS ID,
+                    REASON_NAME AS NAME,
+                    ISNULL(REASON_DESC, '') AS DESCRIPTION
+                FROM {$this->t('MS_REASON')}
+                ORDER BY REASON_NAME ASC";
+        $q = $this->db_tms->query($sql);
+        return $q && $q->num_rows() > 0 ? $q->result_array() : array();
+    }
+
+    /**
+     * Get causes for modal popup (ID, Name, Description)
+     */
+    public function get_causes_for_modal()
+    {
+        $sql = "SELECT 
+                    CI_ID AS ID,
+                    CI_NAME AS NAME,
+                    ISNULL(CI_DESC, '') AS DESCRIPTION
+                FROM {$this->t('MS_CAUSE_ITEM')}
+                ORDER BY CI_NAME ASC";
+        $q = $this->db_tms->query($sql);
+        return $q && $q->num_rows() > 0 ? $q->result_array() : array();
+    }
+
+    /**
+     * Get tool inventory for modal popup (Tool ID, Tool Drawing No, Revision, Status, EndCycle, Storage Location)
+     */
+    public function get_tool_inventory_for_modal()
+    {
+        $sql = "SELECT 
+                    inv.INV_ID,
+                    inv.INV_TOOL_ID AS TOOL_ID,
+                    ml.ML_TOOL_DRAW_NO AS TOOL_DRAWING_NO,
+                    mlr.MLR_REV AS REVISION,
+                    inv.INV_STATUS AS STATUS,
+                    ISNULL(inv.INV_END_CYCLE, 0) AS END_CYCLE,
+                    ISNULL(sl.SL_NAME, '') AS STORAGE_LOCATION
+                FROM {$this->t('TMS_TOOL_INVENTORY')} inv
+                INNER JOIN {$this->t('TMS_TOOL_MASTER_LIST_REV')} mlr ON mlr.MLR_ID = inv.INV_MLR_ID
+                INNER JOIN {$this->t('TMS_TOOL_MASTER_LIST')} ml ON ml.ML_ID = mlr.MLR_ML_ID
+                LEFT JOIN {$this->t('MS_STORAGE_LOCATION')} sl ON sl.SL_ID = inv.INV_SL_ID
+                WHERE inv.INV_TOOL_ID IS NOT NULL AND inv.INV_TOOL_ID <> ''
+                ORDER BY inv.INV_TOOL_ID ASC";
+        $q = $this->db_tms->query($sql);
+        return $q && $q->num_rows() > 0 ? $q->result_array() : array();
+    }
+
+    /**
+     * Get tool inventory details by Tool ID for auto-fill
+     */
+    public function get_tool_inventory_details_by_tool_id($tool_id)
+    {
+        $tool_id = trim((string)$tool_id);
+        if (empty($tool_id)) return null;
+
+        $sql = "SELECT TOP 1
+                    inv.INV_ID,
+                    inv.INV_TOOL_ID AS TOOL_ID,
+                    inv.INV_MLR_ID,
+                    ml.ML_TOOL_DRAW_NO AS TOOL_DRAWING_NO,
+                    mlr.MLR_REV AS REVISION,
+                    tc.TC_NAME AS TOOL_NAME,
+                    tc.TC_ID AS TOOL_NAME_ID,
+                    mat.MAT_NAME AS MATERIAL,
+                    mat.MAT_ID AS MATERIAL_ID,
+                    ISNULL(ord.ORD_RQ_NO, inv.INV_RQ_NO) AS RQ_NO,
+                    mlr.MLR_PRICE AS TOOL_PRICE,
+                    inv.INV_ASSIGN_NO AS TOOL_ASSIGNMENT_NO,
+                    ISNULL(pcs_produced.PCS_PRODUCED, 0) AS PCS_PRODUCED,
+                    inv.INV_STATUS AS STATUS,
+                    ISNULL(inv.INV_END_CYCLE, 0) AS END_CYCLE
+                FROM {$this->t('TMS_TOOL_INVENTORY')} inv
+                INNER JOIN {$this->t('TMS_TOOL_MASTER_LIST_REV')} mlr ON mlr.MLR_ID = inv.INV_MLR_ID
+                INNER JOIN {$this->t('TMS_TOOL_MASTER_LIST')} ml ON ml.ML_ID = mlr.MLR_ML_ID
+                LEFT JOIN {$this->t('MS_TOOL_CLASS')} tc ON tc.TC_ID = mlr.MLR_TC_ID
+                LEFT JOIN {$this->t('MS_MATERIAL')} mat ON mat.MAT_ID = inv.INV_MAT_ID
+                LEFT JOIN {$this->t('TMS_ORDERING_ITEMS')} ordi ON ordi.ORDI_ID = inv.INV_ORDI_ID
+                LEFT JOIN {$this->t('TMS_ORDERING')} ord ON ord.ORD_ID = ordi.ORDI_ORD_ID
+                LEFT JOIN (
+                    SELECT ASSGN_INV_ID, SUM(ISNULL(ASSGN_QTY_PRODUCED, 0)) AS PCS_PRODUCED
+                    FROM {$this->t('TMS_ASSIGNED_TOOLS')}
+                    WHERE ASSGN_INV_ID IS NOT NULL
+                    GROUP BY ASSGN_INV_ID
+                ) pcs_produced ON pcs_produced.ASSGN_INV_ID = inv.INV_ID
+                WHERE inv.INV_TOOL_ID = ?
+                ORDER BY inv.INV_ID DESC";
+        $q = $this->db_tms->query($sql, array($tool_id));
+        return $q && $q->num_rows() > 0 ? $q->row_array() : null;
+    }
+
+    /**
+     * Get materials for dropdown
+     */
+    public function get_materials()
+    {
+        $sql = "SELECT MAT_ID AS MATERIAL_ID, MAT_NAME AS MATERIAL_NAME 
+                FROM {$this->t('MS_MATERIAL')} 
+                ORDER BY MAT_NAME ASC";
+        $q = $this->db_tms->query($sql);
+        return $q && $q->num_rows() > 0 ? $q->result_array() : array();
+    }
+
+    /**
+     * Get RQ Numbers
+     */
+    public function get_rq_numbers()
+    {
+        $sql = "SELECT DISTINCT ORD_RQ_NO AS RQ_NO 
+                FROM {$this->t('TMS_ORDERING')} 
+                WHERE ORD_RQ_NO IS NOT NULL AND ORD_RQ_NO <> ''
+                UNION
+                SELECT DISTINCT RQ_INT_REQ_NO AS RQ_NO
+                FROM {$this->t('TMS_REQUISITION')}
+                WHERE RQ_INT_REQ_NO IS NOT NULL AND RQ_INT_REQ_NO <> ''
+                ORDER BY RQ_NO DESC";
+        $q = $this->db_tms->query($sql);
+        return $q && $q->num_rows() > 0 ? $q->result_array() : array();
+    }
+
+    /**
+     * Get next Scrap No
+     */
+    public function get_next_scrap_no()
+    {
+        $sql = "SELECT MAX(SCRAP_ID) AS MAX_ID FROM {$this->t('TMS_TOOL_SCRAP')}";
+        $q = $this->db_tms->query($sql);
+        if ($q && $q->num_rows() > 0) {
+            $row = $q->row_array();
+            $max_id = isset($row['MAX_ID']) ? (int)$row['MAX_ID'] : 0;
+            return 'SCRAP-' . str_pad($max_id + 1, 6, '0', STR_PAD_LEFT);
+        }
+        return 'SCRAP-000001';
+    }
 }
 
