@@ -57,7 +57,7 @@
                             <div class="form-row">
                                 <div class="form-group col-md-6">
                                     <label class="label-required">Product</label>
-                                    <select name="PRODUCT_ID" class="form-control" disabled>
+                                    <select name="PRODUCT_ID_DISPLAY" class="form-control" disabled>
                                         <option value="">-- Select Product --</option>
                                         <?php foreach ($products as $p): ?>
                                             <option value="<?= (int)$p['PRODUCT_ID']; ?>" <?= (isset($bom['PRODUCT_ID']) && (int)$bom['PRODUCT_ID'] === (int)$p['PRODUCT_ID']) ? 'selected' : ''; ?>>
@@ -65,6 +65,7 @@
                                             </option>
                                         <?php endforeach; ?>
                                     </select>
+                                    <input type="hidden" name="PRODUCT_ID" value="<?= htmlspecialchars(isset($bom['PRODUCT_ID']) ? (int)$bom['PRODUCT_ID'] : 0); ?>">
                                 </div>
                                 <div class="form-group col-md-6">
                                     <label class="label-required">Tool BOM</label>
@@ -75,11 +76,12 @@
                             <div class="form-row">
                                 <div class="form-group col-md-4">
                                     <label>Revision</label>
-                                    <input type="number" class="form-control" name="REVISION" value="<?= htmlspecialchars(isset($bom['REVISION']) ? $bom['REVISION'] : 0); ?>" readonly>
+                                    <input type="number" class="form-control" name="REVISION_DISPLAY" value="<?= htmlspecialchars(isset($bom['REVISION']) ? $bom['REVISION'] : 0); ?>" readonly>
+                                    <input type="hidden" name="REVISION" value="<?= htmlspecialchars(isset($bom['REVISION']) ? (int)$bom['REVISION'] : 0); ?>">
                                 </div>
                                 <div class="form-group col-md-4">
                                     <label>Process</label>
-                                    <select name="PROCESS_ID" class="form-control" disabled>
+                                    <select name="PROCESS_ID_DISPLAY" class="form-control" disabled>
                                         <option value="">-- Select Process --</option>
                                         <?php foreach ($operations as $o): ?>
                                             <option value="<?= (int)$o['OPERATION_ID']; ?>" <?= (isset($bom['PROCESS_ID']) && (int)$bom['PROCESS_ID'] === (int)$o['OPERATION_ID']) ? 'selected' : ''; ?>>
@@ -87,10 +89,11 @@
                                             </option>
                                         <?php endforeach; ?>
                                     </select>
+                                    <input type="hidden" name="PROCESS_ID" value="<?= htmlspecialchars(isset($bom['PROCESS_ID']) ? (int)$bom['PROCESS_ID'] : 0); ?>">
                                 </div>
                                 <div class="form-group col-md-4">
                                     <label>Machine Group</label>
-                                    <select name="MACHINE_GROUP_ID" class="form-control" disabled>
+                                    <select name="MACHINE_GROUP_ID_DISPLAY" class="form-control" disabled>
                                         <option value="">-- Select Machine Group --</option>
                                         <?php foreach ($machine_groups as $mg): ?>
                                             <option value="<?= (int)$mg['MACHINE_ID']; ?>" <?= (isset($bom['MACHINE_GROUP_ID']) && (int)$bom['MACHINE_GROUP_ID'] === (int)$mg['MACHINE_ID']) ? 'selected' : ''; ?>>
@@ -98,13 +101,15 @@
                                             </option>
                                         <?php endforeach; ?>
                                     </select>
+                                    <input type="hidden" name="MACHINE_GROUP_ID" value="<?= htmlspecialchars(isset($bom['MACHINE_GROUP_ID']) ? (int)$bom['MACHINE_GROUP_ID'] : 0); ?>">
                                 </div>
                             </div>
 
                             <div class="form-row">
                                 <div class="form-group col-md-6">
                                     <label>Description</label>
-                                    <input type="text" class="form-control" name="DESCRIPTION" value="<?= htmlspecialchars(isset($bom['DESCRIPTION']) ? $bom['DESCRIPTION'] : ''); ?>" readonly>
+                                    <input type="text" class="form-control" name="DESCRIPTION_DISPLAY" value="<?= htmlspecialchars(isset($bom['DESCRIPTION']) ? $bom['DESCRIPTION'] : ''); ?>" readonly>
+                                    <input type="hidden" name="DESCRIPTION" value="<?= htmlspecialchars(isset($bom['DESCRIPTION']) ? $bom['DESCRIPTION'] : ''); ?>">
                                 </div>
                                 <div class="form-group col-md-3">
                                     <label>Status</label>
@@ -116,25 +121,29 @@
                                             elseif ($st === 'PENDING' || $st === '2') $statusVal = 2;
                                         }
                                     ?>
-                                    <select name="STATUS" class="form-control" disabled>
+                                    <select name="STATUS_DISPLAY" class="form-control" disabled>
                                         <option value="1" <?= $statusVal === 1 ? 'selected' : ''; ?>>Active</option>
                                         <option value="0" <?= $statusVal === 0 ? 'selected' : ''; ?>>Inactive</option>
                                         <option value="2" <?= $statusVal === 2 ? 'selected' : ''; ?>>Pending</option>
                                     </select>
+                                    <input type="hidden" name="STATUS" value="<?= htmlspecialchars($statusVal); ?>">
                                 </div>
                                 <div class="form-group col-md-3">
                                     <label>Effective Date</label>
                                     <?php
                                         $eff = isset($bom['EFFECTIVE_DATE']) ? substr($bom['EFFECTIVE_DATE'], 0, 10) : '';
                                     ?>
-                                    <input type="date" class="form-control" name="EFFECTIVE_DATE" value="<?= htmlspecialchars($eff); ?>" readonly>
+                                    <input type="date" class="form-control" name="EFFECTIVE_DATE_DISPLAY" value="<?= htmlspecialchars($eff); ?>" readonly>
+                                    <input type="hidden" name="EFFECTIVE_DATE" value="<?= htmlspecialchars($eff); ?>">
                                 </div>
                             </div>
 
                             <div class="form-row">
                                 <div class="form-group col-md-12">
                                     <label>Change Summary</label>
-                                    <textarea name="CHANGE_SUMMARY" rows="3" class="form-control" readonly><?= htmlspecialchars(isset($bom['CHANGE_SUMMARY']) ? $bom['CHANGE_SUMMARY'] : 'Additional Information'); ?></textarea>
+                                    <textarea name="CHANGE_SUMMARY_DISPLAY" rows="3" class="form-control" readonly><?= htmlspecialchars(isset($bom['CHANGE_SUMMARY']) ? $bom['CHANGE_SUMMARY'] : 'Additional Information'); ?></textarea>
+                                    <input type="hidden" name="CHANGE_SUMMARY" value="<?= htmlspecialchars(isset($bom['CHANGE_SUMMARY']) ? $bom['CHANGE_SUMMARY'] : ''); ?>">
+                                    <input type="hidden" name="IS_TRIAL_BOM" value="<?= htmlspecialchars(isset($bom['IS_TRIAL_BOM']) && (int)$bom['IS_TRIAL_BOM'] === 1 ? '1' : '0'); ?>">
                                 </div>
                             </div>
 
