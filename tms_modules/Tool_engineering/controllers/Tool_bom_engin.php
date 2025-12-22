@@ -191,8 +191,51 @@ class Tool_bom_engin extends MY_Controller
         $data['materials'] = $this->tool_bom_engin->get_materials();
         $data['makers'] = $this->tool_bom_engin->get_makers();
         $data['additional_info'] = $this->tool_bom_engin->get_additional_info($id);
+        
+        // Load Tool Drawing Engineering model for dropdown
+        $this->load->model('M_tool_draw_engin', 'tool_draw_engin');
+        $data['tool_drawings'] = $this->tool_draw_engin->get_all();
 
         $this->view('edit_tool_bom_engin', $data, FALSE);
+    }
+    
+    /**
+     * Get Tool Drawing detail by ID (for auto-fill)
+     */
+    public function get_drawing_detail()
+    {
+        $this->output->set_content_type('application/json');
+        
+        $mlr_id = (int)$this->input->post('MLR_ID', TRUE);
+        if ($mlr_id <= 0) {
+            echo json_encode(array('success' => false, 'message' => 'ID tidak valid.'));
+            return;
+        }
+        
+        $this->load->model('M_tool_draw_engin', 'tool_draw_engin');
+        $drawing = $this->tool_draw_engin->get_by_id($mlr_id);
+        
+        if (!$drawing) {
+            echo json_encode(array('success' => false, 'message' => 'Data tidak ditemukan.'));
+            return;
+        }
+        
+        echo json_encode(array(
+            'success' => true,
+            'data' => array(
+                'TD_DRAWING_NO' => isset($drawing['TD_DRAWING_NO']) ? $drawing['TD_DRAWING_NO'] : '',
+                'TD_REVISION' => isset($drawing['TD_REVISION']) ? (int)$drawing['TD_REVISION'] : 0,
+                'TD_TOOL_ID' => isset($drawing['TD_TOOL_ID']) ? (int)$drawing['TD_TOOL_ID'] : 0,
+                'TD_TOOL_NAME' => isset($drawing['TD_TOOL_NAME']) ? $drawing['TD_TOOL_NAME'] : '',
+                'TD_DRAWING_FILE' => isset($drawing['TD_DRAWING_FILE']) ? $drawing['TD_DRAWING_FILE'] : '',
+                'TD_PRODUCT_ID' => isset($drawing['TD_PRODUCT_ID']) ? (int)$drawing['TD_PRODUCT_ID'] : 0,
+                'TD_PROCESS_ID' => isset($drawing['TD_PROCESS_ID']) ? (int)$drawing['TD_PROCESS_ID'] : 0,
+                'TD_MATERIAL_ID' => isset($drawing['TD_MATERIAL_ID']) ? (int)$drawing['TD_MATERIAL_ID'] : 0,
+                'TD_MAKER_ID' => isset($drawing['TD_MAKER_ID']) ? (int)$drawing['TD_MAKER_ID'] : 0,
+                'TD_MACHINE_GROUP_ID' => isset($drawing['TD_MACHINE_GROUP_ID']) ? (int)$drawing['TD_MACHINE_GROUP_ID'] : 0,
+                'TD_STATUS' => isset($drawing['TD_STATUS']) ? (int)$drawing['TD_STATUS'] : 1
+            )
+        ));
     }
 
     /**
