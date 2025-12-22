@@ -97,7 +97,21 @@
 
                                     <div class="form-group">
                                         <label class="label-required">Tool ID</label>
-                                        <input type="text" name="tool_id" class="form-control" placeholder="Enter Tool ID" required>
+                                        <select name="tool_id" id="tool_id" class="form-control" required>
+                                            <option value="">-- Select Tool ID --</option>
+                                            <?php if (isset($existing_tool_ids) && is_array($existing_tool_ids)): ?>
+                                                <?php foreach ($existing_tool_ids as $tid): ?>
+                                                    <option value="<?= htmlspecialchars($tid['INV_TOOL_ID'], ENT_QUOTES, 'UTF-8'); ?>"
+                                                            data-process-id="<?= isset($tid['PROCESS_ID']) ? (int)$tid['PROCESS_ID'] : ''; ?>"
+                                                            data-tool-name-id="<?= isset($tid['TOOL_NAME_ID']) ? (int)$tid['TOOL_NAME_ID'] : ''; ?>"
+                                                            data-revision="<?= isset($tid['REVISION']) ? (int)$tid['REVISION'] : ''; ?>"
+                                                            data-product-id="<?= isset($tid['PRODUCT_ID']) ? (int)$tid['PRODUCT_ID'] : ''; ?>">
+                                                        <?= htmlspecialchars($tid['INV_TOOL_ID'], ENT_QUOTES, 'UTF-8'); ?>
+                                                    </option>
+                                                <?php endforeach; ?>
+                                            <?php endif; ?>
+                                        </select>
+                                        <small class="form-text text-muted">Pilih Tool ID yang sudah ada untuk auto-fill data.</small>
                                     </div>
 
                                     <div class="form-group">
@@ -386,6 +400,35 @@
             }
         });
 
+        // Handle Tool ID selection - auto-fill Product, Process, Tool Name, and Revision
+        $('#tool_id').on('change', function() {
+            var selectedOption = $(this).find('option:selected');
+            var processId = selectedOption.data('process-id') || '';
+            var toolNameId = selectedOption.data('tool-name-id') || '';
+            var revision = selectedOption.data('revision') || '';
+            var productId = selectedOption.data('product-id') || '';
+
+            // Auto-fill Product
+            if (productId) {
+                $('[name="product_id"]').val(productId);
+            }
+
+            // Auto-fill Process
+            if (processId) {
+                $('[name="process_id"]').val(processId);
+            }
+
+            // Auto-fill Tool Name
+            if (toolNameId) {
+                $('[name="tool_name"]').val(toolNameId);
+            }
+
+            // Auto-fill Revision
+            if (revision !== '') {
+                $('[name="revision"]').val(revision);
+            }
+        });
+
         // Handle Maker selection - auto-fill Maker Code
         $('#maker_id').on('change', function() {
             var selectedOption = $(this).find('option:selected');
@@ -393,13 +436,50 @@
             $('#maker_code').val(makerCode);
         });
 
-        // Form validation
+        // Form submit with AJAX
         $('#formToolInventory').on('submit', function(e) {
+            e.preventDefault();
+            
             if (!this.checkValidity()) {
-                e.preventDefault();
-                e.stopPropagation();
+                $(this).addClass('was-validated');
+                return;
             }
-            $(this).addClass('was-validated');
+
+            var formData = new FormData(this);
+            
+            $.ajax({
+                url: $(this).attr('action'),
+                type: 'POST',
+                data: formData,
+                dataType: 'json',
+                processData: false,
+                contentType: false,
+                cache: false,
+                timeout: 30000
+            }).done(function(res) {
+                if (res && res.success) {
+                    if (typeof toastr !== 'undefined') {
+                        toastr.success(res.message || 'Tool Inventory berhasil ditambahkan');
+                    } else {
+                        alert(res.message || 'Tool Inventory berhasil ditambahkan');
+                    }
+                    setTimeout(function() {
+                        window.location.href = '<?= base_url("Tool_inventory/tool_inventory"); ?>';
+                    }, 1000);
+                } else {
+                    if (typeof toastr !== 'undefined') {
+                        toastr.warning(res && res.message ? res.message : 'Gagal menyimpan Tool Inventory');
+                    } else {
+                        alert(res && res.message ? res.message : 'Gagal menyimpan Tool Inventory');
+                    }
+                }
+            }).fail(function(xhr, status, error) {
+                if (typeof toastr !== 'undefined') {
+                    toastr.error('Gagal menyimpan: ' + (error || status));
+                } else {
+                    alert('Gagal menyimpan: ' + (error || status));
+                }
+            });
         });
     });
 })(jQuery);

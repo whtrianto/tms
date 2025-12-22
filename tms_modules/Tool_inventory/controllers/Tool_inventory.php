@@ -159,6 +159,7 @@ class Tool_inventory extends MY_Controller
         $data['tool_drawing_nos'] = $this->tool_inventory->get_tool_drawing_nos();
         $data['rq_numbers'] = $this->tool_inventory->get_rq_numbers();
         $data['next_tool_tag'] = $this->tool_inventory->get_next_tool_tag();
+        $data['existing_tool_ids'] = $this->tool_inventory->get_existing_tool_ids();
         $this->view('add_tool_inventory', $data, FALSE);
     }
 
@@ -317,6 +318,35 @@ class Tool_inventory extends MY_Controller
     }
 
     /**
+     * Get Tool ID details for auto-fill
+     */
+    public function get_tool_id_details()
+    {
+        if (ob_get_level()) ob_clean();
+        $this->output->set_content_type('application/json', 'UTF-8');
+        
+        $tool_id = $this->input->post('tool_id', TRUE);
+        if (empty($tool_id)) {
+            echo json_encode(array('success' => false, 'message' => 'Tool ID tidak boleh kosong.'));
+            return;
+        }
+
+        $data = $this->tool_inventory->get_tool_id_details($tool_id);
+        if ($data) {
+            echo json_encode(array(
+                'success' => true,
+                'data' => $data
+            ));
+        } else {
+            echo json_encode(array(
+                'success' => false,
+                'message' => 'Data tidak ditemukan',
+                'data' => null
+            ));
+        }
+    }
+
+    /**
      * Submit data (ADD/EDIT)
      */
     public function submit_data()
@@ -345,10 +375,61 @@ class Tool_inventory extends MY_Controller
                 return;
             }
 
-            // TODO: Implement add_data method in model
-            // For now, return placeholder
-            $result['success'] = false;
-            $result['message'] = 'Save functionality will be implemented in model.';
+            if ($action === 'ADD') {
+                // Prepare data for model
+                $data = array(
+                    'mlr_id' => $this->input->post('mlr_id', TRUE),
+                    'tool_id' => $this->input->post('tool_id', TRUE),
+                    'tool_tag' => $this->input->post('tool_tag', TRUE),
+                    'product_id' => $this->input->post('product_id', TRUE),
+                    'process_id' => $this->input->post('process_id', TRUE),
+                    'tool_name' => $this->input->post('tool_name', TRUE),
+                    'revision' => $this->input->post('revision', TRUE),
+                    'tool_status' => $this->input->post('tool_status', TRUE),
+                    'storage_location_id' => $this->input->post('storage_location_id', TRUE),
+                    'notes' => $this->input->post('notes', TRUE),
+                    'rq_no' => $this->input->post('rq_no', TRUE),
+                    'maker_id' => $this->input->post('maker_id', TRUE),
+                    'material_id' => $this->input->post('material_id', TRUE),
+                    'purchase_type' => $this->input->post('purchase_type', TRUE),
+                    'do_no' => $this->input->post('do_no', TRUE),
+                    'received_date' => $this->input->post('received_date', TRUE),
+                    'tool_condition' => $this->input->post('tool_condition', TRUE),
+                    'begin_cycle' => $this->input->post('begin_cycle', TRUE),
+                    'end_cycle' => $this->input->post('end_cycle', TRUE),
+                    'in_tool_set' => $this->input->post('in_tool_set', TRUE),
+                    'assetized' => $this->input->post('assetized', TRUE)
+                );
+
+                // Get MLR_ID from revision select if "Allow Select Old Revision" is checked
+                if ($this->input->post('allow_old_revision') == '1') {
+                    $mlr_id = (int)$this->input->post('mlr_revision', TRUE);
+                    if ($mlr_id > 0) {
+                        $data['mlr_id'] = $mlr_id;
+                    }
+                } else {
+                    // Use latest MLR_ID from tool_drawing_no
+                    $tool_drawing_no = (int)$this->input->post('tool_drawing_no', TRUE);
+                    if ($tool_drawing_no > 0) {
+                        $mlr_id = (int)$this->input->post('mlr_id', TRUE);
+                        if ($mlr_id > 0) {
+                            $data['mlr_id'] = $mlr_id;
+                        }
+                    }
+                }
+
+                $ok = $this->tool_inventory->add_data($data);
+                if ($ok) {
+                    $result['success'] = true;
+                    $result['message'] = $this->tool_inventory->messages ?: 'Tool Inventory berhasil ditambahkan.';
+                } else {
+                    $result['success'] = false;
+                    $result['message'] = $this->tool_inventory->messages ?: 'Gagal menambahkan Tool Inventory.';
+                }
+            } else {
+                $result['message'] = 'Action tidak valid.';
+            }
+            
             echo json_encode($result);
             
         } catch (Exception $e) {

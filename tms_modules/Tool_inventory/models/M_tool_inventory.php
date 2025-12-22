@@ -459,6 +459,214 @@ class M_tool_inventory extends CI_Model
     }
 
     /**
+     * Get existing Tool IDs for dropdown
+     */
+    public function get_existing_tool_ids()
+    {
+        $sql = "SELECT DISTINCT 
+                    inv.INV_TOOL_ID,
+                    inv.INV_MLR_ID,
+                    mlr.MLR_OP_ID AS PROCESS_ID,
+                    mlr.MLR_TC_ID AS TOOL_NAME_ID,
+                    mlr.MLR_REV AS REVISION,
+                    ml.ML_ID AS TOOL_DRAWING_ML_ID,
+                    (SELECT TOP 1 TMLP_PART_ID FROM {$this->t('TMS_TOOL_MASTER_LIST_PARTS')} WHERE TMLP_ML_ID = ml.ML_ID) AS PRODUCT_ID
+                FROM {$this->t('TMS_TOOL_INVENTORY')} inv
+                INNER JOIN {$this->t('TMS_TOOL_MASTER_LIST_REV')} mlr ON mlr.MLR_ID = inv.INV_MLR_ID
+                INNER JOIN {$this->t('TMS_TOOL_MASTER_LIST')} ml ON ml.ML_ID = mlr.MLR_ML_ID
+                WHERE inv.INV_TOOL_ID IS NOT NULL AND inv.INV_TOOL_ID <> ''
+                ORDER BY inv.INV_TOOL_ID ASC";
+        $q = $this->db_tms->query($sql);
+        return $q && $q->num_rows() > 0 ? $q->result_array() : array();
+    }
+
+    /**
+     * Get Tool ID details by Tool ID string
+     */
+    public function get_tool_id_details($tool_id)
+    {
+        $tool_id = trim((string)$tool_id);
+        if (empty($tool_id)) return null;
+
+        $sql = "SELECT TOP 1
+                    inv.INV_TOOL_ID,
+                    inv.INV_MLR_ID,
+                    mlr.MLR_OP_ID AS PROCESS_ID,
+                    mlr.MLR_TC_ID AS TOOL_NAME_ID,
+                    mlr.MLR_REV AS REVISION,
+                    ml.ML_ID AS TOOL_DRAWING_ML_ID,
+                    (SELECT TOP 1 TMLP_PART_ID FROM {$this->t('TMS_TOOL_MASTER_LIST_PARTS')} WHERE TMLP_ML_ID = ml.ML_ID) AS PRODUCT_ID
+                FROM {$this->t('TMS_TOOL_INVENTORY')} inv
+                INNER JOIN {$this->t('TMS_TOOL_MASTER_LIST_REV')} mlr ON mlr.MLR_ID = inv.INV_MLR_ID
+                INNER JOIN {$this->t('TMS_TOOL_MASTER_LIST')} ml ON ml.ML_ID = mlr.MLR_ML_ID
+                WHERE inv.INV_TOOL_ID = ?
+                ORDER BY inv.INV_ID DESC";
+        $q = $this->db_tms->query($sql, array($tool_id));
+        return $q && $q->num_rows() > 0 ? $q->row_array() : null;
+    }
+
+    /**
+     * Add new Tool Inventory
+     */
+    public function add_data($data)
+    {
+        $this->db_tms->trans_start();
+
+        // Prepare data
+        $mlr_id = isset($data['mlr_id']) ? (int)$data['mlr_id'] : 0;
+        $tool_id = isset($data['tool_id']) ? trim((string)$data['tool_id']) : '';
+        $tool_tag = isset($data['tool_tag']) ? trim((string)$data['tool_tag']) : '';
+        $product_id = isset($data['product_id']) ? (int)$data['product_id'] : 0;
+        $process_id = isset($data['process_id']) ? (int)$data['process_id'] : 0;
+        $tool_name = isset($data['tool_name']) ? (int)$data['tool_name'] : 0;
+        $revision = isset($data['revision']) ? (int)$data['revision'] : 0;
+        $tool_status = isset($data['tool_status']) ? (int)$data['tool_status'] : 1;
+        $storage_location_id = isset($data['storage_location_id']) && $data['storage_location_id'] > 0 ? (int)$data['storage_location_id'] : null;
+        $notes = isset($data['notes']) ? trim((string)$data['notes']) : null;
+        $rq_no = isset($data['rq_no']) && !empty($data['rq_no']) ? trim((string)$data['rq_no']) : null;
+        $maker_id = isset($data['maker_id']) && $data['maker_id'] > 0 ? (int)$data['maker_id'] : null;
+        $material_id = isset($data['material_id']) && $data['material_id'] > 0 ? (int)$data['material_id'] : null;
+        $purchase_type = isset($data['purchase_type']) && !empty($data['purchase_type']) ? trim((string)$data['purchase_type']) : null;
+        $do_no = isset($data['do_no']) && !empty($data['do_no']) ? trim((string)$data['do_no']) : null;
+        $received_date = isset($data['received_date']) && !empty($data['received_date']) ? trim((string)$data['received_date']) : null;
+        $tool_condition = isset($data['tool_condition']) && $data['tool_condition'] !== '' ? (int)$data['tool_condition'] : null;
+        $begin_cycle = isset($data['begin_cycle']) && $data['begin_cycle'] !== '' ? (int)$data['begin_cycle'] : null;
+        $end_cycle = isset($data['end_cycle']) && $data['end_cycle'] !== '' ? (int)$data['end_cycle'] : null;
+        $in_tool_set = isset($data['in_tool_set']) && $data['in_tool_set'] !== '' ? (int)$data['in_tool_set'] : null;
+        $assetized = isset($data['assetized']) && $data['assetized'] == '1' ? 1 : 0;
+
+        // Validation
+        if ($mlr_id <= 0) {
+            $this->messages = 'MLR ID tidak valid.';
+            $this->db_tms->trans_rollback();
+            return false;
+        }
+
+        if (empty($tool_id)) {
+            $this->messages = 'Tool ID tidak boleh kosong.';
+            $this->db_tms->trans_rollback();
+            return false;
+        }
+
+        if (empty($tool_tag)) {
+            $this->messages = 'Tool Tag tidak boleh kosong.';
+            $this->db_tms->trans_rollback();
+            return false;
+        }
+
+        // Check if Tool ID already exists
+        $check_sql = "SELECT INV_ID FROM {$this->t('TMS_TOOL_INVENTORY')} WHERE INV_TOOL_ID = ?";
+        $check_q = $this->db_tms->query($check_sql, array($tool_id));
+        if ($check_q && $check_q->num_rows() > 0) {
+            $this->messages = 'Tool ID sudah digunakan.';
+            $this->db_tms->trans_rollback();
+            return false;
+        }
+
+        // Insert
+        $insert_fields = array('INV_TOOL_ID', 'INV_MLR_ID', 'INV_TOOL_TAG', 'INV_STATUS');
+        $insert_values = array('?', '?', '?', '?');
+        $insert_params = array($tool_id, $mlr_id, $tool_tag, $tool_status);
+
+        if ($storage_location_id !== null) {
+            $insert_fields[] = 'INV_SL_ID';
+            $insert_values[] = '?';
+            $insert_params[] = $storage_location_id;
+        }
+
+        if ($notes !== null) {
+            $insert_fields[] = 'INV_NOTES';
+            $insert_values[] = '?';
+            $insert_params[] = $notes;
+        }
+
+        if ($rq_no !== null) {
+            $insert_fields[] = 'INV_RQ_NO';
+            $insert_values[] = '?';
+            $insert_params[] = $rq_no;
+        }
+
+        if ($maker_id !== null) {
+            $insert_fields[] = 'INV_MAKER_ID';
+            $insert_values[] = '?';
+            $insert_params[] = $maker_id;
+        }
+
+        if ($material_id !== null) {
+            $insert_fields[] = 'INV_MAT_ID';
+            $insert_values[] = '?';
+            $insert_params[] = $material_id;
+        }
+
+        if ($purchase_type !== null) {
+            $insert_fields[] = 'INV_PURCHASE_TYPE';
+            $insert_values[] = '?';
+            $insert_params[] = $purchase_type;
+        }
+
+        if ($do_no !== null) {
+            $insert_fields[] = 'INV_DO_NO';
+            $insert_values[] = '?';
+            $insert_params[] = $do_no;
+        }
+
+        if ($received_date !== null) {
+            $insert_fields[] = 'INV_RECEIVED_DATE';
+            $insert_values[] = 'CONVERT(datetime, ?, 120)';
+            $insert_params[] = $received_date;
+        }
+
+        if ($tool_condition !== null) {
+            $insert_fields[] = 'INV_TOOL_CONDITION';
+            $insert_values[] = '?';
+            $insert_params[] = $tool_condition;
+        }
+
+        if ($begin_cycle !== null) {
+            $insert_fields[] = 'INV_BEGIN_CYCLE';
+            $insert_values[] = '?';
+            $insert_params[] = $begin_cycle;
+        }
+
+        if ($end_cycle !== null) {
+            $insert_fields[] = 'INV_END_CYCLE';
+            $insert_values[] = '?';
+            $insert_params[] = $end_cycle;
+        }
+
+        if ($in_tool_set !== null) {
+            $insert_fields[] = 'INV_IN_TOOL_SET';
+            $insert_values[] = '?';
+            $insert_params[] = $in_tool_set;
+        }
+
+        $insert_fields[] = 'INV_ASSETIZED';
+        $insert_values[] = '?';
+        $insert_params[] = $assetized;
+
+        $insert_sql = "INSERT INTO {$this->t('TMS_TOOL_INVENTORY')} (" . implode(', ', $insert_fields) . ") VALUES (" . implode(', ', $insert_values) . ")";
+        $insert_q = $this->db_tms->query($insert_sql, $insert_params);
+
+        if (!$insert_q) {
+            $this->db_tms->trans_rollback();
+            $err = $this->db_tms->error();
+            $this->messages = 'Gagal menambahkan Tool Inventory. ' . (isset($err['message']) ? $err['message'] : '');
+            return false;
+        }
+
+        $this->db_tms->trans_complete();
+
+        if ($this->db_tms->trans_status()) {
+            $this->messages = 'Tool Inventory berhasil ditambahkan.';
+            return true;
+        }
+
+        $err = $this->db_tms->error();
+        $this->messages = 'Gagal menambahkan Tool Inventory. ' . (isset($err['message']) ? $err['message'] : '');
+        return false;
+    }
+
+    /**
      * Delete
      */
     public function delete_data($id)
