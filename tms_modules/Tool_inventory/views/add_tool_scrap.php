@@ -871,12 +871,19 @@
             var invId = $(this).data('inv-id');
             var toolId = $(this).data('tool-id');
             
+            // Trim and validate Tool ID
+            if (toolId) {
+                toolId = String(toolId).trim();
+            }
+            
             if (!toolId || toolId === '') {
                 if (typeof toastr !== 'undefined') {
                     toastr.warning('Tool ID tidak valid');
                 }
                 return;
             }
+            
+            console.log('Selected Tool ID:', toolId, 'Length:', toolId.length, 'Inv ID:', invId);
             
             // Set values
             $('#inv_id').val(invId || '');
@@ -914,6 +921,11 @@
 
         // Function to load Tool Inventory details
         function loadToolInventoryDetails(toolId) {
+            // Trim and validate
+            if (toolId) {
+                toolId = String(toolId).trim();
+            }
+            
             if (!toolId || toolId === '') {
                 clearToolFields();
                 return;
@@ -924,6 +936,8 @@
             var originalVal = $toolIdDisplay.val();
             $toolIdDisplay.val('Loading...');
 
+            console.log('AJAX Request - Tool ID:', toolId, 'Type:', typeof toolId, 'Length:', toolId.length);
+
             $.ajax({
                 url: '<?= base_url("Tool_inventory/tool_scrap/get_tool_inventory_details"); ?>',
                 type: 'POST',
@@ -932,10 +946,12 @@
                     tool_id: toolId 
                 },
                 beforeSend: function() {
-                    console.log('Loading Tool ID:', toolId);
+                    console.log('Sending AJAX request for Tool ID:', toolId);
                 }
             }).done(function(res) {
-                console.log('Response:', res);
+                console.log('AJAX Response:', res);
+                console.log('Response success:', res ? res.success : 'null');
+                console.log('Response data:', res ? res.data : 'null');
                 $toolIdDisplay.val(originalVal); // Restore original value
                 
                 if (res && res.success && res.data) {

@@ -384,7 +384,18 @@ class M_tool_scrap extends CI_Model
                     ml.ML_TOOL_DRAW_NO AS TOOL_DRAWING_NO,
                     mlr.MLR_REV AS REVISION,
                     ISNULL(tc.TC_NAME, '') AS TOOL_NAME,
-                    inv.INV_STATUS AS TOOL_STATUS,
+                    CASE inv.INV_STATUS
+                        WHEN 1 THEN 'New'
+                        WHEN 2 THEN 'Allocated'
+                        WHEN 3 THEN 'Available'
+                        WHEN 4 THEN 'InUsed'
+                        WHEN 5 THEN 'Onhold'
+                        WHEN 6 THEN 'Scrapped'
+                        WHEN 7 THEN 'Repairing'
+                        WHEN 8 THEN 'Modifying'
+                        WHEN 9 THEN 'DesignChange'
+                        ELSE 'Unknown'
+                    END AS TOOL_STATUS,
                     ISNULL(inv.INV_NOTES, '') AS REMARKS
                 FROM {$this->t('TMS_TOOL_INVENTORY')} inv
                 INNER JOIN {$this->t('TMS_TOOL_MASTER_LIST_REV')} mlr ON mlr.MLR_ID = inv.INV_MLR_ID
@@ -408,28 +419,50 @@ class M_tool_scrap extends CI_Model
         }
 
         try {
-            // Escape tool_id to prevent SQL injection
-            $tool_id_escaped = $this->db_tms->escape_str($tool_id);
+            // Use escape() method which properly handles SQL Server string escaping
+            $tool_id_escaped = $this->db_tms->escape($tool_id);
             
+            // First, check if Tool ID exists at all (simple check)
+            $check_sql = "SELECT TOP 1 INV_ID, INV_TOOL_ID FROM {$this->t('TMS_TOOL_INVENTORY')} WHERE INV_TOOL_ID = {$tool_id_escaped}";
+            $check_q = $this->db_tms->query($check_sql);
+            
+            if (!$check_q || $check_q->num_rows() == 0) {
+                // Tool ID doesn't exist at all
+                log_message('debug', '[M_tool_scrap::get_tool_inventory_details_by_tool_id] Tool ID not found in TMS_TOOL_INVENTORY: [' . $tool_id . ']');
+                
+                // Try to find similar Tool IDs for debugging
+                $similar_sql = "SELECT TOP 5 INV_TOOL_ID, LEN(INV_TOOL_ID) AS LEN_ID FROM {$this->t('TMS_TOOL_INVENTORY')} WHERE INV_TOOL_ID LIKE " . $this->db_tms->escape('%' . $tool_id . '%') . " ORDER BY INV_ID DESC";
+                $similar_q = $this->db_tms->query($similar_sql);
+                $similar_ids = array();
+                if ($similar_q && $similar_q->num_rows() > 0) {
+                    foreach ($similar_q->result_array() as $row) {
+                        $similar_ids[] = $row['INV_TOOL_ID'];
+                    }
+                }
+                log_message('debug', '[M_tool_scrap::get_tool_inventory_details_by_tool_id] Similar Tool IDs found: ' . implode(', ', $similar_ids));
+                return null;
+            }
+            
+            // Tool ID exists, now get full details with joins
             $sql = "SELECT TOP 1
                         inv.INV_ID,
                         inv.INV_TOOL_ID AS TOOL_ID,
                         inv.INV_MLR_ID,
-                        ml.ML_TOOL_DRAW_NO AS TOOL_DRAWING_NO,
-                        mlr.MLR_REV AS REVISION,
-                        tc.TC_NAME AS TOOL_NAME,
-                        tc.TC_ID AS TOOL_NAME_ID,
-                        mat.MAT_NAME AS MATERIAL,
-                        mat.MAT_ID AS MATERIAL_ID,
-                        ISNULL(ord.ORD_RQ_NO, inv.INV_RQ_NO) AS RQ_NO,
-                        mlr.MLR_PRICE AS TOOL_PRICE,
+                        ISNULL(ml.ML_TOOL_DRAW_NO, '') AS TOOL_DRAWING_NO,
+                        ISNULL(mlr.MLR_REV, 0) AS REVISION,
+                        ISNULL(tc.TC_NAME, '') AS TOOL_NAME,
+                        ISNULL(tc.TC_ID, 0) AS TOOL_NAME_ID,
+                        ISNULL(mat.MAT_NAME, '') AS MATERIAL,
+                        ISNULL(mat.MAT_ID, 0) AS MATERIAL_ID,
+                        ISNULL(ISNULL(ord.ORD_RQ_NO, inv.INV_RQ_NO), '') AS RQ_NO,
+                        ISNULL(mlr.MLR_PRICE, 0) AS TOOL_PRICE,
                         ISNULL(tasgn.TASGN_ASSIGN_NO, '') AS TOOL_ASSIGNMENT_NO,
                         ISNULL(pcs_produced.PCS_PRODUCED, 0) AS PCS_PRODUCED,
-                        inv.INV_STATUS AS STATUS,
+                        ISNULL(inv.INV_STATUS, 0) AS STATUS,
                         ISNULL(inv.INV_END_CYCLE, 0) AS END_CYCLE
                     FROM {$this->t('TMS_TOOL_INVENTORY')} inv
-                    INNER JOIN {$this->t('TMS_TOOL_MASTER_LIST_REV')} mlr ON mlr.MLR_ID = inv.INV_MLR_ID
-                    INNER JOIN {$this->t('TMS_TOOL_MASTER_LIST')} ml ON ml.ML_ID = mlr.MLR_ML_ID
+                    LEFT JOIN {$this->t('TMS_TOOL_MASTER_LIST_REV')} mlr ON mlr.MLR_ID = inv.INV_MLR_ID
+                    LEFT JOIN {$this->t('TMS_TOOL_MASTER_LIST')} ml ON ml.ML_ID = mlr.MLR_ML_ID
                     LEFT JOIN {$this->t('MS_TOOL_CLASS')} tc ON tc.TC_ID = mlr.MLR_TC_ID
                     LEFT JOIN {$this->t('MS_MATERIAL')} mat ON mat.MAT_ID = inv.INV_MAT_ID
                     LEFT JOIN {$this->t('TMS_ORDERING_ITEMS')} ordi ON ordi.ORDI_ID = inv.INV_ORDI_ID
@@ -442,27 +475,31 @@ class M_tool_scrap extends CI_Model
                         WHERE ASSGN_INV_ID IS NOT NULL
                         GROUP BY ASSGN_INV_ID
                     ) pcs_produced ON pcs_produced.ASSGN_INV_ID = inv.INV_ID
-                    WHERE inv.INV_TOOL_ID = '{$tool_id_escaped}'
+                    WHERE inv.INV_TOOL_ID = {$tool_id_escaped}
                     ORDER BY inv.INV_ID DESC";
+            
+            log_message('debug', '[M_tool_scrap::get_tool_inventory_details_by_tool_id] Querying Tool ID: [' . $tool_id . '] (length: ' . strlen($tool_id) . ', escaped: ' . $tool_id_escaped . ')');
             
             $q = $this->db_tms->query($sql);
             
             if (!$q) {
                 $error = $this->db_tms->error();
-                log_message('error', '[M_tool_scrap::get_tool_inventory_details_by_tool_id] Query error: ' . (isset($error['message']) ? $error['message'] : 'Unknown error') . ' - Tool ID: ' . $tool_id);
+                $error_msg = isset($error['message']) ? $error['message'] : 'Unknown error';
+                log_message('error', '[M_tool_scrap::get_tool_inventory_details_by_tool_id] Query error: ' . $error_msg . ' - Tool ID: [' . $tool_id . ']');
+                log_message('error', '[M_tool_scrap::get_tool_inventory_details_by_tool_id] SQL: ' . $sql);
                 return null;
             }
             
             if ($q->num_rows() > 0) {
                 $result = $q->row_array();
-                log_message('debug', '[M_tool_scrap::get_tool_inventory_details_by_tool_id] Found data for Tool ID: ' . $tool_id);
+                log_message('debug', '[M_tool_scrap::get_tool_inventory_details_by_tool_id] Found data for Tool ID: [' . $tool_id . '] - Found TOOL_ID: [' . (isset($result['TOOL_ID']) ? $result['TOOL_ID'] : 'N/A') . ']');
                 return $result;
             } else {
-                log_message('debug', '[M_tool_scrap::get_tool_inventory_details_by_tool_id] No data found for Tool ID: ' . $tool_id);
+                log_message('debug', '[M_tool_scrap::get_tool_inventory_details_by_tool_id] Tool ID exists but no data returned from joined query: [' . $tool_id . ']');
                 return null;
             }
         } catch (Exception $e) {
-            log_message('error', '[M_tool_scrap::get_tool_inventory_details_by_tool_id] Exception: ' . $e->getMessage() . ' - Tool ID: ' . $tool_id);
+            log_message('error', '[M_tool_scrap::get_tool_inventory_details_by_tool_id] Exception: ' . $e->getMessage() . ' - Tool ID: [' . $tool_id . ']');
             return null;
         }
     }
