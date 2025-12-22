@@ -610,7 +610,9 @@ class M_tool_inventory extends CI_Model
         $rq_no = isset($data['rq_no']) && !empty($data['rq_no']) ? trim((string)$data['rq_no']) : null;
         $maker_id = isset($data['maker_id']) && $data['maker_id'] > 0 ? (int)$data['maker_id'] : null;
         $material_id = isset($data['material_id']) && $data['material_id'] > 0 ? (int)$data['material_id'] : null;
-        $purchase_type = isset($data['purchase_type']) && !empty($data['purchase_type']) ? trim((string)$data['purchase_type']) : null;
+        // INV_PURCHASE_TYPE is bigint in database, but form sends string like 'Local', 'Overseas'
+        // Skip this field for now since column type is bigint (likely needs a lookup table)
+        $purchase_type = null;
         $do_no = isset($data['do_no']) && !empty($data['do_no']) ? trim((string)$data['do_no']) : null;
         $received_date = isset($data['received_date']) && !empty($data['received_date']) ? trim((string)$data['received_date']) : null;
         $tool_condition = isset($data['tool_condition']) && $data['tool_condition'] !== '' ? (int)$data['tool_condition'] : null;
@@ -682,10 +684,12 @@ class M_tool_inventory extends CI_Model
             $insert_params[] = $material_id;
         }
 
-        if ($purchase_type !== null) {
+        // INV_PURCHASE_TYPE is bigint in database, so skip if value is string
+        // Only insert if purchase_type is numeric (bigint ID)
+        if ($purchase_type !== null && is_numeric($purchase_type)) {
             $insert_fields[] = 'INV_PURCHASE_TYPE';
             $insert_values[] = '?';
-            $insert_params[] = $purchase_type;
+            $insert_params[] = (int)$purchase_type;
         }
 
         if ($do_no !== null) {
