@@ -419,20 +419,18 @@ class M_tool_scrap extends CI_Model
         }
 
         try {
-            // Use escape() method which properly handles SQL Server string escaping
-            $tool_id_escaped = $this->db_tms->escape($tool_id);
-            
+            // Use parameterized query like M_tool_inventory::get_tool_id_details() for better compatibility
             // First, check if Tool ID exists at all (simple check)
-            $check_sql = "SELECT TOP 1 INV_ID, INV_TOOL_ID FROM {$this->t('TMS_TOOL_INVENTORY')} WHERE INV_TOOL_ID = {$tool_id_escaped}";
-            $check_q = $this->db_tms->query($check_sql);
+            $check_sql = "SELECT TOP 1 INV_ID, INV_TOOL_ID FROM {$this->t('TMS_TOOL_INVENTORY')} WHERE INV_TOOL_ID = ?";
+            $check_q = $this->db_tms->query($check_sql, array($tool_id));
             
             if (!$check_q || $check_q->num_rows() == 0) {
                 // Tool ID doesn't exist at all
                 log_message('debug', '[M_tool_scrap::get_tool_inventory_details_by_tool_id] Tool ID not found in TMS_TOOL_INVENTORY: [' . $tool_id . ']');
                 
-                // Try to find similar Tool IDs for debugging
-                $similar_sql = "SELECT TOP 5 INV_TOOL_ID, LEN(INV_TOOL_ID) AS LEN_ID FROM {$this->t('TMS_TOOL_INVENTORY')} WHERE INV_TOOL_ID LIKE " . $this->db_tms->escape('%' . $tool_id . '%') . " ORDER BY INV_ID DESC";
-                $similar_q = $this->db_tms->query($similar_sql);
+                // Try to find similar Tool IDs for debugging (case-insensitive search)
+                $similar_sql = "SELECT TOP 5 INV_TOOL_ID, LEN(INV_TOOL_ID) AS LEN_ID FROM {$this->t('TMS_TOOL_INVENTORY')} WHERE UPPER(LTRIM(RTRIM(INV_TOOL_ID))) = UPPER(LTRIM(RTRIM(?))) OR INV_TOOL_ID LIKE ? ORDER BY INV_ID DESC";
+                $similar_q = $this->db_tms->query($similar_sql, array($tool_id, '%' . $tool_id . '%'));
                 $similar_ids = array();
                 if ($similar_q && $similar_q->num_rows() > 0) {
                     foreach ($similar_q->result_array() as $row) {
@@ -444,31 +442,23 @@ class M_tool_scrap extends CI_Model
             }
             
             // Tool ID exists, now get full details with joins
-            // Following the same pattern as M_tool_inventory::get_by_id() which is proven to work
+            // Following EXACTLY the same pattern as M_tool_inventory::get_by_id() which is proven to work
             $sql = "SELECT TOP 1
                         inv.INV_ID,
                         inv.INV_TOOL_ID AS TOOL_ID,
                         inv.INV_MLR_ID,
-                        -- Drawing No: from TMS_TOOL_MASTER_LIST
+                        -- Drawing No: from TMS_TOOL_MASTER_LIST (same as get_by_id)
                         ISNULL(ml.ML_TOOL_DRAW_NO, '') AS TOOL_DRAWING_NO,
-                        -- Revision: from TMS_TOOL_MASTER_LIST_REV
+                        -- Revision: from TMS_TOOL_MASTER_LIST_REV (same as get_by_id)
                         ISNULL(mlr.MLR_REV, 0) AS REVISION,
-                        -- Tool Name: from MS_TOOL_CLASS via MLR_TC_ID
+                        -- Tool Name: from MS_TOOL_CLASS via MLR_TC_ID (same as get_by_id)
                         ISNULL(tc.TC_NAME, '') AS TOOL_NAME,
                         ISNULL(tc.TC_ID, 0) AS TOOL_NAME_ID,
-                        -- Material: from MS_MATERIAL via INV_MAT_ID (preferred) or MLR_MAT_ID (fallback)
-                        CASE 
-                            WHEN inv.INV_MAT_ID IS NOT NULL AND inv_mat.MAT_NAME IS NOT NULL THEN inv_mat.MAT_NAME
-                            WHEN mlr.MLR_MAT_ID IS NOT NULL AND mlr_mat.MAT_NAME IS NOT NULL THEN mlr_mat.MAT_NAME
-                            ELSE ''
-                        END AS MATERIAL,
-                        CASE 
-                            WHEN inv.INV_MAT_ID IS NOT NULL THEN inv.INV_MAT_ID
-                            WHEN mlr.MLR_MAT_ID IS NOT NULL THEN mlr.MLR_MAT_ID
-                            ELSE 0
-                        END AS MATERIAL_ID,
-                        -- RQ No: from INV_RQ_NO (preferred) or TMS_ORDERING.ORD_RQ_NO (fallback) - following M_tool_inventory pattern
-                        ISNULL(ISNULL(inv.INV_RQ_NO, ord.ORD_RQ_NO), '') AS RQ_NO,
+                        -- Material: from MS_MATERIAL via INV_MAT_ID ONLY (same as get_by_id - no fallback to MLR_MAT_ID)
+                        ISNULL(mat.MAT_NAME, '') AS MATERIAL,
+                        ISNULL(inv.INV_MAT_ID, 0) AS MATERIAL_ID,
+                        -- RQ No: from INV_RQ_NO (preferred) or TMS_ORDERING.ORD_RQ_NO (fallback) - EXACT same as get_by_id
+                        ISNULL(inv.INV_RQ_NO, ord.ORD_RQ_NO) AS RQ_NO,
                         -- Tool Price: from INV_TOOL_COST (preferred) or MLR_PRICE (fallback)
                         ISNULL(ISNULL(inv.INV_TOOL_COST, mlr.MLR_PRICE), 0) AS TOOL_PRICE,
                         -- Tool Assignment No: from TMS_TOOL_ASSIGNMENT via TMS_ASSIGNED_TOOLS (scalar subquery)
@@ -488,25 +478,22 @@ class M_tool_scrap extends CI_Model
                         ISNULL(inv.INV_STATUS, 0) AS STATUS,
                         ISNULL(inv.INV_END_CYCLE, 0) AS END_CYCLE
                     FROM {$this->t('TMS_TOOL_INVENTORY')} inv
-                    -- Join to TMS_TOOL_MASTER_LIST_REV first (required for MLR_ID)
+                    -- EXACT same JOIN order as get_by_id
                     LEFT JOIN {$this->t('TMS_TOOL_MASTER_LIST_REV')} mlr ON mlr.MLR_ID = inv.INV_MLR_ID
-                    -- Join to TMS_TOOL_MASTER_LIST (for Drawing No)
                     LEFT JOIN {$this->t('TMS_TOOL_MASTER_LIST')} ml ON ml.ML_ID = mlr.MLR_ML_ID
-                    -- Join to MS_TOOL_CLASS (for Tool Name)
                     LEFT JOIN {$this->t('MS_TOOL_CLASS')} tc ON tc.TC_ID = mlr.MLR_TC_ID
-                    -- Join to MS_MATERIAL for inventory material (INV_MAT_ID)
-                    LEFT JOIN {$this->t('MS_MATERIAL')} inv_mat ON inv_mat.MAT_ID = inv.INV_MAT_ID
-                    -- Join to MS_MATERIAL for master list revision material (MLR_MAT_ID) as fallback
-                    LEFT JOIN {$this->t('MS_MATERIAL')} mlr_mat ON mlr_mat.MAT_ID = mlr.MLR_MAT_ID
-                    -- Join to TMS_ORDERING_ITEMS and TMS_ORDERING (for RQ No)
+                    -- Material: ONLY from INV_MAT_ID (same as get_by_id)
+                    LEFT JOIN {$this->t('MS_MATERIAL')} mat ON mat.MAT_ID = inv.INV_MAT_ID
+                    -- Join to TMS_ORDERING_ITEMS and TMS_ORDERING (for RQ No) - same as get_by_id
                     LEFT JOIN {$this->t('TMS_ORDERING_ITEMS')} ordi ON ordi.ORDI_ID = inv.INV_ORDI_ID
                     LEFT JOIN {$this->t('TMS_ORDERING')} ord ON ord.ORD_ID = ordi.ORDI_ORD_ID
-                    WHERE inv.INV_TOOL_ID = {$tool_id_escaped}
+                    WHERE inv.INV_TOOL_ID = ?
                     ORDER BY inv.INV_ID DESC";
             
-            log_message('debug', '[M_tool_scrap::get_tool_inventory_details_by_tool_id] Querying Tool ID: [' . $tool_id . '] (length: ' . strlen($tool_id) . ', escaped: ' . $tool_id_escaped . ')');
+            log_message('debug', '[M_tool_scrap::get_tool_inventory_details_by_tool_id] Querying Tool ID: [' . $tool_id . '] (length: ' . strlen($tool_id) . ')');
             
-            $q = $this->db_tms->query($sql);
+            // Use parameterized query for better compatibility
+            $q = $this->db_tms->query($sql, array($tool_id));
             
             if (!$q) {
                 $error = $this->db_tms->error();
@@ -519,6 +506,7 @@ class M_tool_scrap extends CI_Model
             if ($q->num_rows() > 0) {
                 $result = $q->row_array();
                 log_message('debug', '[M_tool_scrap::get_tool_inventory_details_by_tool_id] Found data for Tool ID: [' . $tool_id . '] - Found TOOL_ID: [' . (isset($result['TOOL_ID']) ? $result['TOOL_ID'] : 'N/A') . ']');
+                log_message('debug', '[M_tool_scrap::get_tool_inventory_details_by_tool_id] Material: [' . (isset($result['MATERIAL']) ? $result['MATERIAL'] : 'N/A') . '], RQ_NO: [' . (isset($result['RQ_NO']) ? $result['RQ_NO'] : 'N/A') . '], TOOL_PRICE: [' . (isset($result['TOOL_PRICE']) ? $result['TOOL_PRICE'] : 'N/A') . ']');
                 return $result;
             } else {
                 log_message('debug', '[M_tool_scrap::get_tool_inventory_details_by_tool_id] Tool ID exists but no data returned from joined query: [' . $tool_id . ']');
@@ -540,9 +528,9 @@ class M_tool_scrap extends CI_Model
                                     ISNULL(INV_STATUS, 0) AS STATUS,
                                     ISNULL(INV_END_CYCLE, 0) AS END_CYCLE
                                 FROM {$this->t('TMS_TOOL_INVENTORY')}
-                                WHERE INV_TOOL_ID = {$tool_id_escaped}
+                                WHERE INV_TOOL_ID = ?
                                 ORDER BY INV_ID DESC";
-                $fallback_q = $this->db_tms->query($fallback_sql);
+                $fallback_q = $this->db_tms->query($fallback_sql, array($tool_id));
                 if ($fallback_q && $fallback_q->num_rows() > 0) {
                     $result = $fallback_q->row_array();
                     log_message('debug', '[M_tool_scrap::get_tool_inventory_details_by_tool_id] Using fallback query - Found basic data for Tool ID: [' . $tool_id . ']');
