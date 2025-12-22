@@ -38,8 +38,8 @@
                         </div>
                     </div>
                     <div class="card-body">
-                        <form id="formBom" method="post" action="#" onsubmit="return false;">
-                            <input type="hidden" name="action" value="VIEW">
+                        <form id="formBom" method="post" action="<?= base_url('Tool_engineering/tool_bom_tooling/submit_data'); ?>" enctype="multipart/form-data">
+                            <input type="hidden" name="action" value="EDIT">
                             <input type="hidden" name="ID" value="<?= htmlspecialchars($bom['ID']); ?>">
                             
                             <!-- Trial BOM Checkbox -->
@@ -155,8 +155,17 @@
                                     <?php if (!empty($bom['SKETCH'])): ?>
                                         <div class="small-muted mt-1">Current: <?= htmlspecialchars($bom['SKETCH']); ?></div>
                                     <?php endif; ?>
-                                    <small class="form-text text-muted">Pilih file untuk mengunggah sketch.</small>
+                                    <small class="form-text text-muted">Pilih file untuk mengunggah sketch. Biarkan kosong jika tidak mengganti file.</small>
                                 </div>
+                            </div>
+
+                            <div class="d-flex justify-content-end mt-3">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fa fa-save"></i> Save
+                                </button>
+                                <a href="<?= base_url('Tool_engineering/tool_bom_tooling'); ?>" class="btn btn-secondary ml-2">
+                                    <i class="fa fa-times"></i> Cancel
+                                </a>
                             </div>
                         </form>
                     </div>
@@ -236,6 +245,51 @@
                 { width: '50px', targets:0 },
                 { width: '70px', targets:1 }
             ]
+        });
+
+        // BOM submit
+        $('#formBom').on('submit', function(e){
+            e.preventDefault();
+            var toolBom = $.trim($('[name="TOOL_BOM"]').val());
+            if (toolBom === '') {
+                $('[name="TOOL_BOM"]').addClass('is-invalid');
+                return;
+            }
+            $('[name="TOOL_BOM"]').removeClass('is-invalid');
+            var fd = new FormData(this);
+            $.ajax({
+                url: $(this).attr('action'),
+                type: 'POST',
+                data: fd,
+                dataType: 'json',
+                processData: false,
+                contentType: false,
+                cache: false,
+                timeout: 30000
+            }).done(function(res){
+                if (res && res.success) {
+                    if (typeof toastr !== 'undefined') {
+                        toastr.success(res.message || 'Tool BOM berhasil diubah');
+                    } else {
+                        alert(res.message || 'Tool BOM berhasil diubah');
+                    }
+                    setTimeout(function(){
+                        window.location.href = '<?= base_url("Tool_engineering/tool_bom_tooling"); ?>';
+                    }, 600);
+                } else {
+                    if (typeof toastr !== 'undefined') {
+                        toastr.warning(res && res.message ? res.message : 'Gagal menyimpan Tool BOM');
+                    } else {
+                        alert(res && res.message ? res.message : 'Gagal menyimpan Tool BOM');
+                    }
+                }
+            }).fail(function(xhr, status){
+                if (typeof toastr !== 'undefined') {
+                    toastr.error('Gagal menyimpan: ' + status);
+                } else {
+                    alert('Gagal menyimpan: ' + status);
+                }
+            });
         });
     });
 })(jQuery);
