@@ -134,7 +134,6 @@
                                                    placeholder="Click button to select department">
                                             <input type="hidden" name="WO_DEPARTMENT" id="selected_dept_name_hidden" 
                                                    value="<?= isset($work_order['WO_DEPARTMENT']) ? htmlspecialchars($work_order['WO_DEPARTMENT'], ENT_QUOTES, 'UTF-8') : ''; ?>">
-                                            <input type="hidden" name="WO_DEPARTMENT_ID" id="selected_dept_id" value="">
                                             <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#modalSelectDepartment">
                                                 <i class="fa fa-search"></i> Select
                                             </button>
@@ -230,9 +229,26 @@
 
                                     <div class="form-group">
                                         <label>Condition After Repair</label>
-                                        <input type="text" name="WO_CONDITION" class="form-control" 
-                                               value="<?= isset($work_order['WO_CONDITION']) ? htmlspecialchars($work_order['WO_CONDITION'], ENT_QUOTES, 'UTF-8') : ''; ?>" 
-                                               placeholder="e.g., O K Repaired">
+                                        <select name="WO_CONDITION" class="form-control">
+                                            <option value="">-- Select Condition --</option>
+                                            <?php 
+                                            $current_condition = isset($work_order['WO_CONDITION']) ? (int)$work_order['WO_CONDITION'] : '';
+                                            $condition_map = array(
+                                                '' => '-- Select Condition --',
+                                                0 => 'None',
+                                                1 => 'O K Modified',
+                                                2 => 'N G Needs Repair',
+                                                3 => 'N G Not Repairable',
+                                                4 => 'O K Repaired'
+                                            );
+                                            foreach ($condition_map as $val => $label): 
+                                                $selected = ($current_condition === $val || (string)$current_condition === (string)$val) ? 'selected' : '';
+                                            ?>
+                                                <option value="<?= $val === '' ? '' : $val; ?>" <?= $selected; ?>>
+                                                    <?= htmlspecialchars($label, ENT_QUOTES, 'UTF-8'); ?>
+                                                </option>
+                                            <?php endforeach; ?>
+                                        </select>
                                     </div>
 
                                     <div class="form-group">
@@ -718,8 +734,47 @@
         // Form submit Work Order
         $('#formWorkOrder').on('submit', function(e) {
             e.preventDefault();
-            // TODO: Implement form submission
-            alert('Save Work Order functionality will be implemented');
+            
+            if (!this.checkValidity()) {
+                $(this).addClass('was-validated');
+                return;
+            }
+
+            var formData = new FormData(this);
+            
+            $.ajax({
+                url: $(this).attr('action'),
+                type: 'POST',
+                data: formData,
+                dataType: 'json',
+                processData: false,
+                contentType: false,
+                cache: false,
+                timeout: 30000
+            }).done(function(res) {
+                if (res && res.success) {
+                    if (typeof toastr !== 'undefined') {
+                        toastr.success(res.message || 'Work Order berhasil diupdate');
+                    } else {
+                        alert(res.message || 'Work Order berhasil diupdate');
+                    }
+                    setTimeout(function() {
+                        window.location.href = '<?= base_url("Tool_management/tool_work_order"); ?>';
+                    }, 1000);
+                } else {
+                    if (typeof toastr !== 'undefined') {
+                        toastr.warning(res && res.message ? res.message : 'Gagal mengupdate Work Order');
+                    } else {
+                        alert(res && res.message ? res.message : 'Gagal mengupdate Work Order');
+                    }
+                }
+            }).fail(function(xhr, status, error) {
+                if (typeof toastr !== 'undefined') {
+                    toastr.error('Gagal mengupdate: ' + (error || status));
+                } else {
+                    alert('Gagal mengupdate: ' + (error || status));
+                }
+            });
         });
     });
 })(jQuery);
