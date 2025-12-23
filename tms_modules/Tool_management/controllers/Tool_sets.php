@@ -128,7 +128,81 @@ class Tool_sets extends MY_Controller
     public function add_page()
     {
         $data = array();
+        $data['tool_bom_modal'] = $this->tool_sets->get_tool_bom_for_modal();
         $this->view('add_tool_sets', $data, FALSE);
+    }
+
+    /**
+     * Get Tool BOM details by MLR_ID (AJAX)
+     */
+    public function get_tool_bom_details()
+    {
+        if (ob_get_level()) ob_clean();
+        $this->output->set_content_type('application/json', 'UTF-8');
+
+        try {
+            $mlr_id = (int)$this->input->post('mlr_id', TRUE);
+            if ($mlr_id <= 0) {
+                echo json_encode(array('success' => false, 'message' => 'MLR ID tidak valid.'));
+                return;
+            }
+
+            $details = $this->tool_sets->get_tool_bom_details_by_mlr_id($mlr_id);
+            if ($details) {
+                echo json_encode(array('success' => true, 'data' => $details), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+            } else {
+                echo json_encode(array('success' => false, 'message' => 'Tool BOM tidak ditemukan.'));
+            }
+        } catch (Exception $e) {
+            log_message('error', '[Tool_sets::get_tool_bom_details] Exception: ' . $e->getMessage());
+            echo json_encode(array('success' => false, 'message' => 'Error: ' . $e->getMessage()));
+        }
+    }
+
+    /**
+     * Submit data (Add/Edit)
+     */
+    public function submit_data()
+    {
+        if (ob_get_level()) ob_clean();
+        $this->output->set_content_type('application/json', 'UTF-8');
+
+        try {
+            $action = $this->input->post('action', TRUE);
+            
+            if ($action === 'ADD') {
+                $toolset_name = trim($this->input->post('toolset_name', TRUE));
+                $tool_bom_mlr_id = (int)$this->input->post('tool_bom_mlr_id', TRUE);
+                $toolset_status = (int)$this->input->post('toolset_status', TRUE);
+                
+                if (empty($toolset_name)) {
+                    echo json_encode(array('success' => false, 'message' => 'Toolset Name tidak boleh kosong.'));
+                    return;
+                }
+                
+                if ($tool_bom_mlr_id <= 0) {
+                    echo json_encode(array('success' => false, 'message' => 'Tool BOM No. harus dipilih.'));
+                    return;
+                }
+                
+                $data = array(
+                    'TSET_NAME' => $toolset_name,
+                    'TSET_BOM_MLR_ID' => $tool_bom_mlr_id,
+                    'TSET_STATUS' => $toolset_status > 0 ? $toolset_status : 1 // Default: 1 (Incomplete)
+                );
+                
+                $ok = $this->tool_sets->add_data($data);
+                echo json_encode(array(
+                    'success' => $ok,
+                    'message' => $this->tool_sets->messages
+                ));
+            } else {
+                echo json_encode(array('success' => false, 'message' => 'Action tidak valid.'));
+            }
+        } catch (Exception $e) {
+            log_message('error', '[Tool_sets::submit_data] Exception: ' . $e->getMessage());
+            echo json_encode(array('success' => false, 'message' => 'Error: ' . $e->getMessage()));
+        }
     }
 
     /**

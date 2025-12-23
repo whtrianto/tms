@@ -244,6 +244,58 @@ class M_tool_sets extends CI_Model
     }
 
     /**
+     * Add new Tool Set
+     */
+    public function add_data($data)
+    {
+        try {
+            $this->db_tms->trans_start();
+
+            // Validate required fields
+            if (empty($data['TSET_NAME'])) {
+                $this->messages = 'Toolset Name tidak boleh kosong.';
+                return false;
+            }
+
+            if (empty($data['TSET_BOM_MLR_ID']) || (int)$data['TSET_BOM_MLR_ID'] <= 0) {
+                $this->messages = 'Tool BOM MLR ID tidak valid.';
+                return false;
+            }
+
+            // Check if Tool BOM MLR_ID exists
+            $check_sql = "SELECT COUNT(*) as cnt FROM {$this->t('TMS_TOOL_MASTER_LIST_REV')} WHERE MLR_ID = ?";
+            $check_result = $this->db_tms->query($check_sql, array((int)$data['TSET_BOM_MLR_ID']));
+            if (!$check_result || $check_result->num_rows() == 0 || (int)$check_result->row()->cnt == 0) {
+                $this->messages = 'Tool BOM tidak ditemukan.';
+                return false;
+            }
+
+            // Insert data
+            $insert_data = array(
+                'TSET_NAME' => trim($data['TSET_NAME']),
+                'TSET_BOM_MLR_ID' => (int)$data['TSET_BOM_MLR_ID'],
+                'TSET_STATUS' => isset($data['TSET_STATUS']) ? (int)$data['TSET_STATUS'] : 1 // Default: 1 (Incomplete)
+            );
+
+            $this->db_tms->insert($this->t('TMS_TOOLSETS'), $insert_data);
+
+            $this->db_tms->trans_complete();
+
+            if ($this->db_tms->trans_status() === FALSE) {
+                $this->messages = 'Gagal menambahkan Tool Set.';
+                return false;
+            }
+
+            $this->messages = 'Tool Set berhasil ditambahkan.';
+            return true;
+        } catch (Exception $e) {
+            log_message('error', '[M_tool_sets::add_data] Exception: ' . $e->getMessage());
+            $this->messages = 'Error: ' . $e->getMessage();
+            return false;
+        }
+    }
+
+    /**
      * Delete
      */
     public function delete_data($id)
@@ -463,6 +515,59 @@ class M_tool_sets extends CI_Model
             $this->messages = 'Error: ' . $e->getMessage();
             return false;
         }
+    }
+
+    /**
+     * Get Tool BOM data for popup modal
+     * Returns: BOM No., Machine Group, BOM Description, BOM Revision
+     */
+    public function get_tool_bom_for_modal()
+    {
+        $sql = "SELECT TOP 500
+                    mlr.MLR_ID AS ID,
+                    ml.ML_TOOL_DRAW_NO AS BOM_NO,
+                    ISNULL(mac.MAC_NAME, '') AS MACHINE_GROUP,
+                    ISNULL(mlr.MLR_DESC, '') AS BOM_DESCRIPTION,
+                    ISNULL(mlr.MLR_REV, 0) AS BOM_REVISION,
+                    mlr.MLR_ID AS MLR_ID,
+                    (SELECT TOP 1 TMLP_PART_ID FROM {$this->t('TMS_TOOL_MASTER_LIST_PARTS')} WHERE TMLP_ML_ID = ml.ML_ID) AS PRODUCT_ID,
+                    mlr.MLR_OP_ID AS PROCESS_ID
+                FROM {$this->t('TMS_TOOL_MASTER_LIST_REV')} mlr
+                INNER JOIN {$this->t('TMS_TOOL_MASTER_LIST')} ml ON ml.ML_ID = mlr.MLR_ML_ID
+                LEFT JOIN {$this->t('MS_MACHINES')} mac ON mac.MAC_ID = mlr.MLR_MACG_ID
+                WHERE ml.ML_TYPE = 2
+                ORDER BY ml.ML_TOOL_DRAW_NO ASC, mlr.MLR_REV DESC";
+        $q = $this->db_tms->query($sql);
+        return $q && $q->num_rows() > 0 ? $q->result_array() : array();
+    }
+
+    /**
+     * Get Tool BOM details by MLR_ID for auto-fill
+     */
+    public function get_tool_bom_details_by_mlr_id($mlr_id)
+    {
+        $mlr_id = (int)$mlr_id;
+        if ($mlr_id <= 0) return null;
+
+        $sql = "SELECT 
+                    mlr.MLR_ID,
+                    ml.ML_TOOL_DRAW_NO AS BOM_NO,
+                    ISNULL(mlr.MLR_DESC, '') AS BOM_DESCRIPTION,
+                    ISNULL(mlr.MLR_REV, 0) AS BOM_REVISION,
+                    ISNULL(mac.MAC_NAME, '') AS MACHINE_GROUP,
+                    (SELECT TOP 1 TMLP_PART_ID FROM {$this->t('TMS_TOOL_MASTER_LIST_PARTS')} WHERE TMLP_ML_ID = ml.ML_ID) AS PRODUCT_ID,
+                    ISNULL(part.PART_NAME, '') AS PRODUCT_NAME,
+                    mlr.MLR_OP_ID AS PROCESS_ID,
+                    ISNULL(op.OP_NAME, '') AS PROCESS_NAME
+                FROM {$this->t('TMS_TOOL_MASTER_LIST_REV')} mlr
+                INNER JOIN {$this->t('TMS_TOOL_MASTER_LIST')} ml ON ml.ML_ID = mlr.MLR_ML_ID
+                LEFT JOIN {$this->t('MS_MACHINES')} mac ON mac.MAC_ID = mlr.MLR_MACG_ID
+                LEFT JOIN {$this->t('TMS_TOOL_MASTER_LIST_PARTS')} mlparts ON mlparts.TMLP_ML_ID = ml.ML_ID
+                LEFT JOIN {$this->t('MS_PARTS')} part ON part.PART_ID = mlparts.TMLP_PART_ID
+                LEFT JOIN {$this->t('MS_OPERATION')} op ON op.OP_ID = mlr.MLR_OP_ID
+                WHERE mlr.MLR_ID = ? AND ml.ML_TYPE = 2";
+        $q = $this->db_tms->query($sql, array($mlr_id));
+        return $q && $q->num_rows() > 0 ? $q->row_array() : null;
     }
 }
 
