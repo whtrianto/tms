@@ -9,7 +9,7 @@ class M_tool_work_order extends CI_Model
     private $db_tms;
     private $db_name = 'TMS_NEW';
     private $tbl;
-    
+
     public $messages = '';
     public $uid = '';
 
@@ -132,7 +132,7 @@ class M_tool_work_order extends CI_Model
         $data = array();
         try {
             $result = $this->db_tms->query($data_sql, $params);
-            
+
             if (!$result) {
                 $error = $this->db_tms->error();
                 log_message('error', '[M_tool_work_order::get_data_serverside] SQL Error: ' . (isset($error['message']) ? $error['message'] : 'Unknown error'));
@@ -143,7 +143,7 @@ class M_tool_work_order extends CI_Model
                     'data' => array()
                 );
             }
-            
+
             $data = $result->result_array();
         } catch (Exception $e) {
             log_message('error', '[M_tool_work_order::get_data_serverside] Exception: ' . $e->getMessage());
@@ -220,7 +220,7 @@ class M_tool_work_order extends CI_Model
     {
         $status = (int)$status;
         $status_name = $this->get_wo_status_name($status);
-        
+
         $badge_class = 'badge-secondary'; // Default
         if ($status === 3) {
             $badge_class = 'badge-success'; // Closed
@@ -231,7 +231,7 @@ class M_tool_work_order extends CI_Model
         } elseif ($status === 1) {
             $badge_class = 'badge-info'; // Open
         }
-        
+
         return '<span class="badge ' . $badge_class . '">' . htmlspecialchars($status_name, ENT_QUOTES, 'UTF-8') . '</span>';
     }
 
@@ -449,7 +449,7 @@ class M_tool_work_order extends CI_Model
             if ($action === 'EDIT' && $extcost_id > 0) {
                 $this->db_tms->where('EXTCOST_ID', $extcost_id);
                 $this->db_tms->update($this->t('TMS_WO_EXTERNAL_COSTS'), $data);
-                
+
                 if ($this->db_tms->affected_rows() >= 0) {
                     $this->messages = 'External Cost berhasil diupdate.';
                     return true;
@@ -459,7 +459,7 @@ class M_tool_work_order extends CI_Model
                 }
             } else {
                 $this->db_tms->insert($this->t('TMS_WO_EXTERNAL_COSTS'), $data);
-                
+
                 if ($this->db_tms->affected_rows() > 0) {
                     $this->messages = 'External Cost berhasil ditambahkan.';
                     return true;
@@ -489,7 +489,7 @@ class M_tool_work_order extends CI_Model
         try {
             $this->db_tms->where('EXTCOST_ID', $extcost_id);
             $this->db_tms->delete($this->t('TMS_WO_EXTERNAL_COSTS'));
-            
+
             if ($this->db_tms->affected_rows() > 0) {
                 $this->messages = 'External Cost berhasil dihapus.';
                 return true;
@@ -518,7 +518,7 @@ class M_tool_work_order extends CI_Model
         try {
             $this->db_tms->where('WO_ID', $id);
             $this->db_tms->delete($this->t('TMS_WORKORDER'));
-            
+
             if ($this->db_tms->affected_rows() > 0) {
                 $this->messages = 'Work Order berhasil dihapus.';
                 return true;
@@ -563,12 +563,18 @@ class M_tool_work_order extends CI_Model
                 }
             }
 
+            // Validate required fields
+            if (!isset($data['WO_REQUESTED_BY']) || $data['WO_REQUESTED_BY'] <= 0) {
+                $this->messages = 'WO_REQUESTED_BY is required and cannot be NULL.';
+                return false;
+            }
+            
             // Prepare insert data
             $insert_data = array(
                 'WO_NO' => $wo_no,
                 'WO_TYPE' => isset($data['WO_TYPE']) ? (int)$data['WO_TYPE'] : 1, // Default: 1 (Repair)
                 'WO_CREATED_DATE' => isset($data['WO_CREATED_DATE']) && !empty($data['WO_CREATED_DATE']) ? $data['WO_CREATED_DATE'] : date('Y-m-d'),
-                'WO_REQUESTED_BY' => isset($data['WO_REQUESTED_BY']) && $data['WO_REQUESTED_BY'] > 0 ? (int)$data['WO_REQUESTED_BY'] : null,
+                'WO_REQUESTED_BY' => (int)$data['WO_REQUESTED_BY'], // Required, already validated above
                 'WO_DEPARTMENT' => isset($data['WO_DEPARTMENT']) && !empty($data['WO_DEPARTMENT']) ? trim($data['WO_DEPARTMENT']) : null,
                 'WO_REASON' => isset($data['WO_REASON']) && $data['WO_REASON'] > 0 ? (int)$data['WO_REASON'] : null,
                 'WO_REMARKS' => isset($data['WO_REMARKS']) && !empty($data['WO_REMARKS']) ? trim($data['WO_REMARKS']) : null,
@@ -623,7 +629,7 @@ class M_tool_work_order extends CI_Model
 
             // Prepare update data
             $update_data = array();
-            
+
             if (isset($data['WO_CREATED_DATE']) && !empty($data['WO_CREATED_DATE'])) {
                 $update_data['WO_CREATED_DATE'] = $data['WO_CREATED_DATE'];
             }
@@ -710,7 +716,7 @@ class M_tool_work_order extends CI_Model
         $date = date('dmy');
         $sql = "SELECT TOP 1 WO_NO FROM {$this->t('TMS_WORKORDER')} WHERE WO_NO LIKE ? ORDER BY WO_ID DESC";
         $q = $this->db_tms->query($sql, array('W-' . $date . '-%'));
-        
+
         $seq = 1;
         if ($q && $q->num_rows() > 0) {
             $last_no = $q->row()->WO_NO;
@@ -720,8 +726,8 @@ class M_tool_work_order extends CI_Model
                 $seq = $last_seq + 1;
             }
         }
-        
-            return 'W-' . $date . '-' . str_pad($seq, 4, '0', STR_PAD_LEFT);
+
+        return 'W-' . $date . '-' . str_pad($seq, 4, '0', STR_PAD_LEFT);
     }
 
     /**
@@ -730,32 +736,32 @@ class M_tool_work_order extends CI_Model
     public function get_tool_inventory_for_modal()
     {
         $sql = "SELECT TOP 500
-                    inv.INV_ID AS ID,
-                    inv.INV_TOOL_ID AS TOOL_ID,
-                    ml.ML_TOOL_DRAW_NO AS TOOL_DRAWING_NO,
-                    mlr.MLR_REV AS REVISION,
-                    ISNULL(tc.TC_NAME, '') AS TOOL_NAME,
-                    CASE inv.INV_STATUS
-                        WHEN 1 THEN 'New'
-                        WHEN 2 THEN 'Allocated'
-                        WHEN 3 THEN 'Available'
-                        WHEN 4 THEN 'InUsed'
-                        WHEN 5 THEN 'Onhold'
-                        WHEN 6 THEN 'Scrapped'
-                        WHEN 7 THEN 'Repairing'
-                        WHEN 8 THEN 'Modifying'
-                        WHEN 9 THEN 'DesignChange'
-                        ELSE 'Unknown'
-                    END AS TOOL_STATUS,
-                    ISNULL(inv.INV_NOTES, '') AS REMARKS,
-                    ISNULL(inv.INV_TOOL_TAG, '') AS TOOL_TAG,
-                    inv.INV_MLR_ID AS MLR_ID
-                FROM {$this->t('TMS_TOOL_INVENTORY')} inv
-                INNER JOIN {$this->t('TMS_TOOL_MASTER_LIST_REV')} mlr ON mlr.MLR_ID = inv.INV_MLR_ID
-                INNER JOIN {$this->t('TMS_TOOL_MASTER_LIST')} ml ON ml.ML_ID = mlr.MLR_ML_ID
-                LEFT JOIN {$this->t('MS_TOOL_CLASS')} tc ON tc.TC_ID = mlr.MLR_TC_ID
-                WHERE inv.INV_TOOL_ID IS NOT NULL AND inv.INV_TOOL_ID <> ''
-                ORDER BY inv.INV_TOOL_ID ASC";
+                        inv.INV_ID AS ID,
+                        inv.INV_TOOL_ID AS TOOL_ID,
+                        ml.ML_TOOL_DRAW_NO AS TOOL_DRAWING_NO,
+                        mlr.MLR_REV AS REVISION,
+                        ISNULL(tc.TC_NAME, '') AS TOOL_NAME,
+                        CASE inv.INV_STATUS
+                            WHEN 1 THEN 'New'
+                            WHEN 2 THEN 'Allocated'
+                            WHEN 3 THEN 'Available'
+                            WHEN 4 THEN 'InUsed'
+                            WHEN 5 THEN 'Onhold'
+                            WHEN 6 THEN 'Scrapped'
+                            WHEN 7 THEN 'Repairing'
+                            WHEN 8 THEN 'Modifying'
+                            WHEN 9 THEN 'DesignChange'
+                            ELSE 'Unknown'
+                        END AS TOOL_STATUS,
+                        ISNULL(inv.INV_NOTES, '') AS REMARKS,
+                        ISNULL(inv.INV_TOOL_TAG, '') AS TOOL_TAG,
+                        inv.INV_MLR_ID AS MLR_ID
+                    FROM {$this->t('TMS_TOOL_INVENTORY')} inv
+                    INNER JOIN {$this->t('TMS_TOOL_MASTER_LIST_REV')} mlr ON mlr.MLR_ID = inv.INV_MLR_ID
+                    INNER JOIN {$this->t('TMS_TOOL_MASTER_LIST')} ml ON ml.ML_ID = mlr.MLR_ML_ID
+                    LEFT JOIN {$this->t('MS_TOOL_CLASS')} tc ON tc.TC_ID = mlr.MLR_TC_ID
+                    WHERE inv.INV_TOOL_ID IS NOT NULL AND LTRIM(RTRIM(inv.INV_TOOL_ID)) <> ''
+                    ORDER BY inv.INV_TOOL_ID ASC";
         $q = $this->db_tms->query($sql);
         return $q && $q->num_rows() > 0 ? $q->result_array() : array();
     }
@@ -775,7 +781,7 @@ class M_tool_work_order extends CI_Model
 
         // Escape tool_id for SQL Server
         $escaped_tool_id = $this->db_tms->escape($tool_id);
-        
+
         try {
             // Direct query from TMS_TOOL_INVENTORY (more reliable for PHP 5.6.36)
             $sql = "SELECT TOP 1
@@ -789,24 +795,23 @@ class M_tool_work_order extends CI_Model
                     INNER JOIN {$this->t('TMS_TOOL_MASTER_LIST_REV')} mlr ON mlr.MLR_ID = inv.INV_MLR_ID
                     INNER JOIN {$this->t('TMS_TOOL_MASTER_LIST')} ml ON ml.ML_ID = mlr.MLR_ML_ID
                     LEFT JOIN {$this->t('MS_TOOL_CLASS')} tc ON tc.TC_ID = mlr.MLR_TC_ID
-                    WHERE inv.INV_TOOL_ID = " . $escaped_tool_id . "
+                    WHERE LTRIM(RTRIM(inv.INV_TOOL_ID)) = " . $escaped_tool_id . "
                     ORDER BY inv.INV_ID DESC";
-            
+
             log_message('debug', '[M_tool_work_order::get_tool_inventory_details_by_tool_id] Querying Tool ID: [' . $tool_id . ']');
             log_message('debug', '[M_tool_work_order::get_tool_inventory_details_by_tool_id] SQL: ' . $sql);
-            
             $q = $this->db_tms->query($sql);
-            
+
             if (!$q) {
                 $error = $this->db_tms->error();
                 $error_msg = (isset($error['message']) && $error['message']) ? $error['message'] : 'Unknown error';
                 log_message('error', '[M_tool_work_order::get_tool_inventory_details_by_tool_id] Query error: ' . $error_msg . ' - Tool ID: [' . $tool_id . ']');
                 return null;
             }
-            
+
             if ($q->num_rows() > 0) {
                 $result = $q->row_array();
-                
+
                 // Ensure all fields are set with default values (PHP 5.6.36 compatible)
                 if (!isset($result['TOOL_TAG']) || $result['TOOL_TAG'] === null) {
                     $result['TOOL_TAG'] = '';
@@ -820,10 +825,10 @@ class M_tool_work_order extends CI_Model
                 if (!isset($result['TOOL_NAME']) || $result['TOOL_NAME'] === null) {
                     $result['TOOL_NAME'] = '';
                 }
-                
+
                 log_message('debug', '[M_tool_work_order::get_tool_inventory_details_by_tool_id] Found Tool ID: [' . $tool_id . ']');
                 log_message('debug', '[M_tool_work_order::get_tool_inventory_details_by_tool_id] TOOL_TAG: [' . $result['TOOL_TAG'] . '], TOOL_DRAWING_NO: [' . $result['TOOL_DRAWING_NO'] . '], REVISION: [' . $result['REVISION'] . '], TOOL_NAME: [' . $result['TOOL_NAME'] . ']');
-                
+
                 return $result;
             } else {
                 log_message('debug', '[M_tool_work_order::get_tool_inventory_details_by_tool_id] Tool ID not found: [' . $tool_id . ']');
@@ -835,4 +840,3 @@ class M_tool_work_order extends CI_Model
         }
     }
 }
-

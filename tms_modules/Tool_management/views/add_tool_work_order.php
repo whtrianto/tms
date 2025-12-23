@@ -126,11 +126,11 @@
                                     </div>
 
                                     <div class="form-group">
-                                        <label>Requested By</label>
+                                        <label class="label-required">Requested By</label>
                                         <div class="tool-id-input-group">
                                             <input type="text" id="selected_user_name" class="form-control" readonly 
-                                                   placeholder="Click button to select user">
-                                            <input type="hidden" name="WO_REQUESTED_BY" id="selected_user_id" value="">
+                                                   placeholder="Click button to select user" required>
+                                            <input type="hidden" name="WO_REQUESTED_BY" id="selected_user_id" value="" required>
                                             <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#modalSelectUser">
                                                 <i class="fa fa-search"></i> Select
                                             </button>
@@ -829,6 +829,18 @@
         // Form submit Work Order
         $('#formWorkOrder').on('submit', function(e) {
             e.preventDefault();
+            
+            // Validate Requested By
+            var requestedBy = $('#selected_user_id').val();
+            if (!requestedBy || requestedBy === '' || parseInt(requestedBy) <= 0) {
+                if (typeof toastr !== 'undefined') {
+                    toastr.warning('Requested By harus dipilih.');
+                } else {
+                    alert('Requested By harus dipilih.');
+                }
+                $('#modalSelectUser').modal('show');
+                return;
+            }
             
             if (!this.checkValidity()) {
                 $(this).addClass('was-validated');

@@ -353,10 +353,16 @@ class Tool_work_order extends MY_Controller
                 $urgency = $this->input->post('WO_URGENCY', TRUE);
                 $inv_id = (int)$this->input->post('WO_INV_ID', TRUE);
                 
+                // Validate required fields
+                if ($requested_by <= 0) {
+                    echo json_encode(array('success' => false, 'message' => 'Requested By harus dipilih.'));
+                    return;
+                }
+                
                 $data = array(
                     'WO_CREATED_DATE' => !empty($created_date) ? $created_date : date('Y-m-d'),
                     'WO_TYPE' => $wo_type > 0 ? $wo_type : 1, // Default: 1 (Repair)
-                    'WO_REQUESTED_BY' => $requested_by > 0 ? $requested_by : null,
+                    'WO_REQUESTED_BY' => $requested_by, // Required, already validated above
                     'WO_DEPARTMENT' => !empty($department) ? $department : null,
                     'WO_REASON' => $reason > 0 ? $reason : null,
                     'WO_REMARKS' => !empty($remarks) ? $remarks : null,
