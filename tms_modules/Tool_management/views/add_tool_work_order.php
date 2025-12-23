@@ -143,7 +143,6 @@
                                             <input type="text" id="selected_dept_name" class="form-control" readonly 
                                                    placeholder="Click button to select department">
                                             <input type="hidden" name="WO_DEPARTMENT" id="selected_dept_name_hidden" value="">
-                                            <input type="hidden" name="WO_DEPARTMENT_ID" id="selected_dept_id" value="">
                                             <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#modalSelectDepartment">
                                                 <i class="fa fa-search"></i> Select
                                             </button>

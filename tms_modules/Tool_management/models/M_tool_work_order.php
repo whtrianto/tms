@@ -544,6 +544,25 @@ class M_tool_work_order extends CI_Model
             // Generate WO_NO
             $wo_no = $this->generate_wo_no();
 
+            // Map WO_CONDITION from string to integer
+            $condition_map = array(
+                '' => null,
+                'None' => 0,
+                'O K Modified' => 1,
+                'N G Needs Repair' => 2,
+                'N G Not Repairable' => 3,
+                'O K Repaired' => 4
+            );
+            $wo_condition = null;
+            if (isset($data['WO_CONDITION']) && !empty($data['WO_CONDITION'])) {
+                $condition_str = trim($data['WO_CONDITION']);
+                if (isset($condition_map[$condition_str])) {
+                    $wo_condition = $condition_map[$condition_str];
+                } elseif (is_numeric($condition_str)) {
+                    $wo_condition = (int)$condition_str;
+                }
+            }
+
             // Prepare insert data
             $insert_data = array(
                 'WO_NO' => $wo_no,
@@ -551,17 +570,16 @@ class M_tool_work_order extends CI_Model
                 'WO_CREATED_DATE' => isset($data['WO_CREATED_DATE']) && !empty($data['WO_CREATED_DATE']) ? $data['WO_CREATED_DATE'] : date('Y-m-d'),
                 'WO_REQUESTED_BY' => isset($data['WO_REQUESTED_BY']) && $data['WO_REQUESTED_BY'] > 0 ? (int)$data['WO_REQUESTED_BY'] : null,
                 'WO_DEPARTMENT' => isset($data['WO_DEPARTMENT']) && !empty($data['WO_DEPARTMENT']) ? trim($data['WO_DEPARTMENT']) : null,
-                'WO_DEPARTMENT_ID' => isset($data['WO_DEPARTMENT_ID']) && $data['WO_DEPARTMENT_ID'] > 0 ? (int)$data['WO_DEPARTMENT_ID'] : null,
                 'WO_REASON' => isset($data['WO_REASON']) && $data['WO_REASON'] > 0 ? (int)$data['WO_REASON'] : null,
                 'WO_REMARKS' => isset($data['WO_REMARKS']) && !empty($data['WO_REMARKS']) ? trim($data['WO_REMARKS']) : null,
                 'WO_QTY' => isset($data['WO_QTY']) && $data['WO_QTY'] > 0 ? (int)$data['WO_QTY'] : 1,
                 'WO_TARGET_COM_DATE' => isset($data['WO_TARGET_COM_DATE']) && !empty($data['WO_TARGET_COM_DATE']) ? $data['WO_TARGET_COM_DATE'] : null,
                 'WO_ACTUAL_COM_DATE' => isset($data['WO_ACTUAL_COM_DATE']) && !empty($data['WO_ACTUAL_COM_DATE']) ? $data['WO_ACTUAL_COM_DATE'] : null,
                 'WO_STATUS' => isset($data['WO_STATUS']) && $data['WO_STATUS'] > 0 ? (int)$data['WO_STATUS'] : 1, // Default: 1 (Open)
-                'WO_CONDITION' => isset($data['WO_CONDITION']) && !empty($data['WO_CONDITION']) ? trim($data['WO_CONDITION']) : null,
+                'WO_CONDITION' => $wo_condition,
                 'WO_URGENCY' => isset($data['WO_URGENCY']) && !empty($data['WO_URGENCY']) ? trim($data['WO_URGENCY']) : null,
                 'WO_INV_ID' => isset($data['WO_INV_ID']) && $data['WO_INV_ID'] > 0 ? (int)$data['WO_INV_ID'] : null,
-                'WO_CREATED_BY' => $this->uid
+                'WO_CREATED_BY' => ($this->uid && is_numeric($this->uid)) ? (int)$this->uid : 1 // Default to user ID 1 if not set
             );
 
             $this->db_tms->insert($this->t('TMS_WORKORDER'), $insert_data);
@@ -618,10 +636,6 @@ class M_tool_work_order extends CI_Model
                 $update_data['WO_DEPARTMENT'] = !empty($data['WO_DEPARTMENT']) ? trim($data['WO_DEPARTMENT']) : null;
             }
 
-            if (isset($data['WO_DEPARTMENT_ID'])) {
-                $update_data['WO_DEPARTMENT_ID'] = $data['WO_DEPARTMENT_ID'] > 0 ? (int)$data['WO_DEPARTMENT_ID'] : null;
-            }
-
             if (isset($data['WO_REMARKS'])) {
                 $update_data['WO_REMARKS'] = !empty($data['WO_REMARKS']) ? trim($data['WO_REMARKS']) : null;
             }
@@ -639,7 +653,23 @@ class M_tool_work_order extends CI_Model
             }
 
             if (isset($data['WO_CONDITION'])) {
-                $update_data['WO_CONDITION'] = !empty($data['WO_CONDITION']) ? trim($data['WO_CONDITION']) : null;
+                // Map WO_CONDITION from string to integer
+                $condition_map = array(
+                    '' => null,
+                    'None' => 0,
+                    'O K Modified' => 1,
+                    'N G Needs Repair' => 2,
+                    'N G Not Repairable' => 3,
+                    'O K Repaired' => 4
+                );
+                $condition_str = !empty($data['WO_CONDITION']) ? trim($data['WO_CONDITION']) : '';
+                if (isset($condition_map[$condition_str])) {
+                    $update_data['WO_CONDITION'] = $condition_map[$condition_str];
+                } elseif (is_numeric($condition_str)) {
+                    $update_data['WO_CONDITION'] = (int)$condition_str;
+                } else {
+                    $update_data['WO_CONDITION'] = null;
+                }
             }
 
             if (isset($data['WO_URGENCY'])) {

@@ -14,8 +14,20 @@ class Tool_work_order extends MY_Controller
         parent::__construct();
         $this->load->library(array('form_validation', 'session'));
         
-        $username = $this->session->userdata('username');
-        $this->uid = (string)($username ?: 'SYSTEM');
+        // Get user ID from session (prefer user_id, fallback to username lookup)
+        $user_id = $this->session->userdata('user_id');
+        if (!$user_id || !is_numeric($user_id)) {
+            // Try to get user ID from username
+            $username = $this->session->userdata('username');
+            if ($username) {
+                $db_tms = $this->load->database('tms_NEW', TRUE);
+                $q = $db_tms->query("SELECT TOP 1 USR_ID FROM TMS_NEW.dbo.MS_USERS WHERE USR_NAME = ?", array($username));
+                if ($q && $q->num_rows() > 0) {
+                    $user_id = (int)$q->row()->USR_ID;
+                }
+            }
+        }
+        $this->uid = ($user_id && is_numeric($user_id)) ? (int)$user_id : 1; // Default to user ID 1 if not found
 
         $this->load->model('M_tool_work_order', 'tool_work_order');
         $this->tool_work_order->uid = $this->uid;
@@ -331,7 +343,6 @@ class Tool_work_order extends MY_Controller
                 $wo_type = (int)$this->input->post('WO_TYPE', TRUE);
                 $requested_by = (int)$this->input->post('WO_REQUESTED_BY', TRUE);
                 $department = $this->input->post('WO_DEPARTMENT', TRUE);
-                $department_id = (int)$this->input->post('WO_DEPARTMENT_ID', TRUE);
                 $reason = (int)$this->input->post('WO_REASON', TRUE);
                 $remarks = $this->input->post('WO_REMARKS', TRUE);
                 $qty = (int)$this->input->post('WO_QTY', TRUE);
@@ -347,7 +358,6 @@ class Tool_work_order extends MY_Controller
                     'WO_TYPE' => $wo_type > 0 ? $wo_type : 1, // Default: 1 (Repair)
                     'WO_REQUESTED_BY' => $requested_by > 0 ? $requested_by : null,
                     'WO_DEPARTMENT' => !empty($department) ? $department : null,
-                    'WO_DEPARTMENT_ID' => $department_id > 0 ? $department_id : null,
                     'WO_REASON' => $reason > 0 ? $reason : null,
                     'WO_REMARKS' => !empty($remarks) ? $remarks : null,
                     'WO_QTY' => $qty > 0 ? $qty : 1,
@@ -374,7 +384,6 @@ class Tool_work_order extends MY_Controller
                 $created_date = $this->input->post('WO_CREATED_DATE', TRUE);
                 $requested_by = (int)$this->input->post('WO_REQUESTED_BY', TRUE);
                 $department = $this->input->post('WO_DEPARTMENT', TRUE);
-                $department_id = (int)$this->input->post('WO_DEPARTMENT_ID', TRUE);
                 $remarks = $this->input->post('WO_REMARKS', TRUE);
                 $qty = (int)$this->input->post('WO_QTY', TRUE);
                 $target_com_date = $this->input->post('WO_TARGET_COM_DATE', TRUE);
@@ -386,7 +395,6 @@ class Tool_work_order extends MY_Controller
                     'WO_CREATED_DATE' => !empty($created_date) ? $created_date : null,
                     'WO_REQUESTED_BY' => $requested_by > 0 ? $requested_by : null,
                     'WO_DEPARTMENT' => !empty($department) ? $department : null,
-                    'WO_DEPARTMENT_ID' => $department_id > 0 ? $department_id : null,
                     'WO_REMARKS' => !empty($remarks) ? $remarks : null,
                     'WO_QTY' => $qty > 0 ? $qty : 1,
                     'WO_TARGET_COM_DATE' => !empty($target_com_date) ? $target_com_date : null,
