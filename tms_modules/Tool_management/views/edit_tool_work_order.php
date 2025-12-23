@@ -341,7 +341,7 @@
                                                 </tr>
                                             <?php endforeach; ?>
                                         <?php else: ?>
-                                            <tr>
+                                            <tr class="no-data-row">
                                                 <td colspan="12" class="text-center">No external costs found</td>
                                             </tr>
                                         <?php endif; ?>
@@ -569,31 +569,89 @@
 (function($){
     $(function(){
         // Initialize DataTable for users
-        if ($('#tableUsers tbody tr').length > 0) {
-            $('#tableUsers').DataTable({
-                pageLength: 10,
-                order: [[1, 'asc']],
-                autoWidth: false
+        var $tableUsers = $('#tableUsers');
+        if ($tableUsers.length > 0 && $tableUsers.find('thead tr').length > 0) {
+            var $usersRows = $tableUsers.find('tbody tr');
+            var hasValidRows = false;
+            $usersRows.each(function() {
+                if ($(this).find('td').length === 3 && !$(this).find('td[colspan]').length) {
+                    hasValidRows = true;
+                    return false; // break
+                }
             });
+            if (hasValidRows) {
+                try {
+                    $tableUsers.DataTable({
+                        pageLength: 10,
+                        order: [[1, 'asc']],
+                        autoWidth: false
+                    });
+                } catch(e) {
+                    console.error('Error initializing tableUsers DataTable:', e);
+                }
+            }
         }
 
         // Initialize DataTable for departments
-        if ($('#tableDepartments tbody tr').length > 0) {
-            $('#tableDepartments').DataTable({
-                pageLength: 10,
-                order: [[1, 'asc']],
-                autoWidth: false
+        var $tableDepartments = $('#tableDepartments');
+        if ($tableDepartments.length > 0 && $tableDepartments.find('thead tr').length > 0) {
+            var $deptRows = $tableDepartments.find('tbody tr');
+            var hasValidDeptRows = false;
+            $deptRows.each(function() {
+                if ($(this).find('td').length === 3 && !$(this).find('td[colspan]').length) {
+                    hasValidDeptRows = true;
+                    return false; // break
+                }
             });
+            if (hasValidDeptRows) {
+                try {
+                    $tableDepartments.DataTable({
+                        pageLength: 10,
+                        order: [[1, 'asc']],
+                        autoWidth: false
+                    });
+                } catch(e) {
+                    console.error('Error initializing tableDepartments DataTable:', e);
+                }
+            }
         }
 
         // Initialize DataTable for external costs
-        if ($('#table-external-costs tbody tr').length > 0) {
-            $('#table-external-costs').DataTable({
-                pageLength: 10,
-                order: [[0, 'desc']],
-                autoWidth: false,
-                scrollX: true
+        var $tableExternalCosts = $('#table-external-costs');
+        if ($tableExternalCosts.length > 0 && $tableExternalCosts.find('thead tr').length > 0) {
+            var $extRows = $tableExternalCosts.find('tbody tr:not(.no-data-row)');
+            var hasValidExtRows = false;
+            var expectedCols = $tableExternalCosts.find('thead tr th').length;
+            
+            // Remove no-data-row before checking
+            $tableExternalCosts.find('tbody tr.no-data-row').remove();
+            
+            $extRows.each(function() {
+                var $row = $(this);
+                var colCount = $row.find('td').length;
+                if (colCount === expectedCols && !$row.find('td[colspan]').length) {
+                    hasValidExtRows = true;
+                    return false; // break
+                }
             });
+            
+            if (hasValidExtRows) {
+                try {
+                    $tableExternalCosts.DataTable({
+                        pageLength: 10,
+                        order: [[0, 'desc']],
+                        autoWidth: false,
+                        scrollX: true
+                    });
+                } catch(e) {
+                    console.error('Error initializing table-external-costs DataTable:', e);
+                }
+            } else {
+                // If no valid rows, add back the no-data message
+                if ($tableExternalCosts.find('tbody tr').length === 0) {
+                    $tableExternalCosts.find('tbody').append('<tr><td colspan="' + expectedCols + '" class="text-center">No external costs found</td></tr>');
+                }
+            }
         }
 
         // Handle User Selection
