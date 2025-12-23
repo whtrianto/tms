@@ -154,6 +154,16 @@
                                     </div>
 
                                     <div class="form-group">
+                                        <label>Quantity (pcs)</label>
+                                        <input type="number" name="WO_QTY" class="form-control" 
+                                               value="<?= isset($work_order['WO_QTY']) ? htmlspecialchars($work_order['WO_QTY'], ENT_QUOTES, 'UTF-8') : '1'; ?>" 
+                                               min="1">
+                                    </div>
+                                </div>
+
+                                <!-- Kolom Kanan -->
+                                <div class="col-md-6">
+                                    <div class="form-group">
                                         <label>Tool ID</label>
                                         <div class="info-display">
                                             <?php 
@@ -197,16 +207,6 @@
                                         <div class="info-display">
                                             <?= isset($work_order['TOOL_NAME']) ? htmlspecialchars($work_order['TOOL_NAME'], ENT_QUOTES, 'UTF-8') : ''; ?>
                                         </div>
-                                    </div>
-                                </div>
-
-                                <!-- Kolom Kanan -->
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label>Quantity (pcs)</label>
-                                        <input type="number" name="WO_QTY" class="form-control" 
-                                               value="<?= isset($work_order['WO_QTY']) ? htmlspecialchars($work_order['WO_QTY'], ENT_QUOTES, 'UTF-8') : '1'; ?>" 
-                                               min="1">
                                     </div>
 
                                     <div class="form-group">

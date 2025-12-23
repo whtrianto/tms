@@ -167,6 +167,15 @@
                                     </div>
 
                                     <div class="form-group">
+                                        <label>Quantity (pcs)</label>
+                                        <input type="number" name="WO_QTY" class="form-control" 
+                                               value="1" min="1">
+                                    </div>
+                                </div>
+
+                                <!-- Kolom Kanan -->
+                                <div class="col-md-6">
+                                    <div class="form-group">
                                         <label>Tool ID</label>
                                         <div class="info-display">
                                             -
@@ -199,15 +208,6 @@
                                         <div class="info-display">
                                             -
                                         </div>
-                                    </div>
-                                </div>
-
-                                <!-- Kolom Kanan -->
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label>Quantity (pcs)</label>
-                                        <input type="number" name="WO_QTY" class="form-control" 
-                                               value="1" min="1">
                                     </div>
 
                                     <div class="form-group">
