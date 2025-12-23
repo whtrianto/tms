@@ -260,7 +260,7 @@ class M_tool_work_order extends CI_Model
                     CASE WHEN wo.WO_ACTUAL_COM_DATE IS NULL THEN '' 
                          ELSE CONVERT(VARCHAR(19), wo.WO_ACTUAL_COM_DATE, 120) END AS ACTUAL_COMPLETION_DATE,
                     wo.WO_STATUS,
-                    wo.WO_CONDITION,
+                    ISNULL(wo.WO_CONDITION, 0) AS WO_CONDITION,
                     wo.WO_QTY,
                     wo.WO_URGENCY,
                     wo.WO_REMARKS,

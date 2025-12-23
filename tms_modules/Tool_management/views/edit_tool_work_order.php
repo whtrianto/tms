@@ -230,19 +230,30 @@
                                     <div class="form-group">
                                         <label>Condition After Repair</label>
                                         <select name="WO_CONDITION" class="form-control">
-                                            <option value="">-- Select Condition --</option>
                                             <?php 
-                                            $current_condition = isset($work_order['WO_CONDITION']) ? (int)$work_order['WO_CONDITION'] : '';
+                                            $current_condition = '';
+                                            if (isset($work_order['WO_CONDITION'])) {
+                                                if ($work_order['WO_CONDITION'] === null || $work_order['WO_CONDITION'] === '') {
+                                                    $current_condition = '';
+                                                } else {
+                                                    $current_condition = (int)$work_order['WO_CONDITION'];
+                                                }
+                                            }
                                             $condition_map = array(
                                                 '' => '-- Select Condition --',
-                                                0 => 'None',
-                                                1 => 'O K Modified',
-                                                2 => 'N G Needs Repair',
-                                                3 => 'N G Not Repairable',
-                                                4 => 'O K Repaired'
+                                                '0' => 'None',
+                                                '1' => 'O K Modified',
+                                                '2' => 'N G Needs Repair',
+                                                '3' => 'N G Not Repairable',
+                                                '4' => 'O K Repaired'
                                             );
                                             foreach ($condition_map as $val => $label): 
-                                                $selected = ($current_condition === $val || (string)$current_condition === (string)$val) ? 'selected' : '';
+                                                $selected = '';
+                                                if ($val === '') {
+                                                    $selected = ($current_condition === '' || $current_condition === null) ? 'selected' : '';
+                                                } else {
+                                                    $selected = ((string)$current_condition === $val) ? 'selected' : '';
+                                                }
                                             ?>
                                                 <option value="<?= $val === '' ? '' : $val; ?>" <?= $selected; ?>>
                                                     <?= htmlspecialchars($label, ENT_QUOTES, 'UTF-8'); ?>
@@ -752,7 +763,8 @@
                 cache: false,
                 timeout: 30000
             }).done(function(res) {
-                if (res && res.success) {
+                console.log('Response:', res);
+                if (res && typeof res === 'object' && res.success === true) {
                     if (typeof toastr !== 'undefined') {
                         toastr.success(res.message || 'Work Order berhasil diupdate');
                     } else {
@@ -762,17 +774,33 @@
                         window.location.href = '<?= base_url("Tool_management/tool_work_order"); ?>';
                     }, 1000);
                 } else {
+                    var errorMsg = 'Gagal mengupdate Work Order';
+                    if (res && res.message) {
+                        errorMsg = res.message;
+                    }
                     if (typeof toastr !== 'undefined') {
-                        toastr.warning(res && res.message ? res.message : 'Gagal mengupdate Work Order');
+                        toastr.warning(errorMsg);
                     } else {
-                        alert(res && res.message ? res.message : 'Gagal mengupdate Work Order');
+                        alert(errorMsg);
                     }
                 }
             }).fail(function(xhr, status, error) {
+                console.error('AJAX Error:', xhr, status, error);
+                var errorMsg = 'Gagal mengupdate: ' + (error || status);
+                if (xhr.responseText) {
+                    try {
+                        var errorRes = JSON.parse(xhr.responseText);
+                        if (errorRes && errorRes.message) {
+                            errorMsg = errorRes.message;
+                        }
+                    } catch(e) {
+                        errorMsg = errorMsg + ' - ' + xhr.responseText.substring(0, 100);
+                    }
+                }
                 if (typeof toastr !== 'undefined') {
-                    toastr.error('Gagal mengupdate: ' + (error || status));
+                    toastr.error(errorMsg);
                 } else {
-                    alert('Gagal mengupdate: ' + (error || status));
+                    alert(errorMsg);
                 }
             });
         });
