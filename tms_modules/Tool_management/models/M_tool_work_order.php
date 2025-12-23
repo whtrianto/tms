@@ -532,5 +532,165 @@ class M_tool_work_order extends CI_Model
             return false;
         }
     }
+
+    /**
+     * Add new Work Order
+     */
+    public function add_data($data)
+    {
+        try {
+            $this->db_tms->trans_start();
+
+            // Generate WO_NO
+            $wo_no = $this->generate_wo_no();
+
+            // Prepare insert data
+            $insert_data = array(
+                'WO_NO' => $wo_no,
+                'WO_TYPE' => isset($data['WO_TYPE']) ? (int)$data['WO_TYPE'] : 4, // Default: 4 (Repair)
+                'WO_CREATED_DATE' => isset($data['WO_CREATED_DATE']) && !empty($data['WO_CREATED_DATE']) ? $data['WO_CREATED_DATE'] : date('Y-m-d'),
+                'WO_REQUESTED_BY' => isset($data['WO_REQUESTED_BY']) && $data['WO_REQUESTED_BY'] > 0 ? (int)$data['WO_REQUESTED_BY'] : null,
+                'WO_DEPARTMENT' => isset($data['WO_DEPARTMENT']) && !empty($data['WO_DEPARTMENT']) ? trim($data['WO_DEPARTMENT']) : null,
+                'WO_DEPARTMENT_ID' => isset($data['WO_DEPARTMENT_ID']) && $data['WO_DEPARTMENT_ID'] > 0 ? (int)$data['WO_DEPARTMENT_ID'] : null,
+                'WO_REASON' => isset($data['WO_REASON']) && !empty($data['WO_REASON']) ? trim($data['WO_REASON']) : null,
+                'WO_REMARKS' => isset($data['WO_REMARKS']) && !empty($data['WO_REMARKS']) ? trim($data['WO_REMARKS']) : null,
+                'WO_QTY' => isset($data['WO_QTY']) && $data['WO_QTY'] > 0 ? (int)$data['WO_QTY'] : 1,
+                'WO_TARGET_COM_DATE' => isset($data['WO_TARGET_COM_DATE']) && !empty($data['WO_TARGET_COM_DATE']) ? $data['WO_TARGET_COM_DATE'] : null,
+                'WO_ACTUAL_COM_DATE' => isset($data['WO_ACTUAL_COM_DATE']) && !empty($data['WO_ACTUAL_COM_DATE']) ? $data['WO_ACTUAL_COM_DATE'] : null,
+                'WO_STATUS' => isset($data['WO_STATUS']) && $data['WO_STATUS'] > 0 ? (int)$data['WO_STATUS'] : 1, // Default: 1 (Open)
+                'WO_CONDITION' => isset($data['WO_CONDITION']) && !empty($data['WO_CONDITION']) ? trim($data['WO_CONDITION']) : null,
+                'WO_URGENCY' => isset($data['WO_URGENCY']) && !empty($data['WO_URGENCY']) ? trim($data['WO_URGENCY']) : null,
+                'WO_CREATED_BY' => $this->uid
+            );
+
+            $this->db_tms->insert($this->t('TMS_WORKORDER'), $insert_data);
+
+            $this->db_tms->trans_complete();
+
+            if ($this->db_tms->trans_status() === FALSE) {
+                $this->messages = 'Gagal menambahkan Work Order.';
+                return false;
+            }
+
+            $this->messages = 'Work Order berhasil ditambahkan.';
+            return true;
+        } catch (Exception $e) {
+            log_message('error', '[M_tool_work_order::add_data] Exception: ' . $e->getMessage());
+            $this->messages = 'Error: ' . $e->getMessage();
+            return false;
+        }
+    }
+
+    /**
+     * Update Work Order
+     */
+    public function update_data($id, $data)
+    {
+        try {
+            $id = (int)$id;
+            if ($id <= 0) {
+                $this->messages = 'Work Order ID tidak valid.';
+                return false;
+            }
+
+            // Check if Work Order exists
+            $existing = $this->get_by_id($id);
+            if (!$existing) {
+                $this->messages = 'Work Order tidak ditemukan.';
+                return false;
+            }
+
+            $this->db_tms->trans_start();
+
+            // Prepare update data
+            $update_data = array();
+            
+            if (isset($data['WO_CREATED_DATE']) && !empty($data['WO_CREATED_DATE'])) {
+                $update_data['WO_CREATED_DATE'] = $data['WO_CREATED_DATE'];
+            }
+
+            if (isset($data['WO_REQUESTED_BY'])) {
+                $update_data['WO_REQUESTED_BY'] = $data['WO_REQUESTED_BY'] > 0 ? (int)$data['WO_REQUESTED_BY'] : null;
+            }
+
+            if (isset($data['WO_DEPARTMENT'])) {
+                $update_data['WO_DEPARTMENT'] = !empty($data['WO_DEPARTMENT']) ? trim($data['WO_DEPARTMENT']) : null;
+            }
+
+            if (isset($data['WO_DEPARTMENT_ID'])) {
+                $update_data['WO_DEPARTMENT_ID'] = $data['WO_DEPARTMENT_ID'] > 0 ? (int)$data['WO_DEPARTMENT_ID'] : null;
+            }
+
+            if (isset($data['WO_REMARKS'])) {
+                $update_data['WO_REMARKS'] = !empty($data['WO_REMARKS']) ? trim($data['WO_REMARKS']) : null;
+            }
+
+            if (isset($data['WO_QTY']) && $data['WO_QTY'] > 0) {
+                $update_data['WO_QTY'] = (int)$data['WO_QTY'];
+            }
+
+            if (isset($data['WO_TARGET_COM_DATE'])) {
+                $update_data['WO_TARGET_COM_DATE'] = !empty($data['WO_TARGET_COM_DATE']) ? $data['WO_TARGET_COM_DATE'] : null;
+            }
+
+            if (isset($data['WO_ACTUAL_COM_DATE'])) {
+                $update_data['WO_ACTUAL_COM_DATE'] = !empty($data['WO_ACTUAL_COM_DATE']) ? $data['WO_ACTUAL_COM_DATE'] : null;
+            }
+
+            if (isset($data['WO_CONDITION'])) {
+                $update_data['WO_CONDITION'] = !empty($data['WO_CONDITION']) ? trim($data['WO_CONDITION']) : null;
+            }
+
+            if (isset($data['WO_URGENCY'])) {
+                $update_data['WO_URGENCY'] = !empty($data['WO_URGENCY']) ? trim($data['WO_URGENCY']) : null;
+            }
+
+            if (empty($update_data)) {
+                $this->messages = 'Tidak ada data yang diupdate.';
+                $this->db_tms->trans_rollback();
+                return false;
+            }
+
+            // Update data
+            $this->db_tms->where('WO_ID', $id);
+            $this->db_tms->update($this->t('TMS_WORKORDER'), $update_data);
+
+            $this->db_tms->trans_complete();
+
+            if ($this->db_tms->trans_status() === FALSE) {
+                $this->messages = 'Gagal mengupdate Work Order.';
+                return false;
+            }
+
+            $this->messages = 'Work Order berhasil diupdate.';
+            return true;
+        } catch (Exception $e) {
+            log_message('error', '[M_tool_work_order::update_data] Exception: ' . $e->getMessage());
+            $this->messages = 'Error: ' . $e->getMessage();
+            return false;
+        }
+    }
+
+    /**
+     * Generate Work Order Number
+     */
+    private function generate_wo_no()
+    {
+        $date = date('dmy');
+        $sql = "SELECT TOP 1 WO_NO FROM {$this->t('TMS_WORKORDER')} WHERE WO_NO LIKE ? ORDER BY WO_ID DESC";
+        $q = $this->db_tms->query($sql, array('W-' . $date . '-%'));
+        
+        $seq = 1;
+        if ($q && $q->num_rows() > 0) {
+            $last_no = $q->row()->WO_NO;
+            $parts = explode('-', $last_no);
+            if (count($parts) >= 3) {
+                $last_seq = (int)$parts[2];
+                $seq = $last_seq + 1;
+            }
+        }
+        
+        return 'W-' . $date . '-' . str_pad($seq, 4, '0', STR_PAD_LEFT);
+    }
 }
 

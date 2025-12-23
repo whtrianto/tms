@@ -147,11 +147,17 @@ class Tool_work_order extends MY_Controller
     }
 
     /**
-     * Add page (placeholder)
+     * Add page
      */
     public function add_page()
     {
         $data = array();
+        $data['work_order'] = array(); // Empty array for new work order
+        $data['external_costs'] = array(); // Empty for new work order
+        $data['work_activities'] = $this->tool_work_order->get_work_activities();
+        $data['suppliers'] = $this->tool_work_order->get_suppliers();
+        $data['users'] = $this->tool_work_order->get_users();
+        $data['departments'] = $this->tool_work_order->get_departments();
         $this->view('add_tool_work_order', $data, FALSE);
     }
 
@@ -264,6 +270,97 @@ class Tool_work_order extends MY_Controller
             'success' => $ok,
             'message' => $this->tool_work_order->messages
         ));
+    }
+
+    /**
+     * Submit Work Order data (Add/Edit)
+     */
+    public function submit_data()
+    {
+        if (ob_get_level()) ob_clean();
+        $this->output->set_content_type('application/json', 'UTF-8');
+
+        try {
+            $action = $this->input->post('action', TRUE);
+            
+            if ($action === 'ADD') {
+                $created_date = $this->input->post('WO_CREATED_DATE', TRUE);
+                $requested_by = (int)$this->input->post('WO_REQUESTED_BY', TRUE);
+                $department = $this->input->post('WO_DEPARTMENT', TRUE);
+                $department_id = (int)$this->input->post('WO_DEPARTMENT_ID', TRUE);
+                $reason = (int)$this->input->post('WO_REASON', TRUE);
+                $remarks = $this->input->post('WO_REMARKS', TRUE);
+                $qty = (int)$this->input->post('WO_QTY', TRUE);
+                $target_com_date = $this->input->post('WO_TARGET_COM_DATE', TRUE);
+                $actual_com_date = $this->input->post('WO_ACTUAL_COM_DATE', TRUE);
+                $status = (int)$this->input->post('WO_STATUS', TRUE);
+                $condition = $this->input->post('WO_CONDITION', TRUE);
+                $urgency = $this->input->post('WO_URGENCY', TRUE);
+                
+                $data = array(
+                    'WO_CREATED_DATE' => !empty($created_date) ? $created_date : date('Y-m-d'),
+                    'WO_REQUESTED_BY' => $requested_by > 0 ? $requested_by : null,
+                    'WO_DEPARTMENT' => !empty($department) ? $department : null,
+                    'WO_DEPARTMENT_ID' => $department_id > 0 ? $department_id : null,
+                    'WO_REASON' => $reason > 0 ? $reason : null,
+                    'WO_REMARKS' => !empty($remarks) ? $remarks : null,
+                    'WO_QTY' => $qty > 0 ? $qty : 1,
+                    'WO_TARGET_COM_DATE' => !empty($target_com_date) ? $target_com_date : null,
+                    'WO_ACTUAL_COM_DATE' => !empty($actual_com_date) ? $actual_com_date : null,
+                    'WO_STATUS' => $status > 0 ? $status : 1, // Default: 1 (Open)
+                    'WO_CONDITION' => !empty($condition) ? $condition : null,
+                    'WO_URGENCY' => !empty($urgency) ? $urgency : null,
+                    'WO_TYPE' => 1 // Default type (Repair)
+                );
+                
+                $ok = $this->tool_work_order->add_data($data);
+                echo json_encode(array(
+                    'success' => $ok,
+                    'message' => $this->tool_work_order->messages
+                ));
+            } elseif ($action === 'EDIT') {
+                $wo_id = (int)$this->input->post('WO_ID', TRUE);
+                if ($wo_id <= 0) {
+                    echo json_encode(array('success' => false, 'message' => 'Work Order ID tidak valid.'));
+                    return;
+                }
+                
+                $created_date = $this->input->post('WO_CREATED_DATE', TRUE);
+                $requested_by = (int)$this->input->post('WO_REQUESTED_BY', TRUE);
+                $department = $this->input->post('WO_DEPARTMENT', TRUE);
+                $department_id = (int)$this->input->post('WO_DEPARTMENT_ID', TRUE);
+                $remarks = $this->input->post('WO_REMARKS', TRUE);
+                $qty = (int)$this->input->post('WO_QTY', TRUE);
+                $target_com_date = $this->input->post('WO_TARGET_COM_DATE', TRUE);
+                $actual_com_date = $this->input->post('WO_ACTUAL_COM_DATE', TRUE);
+                $condition = $this->input->post('WO_CONDITION', TRUE);
+                $urgency = $this->input->post('WO_URGENCY', TRUE);
+                
+                $data = array(
+                    'WO_CREATED_DATE' => !empty($created_date) ? $created_date : null,
+                    'WO_REQUESTED_BY' => $requested_by > 0 ? $requested_by : null,
+                    'WO_DEPARTMENT' => !empty($department) ? $department : null,
+                    'WO_DEPARTMENT_ID' => $department_id > 0 ? $department_id : null,
+                    'WO_REMARKS' => !empty($remarks) ? $remarks : null,
+                    'WO_QTY' => $qty > 0 ? $qty : 1,
+                    'WO_TARGET_COM_DATE' => !empty($target_com_date) ? $target_com_date : null,
+                    'WO_ACTUAL_COM_DATE' => !empty($actual_com_date) ? $actual_com_date : null,
+                    'WO_CONDITION' => !empty($condition) ? $condition : null,
+                    'WO_URGENCY' => !empty($urgency) ? $urgency : null
+                );
+                
+                $ok = $this->tool_work_order->update_data($wo_id, $data);
+                echo json_encode(array(
+                    'success' => $ok,
+                    'message' => $this->tool_work_order->messages
+                ));
+            } else {
+                echo json_encode(array('success' => false, 'message' => 'Action tidak valid.'));
+            }
+        } catch (Exception $e) {
+            log_message('error', '[Tool_work_order::submit_data] Exception: ' . $e->getMessage());
+            echo json_encode(array('success' => false, 'message' => 'Error: ' . $e->getMessage()));
+        }
     }
 
     /**
