@@ -58,33 +58,38 @@ class M_tool_inventory extends CI_Model
             LEFT JOIN {$this->t('MS_STORAGE_LOCATION')} sl ON sl.SL_ID = inv.INV_SL_ID
             LEFT JOIN {$this->t('TMS_ORDERING_ITEMS')} ordi ON ordi.ORDI_ID = inv.INV_ORDI_ID
             LEFT JOIN {$this->t('TMS_ORDERING')} ord ON ord.ORD_ID = ordi.ORDI_ORD_ID
-            LEFT JOIN {$this->t('TMS_TOOL_MASTER_LIST_PARTS')} mlparts ON mlparts.TMLP_ML_ID = ml.ML_ID
-            LEFT JOIN {$this->t('MS_PARTS')} part ON part.PART_ID = mlparts.TMLP_PART_ID";
+            LEFT JOIN (
+                SELECT DISTINCT TMLP_ML_ID, 
+                       STUFF((SELECT ', ' + PART_NAME 
+                              FROM {$this->t('TMS_TOOL_MASTER_LIST_PARTS')} tmlp2
+                              INNER JOIN {$this->t('MS_PARTS')} p2 ON p2.PART_ID = tmlp2.TMLP_PART_ID
+                              WHERE tmlp2.TMLP_ML_ID = tmlp1.TMLP_ML_ID
+                              FOR XML PATH('')), 1, 2, '') AS PART_NAME
+                FROM {$this->t('TMS_TOOL_MASTER_LIST_PARTS')} tmlp1
+            ) part_agg ON part_agg.TMLP_ML_ID = ml.ML_ID";
 
         $where = " WHERE (ml.ML_TYPE = 1 OR ml.ML_TYPE IS NULL OR inv.INV_MLR_ID IS NULL)";
         $params = array();
 
-        // Global search
+        // Global search - optimized: only search on indexed or commonly searched fields
         if (!empty($search)) {
             $where .= " AND (
                 CAST(inv.INV_ID AS VARCHAR) LIKE ? OR 
                 inv.INV_TOOL_TAG LIKE ? OR 
                 ISNULL(inv.INV_RQ_NO, ord.ORD_RQ_NO) LIKE ? OR 
-                part.PART_NAME LIKE ? OR 
                 tc.TC_NAME LIKE ? OR 
                 ml.ML_TOOL_DRAW_NO LIKE ? OR 
-                CONVERT(VARCHAR(19), inv.INV_RECEIVED_DATE, 120) LIKE ? OR 
                 inv.INV_DO_NO LIKE ? OR 
                 inv.INV_TOOL_ID LIKE ? OR 
                 CAST(inv.INV_STATUS AS VARCHAR) LIKE ? OR 
                 inv.INV_NOTES LIKE ? OR 
                 sl.SL_NAME LIKE ? OR 
                 mat.MAT_NAME LIKE ? OR 
-                CAST(inv.INV_TOOL_CONDITION AS VARCHAR) LIKE ? OR 
-                CAST(inv.INV_END_CYCLE AS VARCHAR) LIKE ?
+                ISNULL(part_agg.PART_NAME, '') LIKE ?
             )";
             $search_param = '%' . $search . '%';
-            for ($i = 0; $i < 15; $i++) {
+            // Reduced from 15 to 13 parameters - removed date conversions and condition/cycle from global search
+            for ($i = 0; $i < 13; $i++) {
                 $params[] = $search_param;
             }
         }
@@ -94,7 +99,7 @@ class M_tool_inventory extends CI_Model
             0 => 'CAST(inv.INV_ID AS VARCHAR)',
             1 => 'ISNULL(inv.INV_TOOL_TAG, \'\')',
             2 => 'ISNULL(ISNULL(inv.INV_RQ_NO, ord.ORD_RQ_NO), \'\')',
-            3 => 'ISNULL(part.PART_NAME, \'\')',
+            3 => 'ISNULL(part_agg.PART_NAME, \'\')',
             4 => 'ISNULL(tc.TC_NAME, \'\')',
             5 => 'ISNULL(ml.ML_TOOL_DRAW_NO, \'\')',
             6 => 'ISNULL(CONVERT(VARCHAR(19), inv.INV_RECEIVED_DATE, 120), \'\')',
@@ -121,8 +126,8 @@ class M_tool_inventory extends CI_Model
         $count_total_result = $this->db_tms->query($count_total_sql);
         $count_total = $count_total_result && $count_total_result->num_rows() > 0 ? $count_total_result->row()->cnt : 0;
 
-        // Count filtered
-        $count_filtered_sql = "SELECT COUNT(*) as cnt " . $base_from . $where;
+        // Count filtered - use DISTINCT to avoid duplicate rows from JOINs
+        $count_filtered_sql = "SELECT COUNT(DISTINCT inv.INV_ID) as cnt " . $base_from . $where;
         $count_filtered_result = $this->db_tms->query($count_filtered_sql, $params);
         $count_filtered = $count_filtered_result && $count_filtered_result->num_rows() > 0 ? $count_filtered_result->row()->cnt : 0;
 
@@ -130,12 +135,12 @@ class M_tool_inventory extends CI_Model
         $order_column = isset($columns[$order_col]) ? $columns[$order_col] : 'inv.INV_ID';
         $order_direction = strtoupper($order_dir) === 'ASC' ? 'ASC' : 'DESC';
 
-        // Data query
-        $data_sql = "SELECT 
+        // Data query - use DISTINCT to avoid duplicate rows from JOINs
+        $data_sql = "SELECT DISTINCT
                         inv.INV_ID,
                         inv.INV_TOOL_TAG,
                         ISNULL(inv.INV_RQ_NO, ord.ORD_RQ_NO) AS RQ_NO,
-                        ISNULL(part.PART_NAME, '') AS PRODUCT_NAME,
+                        ISNULL(part_agg.PART_NAME, '') AS PRODUCT_NAME,
                         ISNULL(tc.TC_NAME, '') AS TOOL_NAME,
                         ISNULL(ml.ML_TOOL_DRAW_NO, '') AS TOOL_DRAWING_NO,
                         CASE WHEN inv.INV_RECEIVED_DATE IS NULL THEN '' 
