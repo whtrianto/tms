@@ -98,6 +98,30 @@
                                     </div>
 
                                     <div class="form-group">
+                                        <label>W/O No.</label>
+                                        <div class="info-display">
+                                            (Auto-generated)
+                                        </div>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label>W/O Type</label>
+                                        <div class="info-display">
+                                            Repair
+                                        </div>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label>Created By</label>
+                                        <div class="info-display">
+                                            <?php 
+                                            $username = $this->session->userdata('username');
+                                            echo htmlspecialchars($username ? $username : 'SYSTEM', ENT_QUOTES, 'UTF-8'); 
+                                            ?>
+                                        </div>
+                                    </div>
+
+                                    <div class="form-group">
                                         <label>Requested By</label>
                                         <div class="tool-id-input-group">
                                             <input type="text" id="selected_user_name" class="form-control" readonly 
@@ -140,6 +164,41 @@
                                     <div class="form-group">
                                         <label>Remarks</label>
                                         <textarea name="WO_REMARKS" class="form-control" rows="2"></textarea>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label>Tool ID</label>
+                                        <div class="info-display">
+                                            -
+                                        </div>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label>Tool Tag</label>
+                                        <div class="info-display">
+                                            -
+                                        </div>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label>Tool Drawing No</label>
+                                        <div class="info-display">
+                                            -
+                                        </div>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label>Revision</label>
+                                        <div class="info-display">
+                                            0
+                                        </div>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label>Tool Name</label>
+                                        <div class="info-display">
+                                            -
+                                        </div>
                                     </div>
                                 </div>
 
