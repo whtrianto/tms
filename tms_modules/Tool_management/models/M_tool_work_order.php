@@ -732,7 +732,8 @@ class M_tool_work_order extends CI_Model
 
     /**
      * Get tool inventory details by Tool ID for auto-fill
-     * Using VW_TOOL_INVENTORY view for consistency with original server
+     * PHP 5.6.36 & CI3 compatible
+     * Using direct query from TMS_TOOL_INVENTORY for better compatibility
      */
     public function get_tool_inventory_details_by_tool_id($tool_id)
     {
@@ -742,89 +743,64 @@ class M_tool_work_order extends CI_Model
             return null;
         }
 
+        // Escape tool_id for SQL Server
+        $escaped_tool_id = $this->db_tms->escape($tool_id);
+        
         try {
-            // Try using VW_TOOL_INVENTORY view first (same as original server)
-            // Use parameterized query for SQL Server compatibility
-            $sql = "SELECT TOP 1
-                        INV_ID,
-                        INV_TOOL_ID AS TOOL_ID,
-                        ISNULL(INV_TOOL_TAG, '') AS TOOL_TAG,
-                        ML_TOOL_DRAW_NO AS TOOL_DRAWING_NO,
-                        MLR_REV AS REVISION,
-                        TC_NAME AS TOOL_NAME
-                    FROM {$this->t('VW_TOOL_INVENTORY')}
-                    WHERE INV_TOOL_ID = ?
-                    ORDER BY INV_ID DESC";
-            
-            log_message('debug', '[M_tool_work_order::get_tool_inventory_details_by_tool_id] Querying Tool ID using VW_TOOL_INVENTORY: [' . $tool_id . ']');
-            
-            $q = $this->db_tms->query($sql, array($tool_id));
-            
-            if (!$q) {
-                $error = $this->db_tms->error();
-                $error_msg = isset($error['message']) ? $error['message'] : 'Unknown error';
-                log_message('error', '[M_tool_work_order::get_tool_inventory_details_by_tool_id] Query error: ' . $error_msg . ' - Tool ID: [' . $tool_id . ']');
-                log_message('error', '[M_tool_work_order::get_tool_inventory_details_by_tool_id] SQL: ' . $sql);
-                
-                // Fallback: Try manual query if VIEW doesn't work
-                return $this->get_tool_inventory_details_manual($tool_id);
-            }
-            
-            if ($q->num_rows() > 0) {
-                $result = $q->row_array();
-                log_message('debug', '[M_tool_work_order::get_tool_inventory_details_by_tool_id] Found Tool ID: [' . $tool_id . ']');
-                return $result;
-            } else {
-                log_message('debug', '[M_tool_work_order::get_tool_inventory_details_by_tool_id] Tool ID not found in VW_TOOL_INVENTORY: [' . $tool_id . ']');
-                // Fallback: Try manual query
-                return $this->get_tool_inventory_details_manual($tool_id);
-            }
-        } catch (Exception $e) {
-            log_message('error', '[M_tool_work_order::get_tool_inventory_details_by_tool_id] Exception: ' . $e->getMessage());
-            // Fallback: Try manual query
-            return $this->get_tool_inventory_details_manual($tool_id);
-        }
-    }
-
-    /**
-     * Fallback method: Get tool inventory details manually (if VIEW fails)
-     */
-    private function get_tool_inventory_details_manual($tool_id)
-    {
-        $tool_id = trim((string)$tool_id);
-        if (empty($tool_id)) {
-            return null;
-        }
-
-        try {
+            // Direct query from TMS_TOOL_INVENTORY (more reliable for PHP 5.6.36)
             $sql = "SELECT TOP 1
                         inv.INV_ID,
                         inv.INV_TOOL_ID AS TOOL_ID,
                         ISNULL(inv.INV_TOOL_TAG, '') AS TOOL_TAG,
-                        ml.ML_TOOL_DRAW_NO AS TOOL_DRAWING_NO,
-                        mlr.MLR_REV AS REVISION,
+                        ISNULL(ml.ML_TOOL_DRAW_NO, '') AS TOOL_DRAWING_NO,
+                        ISNULL(mlr.MLR_REV, 0) AS REVISION,
                         ISNULL(tc.TC_NAME, '') AS TOOL_NAME
                     FROM {$this->t('TMS_TOOL_INVENTORY')} inv
                     INNER JOIN {$this->t('TMS_TOOL_MASTER_LIST_REV')} mlr ON mlr.MLR_ID = inv.INV_MLR_ID
                     INNER JOIN {$this->t('TMS_TOOL_MASTER_LIST')} ml ON ml.ML_ID = mlr.MLR_ML_ID
                     LEFT JOIN {$this->t('MS_TOOL_CLASS')} tc ON tc.TC_ID = mlr.MLR_TC_ID
-                    WHERE inv.INV_TOOL_ID = ?
+                    WHERE inv.INV_TOOL_ID = " . $escaped_tool_id . "
                     ORDER BY inv.INV_ID DESC";
             
-            log_message('debug', '[M_tool_work_order::get_tool_inventory_details_manual] Querying Tool ID manually: [' . $tool_id . ']');
+            log_message('debug', '[M_tool_work_order::get_tool_inventory_details_by_tool_id] Querying Tool ID: [' . $tool_id . ']');
+            log_message('debug', '[M_tool_work_order::get_tool_inventory_details_by_tool_id] SQL: ' . $sql);
             
-            $q = $this->db_tms->query($sql, array($tool_id));
+            $q = $this->db_tms->query($sql);
             
-            if ($q && $q->num_rows() > 0) {
+            if (!$q) {
+                $error = $this->db_tms->error();
+                $error_msg = (isset($error['message']) && $error['message']) ? $error['message'] : 'Unknown error';
+                log_message('error', '[M_tool_work_order::get_tool_inventory_details_by_tool_id] Query error: ' . $error_msg . ' - Tool ID: [' . $tool_id . ']');
+                return null;
+            }
+            
+            if ($q->num_rows() > 0) {
                 $result = $q->row_array();
-                log_message('debug', '[M_tool_work_order::get_tool_inventory_details_manual] Found Tool ID: [' . $tool_id . ']');
+                
+                // Ensure all fields are set with default values (PHP 5.6.36 compatible)
+                if (!isset($result['TOOL_TAG']) || $result['TOOL_TAG'] === null) {
+                    $result['TOOL_TAG'] = '';
+                }
+                if (!isset($result['TOOL_DRAWING_NO']) || $result['TOOL_DRAWING_NO'] === null) {
+                    $result['TOOL_DRAWING_NO'] = '';
+                }
+                if (!isset($result['REVISION']) || $result['REVISION'] === null) {
+                    $result['REVISION'] = '0';
+                }
+                if (!isset($result['TOOL_NAME']) || $result['TOOL_NAME'] === null) {
+                    $result['TOOL_NAME'] = '';
+                }
+                
+                log_message('debug', '[M_tool_work_order::get_tool_inventory_details_by_tool_id] Found Tool ID: [' . $tool_id . ']');
+                log_message('debug', '[M_tool_work_order::get_tool_inventory_details_by_tool_id] TOOL_TAG: [' . $result['TOOL_TAG'] . '], TOOL_DRAWING_NO: [' . $result['TOOL_DRAWING_NO'] . '], REVISION: [' . $result['REVISION'] . '], TOOL_NAME: [' . $result['TOOL_NAME'] . ']');
+                
                 return $result;
             } else {
-                log_message('debug', '[M_tool_work_order::get_tool_inventory_details_manual] Tool ID not found: [' . $tool_id . ']');
+                log_message('debug', '[M_tool_work_order::get_tool_inventory_details_by_tool_id] Tool ID not found: [' . $tool_id . ']');
                 return null;
             }
         } catch (Exception $e) {
-            log_message('error', '[M_tool_work_order::get_tool_inventory_details_manual] Exception: ' . $e->getMessage());
+            log_message('error', '[M_tool_work_order::get_tool_inventory_details_by_tool_id] Exception: ' . $e->getMessage());
             return null;
         }
     }

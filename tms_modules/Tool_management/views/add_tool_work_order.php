@@ -190,9 +190,6 @@
                                                 <button type="button" class="btn btn-primary" id="btnSelectToolID" data-toggle="modal" data-target="#modalSelectToolID">
                                                     <i class="fa fa-search"></i> Select
                                                 </button>
-                                                <button type="button" class="btn btn-info" id="btnSelectToolIDTab" title="Open in new tab">
-                                                    <i class="fa fa-external-link"></i> Tab
-                                                </button>
                                             </div>
                                         </div>
                                     </div>
@@ -704,32 +701,16 @@
             $(this).closest('tr').trigger('click');
         });
 
-        // Handle Tab button for Tool ID selection
-        $('#btnSelectToolIDTab').on('click', function(e) {
-            e.preventDefault();
-            var url = '<?= base_url("Tool_management/tool_work_order/select_tool_id_tab"); ?>';
-            var windowFeatures = 'width=900,height=600,scrollbars=yes,resizable=yes';
-            var newWindow = window.open(url, 'SelectToolID', windowFeatures);
-            
-            // Listen for message from child window
-            window.addEventListener('message', function(event) {
-                if (event.data && event.data.action === 'tool_id_selected') {
-                    var toolId = event.data.tool_id;
-                    var invId = event.data.inv_id;
-                    
-                    if (toolId) {
-                        $('#selected_tool_id').val(toolId);
-                        $('#selected_tool_inv_id').val(invId || '');
-                        $('#selected_tool_id_display').val(toolId);
-                        loadToolInventoryDetails(toolId);
-                    }
-                }
-            });
-        });
-
-        // Function to load Tool Inventory details
+        // Function to load Tool Inventory details (PHP 5.6.36 & CI3 compatible)
         function loadToolInventoryDetails(toolId) {
             if (!toolId || toolId === '') {
+                clearToolFields();
+                return;
+            }
+
+            // Trim toolId
+            toolId = String(toolId).replace(/^\s+|\s+$/g, '');
+            if (toolId === '') {
                 clearToolFields();
                 return;
             }
@@ -744,43 +725,71 @@
                 type: 'POST',
                 dataType: 'json',
                 data: { 
-                    tool_id: toolId.trim()
-                },
-                beforeSend: function() {
-                    console.log('[loadToolInventoryDetails] Sending Tool ID:', toolId.trim());
+                    tool_id: toolId
                 }
             }).done(function(res) {
-                console.log('[loadToolInventoryDetails] Response:', res);
-                $toolIdDisplay.val(originalVal); // Restore original value
+                $toolIdDisplay.val(originalVal);
                 
-                if (res && res.success && res.data) {
-                    var d = res.data;
-                    
-                    // Auto-fill all fields
-                    $('#tool_tag_display').text(d.TOOL_TAG || '-');
-                    $('#tool_drawing_no_display').text(d.TOOL_DRAWING_NO || '-');
-                    $('#revision_display').text(d.REVISION || '0');
-                    $('#tool_name_display').text(d.TOOL_NAME || '-');
-                    
-                    // Show success message
-                    if (typeof toastr !== 'undefined') {
-                        toastr.success('Tool Information loaded successfully');
+                // Check response structure (compatible with PHP 5.6.36)
+                if (res && typeof res === 'object') {
+                    if (res.success === true && res.data && typeof res.data === 'object') {
+                        var d = res.data;
+                        
+                        // Auto-fill all fields with null checks
+                        var toolTag = (d.TOOL_TAG !== undefined && d.TOOL_TAG !== null) ? String(d.TOOL_TAG) : '-';
+                        var toolDrawingNo = (d.TOOL_DRAWING_NO !== undefined && d.TOOL_DRAWING_NO !== null) ? String(d.TOOL_DRAWING_NO) : '-';
+                        var revision = (d.REVISION !== undefined && d.REVISION !== null) ? String(d.REVISION) : '0';
+                        var toolName = (d.TOOL_NAME !== undefined && d.TOOL_NAME !== null) ? String(d.TOOL_NAME) : '-';
+                        
+                        $('#tool_tag_display').text(toolTag);
+                        $('#tool_drawing_no_display').text(toolDrawingNo);
+                        $('#revision_display').text(revision);
+                        $('#tool_name_display').text(toolName);
+                        
+                        // Show success message
+                        if (typeof toastr !== 'undefined') {
+                            toastr.success('Tool Information loaded successfully');
+                        }
+                    } else {
+                        clearToolFields();
+                        var errorMsg = (res.message !== undefined) ? String(res.message) : 'Tool ID tidak ditemukan';
+                        if (typeof toastr !== 'undefined') {
+                            toastr.warning(errorMsg);
+                        } else {
+                            alert(errorMsg);
+                        }
                     }
                 } else {
                     clearToolFields();
                     if (typeof toastr !== 'undefined') {
-                        toastr.warning(res && res.message ? res.message : 'Tool ID tidak ditemukan');
+                        toastr.warning('Invalid response format');
                     } else {
-                        alert(res && res.message ? res.message : 'Tool ID tidak ditemukan');
+                        alert('Invalid response format');
                     }
                 }
             }).fail(function(xhr, status, error) {
-                $toolIdDisplay.val(originalVal); // Restore original value
+                $toolIdDisplay.val(originalVal);
                 clearToolFields();
-                if (typeof toastr !== 'undefined') {
-                    toastr.error('Gagal memuat data Tool: ' + (error || status));
+                
+                // Try to parse error response
+                var errorMsg = 'Gagal memuat data Tool';
+                if (xhr.responseText) {
+                    try {
+                        var errorRes = JSON.parse(xhr.responseText);
+                        if (errorRes && errorRes.message) {
+                            errorMsg = errorRes.message;
+                        }
+                    } catch(e) {
+                        errorMsg = errorMsg + ': ' + (error || status);
+                    }
                 } else {
-                    alert('Gagal memuat data Tool: ' + (error || status));
+                    errorMsg = errorMsg + ': ' + (error || status);
+                }
+                
+                if (typeof toastr !== 'undefined') {
+                    toastr.error(errorMsg);
+                } else {
+                    alert(errorMsg);
                 }
             });
         }

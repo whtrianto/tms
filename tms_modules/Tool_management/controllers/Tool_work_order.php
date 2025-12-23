@@ -211,6 +211,7 @@ class Tool_work_order extends MY_Controller
 
     /**
      * Get Tool Inventory details by Tool ID (AJAX)
+     * PHP 5.6.36 & CI3 compatible
      */
     public function get_tool_inventory_details()
     {
@@ -228,10 +229,18 @@ class Tool_work_order extends MY_Controller
 
             $details = $this->tool_work_order->get_tool_inventory_details_by_tool_id($tool_id);
             
-            if ($details) {
+            if ($details && is_array($details) && count($details) > 0) {
                 log_message('debug', '[Tool_work_order::get_tool_inventory_details] Found details for Tool ID: [' . $tool_id . ']');
-                log_message('debug', '[Tool_work_order::get_tool_inventory_details] Details: ' . json_encode($details));
-                echo json_encode(array('success' => true, 'data' => $details), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+                
+                // PHP 5.6.36 compatible - use json_encode without flags if not available
+                if (defined('JSON_UNESCAPED_SLASHES') && defined('JSON_UNESCAPED_UNICODE')) {
+                    echo json_encode(array('success' => true, 'data' => $details), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+                } else {
+                    // Fallback for older PHP versions
+                    $json = json_encode(array('success' => true, 'data' => $details));
+                    $json = str_replace('\\/', '/', $json);
+                    echo $json;
+                }
             } else {
                 log_message('debug', '[Tool_work_order::get_tool_inventory_details] Tool ID not found: [' . $tool_id . ']');
                 echo json_encode(array('success' => false, 'message' => 'Tool ID tidak ditemukan.'));
@@ -240,17 +249,6 @@ class Tool_work_order extends MY_Controller
             log_message('error', '[Tool_work_order::get_tool_inventory_details] Exception: ' . $e->getMessage());
             echo json_encode(array('success' => false, 'message' => 'Error: ' . $e->getMessage()));
         }
-    }
-
-    /**
-     * Select Tool ID in new tab/window
-     */
-    public function select_tool_id_tab()
-    {
-        $data = array();
-        $data['tool_inventory_modal'] = $this->tool_work_order->get_tool_inventory_for_modal();
-        $data['title'] = 'Select Tool ID';
-        $this->view('select_tool_id_tab', $data, FALSE);
     }
 
     /**
