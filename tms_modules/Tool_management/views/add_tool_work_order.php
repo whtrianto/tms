@@ -106,9 +106,13 @@
 
                                     <div class="form-group">
                                         <label>W/O Type</label>
-                                        <div class="info-display">
-                                            Repair
-                                        </div>
+                                        <select name="WO_TYPE" class="form-control">
+                                            <option value="1" selected>Repair</option>
+                                            <option value="2">Design Change</option>
+                                            <option value="3">Modification</option>
+                                            <option value="4">Tool Making</option>
+                                            <option value="5">Others</option>
+                                        </select>
                                     </div>
 
                                     <div class="form-group">
@@ -177,35 +181,41 @@
                                 <div class="col-md-6">
                                     <div class="form-group">
                                         <label>Tool ID</label>
-                                        <div class="info-display">
-                                            -
+                                        <div class="tool-id-input-group">
+                                            <input type="text" id="selected_tool_id_display" class="form-control" readonly 
+                                                   placeholder="Click button to select Tool ID">
+                                            <input type="hidden" name="WO_INV_ID" id="selected_tool_inv_id" value="">
+                                            <input type="hidden" name="WO_TOOL_ID" id="selected_tool_id" value="">
+                                            <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#modalSelectToolID">
+                                                <i class="fa fa-search"></i> Select
+                                            </button>
                                         </div>
                                     </div>
 
                                     <div class="form-group">
                                         <label>Tool Tag</label>
-                                        <div class="info-display">
+                                        <div class="info-display" id="tool_tag_display">
                                             -
                                         </div>
                                     </div>
 
                                     <div class="form-group">
                                         <label>Tool Drawing No</label>
-                                        <div class="info-display">
+                                        <div class="info-display" id="tool_drawing_no_display">
                                             -
                                         </div>
                                     </div>
 
                                     <div class="form-group">
                                         <label>Revision</label>
-                                        <div class="info-display">
+                                        <div class="info-display" id="revision_display">
                                             0
                                         </div>
                                     </div>
 
                                     <div class="form-group">
                                         <label>Tool Name</label>
-                                        <div class="info-display">
+                                        <div class="info-display" id="tool_name_display">
                                             -
                                         </div>
                                     </div>
@@ -409,6 +419,73 @@
     </div>
 </div>
 
+<!-- Modal Select Tool ID -->
+<div class="modal fade" id="modalSelectToolID" tabindex="-1" role="dialog" aria-labelledby="modalSelectToolIDLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalSelectToolIDLabel">Select Tool ID</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="table-responsive">
+                    <table id="tableToolInventory" class="table table-bordered table-striped table-hover w-100">
+                        <thead>
+                            <tr class="text-center">
+                                <th>ID</th>
+                                <th>Tool ID</th>
+                                <th>Tool Drawing No</th>
+                                <th>Revision</th>
+                                <th>Tool Name</th>
+                                <th>Tool Status</th>
+                                <th>Remarks</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php if (!empty($tool_inventory_modal)): ?>
+                                <?php foreach ($tool_inventory_modal as $tool): ?>
+                                    <tr class="clickable-row" 
+                                        data-tool-id="<?= isset($tool['TOOL_ID']) ? htmlspecialchars($tool['TOOL_ID'], ENT_QUOTES, 'UTF-8') : ''; ?>"
+                                        data-inv-id="<?= isset($tool['ID']) ? (int)$tool['ID'] : 0; ?>">
+                                        <td><?= isset($tool['ID']) ? htmlspecialchars($tool['ID'], ENT_QUOTES, 'UTF-8') : ''; ?></td>
+                                        <td>
+                                            <a href="#" class="select-tool-id-link text-primary" style="text-decoration: underline;">
+                                                <?= isset($tool['TOOL_ID']) ? htmlspecialchars($tool['TOOL_ID'], ENT_QUOTES, 'UTF-8') : ''; ?>
+                                            </a>
+                                        </td>
+                                        <td><?= isset($tool['TOOL_DRAWING_NO']) ? htmlspecialchars($tool['TOOL_DRAWING_NO'], ENT_QUOTES, 'UTF-8') : ''; ?></td>
+                                        <td><?= isset($tool['REVISION']) ? htmlspecialchars($tool['REVISION'], ENT_QUOTES, 'UTF-8') : '0'; ?></td>
+                                        <td><?= isset($tool['TOOL_NAME']) ? htmlspecialchars($tool['TOOL_NAME'], ENT_QUOTES, 'UTF-8') : ''; ?></td>
+                                        <td><?= isset($tool['TOOL_STATUS']) ? htmlspecialchars($tool['TOOL_STATUS'], ENT_QUOTES, 'UTF-8') : ''; ?></td>
+                                        <td><?= isset($tool['REMARKS']) ? htmlspecialchars($tool['REMARKS'], ENT_QUOTES, 'UTF-8') : ''; ?></td>
+                                        <td>
+                                            <button type="button" class="btn btn-sm btn-primary btn-select-tool-id" 
+                                                    data-tool-id="<?= isset($tool['TOOL_ID']) ? htmlspecialchars($tool['TOOL_ID'], ENT_QUOTES, 'UTF-8') : ''; ?>"
+                                                    data-inv-id="<?= isset($tool['ID']) ? (int)$tool['ID'] : 0; ?>">
+                                                Select
+                                            </button>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            <?php else: ?>
+                                <tr>
+                                    <td colspan="8" class="text-center">No tool inventory found</td>
+                                </tr>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Modal External Cost -->
 <div class="modal fade" id="modalExternalCost" tabindex="-1" role="dialog" aria-labelledby="modalExternalCostLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg" role="document">
@@ -569,6 +646,99 @@
             e.preventDefault();
             $(this).closest('tr').trigger('click');
         });
+
+        // Handle Tool ID Selection
+        $('#tableToolInventory tbody').on('click', 'tr.clickable-row, .btn-select-tool-id', function(e) {
+            e.preventDefault();
+            var $row = $(this).closest('tr');
+            var toolId = $row.data('tool-id') || $(this).data('tool-id');
+            var invId = $row.data('inv-id') || $(this).data('inv-id');
+            
+            if (!toolId || toolId === '') {
+                if (typeof toastr !== 'undefined') {
+                    toastr.warning('Tool ID tidak valid');
+                }
+                return;
+            }
+            
+            // Set Tool ID display
+            $('#selected_tool_id').val(toolId);
+            $('#selected_tool_inv_id').val(invId);
+            $('#selected_tool_id_display').val(toolId);
+            
+            // Close modal
+            $('#modalSelectToolID').modal('hide');
+            
+            // Load Tool Inventory details to auto-fill fields
+            loadToolInventoryDetails(toolId);
+        });
+
+        $('#tableToolInventory tbody').on('click', 'a.select-tool-id-link', function(e) {
+            e.preventDefault();
+            $(this).closest('tr').trigger('click');
+        });
+
+        // Function to load Tool Inventory details
+        function loadToolInventoryDetails(toolId) {
+            if (!toolId || toolId === '') {
+                clearToolFields();
+                return;
+            }
+
+            // Show loading indicator
+            var $toolIdDisplay = $('#selected_tool_id_display');
+            var originalVal = $toolIdDisplay.val();
+            $toolIdDisplay.val('Loading...');
+
+            $.ajax({
+                url: '<?= base_url("Tool_management/tool_work_order/get_tool_inventory_details"); ?>',
+                type: 'POST',
+                dataType: 'json',
+                data: { 
+                    tool_id: toolId 
+                }
+            }).done(function(res) {
+                $toolIdDisplay.val(originalVal); // Restore original value
+                
+                if (res && res.success && res.data) {
+                    var d = res.data;
+                    
+                    // Auto-fill all fields
+                    $('#tool_tag_display').text(d.TOOL_TAG || '-');
+                    $('#tool_drawing_no_display').text(d.TOOL_DRAWING_NO || '-');
+                    $('#revision_display').text(d.REVISION || '0');
+                    $('#tool_name_display').text(d.TOOL_NAME || '-');
+                    
+                    // Show success message
+                    if (typeof toastr !== 'undefined') {
+                        toastr.success('Tool Information loaded successfully');
+                    }
+                } else {
+                    clearToolFields();
+                    if (typeof toastr !== 'undefined') {
+                        toastr.warning(res && res.message ? res.message : 'Tool ID tidak ditemukan');
+                    } else {
+                        alert(res && res.message ? res.message : 'Tool ID tidak ditemukan');
+                    }
+                }
+            }).fail(function(xhr, status, error) {
+                $toolIdDisplay.val(originalVal); // Restore original value
+                clearToolFields();
+                if (typeof toastr !== 'undefined') {
+                    toastr.error('Gagal memuat data Tool: ' + (error || status));
+                } else {
+                    alert('Gagal memuat data Tool: ' + (error || status));
+                }
+            });
+        }
+
+        // Function to clear Tool fields
+        function clearToolFields() {
+            $('#tool_tag_display').text('-');
+            $('#tool_drawing_no_display').text('-');
+            $('#revision_display').text('0');
+            $('#tool_name_display').text('-');
+        }
 
         // Calculate Sub Total
         function calculateSubTotal() {

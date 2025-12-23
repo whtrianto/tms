@@ -547,12 +547,12 @@ class M_tool_work_order extends CI_Model
             // Prepare insert data
             $insert_data = array(
                 'WO_NO' => $wo_no,
-                'WO_TYPE' => isset($data['WO_TYPE']) ? (int)$data['WO_TYPE'] : 4, // Default: 4 (Repair)
+                'WO_TYPE' => isset($data['WO_TYPE']) ? (int)$data['WO_TYPE'] : 1, // Default: 1 (Repair)
                 'WO_CREATED_DATE' => isset($data['WO_CREATED_DATE']) && !empty($data['WO_CREATED_DATE']) ? $data['WO_CREATED_DATE'] : date('Y-m-d'),
                 'WO_REQUESTED_BY' => isset($data['WO_REQUESTED_BY']) && $data['WO_REQUESTED_BY'] > 0 ? (int)$data['WO_REQUESTED_BY'] : null,
                 'WO_DEPARTMENT' => isset($data['WO_DEPARTMENT']) && !empty($data['WO_DEPARTMENT']) ? trim($data['WO_DEPARTMENT']) : null,
                 'WO_DEPARTMENT_ID' => isset($data['WO_DEPARTMENT_ID']) && $data['WO_DEPARTMENT_ID'] > 0 ? (int)$data['WO_DEPARTMENT_ID'] : null,
-                'WO_REASON' => isset($data['WO_REASON']) && !empty($data['WO_REASON']) ? trim($data['WO_REASON']) : null,
+                'WO_REASON' => isset($data['WO_REASON']) && $data['WO_REASON'] > 0 ? (int)$data['WO_REASON'] : null,
                 'WO_REMARKS' => isset($data['WO_REMARKS']) && !empty($data['WO_REMARKS']) ? trim($data['WO_REMARKS']) : null,
                 'WO_QTY' => isset($data['WO_QTY']) && $data['WO_QTY'] > 0 ? (int)$data['WO_QTY'] : 1,
                 'WO_TARGET_COM_DATE' => isset($data['WO_TARGET_COM_DATE']) && !empty($data['WO_TARGET_COM_DATE']) ? $data['WO_TARGET_COM_DATE'] : null,
@@ -560,6 +560,7 @@ class M_tool_work_order extends CI_Model
                 'WO_STATUS' => isset($data['WO_STATUS']) && $data['WO_STATUS'] > 0 ? (int)$data['WO_STATUS'] : 1, // Default: 1 (Open)
                 'WO_CONDITION' => isset($data['WO_CONDITION']) && !empty($data['WO_CONDITION']) ? trim($data['WO_CONDITION']) : null,
                 'WO_URGENCY' => isset($data['WO_URGENCY']) && !empty($data['WO_URGENCY']) ? trim($data['WO_URGENCY']) : null,
+                'WO_INV_ID' => isset($data['WO_INV_ID']) && $data['WO_INV_ID'] > 0 ? (int)$data['WO_INV_ID'] : null,
                 'WO_CREATED_BY' => $this->uid
             );
 
@@ -690,7 +691,71 @@ class M_tool_work_order extends CI_Model
             }
         }
         
-        return 'W-' . $date . '-' . str_pad($seq, 4, '0', STR_PAD_LEFT);
+            return 'W-' . $date . '-' . str_pad($seq, 4, '0', STR_PAD_LEFT);
+    }
+
+    /**
+     * Get tool inventory for modal popup (ID, Tool ID, Tool Drawing No, Revision, Tool Name, Tool Status, Remarks)
+     */
+    public function get_tool_inventory_for_modal()
+    {
+        $sql = "SELECT TOP 500
+                    inv.INV_ID AS ID,
+                    inv.INV_TOOL_ID AS TOOL_ID,
+                    ml.ML_TOOL_DRAW_NO AS TOOL_DRAWING_NO,
+                    mlr.MLR_REV AS REVISION,
+                    ISNULL(tc.TC_NAME, '') AS TOOL_NAME,
+                    CASE inv.INV_STATUS
+                        WHEN 1 THEN 'New'
+                        WHEN 2 THEN 'Allocated'
+                        WHEN 3 THEN 'Available'
+                        WHEN 4 THEN 'InUsed'
+                        WHEN 5 THEN 'Onhold'
+                        WHEN 6 THEN 'Scrapped'
+                        WHEN 7 THEN 'Repairing'
+                        WHEN 8 THEN 'Modifying'
+                        WHEN 9 THEN 'DesignChange'
+                        ELSE 'Unknown'
+                    END AS TOOL_STATUS,
+                    ISNULL(inv.INV_NOTES, '') AS REMARKS,
+                    ISNULL(inv.INV_TOOL_TAG, '') AS TOOL_TAG,
+                    inv.INV_MLR_ID AS MLR_ID
+                FROM {$this->t('TMS_TOOL_INVENTORY')} inv
+                INNER JOIN {$this->t('TMS_TOOL_MASTER_LIST_REV')} mlr ON mlr.MLR_ID = inv.INV_MLR_ID
+                INNER JOIN {$this->t('TMS_TOOL_MASTER_LIST')} ml ON ml.ML_ID = mlr.MLR_ML_ID
+                LEFT JOIN {$this->t('MS_TOOL_CLASS')} tc ON tc.TC_ID = mlr.MLR_TC_ID
+                WHERE inv.INV_TOOL_ID IS NOT NULL AND inv.INV_TOOL_ID <> ''
+                ORDER BY inv.INV_TOOL_ID ASC";
+        $q = $this->db_tms->query($sql);
+        return $q && $q->num_rows() > 0 ? $q->result_array() : array();
+    }
+
+    /**
+     * Get tool inventory details by Tool ID for auto-fill
+     */
+    public function get_tool_inventory_details_by_tool_id($tool_id)
+    {
+        $tool_id = trim((string)$tool_id);
+        if (empty($tool_id)) {
+            return null;
+        }
+
+        $sql = "SELECT TOP 1
+                    inv.INV_ID,
+                    inv.INV_TOOL_ID AS TOOL_ID,
+                    ISNULL(inv.INV_TOOL_TAG, '') AS TOOL_TAG,
+                    ml.ML_TOOL_DRAW_NO AS TOOL_DRAWING_NO,
+                    mlr.MLR_REV AS REVISION,
+                    ISNULL(tc.TC_NAME, '') AS TOOL_NAME
+                FROM {$this->t('TMS_TOOL_INVENTORY')} inv
+                INNER JOIN {$this->t('TMS_TOOL_MASTER_LIST_REV')} mlr ON mlr.MLR_ID = inv.INV_MLR_ID
+                INNER JOIN {$this->t('TMS_TOOL_MASTER_LIST')} ml ON ml.ML_ID = mlr.MLR_ML_ID
+                LEFT JOIN {$this->t('MS_TOOL_CLASS')} tc ON tc.TC_ID = mlr.MLR_TC_ID
+                WHERE inv.INV_TOOL_ID = ?
+                ORDER BY inv.INV_ID DESC";
+        
+        $q = $this->db_tms->query($sql, array($tool_id));
+        return $q && $q->num_rows() > 0 ? $q->row_array() : null;
     }
 }
 

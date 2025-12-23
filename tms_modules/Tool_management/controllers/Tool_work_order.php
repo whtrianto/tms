@@ -158,6 +158,7 @@ class Tool_work_order extends MY_Controller
         $data['suppliers'] = $this->tool_work_order->get_suppliers();
         $data['users'] = $this->tool_work_order->get_users();
         $data['departments'] = $this->tool_work_order->get_departments();
+        $data['tool_inventory_modal'] = $this->tool_work_order->get_tool_inventory_for_modal();
         $this->view('add_tool_work_order', $data, FALSE);
     }
 
@@ -285,6 +286,7 @@ class Tool_work_order extends MY_Controller
             
             if ($action === 'ADD') {
                 $created_date = $this->input->post('WO_CREATED_DATE', TRUE);
+                $wo_type = (int)$this->input->post('WO_TYPE', TRUE);
                 $requested_by = (int)$this->input->post('WO_REQUESTED_BY', TRUE);
                 $department = $this->input->post('WO_DEPARTMENT', TRUE);
                 $department_id = (int)$this->input->post('WO_DEPARTMENT_ID', TRUE);
@@ -296,9 +298,11 @@ class Tool_work_order extends MY_Controller
                 $status = (int)$this->input->post('WO_STATUS', TRUE);
                 $condition = $this->input->post('WO_CONDITION', TRUE);
                 $urgency = $this->input->post('WO_URGENCY', TRUE);
+                $inv_id = (int)$this->input->post('WO_INV_ID', TRUE);
                 
                 $data = array(
                     'WO_CREATED_DATE' => !empty($created_date) ? $created_date : date('Y-m-d'),
+                    'WO_TYPE' => $wo_type > 0 ? $wo_type : 1, // Default: 1 (Repair)
                     'WO_REQUESTED_BY' => $requested_by > 0 ? $requested_by : null,
                     'WO_DEPARTMENT' => !empty($department) ? $department : null,
                     'WO_DEPARTMENT_ID' => $department_id > 0 ? $department_id : null,
@@ -310,7 +314,7 @@ class Tool_work_order extends MY_Controller
                     'WO_STATUS' => $status > 0 ? $status : 1, // Default: 1 (Open)
                     'WO_CONDITION' => !empty($condition) ? $condition : null,
                     'WO_URGENCY' => !empty($urgency) ? $urgency : null,
-                    'WO_TYPE' => 1 // Default type (Repair)
+                    'WO_INV_ID' => $inv_id > 0 ? $inv_id : null
                 );
                 
                 $ok = $this->tool_work_order->add_data($data);
