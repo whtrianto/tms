@@ -145,6 +145,7 @@
             order: [[0,'desc']],
             autoWidth: false,
             scrollX: true,
+            dom: 'lrtip', // Hide search box (default is 'lfrtip', remove 'f' to hide search)
             columnDefs: [
                 { orderable:false, targets:[15] },
                 { width:'50px', targets:0 },
@@ -162,7 +163,7 @@
                 { width:'100px', targets:12 },
                 { width:'100px', targets:13 },
                 { width:'80px', targets:14 },
-                { width:'120px', targets:15 }
+                { width:'180px', targets:15 }
             ],
             language: {
                 processing: '<div class="spinner-border spinner-border-sm" role="status"><span class="sr-only">Loading...</span></div> Processing...',

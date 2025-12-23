@@ -482,7 +482,7 @@ class Tool_inventory extends MY_Controller
                     $result['success'] = true;
                     $result['message'] = $this->tool_inventory->messages ?: 'Tool Inventory berhasil diupdate.';
                 } else {
-                    $result['success'] = false;
+            $result['success'] = false;
                     $result['message'] = $this->tool_inventory->messages ?: 'Gagal mengupdate Tool Inventory.';
                 }
             } else {

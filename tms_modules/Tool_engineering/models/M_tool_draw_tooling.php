@@ -133,7 +133,7 @@ if (!class_exists('M_tool_draw_tooling')) {
      */
     public function get_tools()
     {
-        $sql = "SELECT TC_ID, TC_NAME, TC_DESC, TC_ABBR, TC_TYPE 
+        $sql = "SELECT TC_ID, TC_NAME, TC_DESC 
                 FROM {$this->t('MS_TOOL_CLASS')} 
                 ORDER BY TC_NAME ASC";
         $result = $this->tms_NEW->query($sql);
