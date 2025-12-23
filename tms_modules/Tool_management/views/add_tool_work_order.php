@@ -244,13 +244,11 @@
                                         <label>Condition After Repair</label>
                                         <select name="WO_CONDITION" class="form-control">
                                             <option value="">-- Select Condition --</option>
-                                            <option value="OK">OK</option>
-                                            <option value="OK Repaired">OK Repaired</option>
-                                            <option value="Repaired">Repaired</option>
-                                            <option value="Good">Good</option>
-                                            <option value="Fair">Fair</option>
-                                            <option value="Poor">Poor</option>
                                             <option value="None">None</option>
+                                            <option value="O K Modified">O K Modified</option>
+                                            <option value="N G Needs Repair">N G Needs Repair</option>
+                                            <option value="N G Not Repairable">N G Not Repairable</option>
+                                            <option value="O K Repaired">O K Repaired</option>
                                         </select>
                                     </div>
 
