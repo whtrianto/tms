@@ -59,13 +59,10 @@ class M_tool_inventory extends CI_Model
             LEFT JOIN {$this->t('TMS_ORDERING_ITEMS')} ordi ON ordi.ORDI_ID = inv.INV_ORDI_ID
             LEFT JOIN {$this->t('TMS_ORDERING')} ord ON ord.ORD_ID = ordi.ORDI_ORD_ID
             LEFT JOIN (
-                SELECT DISTINCT TMLP_ML_ID, 
-                       STUFF((SELECT ', ' + PART_NAME 
-                              FROM {$this->t('TMS_TOOL_MASTER_LIST_PARTS')} tmlp2
-                              INNER JOIN {$this->t('MS_PARTS')} p2 ON p2.PART_ID = tmlp2.TMLP_PART_ID
-                              WHERE tmlp2.TMLP_ML_ID = tmlp1.TMLP_ML_ID
-                              FOR XML PATH('')), 1, 2, '') AS PART_NAME
-                FROM {$this->t('TMS_TOOL_MASTER_LIST_PARTS')} tmlp1
+                SELECT TMLP_ML_ID, MAX(p.PART_NAME) AS PART_NAME
+                FROM {$this->t('TMS_TOOL_MASTER_LIST_PARTS')} tmlp
+                INNER JOIN {$this->t('MS_PARTS')} p ON p.PART_ID = tmlp.TMLP_PART_ID
+                GROUP BY TMLP_ML_ID
             ) part_agg ON part_agg.TMLP_ML_ID = ml.ML_ID";
 
         $where = " WHERE (ml.ML_TYPE = 1 OR ml.ML_TYPE IS NULL OR inv.INV_MLR_ID IS NULL)";
@@ -120,9 +117,9 @@ class M_tool_inventory extends CI_Model
             }
         }
 
-        // Count total - use same joins as base_from
+        // Count total - use DISTINCT to avoid duplicate rows from JOINs
         $count_total_where = " WHERE (ml.ML_TYPE = 1 OR ml.ML_TYPE IS NULL OR inv.INV_MLR_ID IS NULL)";
-        $count_total_sql = "SELECT COUNT(*) as cnt " . $base_from . $count_total_where;
+        $count_total_sql = "SELECT COUNT(DISTINCT inv.INV_ID) as cnt " . $base_from . $count_total_where;
         $count_total_result = $this->db_tms->query($count_total_sql);
         $count_total = $count_total_result && $count_total_result->num_rows() > 0 ? $count_total_result->row()->cnt : 0;
 
