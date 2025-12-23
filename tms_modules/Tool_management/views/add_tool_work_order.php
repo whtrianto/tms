@@ -242,8 +242,16 @@
 
                                     <div class="form-group">
                                         <label>Condition After Repair</label>
-                                        <input type="text" name="WO_CONDITION" class="form-control" 
-                                               placeholder="e.g., O K Repaired">
+                                        <select name="WO_CONDITION" class="form-control">
+                                            <option value="">-- Select Condition --</option>
+                                            <option value="OK">OK</option>
+                                            <option value="OK Repaired">OK Repaired</option>
+                                            <option value="Repaired">Repaired</option>
+                                            <option value="Good">Good</option>
+                                            <option value="Fair">Fair</option>
+                                            <option value="Poor">Poor</option>
+                                            <option value="None">None</option>
+                                        </select>
                                     </div>
 
                                     <div class="form-group">
