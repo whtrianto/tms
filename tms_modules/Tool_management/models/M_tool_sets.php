@@ -296,6 +296,69 @@ class M_tool_sets extends CI_Model
     }
 
     /**
+     * Update Tool Set
+     */
+    public function update_data($id, $data)
+    {
+        try {
+            $id = (int)$id;
+            if ($id <= 0) {
+                $this->messages = 'Tool Set ID tidak valid.';
+                return false;
+            }
+
+            // Check if Tool Set exists
+            $existing = $this->get_by_id($id);
+            if (!$existing) {
+                $this->messages = 'Tool Set tidak ditemukan.';
+                return false;
+            }
+
+            $this->db_tms->trans_start();
+
+            // Prepare update data
+            $update_data = array();
+            
+            if (isset($data['TSET_NAME'])) {
+                $update_data['TSET_NAME'] = trim($data['TSET_NAME']);
+                if (empty($update_data['TSET_NAME'])) {
+                    $this->messages = 'Toolset Name tidak boleh kosong.';
+                    $this->db_tms->trans_rollback();
+                    return false;
+                }
+            }
+
+            if (isset($data['TSET_STATUS'])) {
+                $update_data['TSET_STATUS'] = (int)$data['TSET_STATUS'];
+            }
+
+            if (empty($update_data)) {
+                $this->messages = 'Tidak ada data yang diupdate.';
+                $this->db_tms->trans_rollback();
+                return false;
+            }
+
+            // Update data
+            $this->db_tms->where('TSET_ID', $id);
+            $this->db_tms->update($this->t('TMS_TOOLSETS'), $update_data);
+
+            $this->db_tms->trans_complete();
+
+            if ($this->db_tms->trans_status() === FALSE) {
+                $this->messages = 'Gagal mengupdate Tool Set.';
+                return false;
+            }
+
+            $this->messages = 'Tool Set berhasil diupdate.';
+            return true;
+        } catch (Exception $e) {
+            log_message('error', '[M_tool_sets::update_data] Exception: ' . $e->getMessage());
+            $this->messages = 'Error: ' . $e->getMessage();
+            return false;
+        }
+    }
+
+    /**
      * Delete
      */
     public function delete_data($id)

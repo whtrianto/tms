@@ -196,12 +196,40 @@ class Tool_sets extends MY_Controller
                     'success' => $ok,
                     'message' => $this->tool_sets->messages
                 ));
+            } elseif ($action === 'EDIT') {
+                $tset_id = (int)$this->input->post('TSET_ID', TRUE);
+                $toolset_name = trim($this->input->post('tset_name', TRUE));
+                
+                if ($tset_id <= 0) {
+                    echo json_encode(array('success' => false, 'message' => 'Tool Set ID tidak valid.'));
+                    return;
+                }
+                
+                if (empty($toolset_name)) {
+                    echo json_encode(array('success' => false, 'message' => 'Toolset Name tidak boleh kosong.'));
+                    return;
+                }
+                
+                $data = array(
+                    'TSET_NAME' => $toolset_name
+                );
+                
+                $ok = $this->tool_sets->update_data($tset_id, $data);
+                echo json_encode(array(
+                    'success' => $ok,
+                    'message' => $this->tool_sets->messages
+                ));
             } else {
                 echo json_encode(array('success' => false, 'message' => 'Action tidak valid.'));
             }
         } catch (Exception $e) {
             log_message('error', '[Tool_sets::submit_data] Exception: ' . $e->getMessage());
+            log_message('error', '[Tool_sets::submit_data] Stack trace: ' . $e->getTraceAsString());
             echo json_encode(array('success' => false, 'message' => 'Error: ' . $e->getMessage()));
+        } catch (Error $e) {
+            log_message('error', '[Tool_sets::submit_data] Error: ' . $e->getMessage());
+            log_message('error', '[Tool_sets::submit_data] Stack trace: ' . $e->getTraceAsString());
+            echo json_encode(array('success' => false, 'message' => 'System error occurred. Please check the logs.'));
         }
     }
 
@@ -210,23 +238,33 @@ class Tool_sets extends MY_Controller
      */
     public function edit_page($id = 0)
     {
-        $id = (int)$id;
-        if ($id <= 0) {
-            show_404();
-            return;
-        }
+        try {
+            $id = (int)$id;
+            if ($id <= 0) {
+                show_404();
+                return;
+            }
 
-        $row = $this->tool_sets->get_by_id($id);
-        if (!$row) {
-            show_404();
-            return;
-        }
+            $row = $this->tool_sets->get_by_id($id);
+            if (!$row) {
+                show_404();
+                return;
+            }
 
-        $data = array();
-        $data['tool_set'] = $row;
-        $data['compositions'] = $this->tool_sets->get_compositions($id);
-        $data['assignments'] = $this->tool_sets->get_usage_assignments($id);
-        $this->view('edit_tool_sets', $data, FALSE);
+            $data = array();
+            $data['tool_set'] = $row;
+            $data['compositions'] = $this->tool_sets->get_compositions($id);
+            $data['assignments'] = $this->tool_sets->get_usage_assignments($id);
+            $this->view('edit_tool_sets', $data, FALSE);
+        } catch (Exception $e) {
+            log_message('error', '[Tool_sets::edit_page] Exception: ' . $e->getMessage());
+            log_message('error', '[Tool_sets::edit_page] Stack trace: ' . $e->getTraceAsString());
+            show_error('Error loading edit page: ' . $e->getMessage(), 500);
+        } catch (Error $e) {
+            log_message('error', '[Tool_sets::edit_page] Error: ' . $e->getMessage());
+            log_message('error', '[Tool_sets::edit_page] Stack trace: ' . $e->getTraceAsString());
+            show_error('System error occurred. Please check the logs.', 500);
+        }
     }
 
     /**

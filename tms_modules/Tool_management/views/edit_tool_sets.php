@@ -377,8 +377,47 @@
         // Form submit
         $('#formToolSet').on('submit', function(e) {
             e.preventDefault();
-            // TODO: Implement form submission
-            alert('Save functionality will be implemented');
+            
+            if (!this.checkValidity()) {
+                $(this).addClass('was-validated');
+                return;
+            }
+
+            var formData = new FormData(this);
+            
+            $.ajax({
+                url: $(this).attr('action'),
+                type: 'POST',
+                data: formData,
+                dataType: 'json',
+                processData: false,
+                contentType: false,
+                cache: false,
+                timeout: 30000
+            }).done(function(res) {
+                if (res && res.success) {
+                    if (typeof toastr !== 'undefined') {
+                        toastr.success(res.message || 'Tool Set berhasil diupdate');
+                    } else {
+                        alert(res.message || 'Tool Set berhasil diupdate');
+                    }
+                    setTimeout(function() {
+                        window.location.reload();
+                    }, 1000);
+                } else {
+                    if (typeof toastr !== 'undefined') {
+                        toastr.warning(res && res.message ? res.message : 'Gagal mengupdate Tool Set');
+                    } else {
+                        alert(res && res.message ? res.message : 'Gagal mengupdate Tool Set');
+                    }
+                }
+            }).fail(function(xhr, status, error) {
+                if (typeof toastr !== 'undefined') {
+                    toastr.error('Gagal menyimpan: ' + (error || status));
+                } else {
+                    alert('Gagal menyimpan: ' + (error || status));
+                }
+            });
         });
     });
 })(jQuery);
