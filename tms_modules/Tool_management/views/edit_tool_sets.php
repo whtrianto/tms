@@ -335,25 +335,99 @@
 <script src="<?= base_url('assets/vendor/datatables/dataTables.bootstrap4.min.js'); ?>"></script>
 <script>
 (function($){
-    $(function(){
-        // Initialize DataTables
-        if ($('#table-compositions tbody tr').length > 0) {
-            $('#table-compositions').DataTable({
-                pageLength: 10,
-                order: [[0, 'asc']],
-                autoWidth: false,
-                scrollX: true
-            });
-        }
+    $(document).ready(function(){
+        // Wait a bit to ensure DOM is fully ready
+        setTimeout(function() {
+            // Initialize DataTables for Compositions
+            var $tableCompositions = $('#table-compositions');
+            if ($tableCompositions.length > 0 && $tableCompositions.find('thead').length > 0) {
+                var $tbodyCompositions = $tableCompositions.find('tbody');
+                var $rowsCompositions = $tbodyCompositions.find('tr');
+                
+                // Check if table has data rows (not just "No data" message row with colspan)
+                var hasDataRows = false;
+                if ($rowsCompositions.length > 0) {
+                    $rowsCompositions.each(function() {
+                        var $row = $(this);
+                        // Skip rows with colspan (these are "No data" messages)
+                        if (!$row.find('td[colspan]').length) {
+                            var $tds = $row.find('td');
+                            // Check if row has correct number of columns (12 columns)
+                            if ($tds.length === 12) {
+                                hasDataRows = true;
+                                return false; // break
+                            }
+                        }
+                    });
+                }
+                
+                if (hasDataRows) {
+                    try {
+                        // Destroy existing instance if any
+                        if ($.fn.DataTable.isDataTable($tableCompositions)) {
+                            $tableCompositions.DataTable().destroy();
+                        }
+                        
+                        $tableCompositions.DataTable({
+                            pageLength: 10,
+                            order: [[0, 'asc']],
+                            autoWidth: false,
+                            scrollX: true,
+                            columnDefs: [
+                                { orderable: false, targets: [11] } // Action column (index 11)
+                            ]
+                        });
+                    } catch (e) {
+                        console.error('Error initializing compositions DataTable:', e);
+                    }
+                }
+            }
 
-        if ($('#table-assignments tbody tr').length > 0) {
-            $('#table-assignments').DataTable({
-                pageLength: 10,
-                order: [[0, 'asc']],
-                autoWidth: false,
-                scrollX: true
-            });
-        }
+            // Initialize DataTables for Assignments
+            var $tableAssignments = $('#table-assignments');
+            if ($tableAssignments.length > 0 && $tableAssignments.find('thead').length > 0) {
+                var $tbodyAssignments = $tableAssignments.find('tbody');
+                var $rowsAssignments = $tbodyAssignments.find('tr');
+                
+                // Check if table has data rows (not just "No data" message row with colspan)
+                var hasDataRows = false;
+                if ($rowsAssignments.length > 0) {
+                    $rowsAssignments.each(function() {
+                        var $row = $(this);
+                        // Skip rows with colspan (these are "No data" messages)
+                        if (!$row.find('td[colspan]').length) {
+                            var $tds = $row.find('td');
+                            // Check if row has correct number of columns (9 columns)
+                            if ($tds.length === 9) {
+                                hasDataRows = true;
+                                return false; // break
+                            }
+                        }
+                    });
+                }
+                
+                if (hasDataRows) {
+                    try {
+                        // Destroy existing instance if any
+                        if ($.fn.DataTable.isDataTable($tableAssignments)) {
+                            $tableAssignments.DataTable().destroy();
+                        }
+                        
+                        $tableAssignments.DataTable({
+                            pageLength: 10,
+                            order: [[0, 'asc']],
+                            autoWidth: false,
+                            scrollX: true,
+                            columnDefs: [
+                                { orderable: false, targets: [8] } // Action column (index 8)
+                            ]
+                        });
+                    } catch (e) {
+                        console.error('Error initializing assignments DataTable:', e);
+                    }
+                }
+            }
+        }, 100); // Small delay to ensure DOM is ready, 100); // Small delay to ensure DOM is ready
 
         // Hide/Show Compositions
         $('#hideCompositions').on('change', function() {
