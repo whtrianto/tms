@@ -250,7 +250,7 @@ class Tool_work_order extends MY_Controller
         $data = array();
         $data['tool_inventory_modal'] = $this->tool_work_order->get_tool_inventory_for_modal();
         $data['title'] = 'Select Tool ID';
-        $this->load->view('Tool_management/views/select_tool_id_tab', $data);
+        $this->view('select_tool_id_tab', $data, FALSE);
     }
 
     /**
