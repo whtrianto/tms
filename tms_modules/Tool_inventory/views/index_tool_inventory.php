@@ -138,13 +138,22 @@
             serverSide: true,
             ajax: {
                 url: '<?= base_url("Tool_inventory/tool_inventory/get_data"); ?>',
-                type: 'POST'
+                type: 'POST',
+                error: function(xhr, error, thrown) {
+                    console.error('DataTables AJAX error:', error, thrown);
+                    if (typeof toastr !== 'undefined') {
+                        toastr.error('Error loading data. Please try again.');
+                    } else {
+                        alert('Error loading data. Please try again.');
+                    }
+                }
             },
             lengthMenu: [[10,25,50,100],[10,25,50,100]],
             pageLength: 25,
             order: [[0,'desc']],
             autoWidth: false,
             scrollX: true,
+            searchDelay: 400, // Add delay to prevent too many requests
             columnDefs: [
                 { orderable:false, targets:[15] },
                 { width:'50px', targets:0 },
@@ -179,12 +188,15 @@
 
         // Per-column search - only on Enter key
         function setupColumnSearch() {
+            // Clear any existing handlers
             $('.column-search').off('keyup keydown input click');
             
+            // Prevent click from bubbling to table
             $('.column-search').on('click', function(e) {
                 e.stopPropagation();
             });
             
+            // Handle keydown for per-column search
             $('.column-search').on('keydown', function(e) {
                 e.stopPropagation();
                 
@@ -194,12 +206,22 @@
                 
                 if (e.keyCode === 13) { // Enter
                     e.preventDefault();
+                    e.stopImmediatePropagation();
+                    // Clear global search first to avoid conflicts
+                    table.search('').draw();
+                    // Then apply column search
                     table.column(column).search(value).draw();
                 } else if (e.keyCode === 27) { // ESC - clear
                     e.preventDefault();
+                    e.stopImmediatePropagation();
                     $input.val('');
                     table.column(column).search('').draw();
                 }
+            });
+            
+            // Prevent input event from triggering global search
+            $('.column-search').on('input', function(e) {
+                e.stopPropagation();
             });
         }
 
