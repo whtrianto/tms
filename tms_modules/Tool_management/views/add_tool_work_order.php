@@ -181,14 +181,19 @@
                                 <div class="col-md-6">
                                     <div class="form-group">
                                         <label>Tool ID</label>
-                                        <div class="tool-id-input-group">
+                                        <div class="input-group">
                                             <input type="text" id="selected_tool_id_display" class="form-control" readonly 
                                                    placeholder="Click button to select Tool ID">
                                             <input type="hidden" name="WO_INV_ID" id="selected_tool_inv_id" value="">
                                             <input type="hidden" name="WO_TOOL_ID" id="selected_tool_id" value="">
-                                            <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#modalSelectToolID">
-                                                <i class="fa fa-search"></i> Select
-                                            </button>
+                                            <div class="input-group-append">
+                                                <button type="button" class="btn btn-primary" id="btnSelectToolID" data-toggle="modal" data-target="#modalSelectToolID">
+                                                    <i class="fa fa-search"></i> Select
+                                                </button>
+                                                <button type="button" class="btn btn-info" id="btnSelectToolIDTab" title="Open in new tab">
+                                                    <i class="fa fa-external-link"></i> Tab
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
 
@@ -427,7 +432,7 @@
 
 <!-- Modal Select Tool ID -->
 <div class="modal fade" id="modalSelectToolID" tabindex="-1" role="dialog" aria-labelledby="modalSelectToolIDLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-dialog modal-xl" role="document">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="modalSelectToolIDLabel">Select Tool ID</h5>
@@ -618,6 +623,21 @@
             });
         }
 
+        // Initialize DataTable for Tool Inventory with search
+        var tableToolInventory = null;
+        if ($('#tableToolInventory tbody tr').length > 0 && !$('#tableToolInventory tbody tr').has('td[colspan]').length) {
+            tableToolInventory = $('#tableToolInventory').DataTable({
+                pageLength: 10,
+                order: [[1, 'asc']], // Order by Tool ID
+                autoWidth: false,
+                dom: '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>rtip',
+                language: {
+                    search: "Search:",
+                    searchPlaceholder: "Search Tool ID, Drawing No, Tool Name..."
+                }
+            });
+        }
+
         // Handle User Selection
         $('#tableUsers tbody').on('click', 'tr.clickable-row', function(e) {
             e.preventDefault();
@@ -684,6 +704,29 @@
             $(this).closest('tr').trigger('click');
         });
 
+        // Handle Tab button for Tool ID selection
+        $('#btnSelectToolIDTab').on('click', function(e) {
+            e.preventDefault();
+            var url = '<?= base_url("Tool_management/tool_work_order/select_tool_id_tab"); ?>';
+            var windowFeatures = 'width=900,height=600,scrollbars=yes,resizable=yes';
+            var newWindow = window.open(url, 'SelectToolID', windowFeatures);
+            
+            // Listen for message from child window
+            window.addEventListener('message', function(event) {
+                if (event.data && event.data.action === 'tool_id_selected') {
+                    var toolId = event.data.tool_id;
+                    var invId = event.data.inv_id;
+                    
+                    if (toolId) {
+                        $('#selected_tool_id').val(toolId);
+                        $('#selected_tool_inv_id').val(invId || '');
+                        $('#selected_tool_id_display').val(toolId);
+                        loadToolInventoryDetails(toolId);
+                    }
+                }
+            });
+        });
+
         // Function to load Tool Inventory details
         function loadToolInventoryDetails(toolId) {
             if (!toolId || toolId === '') {
@@ -701,9 +744,13 @@
                 type: 'POST',
                 dataType: 'json',
                 data: { 
-                    tool_id: toolId 
+                    tool_id: toolId.trim()
+                },
+                beforeSend: function() {
+                    console.log('[loadToolInventoryDetails] Sending Tool ID:', toolId.trim());
                 }
             }).done(function(res) {
+                console.log('[loadToolInventoryDetails] Response:', res);
                 $toolIdDisplay.val(originalVal); // Restore original value
                 
                 if (res && res.success && res.data) {

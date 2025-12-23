@@ -219,21 +219,38 @@ class Tool_work_order extends MY_Controller
 
         try {
             $tool_id = trim($this->input->post('tool_id', TRUE));
+            log_message('debug', '[Tool_work_order::get_tool_inventory_details] Received Tool ID: [' . $tool_id . ']');
+            
             if (empty($tool_id)) {
                 echo json_encode(array('success' => false, 'message' => 'Tool ID tidak valid.'));
                 return;
             }
 
             $details = $this->tool_work_order->get_tool_inventory_details_by_tool_id($tool_id);
+            
             if ($details) {
+                log_message('debug', '[Tool_work_order::get_tool_inventory_details] Found details for Tool ID: [' . $tool_id . ']');
+                log_message('debug', '[Tool_work_order::get_tool_inventory_details] Details: ' . json_encode($details));
                 echo json_encode(array('success' => true, 'data' => $details), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
             } else {
+                log_message('debug', '[Tool_work_order::get_tool_inventory_details] Tool ID not found: [' . $tool_id . ']');
                 echo json_encode(array('success' => false, 'message' => 'Tool ID tidak ditemukan.'));
             }
         } catch (Exception $e) {
             log_message('error', '[Tool_work_order::get_tool_inventory_details] Exception: ' . $e->getMessage());
             echo json_encode(array('success' => false, 'message' => 'Error: ' . $e->getMessage()));
         }
+    }
+
+    /**
+     * Select Tool ID in new tab/window
+     */
+    public function select_tool_id_tab()
+    {
+        $data = array();
+        $data['tool_inventory_modal'] = $this->tool_work_order->get_tool_inventory_for_modal();
+        $data['title'] = 'Select Tool ID';
+        $this->load->view('Tool_management/views/select_tool_id_tab', $data);
     }
 
     /**
