@@ -1,0 +1,4471 @@
+USE [master]
+GO
+/****** Object:  Database [TMS_NEW]    Script Date: 24/12/2025 13:06:31 ******/
+CREATE DATABASE [TMS_NEW]
+ CONTAINMENT = NONE
+ ON  PRIMARY 
+( NAME = N'TMS', FILENAME = N'C:\Program Files\Microsoft SQL Server\MSSQL16.MSSQLSERVER\MSSQL\DATA\TMS_NEW.mdf' , SIZE = 1733632KB , MAXSIZE = UNLIMITED, FILEGROWTH = 1024KB )
+ LOG ON 
+( NAME = N'TMS_log', FILENAME = N'C:\Program Files\Microsoft SQL Server\MSSQL16.MSSQLSERVER\MSSQL\DATA\TMS_NEW_log.ldf' , SIZE = 241216KB , MAXSIZE = 2048GB , FILEGROWTH = 10%)
+ WITH CATALOG_COLLATION = DATABASE_DEFAULT, LEDGER = OFF
+GO
+ALTER DATABASE [TMS_NEW] SET COMPATIBILITY_LEVEL = 100
+GO
+IF (1 = FULLTEXTSERVICEPROPERTY('IsFullTextInstalled'))
+begin
+EXEC [TMS_NEW].[dbo].[sp_fulltext_database] @action = 'enable'
+end
+GO
+ALTER DATABASE [TMS_NEW] SET ANSI_NULL_DEFAULT OFF 
+GO
+ALTER DATABASE [TMS_NEW] SET ANSI_NULLS OFF 
+GO
+ALTER DATABASE [TMS_NEW] SET ANSI_PADDING OFF 
+GO
+ALTER DATABASE [TMS_NEW] SET ANSI_WARNINGS OFF 
+GO
+ALTER DATABASE [TMS_NEW] SET ARITHABORT OFF 
+GO
+ALTER DATABASE [TMS_NEW] SET AUTO_CLOSE OFF 
+GO
+ALTER DATABASE [TMS_NEW] SET AUTO_SHRINK OFF 
+GO
+ALTER DATABASE [TMS_NEW] SET AUTO_UPDATE_STATISTICS ON 
+GO
+ALTER DATABASE [TMS_NEW] SET CURSOR_CLOSE_ON_COMMIT OFF 
+GO
+ALTER DATABASE [TMS_NEW] SET CURSOR_DEFAULT  GLOBAL 
+GO
+ALTER DATABASE [TMS_NEW] SET CONCAT_NULL_YIELDS_NULL OFF 
+GO
+ALTER DATABASE [TMS_NEW] SET NUMERIC_ROUNDABORT OFF 
+GO
+ALTER DATABASE [TMS_NEW] SET QUOTED_IDENTIFIER OFF 
+GO
+ALTER DATABASE [TMS_NEW] SET RECURSIVE_TRIGGERS OFF 
+GO
+ALTER DATABASE [TMS_NEW] SET  DISABLE_BROKER 
+GO
+ALTER DATABASE [TMS_NEW] SET AUTO_UPDATE_STATISTICS_ASYNC OFF 
+GO
+ALTER DATABASE [TMS_NEW] SET DATE_CORRELATION_OPTIMIZATION OFF 
+GO
+ALTER DATABASE [TMS_NEW] SET TRUSTWORTHY OFF 
+GO
+ALTER DATABASE [TMS_NEW] SET ALLOW_SNAPSHOT_ISOLATION OFF 
+GO
+ALTER DATABASE [TMS_NEW] SET PARAMETERIZATION SIMPLE 
+GO
+ALTER DATABASE [TMS_NEW] SET READ_COMMITTED_SNAPSHOT OFF 
+GO
+ALTER DATABASE [TMS_NEW] SET HONOR_BROKER_PRIORITY OFF 
+GO
+ALTER DATABASE [TMS_NEW] SET RECOVERY SIMPLE 
+GO
+ALTER DATABASE [TMS_NEW] SET  MULTI_USER 
+GO
+ALTER DATABASE [TMS_NEW] SET PAGE_VERIFY CHECKSUM  
+GO
+ALTER DATABASE [TMS_NEW] SET DB_CHAINING OFF 
+GO
+ALTER DATABASE [TMS_NEW] SET FILESTREAM( NON_TRANSACTED_ACCESS = OFF ) 
+GO
+ALTER DATABASE [TMS_NEW] SET TARGET_RECOVERY_TIME = 0 SECONDS 
+GO
+ALTER DATABASE [TMS_NEW] SET DELAYED_DURABILITY = DISABLED 
+GO
+ALTER DATABASE [TMS_NEW] SET ACCELERATED_DATABASE_RECOVERY = OFF  
+GO
+EXEC sys.sp_db_vardecimal_storage_format N'TMS_NEW', N'ON'
+GO
+ALTER DATABASE [TMS_NEW] SET QUERY_STORE = OFF
+GO
+USE [TMS_NEW]
+GO
+/****** Object:  User [TACISVFEXTMS01\Administrator]    Script Date: 24/12/2025 13:06:31 ******/
+CREATE USER [TACISVFEXTMS01\Administrator] WITH DEFAULT_SCHEMA=[dbo]
+GO
+/****** Object:  User [NT AUTHORITY\SYSTEM]    Script Date: 24/12/2025 13:06:31 ******/
+CREATE USER [NT AUTHORITY\SYSTEM] FOR LOGIN [NT AUTHORITY\SYSTEM] WITH DEFAULT_SCHEMA=[dbo]
+GO
+/****** Object:  User [NT AUTHORITY\NETWORK SERVICE]    Script Date: 24/12/2025 13:06:31 ******/
+CREATE USER [NT AUTHORITY\NETWORK SERVICE] FOR LOGIN [NT AUTHORITY\NETWORK SERVICE] WITH DEFAULT_SCHEMA=[dbo]
+GO
+ALTER ROLE [db_owner] ADD MEMBER [TACISVFEXTMS01\Administrator]
+GO
+ALTER ROLE [db_owner] ADD MEMBER [NT AUTHORITY\SYSTEM]
+GO
+ALTER ROLE [db_accessadmin] ADD MEMBER [NT AUTHORITY\SYSTEM]
+GO
+ALTER ROLE [db_securityadmin] ADD MEMBER [NT AUTHORITY\SYSTEM]
+GO
+ALTER ROLE [db_ddladmin] ADD MEMBER [NT AUTHORITY\SYSTEM]
+GO
+ALTER ROLE [db_backupoperator] ADD MEMBER [NT AUTHORITY\SYSTEM]
+GO
+ALTER ROLE [db_datareader] ADD MEMBER [NT AUTHORITY\SYSTEM]
+GO
+ALTER ROLE [db_datawriter] ADD MEMBER [NT AUTHORITY\SYSTEM]
+GO
+ALTER ROLE [db_denydatareader] ADD MEMBER [NT AUTHORITY\SYSTEM]
+GO
+ALTER ROLE [db_denydatawriter] ADD MEMBER [NT AUTHORITY\SYSTEM]
+GO
+ALTER ROLE [db_owner] ADD MEMBER [NT AUTHORITY\NETWORK SERVICE]
+GO
+ALTER ROLE [db_accessadmin] ADD MEMBER [NT AUTHORITY\NETWORK SERVICE]
+GO
+ALTER ROLE [db_securityadmin] ADD MEMBER [NT AUTHORITY\NETWORK SERVICE]
+GO
+ALTER ROLE [db_ddladmin] ADD MEMBER [NT AUTHORITY\NETWORK SERVICE]
+GO
+ALTER ROLE [db_backupoperator] ADD MEMBER [NT AUTHORITY\NETWORK SERVICE]
+GO
+ALTER ROLE [db_datareader] ADD MEMBER [NT AUTHORITY\NETWORK SERVICE]
+GO
+ALTER ROLE [db_datawriter] ADD MEMBER [NT AUTHORITY\NETWORK SERVICE]
+GO
+ALTER ROLE [db_denydatareader] ADD MEMBER [NT AUTHORITY\NETWORK SERVICE]
+GO
+ALTER ROLE [db_denydatawriter] ADD MEMBER [NT AUTHORITY\NETWORK SERVICE]
+GO
+/****** Object:  UserDefinedFunction [dbo].[CummAssetDeprnValue]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE FUNCTION [dbo].[CummAssetDeprnValue](@EndDate datetime, @dLength int, @purchaseDt datetime, @toolCost float,  @FullDeprnUponScrap bit = 0, @scrapDt datetime = NULL ) 
+RETURNS float 
+AS
+BEGIN 
+
+DECLARE @NoOfMth AS int 
+DECLARE @DeprnValue AS float 
+DECLARE @Return AS float 
+
+SELECT     @DeprnValue = @toolCost / @dLength 
+IF @purchaseDt <= @EndDate
+  Begin
+    SELECT     @NoOfMth = DATEDIFF(MONTH, @purchaseDt, @EndDate) + 1 
+    IF @NoOfMth <= @dLength
+      SELECT     @Return = @DeprnValue * @NoOfMth 
+    ELSE
+      SELECT     @Return = @toolCost 
+End
+
+IF @FullDeprnUponScrap = 1
+  BEGIN
+    IF @scrapDt <@EndDate
+       SELECT @Return = @toolCost
+  END
+RETURN @Return 
+END
+GO
+/****** Object:  UserDefinedFunction [dbo].[financialMonthYear]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE function [dbo].[financialMonthYear](@ActualDt datetime, @Cut_Off int = 0)
+RETURNS  datetime AS
+BEGIN
+DECLARE @MonthYearDate AS datetime
+DECLARE @finMth AS int
+DECLARE @finYr AS int
+IF @Cut_Off = 0
+BEGIN
+SET @finYr = Year(@ActualDt)
+SET @finMth = Month(@ActualDt)
+END
+ELSE
+BEGIN
+SET @finYr = CASE WHEN day(@ActualDt) > @Cut_Off THEN year(DATEADD(MONTH,1,@ActualDt))  ELSE year(@ActualDt) END 
+SET @finMth = CASE WHEN day(@ActualDt) > @Cut_Off THEN month(DATEADD(MONTH,1,@ActualDt)) ELSE month(@ActualDt) END
+END
+SET @MonthYearDate = CONVERT(datetime,  '1/' + cast(@finMth AS varchar) + '/' + CAST(@finYr AS varchar), 103)
+RETURN @MonthYearDate 
+END
+GO
+/****** Object:  UserDefinedFunction [dbo].[fnGetEnumName]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE FUNCTION [dbo].[fnGetEnumName]
+(
+	@Enum_ID as bigint,
+	@Enum_Type as varchar(max)
+)
+RETURNS varchar(max)
+AS
+BEGIN
+declare @result as varchar(max);
+SET @result =
+	CASE 
+		WHEN @Enum_Type = 'InspectionStatus' Then
+				Case 
+					WHEN @Enum_ID = 1 Then 'Open'
+					WHEN @Enum_ID = 2 Then 'In-progress'
+					WHEN @Enum_ID = 3 Then 'Closed'
+					Else ''
+				End
+		WHEN @Enum_Type = 'InspectionJudgement' Then
+				Case 
+					WHEN @Enum_ID = 0 Then 'None'
+					WHEN @Enum_ID = 1 Then 'Pass'
+					WHEN @Enum_ID = 2 Then 'Out-Of-Control'
+					WHEN @Enum_ID = 3 Then 'Failed'
+					Else ''
+				END
+		WHEN @Enum_Type = 'CharType' Then
+				Case 
+					WHEN @Enum_ID = 1 Then 'Variable'
+					WHEN @Enum_ID = 2 Then 'Attribute'
+					Else ''
+				END
+		WHEN @Enum_Type = 'CharTypeType' Then
+				Case 
+					WHEN @Enum_ID = 1 Then 'Product'
+					WHEN @Enum_ID = 2 Then 'Process'
+					Else ''
+				END
+		WHEN @Enum_Type = 'WO_TYPE' Then
+				Case 
+					WHEN @Enum_ID = 1 Then 'Repair'
+					WHEN @Enum_ID = 2 Then 'Design Change'
+					WHEN @Enum_ID = 3 Then 'Modification'
+					WHEN @Enum_ID = 4 Then 'Tool Making'
+					WHEN @Enum_ID = 5 Then 'Others'
+					Else ''
+				END
+		WHEN @Enum_Type = 'WO_REASON' Then
+				Case 
+					WHEN @Enum_ID = 1 Then 'Accident'
+					WHEN @Enum_ID = 2 Then 'Crack'
+					WHEN @Enum_ID = 3 Then 'Chipping'
+					WHEN @Enum_ID = 4 Then 'Dented'
+					WHEN @Enum_ID = 5 Then 'Wear'
+					WHEN @Enum_ID = 6 Then 'Scratch'
+					WHEN @Enum_ID = 7 Then 'Others'
+					WHEN @Enum_ID = 8 Then 'None'
+
+					Else ''
+end
+		WHEN @Enum_Type = 'RQ_REASON' Then
+				Case 
+					WHEN @Enum_ID = 1 Then 'First_Set'
+					WHEN @Enum_ID = 2 Then 'Second_Set'
+					WHEN @Enum_ID = 3 Then 'Third_Set'
+					WHEN @Enum_ID = 4 Then 'Replacement'
+					WHEN @Enum_ID = 5 Then 'Others'
+					Else ''
+				END
+		Else ''
+	END
+	RETURN @result;
+END
+GO
+/****** Object:  UserDefinedFunction [dbo].[fnGetReplaceToolRowID]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE FUNCTION [dbo].[fnGetReplaceToolRowID] (@ASSGN_TASGN_ID BIGINT)
+RETURNS @retFindReports TABLE 
+(
+    ROWID BIGINT NOT NULL,
+    TC_NAME varchar(255) NULL,
+    INV_TOOL_ID varchar(255) NULL,
+    ASSGN_ID BIGINT NULL,
+    ASSGN_CNR nvarchar (255) NULL,
+    ASSGN_ISSUED_DATE DATETIME NULL,
+    ASSGN_RETURN_DATE DATETIME NULL,
+    ASSGN_LOT_PRODUCED varchar (255) NULL,
+    ASSGN_QTY_PRODUCED INT NULL,
+    ASSGN_REPLACE_TOOL BIGINT NULL,
+    ASSGN_TYPE INT NOT NULL,
+    ASSGN_END_CYCLE BIGINT NULL
+)
+
+AS
+BEGIN
+
+insert INTO @retFindReports (ROWID, TC_NAME, INV_TOOL_ID, ASSGN_ID, ASSGN_CNR, ASSGN_ISSUED_DATE, ASSGN_RETURN_DATE,ASSGN_LOT_PRODUCED, ASSGN_QTY_PRODUCED, ASSGN_REPLACE_TOOL, ASSGN_TYPE, ASSGN_END_CYCLE)
+SELECT ROW_NUMBER() OVER (ORDER BY ASSGN_ID ASC) AS ROWID, TC_NAME, INV_TOOL_ID, ASSGN_ID, ASSGN_CNR, ASSGN_ISSUED_DATE, ASSGN_RETURN_DATE,
+ASSGN_LOT_PRODUCED, ASSGN_QTY_PRODUCED, ASSGN_REPLACE_TOOL, ASSGN_TYPE, ASSGN_END_CYCLE
+from TMS_ASSIGNED_TOOLS
+inner join TMS_TOOL_MASTER_LIST_REV on ASSGN_MLR_ID = MLR_ID
+inner join MS_TOOL_CLASS on MLR_TC_ID = TC_ID
+inner join TMS_TOOL_INVENTORY on ASSGN_INV_ID = INV_ID
+where ASSGN_TASGN_ID = @ASSGN_TASGN_ID
+
+update A set
+A.ASSGN_REPLACE_TOOL = B.ROWID
+FROM @retFindReports A
+INNER JOIN @retFindReports B on (B.ASSGN_ID = A.ASSGN_REPLACE_TOOL)
+WHERE A.ASSGN_REPLACE_TOOL IS NOT NULL
+  RETURN
+END
+GO
+/****** Object:  UserDefinedFunction [dbo].[fnGetToolMasterListParts]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE FUNCTION [dbo].[fnGetToolMasterListParts]
+(
+	@tmlid as bigint
+)
+RETURNS varchar(max)
+AS
+BEGIN
+	declare @result as varchar(max);
+	
+	SELECT @result = COALESCE(@result + ', ', '') + PART_NAME
+	FROM TMS_TOOL_MASTER_LIST_PARTS tmlp inner join MS_PARTS p 
+		on tmlp.TMLP_PART_ID = p.PART_ID
+	WHERE tmlp.TMLP_ML_ID = @tmlid;
+
+	RETURN @result;
+
+END
+GO
+/****** Object:  UserDefinedFunction [dbo].[return12MonthDates]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+create function [dbo].[return12MonthDates](@Start_Month int, @Start_Year int)
+RETURNS @MonthDates table ([MonthDate] [datetime]) AS
+BEGIN
+DECLARE @StDt datetime
+DECLARE @EndDt datetime
+DECLARE @AnchorDt datetime
+SET @StDt = CONVERT(datetime, '1/1/' + CAST(@Start_Year-2 AS varchar), 103)
+SET @EndDt= DATEADD(MONTH, 12, CONVERT(datetime, '1/' + CAST(@Start_Month AS varchar) +'/' + CAST(@Start_Year AS varchar), 103))
+SET @AnchorDt = @StDt
+WHILE @AnchorDt < @EndDt
+BEGIN
+INSERT INTO @MonthDates VALUES(@AnchorDt)
+SET @AnchorDt = DATEADD(MONTH,1,@AnchorDt)
+END
+RETURN
+END
+GO
+/****** Object:  UserDefinedFunction [dbo].[returnInventoryActQty]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE FUNCTION [dbo].[returnInventoryActQty](@tDwgR bigint) 
+RETURNS int
+AS
+BEGIN 
+DECLARE @actualQTY AS int 
+SELECT     @actualQTY = (SELECT COUNT(INV_ID) FROM TMS_TOOL_INVENTORY WHERE INV_MLR_ID = @tDwgR  AND INV_STATUS <> 6)
+RETURN @actualQTY
+END
+GO
+/****** Object:  UserDefinedFunction [dbo].[returnInventoryActQty_modified]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE FUNCTION [dbo].[returnInventoryActQty_modified](@tBomR bigint, @tDwgR bigint) 
+RETURNS int
+AS
+BEGIN 
+DECLARE @actualQTY AS int 
+IF @tBomR = (select TOP 1 TB_MLR_PARENT_ID from tms_tool_master_list_rev
+INNER JOIN TMS_TOOL_MASTER_LIST_MEMBERS ON TMS_TOOL_MASTER_LIST_REV.MLR_ID = TB_MLR_CHILD_ID
+INNER JOIN TMS_TOOL_MASTER_LIST_REV AS TMS_TOOL_MASTER_LIST_REV2 ON TB_MLR_PARENT_ID = TMS_TOOL_MASTER_LIST_REV2.MLR_ID
+WHERE TMS_TOOL_MASTER_LIST_REV.MLR_ID = @tDwgR AND TMS_TOOL_MASTER_LIST_REV2.MLR_STATUS = 2) 
+	BEGIN
+		SELECT     @actualQTY = (SELECT COUNT(INV_ID) FROM TMS_TOOL_INVENTORY WHERE INV_MLR_ID = @tDwgR  AND INV_STATUS <> 6)
+	END
+RETURN @actualQTY
+END
+
+GO
+/****** Object:  UserDefinedFunction [dbo].[returnInventoryNRcvQty]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE FUNCTION [dbo].[returnInventoryNRcvQty](@tDwgR bigint) 
+RETURNS int
+AS
+BEGIN 
+
+DECLARE @thisRevQTY AS int 
+DECLARE @olderRevQTY AS int 
+SELECT     @thisRevQTY = (SELECT     SUM(RQ_ORDER_QTY - RQ_RECEIVE_QTY)  FROM   TMS_REQUISITION
+WHERE     (RQ_ORDER_QTY > RQ_RECEIVE_QTY) AND (RQ_DWG_MLR_ID = @tDwgR))
+SELECT @olderRevQTY = (SELECT     SUM(RQ_ORDER_QTY - RQ_RECEIVE_QTY)  FROM   TMS_REQUISITION
+WHERE     (RQ_ORDER_QTY > RQ_RECEIVE_QTY) AND (RQ_DWG_MLR_ID IN (select AOR_OLD_MLR_ID FROM TMS_MLR_ALLOW_OLD_REVISION where AOR_MLR_ID = @tDwgR)))
+RETURN @thisRevQTY + @olderRevQTY
+END
+GO
+/****** Object:  UserDefinedFunction [dbo].[returnInventoryTACIQtyOnHand]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE FUNCTION [dbo].[returnInventoryTACIQtyOnHand](@tDwgR bigint) 
+RETURNS int
+AS
+BEGIN 
+DECLARE @actualQTY AS int 
+SELECT     @actualQTY = (SELECT COUNT(INV_ID) FROM TMS_TOOL_INVENTORY WHERE INV_MLR_ID = @tDwgR  AND INV_STATUS NOT IN (6,2))
+
+   /* public enum ToolInventoryStatus
+    {
+        New = 1,
+        Allocated = 2,
+        Available = 3,
+        InUsed = 4,
+        Onhold = 5,
+        Scrapped = 6,
+        Repairing = 7,
+        Modifying = 8,
+        DesignChange = 9,
+    }*/
+RETURN @actualQTY
+END
+GO
+/****** Object:  UserDefinedFunction [dbo].[returnInventoryTACIQtyOnhold]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE FUNCTION [dbo].[returnInventoryTACIQtyOnhold](@tDwgR bigint) 
+RETURNS int
+AS
+BEGIN 
+DECLARE @actualQTY AS int 
+SELECT     @actualQTY = (SELECT COUNT(INV_ID) FROM TMS_TOOL_INVENTORY WHERE INV_MLR_ID = @tDwgR  AND INV_STATUS = 5)
+
+   /* public enum ToolInventoryStatus
+    {
+        New = 1,
+        Allocated = 2,
+        Available = 3,
+        InUsed = 4,
+        Onhold = 5,
+        Scrapped = 6,
+        Repairing = 7,
+        Modifying = 8,
+        DesignChange = 9,
+    }*/
+RETURN @actualQTY
+END
+GO
+/****** Object:  UserDefinedFunction [dbo].[returnMakerType]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE function [dbo].[returnMakerType](@MkrType AS varchar(100), @ToolType AS varchar(100))
+RETURNS varchar(100) AS
+BEGIN
+DECLARE @rtValue AS Varchar(100)
+IF @MkrType = 'Local Vendor' AND @ToolType = 'Core Rod'
+SET @rtValue = 'Local Vendor-CORE'
+ELSE IF @MkrType = 'Local Vendor' AND @ToolType <> 'Core Rod'
+SET @rtValue = 'Local Vendor-PUNCHES'
+ELSE
+SET @rtValue = @MkrType
+RETURN @rtValue
+END
+GO
+/****** Object:  UserDefinedFunction [dbo].[returnManTemp]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+create function [dbo].[returnManTemp]()
+RETURNS @Mantemp table ([ID] [int],[ItemNo][int]) AS
+BEGIN
+INSERT INTO @Mantemp (ID,ItemNo)  VALUES(1,1)
+INSERT INTO @Mantemp (ID,ItemNo)  VALUES(2,2)
+INSERT INTO @Mantemp (ID,ItemNo)  VALUES(3,3)
+INSERT INTO @Mantemp (ID,ItemNo)  VALUES(4,4)
+INSERT INTO @Mantemp (ID,ItemNo)  VALUES(5,5)
+INSERT INTO @Mantemp (ID,ItemNo)  VALUES(6,6)
+INSERT INTO @Mantemp (ID,ItemNo)  VALUES(7,7)
+INSERT INTO @Mantemp (ID,ItemNo)  VALUES(8,8)
+INSERT INTO @Mantemp (ID,ItemNo)  VALUES(9,9)
+INSERT INTO @Mantemp (ID,ItemNo)  VALUES(10,10)
+INSERT INTO @Mantemp (ID,ItemNo)  VALUES(11,11)
+INSERT INTO @Mantemp (ID,ItemNo)  VALUES(12,12)
+INSERT INTO @Mantemp (ID,ItemNo)  VALUES(13,13)
+INSERT INTO @Mantemp (ID,ItemNo)  VALUES(14,14)
+RETURN
+END
+GO
+/****** Object:  UserDefinedFunction [dbo].[returnMonthDates]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+create function [dbo].[returnMonthDates](@Start_Month int, @Start_Year int, @noMonths int)
+RETURNS @MonthDates table ([MonthDate] [datetime]) AS
+BEGIN
+DECLARE @Anchor int
+DECLARE @StDt datetime
+SET @StDt = CONVERT(datetime, '1/' + CAST(@Start_Month AS varchar) +'/' + CAST(@Start_Year AS varchar), 103)
+SET @Anchor = 0
+WHILE @Anchor < @noMonths
+BEGIN
+INSERT INTO @MonthDates VALUES(DATEADD(MONTH, @Anchor, @StDt))
+SET @Anchor = @Anchor + 1
+END
+RETURN
+END
+GO
+/****** Object:  UserDefinedFunction [dbo].[returnMonths]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+create function [dbo].[returnMonths]()
+RETURNS @Months table ([month] [int]) AS
+BEGIN
+DECLARE @CurrentMonth int
+DECLARE @EndMonth int
+SET @CurrentMonth = 1
+SET @EndMonth =12
+WHILE @CurrentMonth<@EndMonth + 1
+BEGIN
+INSERT INTO @Months VALUES(@CurrentMonth)
+SET @CurrentMonth = @CurrentMonth + 1
+END
+RETURN
+END
+GO
+/****** Object:  UserDefinedFunction [dbo].[returnTemp]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+create function [dbo].[returnTemp]()
+RETURNS @temp table ([ID] [int],[ItemNo][int]) AS
+BEGIN
+INSERT INTO @temp(ID,ItemNo)  VALUES(1,1)
+INSERT INTO @temp(ID,ItemNo)  VALUES(2,2)
+INSERT INTO @temp(ID,ItemNo)  VALUES(3,3)
+INSERT INTO @temp(ID,ItemNo)  VALUES(4,4)
+INSERT INTO @temp(ID,ItemNo)  VALUES(5,5)
+INSERT INTO @temp(ID,ItemNo)  VALUES(6,6)
+INSERT INTO @temp(ID,ItemNo)  VALUES(7,7)
+INSERT INTO @temp(ID,ItemNo)  VALUES(8,8)
+INSERT INTO @temp(ID,ItemNo)  VALUES(9,9)
+INSERT INTO @temp(ID,ItemNo)  VALUES(10,10)
+INSERT INTO @temp(ID,ItemNo)  VALUES(11,11)
+INSERT INTO @temp(ID,ItemNo)  VALUES(12,12)
+INSERT INTO @temp(ID,ItemNo)  VALUES(13,13)
+INSERT INTO @temp(ID,ItemNo)  VALUES(14,14)
+INSERT INTO @temp(ID,ItemNo)  VALUES(15,15)
+RETURN
+END
+GO
+/****** Object:  UserDefinedFunction [dbo].[returnTemp1]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+create function [dbo].[returnTemp1]()
+RETURNS @temp1 table ([ID] [int],[ItemNo][int]) AS
+BEGIN
+INSERT INTO @temp1(ID,ItemNo)  VALUES(1,1)
+INSERT INTO @temp1(ID,ItemNo)  VALUES(2,2)
+RETURN
+END
+GO
+/****** Object:  UserDefinedFunction [dbo].[returnTemp2]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+create function [dbo].[returnTemp2]()
+RETURNS @temp2 table ([ID] [int],[ItemNo][int]) AS
+BEGIN
+INSERT INTO @temp2(ID,ItemNo)  VALUES(1,1)
+INSERT INTO @temp2(ID,ItemNo)  VALUES(2,2)
+RETURN
+END
+GO
+/****** Object:  UserDefinedFunction [dbo].[returnToolMakingWOMonthBalance]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+create function [dbo].[returnToolMakingWOMonthBalance](@MonthYear as datetime, @Tool_Type as int)
+RETURNS int AS
+BEGIN
+DECLARE @QTY as int
+DECLARE @LastDay as datetime
+DECLARE @anchorDate as datetime
+SET @anchorDate = CONVERT(datetime, '1/'  + CAST(MONTH(@MonthYear)  AS varchar)+  '/'  +CAST(YEAR(@MonthYear) AS varchar),103)
+SET @LastDay = dateadd(day,-1,dateadd(month,1,@anchorDate))
+SET @QTY = (SELECT COUNT(WO_ID) from tms_workorder inner join tms_ordering_items on ordi_id = wo_ordi_id
+inner join tms_requisition on ordi_rq_id = rq_id 
+inner join tms_tool_master_list_rev on rq_dwg_mlr_id = mlr_id
+inner join ms_tool_class on mlr_tc_id = tc_id
+WHERE WO_CREATED_DATE <= @LastDay AND (WO_ACTUAL_COM_DATE >@LastDay OR WO_ACTUAL_COM_DATE IS NULL) AND 
+TC_TYPE = @Tool_Type AND WO_TYPE = 4)
+RETURN @QTY
+END
+GO
+/****** Object:  UserDefinedFunction [dbo].[returnToolPurchaseMakerType]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE function [dbo].[returnToolPurchaseMakerType]()
+RETURNS @ToolPurchaseMakerType table ([MakerType_Id][bigint],[MakerType_Grp][nvarchar](30),[MakerType_Name][nvarchar](30)) AS
+BEGIN
+INSERT INTO @ToolPurchaseMakerType(MakerType_Id,MakerType_Grp,MakerType_Name)  VALUES(4,'Overseas','Japan')
+INSERT INTO @ToolPurchaseMakerType(MakerType_Id,MakerType_Grp,MakerType_Name)  VALUES(5,'Overseas','Others')
+INSERT INTO @ToolPurchaseMakerType(MakerType_Id,MakerType_Grp,MakerType_Name)  VALUES(1,'Malaysia','SESC')
+INSERT INTO @ToolPurchaseMakerType(MakerType_Id,MakerType_Grp,MakerType_Name)  VALUES(2,'Malaysia','Local Vendor-PUNCHES')
+INSERT INTO @ToolPurchaseMakerType(MakerType_Id,MakerType_Grp,MakerType_Name)  VALUES(3,'Malaysia','Local Vendor-CORE')
+INSERT INTO @ToolPurchaseMakerType(MakerType_Id,MakerType_Grp,MakerType_Name)  VALUES(6,'Overseas','Borrow')
+RETURN
+END
+GO
+/****** Object:  UserDefinedFunction [dbo].[returnToolPurchaseMakerType2]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE function [dbo].[returnToolPurchaseMakerType2]()
+RETURNS @ToolPurchaseMakerType table ([MakerType_Id] [int],[MakerType_Grp][nvarchar](30),[MakerType_Name][nvarchar](30)) AS
+BEGIN
+INSERT INTO @ToolPurchaseMakerType(MakerType_Id,MakerType_Grp,MakerType_Name)  VALUES(3,'Japan & Overseas','Japan')
+INSERT INTO @ToolPurchaseMakerType(MakerType_Id,MakerType_Grp,MakerType_Name)  VALUES(4,'Japan & Overseas','Others')
+INSERT INTO @ToolPurchaseMakerType(MakerType_Id,MakerType_Grp,MakerType_Name)  VALUES(1,'SESC & Local Vendors','SESC')
+INSERT INTO @ToolPurchaseMakerType(MakerType_Id,MakerType_Grp,MakerType_Name)  VALUES(2,'SESC & Local Vendors','Local Vendor')
+RETURN
+END
+GO
+/****** Object:  UserDefinedFunction [dbo].[returnToolPurchaseReasons]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+create function [dbo].[returnToolPurchaseReasons]()
+RETURNS @ToolPurchaseReasons table ([Reason_Id] [int],[Reason_Grp][nvarchar](30),[Reason_Name][nvarchar](30)) AS
+BEGIN
+INSERT INTO @ToolPurchaseReasons(Reason_Id,Reason_Grp,Reason_Name)  VALUES(1,'New Tool','1st Set')
+INSERT INTO @ToolPurchaseReasons(Reason_Id,Reason_Grp,Reason_Name)  VALUES(2,'New Tool','2nd Set')
+INSERT INTO @ToolPurchaseReasons(Reason_Id,Reason_Grp,Reason_Name)  VALUES(3,'New Tool','3rd Set')
+INSERT INTO @ToolPurchaseReasons(Reason_Id,Reason_Grp,Reason_Name)  VALUES(4,'REPL','Replacement')
+INSERT INTO @ToolPurchaseReasons(Reason_Id,Reason_Grp,Reason_Name)  VALUES(5,'OTH','Others')
+RETURN
+END
+GO
+/****** Object:  UserDefinedFunction [dbo].[returnToolWORepairReasons]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+create function [dbo].[returnToolWORepairReasons]()
+RETURNS @ToolRepairReasons table ([Reason_Id] [int],[Reason_Name][nvarchar](30)) AS
+BEGIN
+INSERT INTO @ToolRepairReasons(Reason_Id,Reason_Name)  VALUES(1,'Accident')
+INSERT INTO @ToolRepairReasons(Reason_Id,Reason_Name)  VALUES(2,'Crack')
+INSERT INTO @ToolRepairReasons(Reason_Id,Reason_Name)  VALUES(3,'Chipping')
+INSERT INTO @ToolRepairReasons(Reason_Id,Reason_Name)  VALUES(4,'Dented')
+INSERT INTO @ToolRepairReasons(Reason_Id,Reason_Name)  VALUES(5,'Wear')
+INSERT INTO @ToolRepairReasons(Reason_Id,Reason_Name)  VALUES(6,'Scratch')
+INSERT INTO @ToolRepairReasons(Reason_Id,Reason_Name)  VALUES(7,'Others')
+RETURN
+END
+GO
+/****** Object:  UserDefinedFunction [dbo].[returnWOMonthBalance]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+create function [dbo].[returnWOMonthBalance](@MonthYear as datetime, @Reason_Id as int)
+RETURNS int AS
+BEGIN
+DECLARE @QTY as int
+DECLARE @LastDay as datetime
+DECLARE @anchorDate as datetime
+SET @anchorDate = CONVERT(datetime, '1/'  + CAST(MONTH(@MonthYear)  AS varchar)+  '/'  +CAST(YEAR(@MonthYear) AS varchar),103)
+SET @LastDay = dateadd(day,-1,dateadd(month,1,@anchorDate))
+SET @QTY = (SELECT COUNT(WO_ID) FROM TMS_WORKORDER 
+WHERE WO_CREATED_DATE <= @LastDay AND (WO_ACTUAL_COM_DATE >@LastDay OR WO_ACTUAL_COM_DATE IS NULL) AND 
+WO_REASON = @Reason_Id AND WO_TYPE = 1)
+RETURN @QTY
+END
+GO
+/****** Object:  Table [dbo].[NS_DELIVERY_CHANNEL]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[NS_DELIVERY_CHANNEL](
+	[DLVC_ID] [bigint] IDENTITY(1,1) NOT NULL,
+	[DLVC_NAME] [varchar](50) NOT NULL,
+	[DLVC_LIB_PATH] [varchar](255) NOT NULL,
+	[DLVC_ASSEM_NAME] [varchar](500) NOT NULL,
+ CONSTRAINT [PK_DELIVERY_CHANNEL] PRIMARY KEY CLUSTERED 
+(
+	[DLVC_ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[NS_EVENT_DEFINITIONS]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[NS_EVENT_DEFINITIONS](
+	[EVT_ID] [bigint] IDENTITY(1,1) NOT NULL,
+	[EVT_NAME] [varchar](50) NOT NULL,
+	[EVT_DESC] [varchar](500) NOT NULL,
+	[EVT_APP_ID] [bigint] NOT NULL,
+	[EVT_SQL_STR] [text] NULL,
+	[EVT_TYPE] [bigint] NOT NULL,
+	[EVT_CONDITION] [bit] NOT NULL,
+	[EVT_ENABLED] [bit] NULL,
+	[EVT_SQL_SP] [bit] NOT NULL,
+ CONSTRAINT [PK_EVENTS] PRIMARY KEY CLUSTERED 
+(
+	[EVT_ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
+ CONSTRAINT [IX_EVENTS] UNIQUE NONCLUSTERED 
+(
+	[EVT_NAME] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[NS_EVENT_DELIVERY_CHANNEL]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[NS_EVENT_DELIVERY_CHANNEL](
+	[EVTDLVC_ID] [bigint] NOT NULL,
+	[EVTDLVC_EVT_ID] [bigint] NOT NULL,
+	[EVTDLVC_DLVC_ID] [bigint] NOT NULL,
+	[EVTDLVC_INSTRUCTION_SQL_STR] [text] NULL,
+ CONSTRAINT [PK_EVENT_DELIVERY_CHANNEL] PRIMARY KEY CLUSTERED 
+(
+	[EVTDLVC_ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
+GO
+/****** Object:  View [dbo].[V_EVENT_DELIVERY_INSTRUCTION]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE VIEW [dbo].[V_EVENT_DELIVERY_INSTRUCTION]
+AS
+SELECT EVT_ID, EVT_NAME, DLVC_NAME, DLVC_ID, 
+       EVTDLVC_INSTRUCTION_SQL_STR, EVT_ENABLED
+FROM       NS_EVENT_DELIVERY_CHANNEL 
+INNER JOIN NS_EVENT_DEFINITIONS ON EVTDLVC_EVT_ID = EVT_ID 
+INNER JOIN NS_DELIVERY_CHANNEL ON EVTDLVC_DLVC_ID = DLVC_ID
+
+GO
+/****** Object:  Table [dbo].[NS_SUBSCRIPTION_FIELD_VALUE]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[NS_SUBSCRIPTION_FIELD_VALUE](
+	[SBCRFV_ID] [bigint] IDENTITY(1,1) NOT NULL,
+	[SBCRFV_SBCRF_ID] [bigint] NOT NULL,
+	[SBCRFV_VALUE] [varchar](50) NOT NULL,
+ CONSTRAINT [PK_SUBSCRIPTION_FIELD_VALUE] PRIMARY KEY CLUSTERED 
+(
+	[SBCRFV_ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[NS_SUBSCRIPTION_FIELDS]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[NS_SUBSCRIPTION_FIELDS](
+	[SBCRF_ID] [bigint] IDENTITY(1,1) NOT NULL,
+	[SBCRF_SBCR_ID] [bigint] NOT NULL,
+	[SBCRF_EVTP_ID] [bigint] NOT NULL,
+	[SBCRF_FIELD_ENABLED] [bit] NOT NULL,
+ CONSTRAINT [PK_SUBSCRIPTION_FIELDS] PRIMARY KEY CLUSTERED 
+(
+	[SBCRF_ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
+ CONSTRAINT [IX_SUBSCRIPTION_FIELDS_EVENT_PARAM] UNIQUE NONCLUSTERED 
+(
+	[SBCRF_SBCR_ID] ASC,
+	[SBCRF_EVTP_ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[NS_SUBSCRIPTIONS]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[NS_SUBSCRIPTIONS](
+	[SBCR_ID] [bigint] IDENTITY(1,1) NOT NULL,
+	[SBCR_NAME] [varchar](50) NOT NULL,
+	[SBCR_EVT_ID] [bigint] NOT NULL,
+	[SBCR_ENABLED] [bit] NOT NULL,
+ CONSTRAINT [PK_SUBSCRIPTION] PRIMARY KEY CLUSTERED 
+(
+	[SBCR_ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[NS_EVENT_PARAM]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[NS_EVENT_PARAM](
+	[EVTP_ID] [bigint] IDENTITY(1,1) NOT NULL,
+	[EVTP_FIELD] [varchar](500) NOT NULL,
+	[EVTP_FIELD_DESC] [varchar](500) NOT NULL,
+	[EVTP_FIELD_TYPE] [bigint] NOT NULL,
+	[EVTP_FIELD_SYNTAX] [varchar](500) NOT NULL,
+	[EVTP_EVT_ID] [bigint] NOT NULL,
+ CONSTRAINT [PK_EVENT_PARAM] PRIMARY KEY CLUSTERED 
+(
+	[EVTP_ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  View [dbo].[V_SUBDCRIPTION_FIELD_SHOWONLY]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE VIEW [dbo].[V_SUBDCRIPTION_FIELD_SHOWONLY]
+AS
+SELECT     S.SBCRF_ID, S.SBCRF_SBCR_ID, P.EVTP_FIELD_SYNTAX, SV.SBCRFV_VALUE, SB.SBCR_NAME
+FROM       NS_SUBSCRIPTION_FIELDS S 
+INNER JOIN NS_SUBSCRIPTION_FIELD_VALUE SV ON S.SBCRF_ID = SV.SBCRFV_SBCRF_ID 
+INNER JOIN NS_EVENT_PARAM P ON S.SBCRF_EVTP_ID = P.EVTP_ID AND S.SBCRF_FIELD_ENABLED = 1 
+INNER JOIN NS_SUBSCRIPTIONS SB ON S.SBCRF_SBCR_ID = SB.SBCR_ID
+
+GO
+/****** Object:  Table [dbo].[NS_APPLICATIONS]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[NS_APPLICATIONS](
+	[APP_ID] [bigint] IDENTITY(1,1) NOT NULL,
+	[APP_NAME] [varchar](50) NOT NULL,
+	[APP_CONN_STR] [varchar](500) NOT NULL,
+	[APP_INTERVAL] [int] NOT NULL,
+ CONSTRAINT [PK_APPLICATIONS] PRIMARY KEY CLUSTERED 
+(
+	[APP_ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  View [dbo].[V_SUBSCRIPTION]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE VIEW [dbo].[V_SUBSCRIPTION]
+AS
+SELECT S.SBCR_ID, A.APP_NAME, E.EVT_NAME, E.EVT_TYPE, E.EVT_CONDITION, 
+E.EVT_DESC, E.EVT_SQL_STR, S.SBCR_NAME, S.SBCR_ENABLED, E.EVT_SQL_SP
+FROM NS_APPLICATIONS A 
+INNER JOIN NS_EVENT_DEFINITIONS E ON E.EVT_APP_ID = A.APP_ID AND E.EVT_ENABLED = 1 
+INNER JOIN NS_SUBSCRIPTIONS S ON S.SBCR_EVT_ID = E.EVT_ID AND S.SBCR_ENABLED = 1
+
+GO
+/****** Object:  Table [dbo].[NS_SUBSCRIPTION_DELIVERY_CHANNEL]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[NS_SUBSCRIPTION_DELIVERY_CHANNEL](
+	[SBCRDC_ID] [bigint] IDENTITY(1,1) NOT NULL,
+	[SBCRDC_SBCR_ID] [bigint] NOT NULL,
+	[SBCRDC_DLVC_ID] [bigint] NOT NULL,
+	[SBCRDC_ENABLED] [bit] NOT NULL,
+ CONSTRAINT [PK_SUBSCRIPTION_DELIVERY_CHANNEL] PRIMARY KEY CLUSTERED 
+(
+	[SBCRDC_ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  View [dbo].[V_SUBSCRIPTION_DELIVERY_CHANNEL]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE VIEW [dbo].[V_SUBSCRIPTION_DELIVERY_CHANNEL]
+AS
+SELECT S.SBCR_NAME, SDC.*, DC.DLVC_NAME, DC.DLVC_LIB_PATH, DC.DLVC_ASSEM_NAME, EDC.EVTDLVC_INSTRUCTION_SQL_STR
+FROM NS_SUBSCRIPTION_DELIVERY_CHANNEL SDC 
+INNER JOIN NS_SUBSCRIPTIONS S ON S.SBCR_ID = SDC.SBCRDC_SBCR_ID
+INNER JOIN NS_EVENT_DELIVERY_CHANNEL EDC ON EDC.EVTDLVC_EVT_ID = S.SBCR_EVT_ID AND SDC.SBCRDC_DLVC_ID = EDC.EVTDLVC_DLVC_ID
+INNER JOIN NS_DELIVERY_CHANNEL DC ON DC.DLVC_ID = SDC.SBCRDC_DLVC_ID AND DC.DLVC_ID = EDC.EVTDLVC_DLVC_ID 
+AND SDC.SBCRDC_ENABLED = 1
+
+GO
+/****** Object:  View [dbo].[V_SUBSCRIPTION_FIELD]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE VIEW [dbo].[V_SUBSCRIPTION_FIELD]
+AS
+SELECT S.SBCRF_ID, S.SBCRF_SBCR_ID, E.EVT_NAME, P.EVTP_ID, P.EVTP_FIELD_SYNTAX, P.EVTP_FIELD 
+FROM  NS_SUBSCRIPTION_FIELDS S 
+INNER JOIN NS_SUBSCRIPTIONS B ON B.SBCR_ID = S.SBCRF_SBCR_ID
+INNER JOIN NS_EVENT_PARAM P ON S.SBCRF_EVTP_ID = P.EVTP_ID AND S.SBCRF_FIELD_ENABLED = 1
+INNER JOIN NS_EVENT_DEFINITIONS E ON E.EVT_ID = P.EVTP_EVT_ID AND E.EVT_ID= B.SBCR_EVT_ID
+
+
+
+
+
+
+
+
+GO
+/****** Object:  View [dbo].[V_SUBSCRIPTION_FIELD_VALUE]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE VIEW [dbo].[V_SUBSCRIPTION_FIELD_VALUE]
+AS
+SELECT S.SBCR_ID, E.EVT_NAME, P.EVTP_FIELD_SYNTAX, SFV.*
+FROM NS_SUBSCRIPTION_FIELD_VALUE SFV
+INNER JOIN NS_SUBSCRIPTION_FIELDS ON SBCRFV_SBCRF_ID = SBCRF_ID 
+INNER JOIN NS_SUBSCRIPTIONS S ON SBCRF_SBCR_ID = SBCR_ID
+INNER JOIN NS_EVENT_PARAM P ON SBCRF_EVTP_ID = P.EVTP_ID AND SBCRF_FIELD_ENABLED = 1
+INNER JOIN NS_EVENT_DEFINITIONS  E ON E.EVT_ID = P.EVTP_EVT_ID
+GO
+/****** Object:  Table [dbo].[NS_SUBSCRIPTION_SUBSCRIBER_CLASS]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[NS_SUBSCRIPTION_SUBSCRIBER_CLASS](
+	[SSBRSC_ID] [bigint] IDENTITY(1,1) NOT NULL,
+	[SSBRSC_SBCR_ID] [bigint] NOT NULL,
+	[SSBRSC_SBCC_ID] [bigint] NOT NULL,
+	[SSBRSC_SBCG_ID] [bigint] NULL,
+	[SSBRSC_SUBSCRIBER_ID] [bigint] NULL,
+ CONSTRAINT [PK_SUBSCRIPTION_SUBSCRIBER_CLASS] PRIMARY KEY CLUSTERED 
+(
+	[SSBRSC_ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[NS_SUBSCRIBER_CLASS]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[NS_SUBSCRIBER_CLASS](
+	[SBCC_ID] [bigint] IDENTITY(1,1) NOT NULL,
+	[SBCC_SQL_STR] [varchar](500) NOT NULL,
+	[SBCC_NAME] [varchar](500) NULL,
+	[SBCC_DLVC_ID] [bigint] NULL,
+ CONSTRAINT [PK_SUBSCRIBER_CLASS] PRIMARY KEY CLUSTERED 
+(
+	[SBCC_ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
+ CONSTRAINT [IX_SUBSCRIBER_CLASS] UNIQUE NONCLUSTERED 
+(
+	[SBCC_NAME] ASC,
+	[SBCC_DLVC_ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[NS_SUBSCRIBER_GROUP]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[NS_SUBSCRIBER_GROUP](
+	[SBCG_ID] [bigint] IDENTITY(1,1) NOT NULL,
+	[SBCG_NAME] [varchar](50) NOT NULL,
+ CONSTRAINT [PK_SUBCRIBER_GROUP] PRIMARY KEY CLUSTERED 
+(
+	[SBCG_ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  View [dbo].[V_SUBSCRIPTION_SUBSCRIBER]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE VIEW [dbo].[V_SUBSCRIPTION_SUBSCRIBER]
+AS
+SELECT SSC.*, SC.SBCC_NAME, SC.SBCC_SQL_STR, SC.SBCC_DLVC_ID, DC.DLVC_NAME, SG.SBCG_ID, SG.SBCG_NAME
+FROM NS_SUBSCRIPTION_SUBSCRIBER_CLASS SSC 
+INNER JOIN NS_SUBSCRIBER_CLASS SC ON SSC.SSBRSC_SBCC_ID = SC.SBCC_ID
+INNER JOIN NS_DELIVERY_CHANNEL DC ON DC.DLVC_ID = SC.SBCC_DLVC_ID
+INNER JOIN NS_SUBSCRIBER_GROUP SG ON SSC.SSBRSC_SBCG_ID = SG.SBCG_ID
+
+
+
+
+
+GO
+/****** Object:  Table [dbo].[MS_PERMISSIONS]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[MS_PERMISSIONS](
+	[PERM_ID] [bigint] IDENTITY(1,1) NOT NULL,
+	[PERM_NAME] [varchar](100) NOT NULL,
+	[PERM_TYPE] [int] NOT NULL,
+ CONSTRAINT [PK_MS_PERMISSIONS] PRIMARY KEY CLUSTERED 
+(
+	[PERM_ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[MS_ROLE]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[MS_ROLE](
+	[RL_ID] [bigint] IDENTITY(1,1) NOT NULL,
+	[RL_NAME] [varchar](50) NOT NULL,
+	[RL_DESC] [varchar](100) NULL,
+ CONSTRAINT [PK_MS_ROLE] PRIMARY KEY CLUSTERED 
+(
+	[RL_ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
+ CONSTRAINT [UK_MS_ROLE] UNIQUE NONCLUSTERED 
+(
+	[RL_NAME] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[MS_ROLE_DETAILS]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[MS_ROLE_DETAILS](
+	[RLDT_ID] [bigint] IDENTITY(1,1) NOT NULL,
+	[RLDT_RL_ID] [bigint] NOT NULL,
+	[RLDT_SUBMOD_ID] [bigint] NOT NULL,
+	[RLDT_PERM_ID] [bigint] NOT NULL,
+	[RLDT_ENABLED] [bit] NOT NULL,
+ CONSTRAINT [PK_MS_PROFILE_DETAILS] PRIMARY KEY CLUSTERED 
+(
+	[RLDT_ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[MS_SUBMODULE]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[MS_SUBMODULE](
+	[SUBMOD_ID] [bigint] IDENTITY(1,1) NOT NULL,
+	[SUBMOD_NAME] [varchar](100) NOT NULL,
+	[SUBMOD_TYPENAME] [varchar](150) NOT NULL,
+	[SUBMOD_MOD_ID] [bigint] NOT NULL,
+	[SUBMOD_URL] [varchar](200) NULL,
+	[SUBMOD_LICENSE_ID] [bigint] NULL,
+ CONSTRAINT [PK_MS_SUBMODULE] PRIMARY KEY CLUSTERED 
+(
+	[SUBMOD_ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  View [dbo].[VW_ALL_USER_ROLE_DETAILS]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE VIEW [dbo].[VW_ALL_USER_ROLE_DETAILS]
+AS
+SELECT     TOP (10000) dbo.MS_ROLE.RL_ID, dbo.MS_ROLE.RL_NAME, dbo.MS_SUBMODULE.SUBMOD_ID, dbo.MS_SUBMODULE.SUBMOD_NAME, 
+                      dbo.MS_SUBMODULE.SUBMOD_TYPENAME, dbo.MS_PERMISSIONS.PERM_ID, dbo.MS_PERMISSIONS.PERM_NAME, 
+                      dbo.MS_ROLE_DETAILS.RLDT_ENABLED
+FROM         dbo.MS_PERMISSIONS INNER JOIN
+                      dbo.MS_ROLE_DETAILS ON dbo.MS_PERMISSIONS.PERM_ID = dbo.MS_ROLE_DETAILS.RLDT_PERM_ID INNER JOIN
+                      dbo.MS_ROLE ON dbo.MS_ROLE_DETAILS.RLDT_RL_ID = dbo.MS_ROLE.RL_ID INNER JOIN
+                      dbo.MS_SUBMODULE ON dbo.MS_ROLE_DETAILS.RLDT_SUBMOD_ID = dbo.MS_SUBMODULE.SUBMOD_ID
+ORDER BY dbo.MS_ROLE.RL_NAME, dbo.MS_SUBMODULE.SUBMOD_NAME, dbo.MS_PERMISSIONS.PERM_ID
+GO
+/****** Object:  Table [dbo].[TMS_ORDERING]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[TMS_ORDERING](
+	[ORD_ID] [bigint] IDENTITY(1,1) NOT NULL,
+	[ORD_RQ_NO] [varchar](50) NOT NULL,
+	[ORD_ORDER_DATE] [datetime] NULL,
+	[ORD_ORDERED_BY] [bigint] NULL,
+	[ORD_MAKER_ID] [bigint] NULL,
+	[ORD_DAY_WANTED] [float] NULL,
+	[ORD_DATE_WANTED] [datetime] NULL,
+	[ORD_CANCELLED_BY] [bigint] NULL,
+	[ORD_CANCELLED_DATE] [datetime] NULL,
+	[ORD_CANCELLED_REMARK] [varchar](100) NULL,
+	[ORD_STATUS] [bigint] NULL,
+ CONSTRAINT [PK_TMS_ORDERING] PRIMARY KEY CLUSTERED 
+(
+	[ORD_ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[TMS_ORDERING_ITEMS]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[TMS_ORDERING_ITEMS](
+	[ORDI_ID] [bigint] IDENTITY(1,1) NOT NULL,
+	[ORDI_ORD_ID] [bigint] NOT NULL,
+	[ORDI_RQ_ID] [bigint] NOT NULL,
+	[ORDI_ORDER_QTY] [int] NOT NULL,
+	[ORDI_ALERTED] [bit] NULL,
+	[ORDI_CANCELLED_QTY] [int] NULL,
+	[ORDI_REMAIN_QTY] [int] NULL,
+ CONSTRAINT [PK_TMS_ORDERING_ITEMS] PRIMARY KEY CLUSTERED 
+(
+	[ORDI_ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[MS_CUSTOMER]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[MS_CUSTOMER](
+	[CUS_ID] [bigint] IDENTITY(1,1) NOT NULL,
+	[CUS_NAME] [varchar](100) NOT NULL,
+	[CUS_ABBR] [varchar](50) NULL,
+	[IS_DELETED] [int] NOT NULL,
+	[DELETED_AT] [datetime] NULL,
+	[DELETED_BY] [varchar](100) NULL,
+ CONSTRAINT [PK_MS_CUSTOMER] PRIMARY KEY CLUSTERED 
+(
+	[CUS_ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[TMS_TOOL_INVENTORY]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[TMS_TOOL_INVENTORY](
+	[INV_ID] [bigint] IDENTITY(1,1) NOT NULL,
+	[INV_TOOL_ID] [varchar](50) NOT NULL,
+	[INV_MLR_ID] [bigint] NOT NULL,
+	[INV_TOOL_TAG] [varchar](10) NOT NULL,
+	[INV_STATUS] [bigint] NOT NULL,
+	[INV_IN_TOOL_SET] [bigint] NULL,
+	[INV_SL_ID] [bigint] NULL,
+	[INV_NOTES] [varchar](50) NULL,
+	[INV_RQ_NO] [varchar](20) NULL,
+	[INV_MAKER_ID] [bigint] NULL,
+	[INV_MAT_ID] [bigint] NULL,
+	[INV_PURCHASE_TYPE] [bigint] NULL,
+	[INV_DO_NO] [varchar](20) NULL,
+	[INV_RECEIVED_DATE] [datetime] NULL,
+	[INV_ASSGN_ID] [bigint] NULL,
+	[INV_SCRAP_DATE] [datetime] NULL,
+	[INV_TOOL_CONDITION] [bigint] NULL,
+	[INV_WO_ID] [bigint] NULL,
+	[INV_BEGIN_CYCLE] [bigint] NULL,
+	[INV_END_CYCLE] [bigint] NULL,
+	[INV_ORDI_ID] [bigint] NULL,
+	[INV_TOOL_COST] [float] NULL,
+	[INV_ASSETIZED] [bit] NULL,
+	[INV_OVER_TOOLLIFE_ALERTED] [bit] NULL,
+	[INV_REPLACED_BY] [bigint] NULL,
+ CONSTRAINT [PK_TMS_TOOL_INVENTORY] PRIMARY KEY CLUSTERED 
+(
+	[INV_ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
+ CONSTRAINT [UK_TMS_TOOL_INVENTORY] UNIQUE NONCLUSTERED 
+(
+	[INV_TOOL_ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[TMS_TOOL_MASTER_LIST]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[TMS_TOOL_MASTER_LIST](
+	[ML_ID] [bigint] IDENTITY(1,1) NOT NULL,
+	[ML_TOOL_DRAW_NO] [varchar](50) NOT NULL,
+	[ML_TYPE] [bigint] NOT NULL,
+	[ML_TRIAL] [bit] NULL,
+ CONSTRAINT [PK_TMS_TOOL_MASTER_LIST] PRIMARY KEY CLUSTERED 
+(
+	[ML_ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
+ CONSTRAINT [UK_TMS_TOOL_MASTER_LIST] UNIQUE NONCLUSTERED 
+(
+	[ML_TOOL_DRAW_NO] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[TMS_TOOL_MASTER_LIST_PARTS]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[TMS_TOOL_MASTER_LIST_PARTS](
+	[TMLP_ID] [uniqueidentifier] NOT NULL,
+	[TMLP_ML_ID] [bigint] NOT NULL,
+	[TMLP_PART_ID] [bigint] NOT NULL,
+ CONSTRAINT [PK_TMS_TOOL_MASTER_LIST_PARTS] PRIMARY KEY CLUSTERED 
+(
+	[TMLP_ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[TMS_TOOL_MASTER_LIST_REV]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[TMS_TOOL_MASTER_LIST_REV](
+	[MLR_ID] [bigint] IDENTITY(1,1) NOT NULL,
+	[MLR_ML_ID] [bigint] NOT NULL,
+	[MLR_OP_ID] [bigint] NOT NULL,
+	[MLR_TC_ID] [bigint] NULL,
+	[MLR_MAKER_ID] [bigint] NULL,
+	[MLR_MIN_QTY] [int] NULL,
+	[MLR_REPLENISH_QTY] [int] NULL,
+	[MLR_PRICE] [float] NULL,
+	[MLR_STD_TL_LIFE] [varchar](50) NULL,
+	[MLR_STD_REWORK] [varchar](50) NULL,
+	[MLR_DESC] [varchar](100) NULL,
+	[MLR_DRAWING] [varchar](50) NULL,
+	[MLR_MAT_ID] [bigint] NULL,
+	[MLR_REV] [int] NOT NULL,
+	[MLR_STATUS] [bigint] NOT NULL,
+	[MLR_EFFECTIVE_DATE] [datetime] NOT NULL,
+	[MLR_MODIFIED_DATE] [datetime] NOT NULL,
+	[MLR_MODIFIED_BY] [bigint] NOT NULL,
+	[MLR_MACG_ID] [bigint] NULL,
+	[MLR_CHANGE_SUMMARY] [varchar](100) NULL,
+	[MLR_SKETCH] [varchar](50) NULL,
+	[MLR_MINQTY_ALERT] [datetime] NULL,
+ CONSTRAINT [PK_TMS_MASTER_LIST_REV] PRIMARY KEY CLUSTERED 
+(
+	[MLR_ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[MS_MAKER]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[MS_MAKER](
+	[MAKER_ID] [bigint] IDENTITY(1,1) NOT NULL,
+	[MAKER_NAME] [varchar](200) NOT NULL,
+	[MAKER_CODE] [varchar](50) NULL,
+	[MAKER_DESC] [varchar](50) NULL,
+	[MAKER_ADDR] [varchar](200) NULL,
+	[MAKER_CITY] [varchar](50) NULL,
+	[MAKER_COUNTRY] [varchar](50) NULL,
+	[MAKER_STATE] [varchar](50) NULL,
+	[MAKER_ZIPCODE] [int] NULL,
+	[MAKER_TYPE] [bigint] NULL,
+	[IS_DELETED] [bit] NULL,
+	[CREATED_AT] [datetime] NULL,
+	[CREATED_BY] [varchar](50) NULL,
+ CONSTRAINT [PK_MS_MAKER] PRIMARY KEY CLUSTERED 
+(
+	[MAKER_ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[MS_MATERIAL]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[MS_MATERIAL](
+	[MAT_ID] [bigint] IDENTITY(1,1) NOT NULL,
+	[MAT_NAME] [varchar](50) NOT NULL,
+	[MAT_DESC] [varchar](100) NULL,
+	[MAT_CODE] [varchar](50) NULL,
+	[MAT_UNIT] [bigint] NULL,
+	[MAT_UNIT_PRICE] [float] NULL,
+	[IS_DELETED] [bit] NULL,
+	[DELETED_AT] [datetime] NULL,
+	[DELETED_BY] [varchar](50) NULL,
+ CONSTRAINT [PK_MS_MATERIAL] PRIMARY KEY CLUSTERED 
+(
+	[MAT_ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[MS_OPERATION]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[MS_OPERATION](
+	[OP_ID] [bigint] IDENTITY(1,1) NOT NULL,
+	[OP_NAME] [varchar](50) NOT NULL,
+	[OP_CODE] [varchar](50) NULL,
+	[OP_DESC] [varchar](50) NULL,
+	[IS_DELETED] [bit] NULL,
+	[DELETED_AT] [datetime] NULL,
+	[DELETED_BY] [varchar](50) NULL,
+ CONSTRAINT [PK_MS_OPERATION] PRIMARY KEY CLUSTERED 
+(
+	[OP_ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[MS_PARTS]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[MS_PARTS](
+	[PART_ID] [bigint] IDENTITY(1,1) NOT NULL,
+	[PART_NAME] [varchar](50) NOT NULL,
+	[PART_IS_GROUP] [bit] NOT NULL,
+	[PART_DESC] [varchar](100) NULL,
+	[PART_TYPE] [varchar](50) NULL,
+	[PART_CUS_CODE] [varchar](50) NULL,
+	[PART_DRW_NO] [varchar](50) NULL,
+	[PART_UNIT_PRICE] [float] NULL,
+	[PART_WEIGHT] [float] NULL,
+	[PART_UNITS] [bigint] NULL,
+	[PART_CUS_ID] [bigint] NULL,
+	[IS_DELETED] [int] NOT NULL,
+	[DELETED_AT] [datetime] NULL,
+	[DELETED_BY] [varchar](100) NULL,
+ CONSTRAINT [PK_MS_PART] PRIMARY KEY CLUSTERED 
+(
+	[PART_ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[MS_STORAGE_LOCATION]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[MS_STORAGE_LOCATION](
+	[SL_ID] [bigint] IDENTITY(1,1) NOT NULL,
+	[SL_NAME] [varchar](50) NOT NULL,
+	[SL_DESC] [varchar](300) NULL,
+	[IS_DELETED] [bit] NULL,
+	[DELETED_AT] [datetime] NULL,
+	[DELETED_BY] [varchar](50) NULL,
+ CONSTRAINT [PK_MS_STORAGE_LOCATION] PRIMARY KEY CLUSTERED 
+(
+	[SL_ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
+ CONSTRAINT [UK_MS_STORAGE_LOCATION] UNIQUE NONCLUSTERED 
+(
+	[SL_NAME] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[MS_TOOL_CLASS]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[MS_TOOL_CLASS](
+	[TC_ID] [bigint] IDENTITY(1,1) NOT NULL,
+	[TC_NAME] [varchar](50) NOT NULL,
+	[TC_DESC] [varchar](100) NULL,
+	[TC_TYPE] [bigint] NULL,
+	[IS_DELETED] [bit] NULL,
+	[CREATED_AT] [datetime] NULL,
+	[CREATED_BY] [nvarchar](100) NULL,
+ CONSTRAINT [PK_MS_TOOL_CLASS] PRIMARY KEY CLUSTERED 
+(
+	[TC_ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  View [dbo].[VW_TOOL_INVENTORY]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE VIEW [dbo].[VW_TOOL_INVENTORY]
+AS
+SELECT     TOP 100 PERCENT ToolInventory.INV_ID, ToolInventory.INV_TOOL_ID, ToolInventory.INV_TOOL_TAG, ToolInventory.INV_STATUS, 
+                      ToolInventory.INV_IN_TOOL_SET, ToolMasterList.ML_TOOL_DRAW_NO, Operation.OP_NAME, ToolClass.TC_NAME, MasterListRev.MLR_REV, 
+                      ToolInventory.INV_NOTES, Material.MAT_NAME, ToolInventory.INV_PURCHASE_TYPE, ToolInventory.INV_RQ_NO, ToolInventory.INV_DO_NO, 
+                      ToolInventory.INV_RECEIVED_DATE, Maker.MAKER_NAME, Maker.MAKER_CODE, StorageLocation.SL_NAME, ToolInventory.INV_TOOL_COST, 
+                      ToolInventory.INV_ASSETIZED, ToolOrdering.ORD_RQ_NO, ToolInventory.INV_END_CYCLE, Part.PART_NAME, Customer.CUS_ABBR
+FROM         dbo.TMS_TOOL_MASTER_LIST_REV AS MasterListRev RIGHT OUTER JOIN
+                      dbo.TMS_TOOL_INVENTORY AS ToolInventory ON MasterListRev.MLR_ID = ToolInventory.INV_MLR_ID LEFT OUTER JOIN
+                      dbo.TMS_TOOL_MASTER_LIST AS ToolMasterList ON ToolMasterList.ML_ID = MasterListRev.MLR_ML_ID LEFT OUTER JOIN
+                      dbo.TMS_TOOL_MASTER_LIST_PARTS AS ToolMasterListParts ON ToolMasterListParts.TMLP_ML_ID = ToolMasterList.ML_ID LEFT OUTER JOIN
+                      dbo.MS_PARTS AS Part ON Part.PART_ID = ToolMasterListParts.TMLP_PART_ID LEFT OUTER JOIN
+                      dbo.MS_CUSTOMER AS Customer ON Customer.CUS_ID = Part.PART_CUS_ID LEFT OUTER JOIN
+                      dbo.MS_OPERATION AS Operation ON Operation.OP_ID = MasterListRev.MLR_OP_ID LEFT OUTER JOIN
+                      dbo.MS_TOOL_CLASS AS ToolClass ON ToolClass.TC_ID = MasterListRev.MLR_TC_ID LEFT OUTER JOIN
+                      dbo.MS_MAKER AS Maker ON Maker.MAKER_ID = ToolInventory.INV_MAKER_ID LEFT OUTER JOIN
+                      dbo.MS_MATERIAL AS Material ON Material.MAT_ID = ToolInventory.INV_MAT_ID LEFT OUTER JOIN
+                      dbo.TMS_ORDERING_ITEMS AS OrderingItems ON OrderingItems.ORDI_ID = ToolInventory.INV_ORDI_ID LEFT OUTER JOIN
+                      dbo.TMS_ORDERING AS ToolOrdering ON ToolOrdering.ORD_ID = OrderingItems.ORDI_ORD_ID LEFT OUTER JOIN
+                      dbo.MS_STORAGE_LOCATION AS StorageLocation ON StorageLocation.SL_ID = ToolInventory.INV_SL_ID
+WHERE     (ToolMasterList.ML_TYPE = 1)
+ORDER BY ToolInventory.INV_ID
+GO
+/****** Object:  Table [dbo].[MS_USERS]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[MS_USERS](
+	[USR_ID] [bigint] IDENTITY(1,1) NOT NULL,
+	[USR_USERNAME] [varchar](50) NOT NULL,
+	[USR_PASSWORD] [varchar](50) NOT NULL,
+	[USR_NAME] [varchar](50) NOT NULL,
+	[USR_POS_ID] [bigint] NOT NULL,
+	[USR_EMAIL] [varchar](50) NULL,
+	[USR_RL_ID] [bigint] NOT NULL,
+	[USR_CHARGE_RATE] [float] NULL,
+ CONSTRAINT [PK_MS_USERS] PRIMARY KEY CLUSTERED 
+(
+	[USR_ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
+ CONSTRAINT [UK_MS_USERS] UNIQUE NONCLUSTERED 
+(
+	[USR_USERNAME] ASC,
+	[USR_NAME] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[TMS_TOOL_MASTER_LIST_MEMBERS]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[TMS_TOOL_MASTER_LIST_MEMBERS](
+	[TB_ID] [bigint] IDENTITY(1,1) NOT NULL,
+	[TB_MLR_PARENT_ID] [bigint] NOT NULL,
+	[TB_MLR_CHILD_ID] [bigint] NOT NULL,
+	[TB_QTY] [int] NOT NULL,
+	[TB_REMARK] [varchar](100) NULL,
+	[TB_SEQ] [int] NOT NULL,
+	[TB_STD_QTY] [int] NULL,
+ CONSTRAINT [PK_TMS_TOOL_BOM] PRIMARY KEY CLUSTERED 
+(
+	[TB_ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[MS_MACHINES]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[MS_MACHINES](
+	[MAC_ID] [bigint] IDENTITY(1,1) NOT NULL,
+	[MAC_NAME] [varchar](50) NOT NULL,
+	[MAC_OP_ID] [bigint] NOT NULL,
+	[MAC_IS_GROUP] [bit] NOT NULL,
+	[MAC_CHARGE_RATE] [float] NULL,
+	[IS_DELETED] [bit] NULL,
+	[DELETED_AT] [datetime] NULL,
+	[DELETED_BY] [varchar](50) NULL,
+	[IS_ACTIVE] [bit] NULL,
+	[CREATED_AT] [datetime] NULL,
+	[CREATED_BY] [varchar](50) NULL,
+	[UPDATED_AT] [datetime] NULL,
+	[UPDATED_BY] [varchar](50) NULL,
+ CONSTRAINT [PK_MS_MACHINES] PRIMARY KEY CLUSTERED 
+(
+	[MAC_ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  View [dbo].[VW_TOOL_MASTER_LIST]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE VIEW [dbo].[VW_TOOL_MASTER_LIST]
+ 	AS
+ 	SELECT     TOP 100 PERCENT MasterList.ML_ID, LatestMasterListRev.MLR_ID, MasterList.ML_TYPE,
+ 	                                          dbo.fnGetToolMasterListParts(MasterList.ML_ID) as PART_NAME, Operation.OP_NAME, MasterList.ML_TOOL_DRAW_NO,
+ 	                                          ToolClass.TC_NAME, LatestMasterListRev.MLR_REV, LatestMasterListRev.MLR_STATUS, LatestMasterListRev.MLR_EFFECTIVE_DATE,
+ 	                      LatestMasterListRev.MLR_MODIFIED_DATE, ModifiedBy.USR_NAME AS ModifiedBy,
+ 	                      LatestMasterListRev.MLR_CHANGE_SUMMARY, Material.MAT_NAME, LatestMasterListRev.MLR_MIN_QTY,
+ 	                      LatestMasterListRev.MLR_REPLENISH_QTY, LatestMasterListRev.MLR_PRICE, LatestMasterListRev.MLR_STD_TL_LIFE,
+ 	                      LatestMasterListRev.MLR_STD_REWORK, LatestMasterListRev.MLR_DESC, dbo.MS_MAKER.MAKER_NAME,
+ 	                      CASE WHEN ObsoleteMLR.ObsoleteCount > 0 THEN 1 ELSE 0 END AS ChildObsolete, dbo.MS_MACHINES.MAC_NAME
+ 	FROM         dbo.TMS_TOOL_MASTER_LIST AS MasterList LEFT OUTER JOIN
+ 	(SELECT     MAX(MLR_REV) AS REV, MLR_ML_ID
+ 	                            FROM          dbo.TMS_TOOL_MASTER_LIST_REV
+ 	                            GROUP BY MLR_ML_ID) AS Latest on Latest.MLR_ML_ID = MasterList.ML_ID LEFT OUTER JOIN
+ 	                      dbo.TMS_TOOL_MASTER_LIST_REV AS LatestMasterListRev ON LatestMasterListRev.MLR_ML_ID = Latest.MLR_ML_ID and Latest.rev = LatestMasterListRev.mlr_rev LEFT OUTER JOIN
+ 	                      dbo.MS_MAKER ON dbo.MS_MAKER.MAKER_ID = LatestMasterListRev.MLR_MAKER_ID LEFT OUTER JOIN
+ 	                      dbo.MS_MACHINES ON LatestMasterListRev.MLR_MACG_ID = dbo.MS_MACHINES.MAC_ID LEFT OUTER JOIN
+ 	                      dbo.MS_OPERATION AS Operation ON LatestMasterListRev.MLR_OP_ID = Operation.OP_ID LEFT OUTER JOIN
+ 	                      dbo.MS_TOOL_CLASS AS ToolClass ON LatestMasterListRev.MLR_TC_ID = ToolClass.TC_ID LEFT OUTER JOIN
+ 	                      dbo.MS_MATERIAL AS Material ON LatestMasterListRev.MLR_MAT_ID = Material.MAT_ID LEFT OUTER JOIN
+ 	                      dbo.MS_USERS AS ModifiedBy ON LatestMasterListRev.MLR_MODIFIED_BY = ModifiedBy.USR_ID LEFT OUTER JOIN
+ 	                          (SELECT     COUNT('a') AS ObsoleteCount, parent.mlr_id
+ 	                            FROM          dbo.TMS_TOOL_MASTER_LIST_MEMBERS rel
+ 	inner join TMS_TOOL_MASTER_LIST_REV parent on parent.mlr_id = rel.TB_MLR_PARENT_ID
+ 	inner join TMS_TOOL_MASTER_LIST_REV child  on child.mlr_id = rel.TB_MLR_CHILD_ID
+ 	                            WHERE      (child.MLR_STATUS = 1)
+ 	                            GROUP BY parent.mlr_id) AS ObsoleteMLR ON ObsoleteMLR.mlr_id = LatestMasterListRev.MLR_ID
+ 	ORDER BY MasterList.ML_ID
+GO
+/****** Object:  Table [dbo].[TMS_REQUISITION]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[TMS_REQUISITION](
+	[RQ_ID] [bigint] IDENTITY(1,1) NOT NULL,
+	[RQ_INT_REQ_NO] [varchar](50) NULL,
+	[RQ_DATE] [datetime] NULL,
+	[RQ_REQUESTED_BY] [bigint] NOT NULL,
+	[RQ_REASON] [bigint] NULL,
+	[RQ_SCRAP_ID] [bigint] NULL,
+	[RQ_STATUS] [bigint] NOT NULL,
+	[RQ_REMARKS] [varchar](200) NULL,
+	[RQ_PART_ID] [bigint] NOT NULL,
+	[RQ_DWG_MLR_ID] [bigint] NOT NULL,
+	[RQ_MAKER_ID] [bigint] NULL,
+	[RQ_REQ_QTY] [int] NOT NULL,
+	[RQ_EST_RECEIVE_DATE] [datetime] NULL,
+	[RQ_DECISION_1] [bigint] NULL,
+	[RQ_DECISION_2] [bigint] NULL,
+	[RQ_APPROVER_1] [bigint] NULL,
+	[RQ_APPROVER_2] [bigint] NULL,
+	[RQ_APPRV1_DATE] [datetime] NULL,
+	[RQ_APPRV2_DATE] [datetime] NULL,
+	[RQ_APPR1_COMMENTS] [varchar](200) NULL,
+	[RQ_APPR2_COMMENTS] [varchar](200) NULL,
+	[RQ_INVSTS_LAST_UPDATE] [datetime] NULL,
+	[RQ_ORDER_QTY] [int] NULL,
+	[RQ_RECEIVE_QTY] [int] NULL,
+	[RQ_ORI_SUM_QTY] [int] NULL,
+	[RQ_STD_SUM_QTY] [int] NULL,
+	[RQ_CURRENT_SUM_QTY] [int] NULL,
+	[RQ_NGNR_SUM_QTY] [int] NULL,
+	[RQ_NRCV_SUM_QTY] [int] NULL,
+	[RQ_DIFF_SUM_QTY] [int] NULL,
+	[RQ_SUBMIT_ALERTED] [bit] NULL,
+	[RQ_APPROVE_ALERTED] [bit] NULL,
+	[RQ_INV_ID] [bigint] NULL,
+ CONSTRAINT [PK_TMS_REQUISITION] PRIMARY KEY CLUSTERED 
+(
+	[RQ_ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[TMS_TOOL_SCRAP]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[TMS_TOOL_SCRAP](
+	[SCRAP_ID] [bigint] IDENTITY(1,1) NOT NULL,
+	[SCRAP_NO] [varchar](50) NOT NULL,
+	[SCRAP_DATE] [datetime] NOT NULL,
+	[SCRAP_RQ_NO] [varchar](20) NULL,
+	[SCRAP_ACC_DATE] [datetime] NULL,
+	[SCRAP_MAC_ID] [bigint] NULL,
+	[SCRAP_OPERATOR] [bigint] NULL,
+	[SCRAP_REQUESTED_BY] [bigint] NOT NULL,
+	[SCRAP_STATUS] [bigint] NOT NULL,
+	[SCRAP_INV_ID] [bigint] NOT NULL,
+	[SCRAP_REASON_ID] [bigint] NULL,
+	[SCRAP_CI_ID] [bigint] NULL,
+	[SCRAP_COUNTER_MEASURE] [varchar](200) NULL,
+	[SCRAP_CAUSE_REMARK] [varchar](200) NULL,
+	[SCRAP_DISPOSITION] [bigint] NULL,
+	[SCRAP_TO_ORDER] [bigint] NULL,
+	[SCRAP_APPROVED_BY] [bigint] NULL,
+	[SCRAP_APPROVED_DATE] [datetime] NULL,
+	[SCRAP_MODIFIED_BY] [bigint] NULL,
+	[SCRAP_MODIFIED_DATE] [datetime] NULL,
+	[SCRAP_INVESTIGATED_BY] [bigint] NULL,
+	[SCRAP_ASSIGN_NO] [nvarchar](50) NULL,
+	[SCRAP_END_CYCLE] [bigint] NULL,
+	[SCRAP_REQUEST_APPROVE_ALERT] [bit] NULL,
+	[SCRAP_APPROVED_ALERT] [bit] NULL,
+	[SCRAP_INVSTS_LAST_UPDATE] [datetime] NULL,
+	[SCRAP_STD_QTY_THIS] [int] NULL,
+	[SCRAP_NRCV_QTY_THIS] [int] NULL,
+	[SCRAP_CURRENT_QTY_THIS] [int] NULL,
+	[SCRAP_STD_QTY_ALL] [int] NULL,
+	[SCRAP_NRCV_QTY_ALL] [int] NULL,
+	[SCRAP_CURRENT_QTY_ALL] [int] NULL,
+ CONSTRAINT [PK_TMS_TOOL_SCRAP] PRIMARY KEY CLUSTERED 
+(
+	[SCRAP_ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[MS_REASON]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[MS_REASON](
+	[REASON_ID] [bigint] IDENTITY(1,1) NOT NULL,
+	[REASON_NAME] [varchar](200) NOT NULL,
+	[REASON_CODE] [varchar](50) NULL,
+	[IS_DELETED] [bit] NULL,
+	[DELETED_AT] [datetime] NULL,
+	[DELETED_BY] [varchar](50) NULL,
+ CONSTRAINT [PK_MS_REASON] PRIMARY KEY CLUSTERED 
+(
+	[REASON_ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  View [dbo].[VW_TOOL_REQUISITION]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE VIEW [dbo].[VW_TOOL_REQUISITION]
+AS
+SELECT     dbo.TMS_REQUISITION.RQ_ID, dbo.TMS_REQUISITION.RQ_INT_REQ_NO, dbo.TMS_REQUISITION.RQ_DATE, A.USR_NAME AS REQUESTED_BY, 
+                      dbo.TMS_TOOL_SCRAP.SCRAP_NO, dbo.TMS_REQUISITION.RQ_STATUS, dbo.TMS_REQUISITION.RQ_REMARKS, dbo.MS_PARTS.PART_NAME, 
+                      dbo.TMS_TOOL_MASTER_LIST.ML_TOOL_DRAW_NO, dbo.MS_TOOL_CLASS.TC_NAME, dbo.MS_MAKER.MAKER_NAME, 
+                      dbo.MS_MAKER.MAKER_CODE, dbo.TMS_REQUISITION.RQ_REQ_QTY, dbo.TMS_REQUISITION.RQ_EST_RECEIVE_DATE, 
+                      dbo.TMS_REQUISITION.RQ_DECISION_1, dbo.TMS_REQUISITION.RQ_DECISION_2, B.USR_NAME AS APPROVER_1, C.USR_NAME AS APPROVER_2, 
+                      dbo.TMS_REQUISITION.RQ_APPRV1_DATE, dbo.TMS_REQUISITION.RQ_APPRV2_DATE, dbo.TMS_REQUISITION.RQ_APPR1_COMMENTS, 
+                      dbo.TMS_REQUISITION.RQ_APPR2_COMMENTS, dbo.TMS_REQUISITION.RQ_INVSTS_LAST_UPDATE, dbo.TMS_REQUISITION.RQ_ORDER_QTY, 
+                      dbo.TMS_REQUISITION.RQ_RECEIVE_QTY, dbo.TMS_REQUISITION.RQ_ORI_SUM_QTY, dbo.TMS_REQUISITION.RQ_STD_SUM_QTY, 
+                      dbo.TMS_REQUISITION.RQ_CURRENT_SUM_QTY, dbo.TMS_REQUISITION.RQ_NGNR_SUM_QTY, dbo.TMS_REQUISITION.RQ_NRCV_SUM_QTY, 
+                      dbo.TMS_REQUISITION.RQ_DIFF_SUM_QTY, dbo.TMS_REQUISITION.RQ_SUBMIT_ALERTED, dbo.TMS_REQUISITION.RQ_APPROVE_ALERTED, 
+                      dbo.TMS_ORDERING.ORD_DATE_WANTED, dbo.TMS_ORDERING.ORD_ID, dbo.TMS_ORDERING.ORD_RQ_NO, 
+                      CASE WHEN RQ_ORDER_QTY = 0 THEN '' WHEN RQ_ORDER_QTY > 0 AND 
+                      RQ_RECEIVE_QTY = 0 THEN 'NOT RECEIVED' WHEN RQ_RECEIVE_QTY < RQ_ORDER_QTY THEN 'PARTIAL' WHEN RQ_RECEIVE_QTY >= RQ_ORDER_QTY
+                       THEN 'RECEIVED' END AS RECEIVE_STATUS, CASE WHEN RQ_REQ_QTY = 0 THEN '' WHEN RQ_REQ_QTY > 0 AND 
+                      RQ_ORDER_QTY = 0 THEN 'NOT ORDERED' WHEN RQ_ORDER_QTY < RQ_REQ_QTY THEN 'PARTIAL' WHEN RQ_ORDER_QTY >= RQ_REQ_QTY THEN
+                       'ORDERED' END AS ORDER_STATUS, dbo.fnGetEnumName(dbo.TMS_REQUISITION.RQ_REASON, 'RQ_REASON') AS REASON_NAME
+FROM         dbo.TMS_REQUISITION LEFT OUTER JOIN
+                      dbo.TMS_ORDERING_ITEMS ON dbo.TMS_ORDERING_ITEMS.ORDI_RQ_ID = dbo.TMS_REQUISITION.RQ_ID LEFT OUTER JOIN
+                      dbo.TMS_ORDERING ON dbo.TMS_ORDERING_ITEMS.ORDI_ORD_ID = dbo.TMS_ORDERING.ORD_ID LEFT OUTER JOIN
+                      dbo.MS_USERS AS A ON A.USR_ID = dbo.TMS_REQUISITION.RQ_REQUESTED_BY LEFT OUTER JOIN
+                      dbo.MS_REASON ON dbo.MS_REASON.REASON_ID = dbo.TMS_REQUISITION.RQ_REASON LEFT OUTER JOIN
+                      dbo.TMS_TOOL_SCRAP ON dbo.TMS_TOOL_SCRAP.SCRAP_ID = dbo.TMS_REQUISITION.RQ_SCRAP_ID LEFT OUTER JOIN
+                      dbo.MS_PARTS ON dbo.MS_PARTS.PART_ID = dbo.TMS_REQUISITION.RQ_PART_ID LEFT OUTER JOIN
+                      dbo.TMS_TOOL_MASTER_LIST_REV ON dbo.TMS_TOOL_MASTER_LIST_REV.MLR_ID = dbo.TMS_REQUISITION.RQ_DWG_MLR_ID LEFT OUTER JOIN
+                      dbo.MS_TOOL_CLASS ON dbo.MS_TOOL_CLASS.TC_ID = dbo.TMS_TOOL_MASTER_LIST_REV.MLR_TC_ID LEFT OUTER JOIN
+                      dbo.TMS_TOOL_MASTER_LIST ON dbo.TMS_TOOL_MASTER_LIST_REV.MLR_ML_ID = dbo.TMS_TOOL_MASTER_LIST.ML_ID LEFT OUTER JOIN
+                      dbo.MS_MAKER ON dbo.TMS_ORDERING.ORD_MAKER_ID = dbo.MS_MAKER.MAKER_ID LEFT OUTER JOIN
+                      dbo.MS_USERS AS B ON B.USR_ID = dbo.TMS_REQUISITION.RQ_APPROVER_1 LEFT OUTER JOIN
+                      dbo.MS_USERS AS C ON C.USR_ID = dbo.TMS_REQUISITION.RQ_APPROVER_2
+GO
+/****** Object:  Table [dbo].[MS_ACTION_CATEGORY]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[MS_ACTION_CATEGORY](
+	[AC_ID] [bigint] IDENTITY(1,1) NOT NULL,
+	[AC_NAME] [varchar](50) NOT NULL,
+	[AC_DESC] [varchar](100) NULL,
+ CONSTRAINT [PK_MS_ACTION_CATEGORY] PRIMARY KEY CLUSTERED 
+(
+	[AC_ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
+ CONSTRAINT [UK_MS_ACTION_CATEGORY] UNIQUE NONCLUSTERED 
+(
+	[AC_NAME] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[MS_ACTION_ITEM]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[MS_ACTION_ITEM](
+	[AI_ID] [bigint] IDENTITY(1,1) NOT NULL,
+	[AI_NAME] [varchar](200) NOT NULL,
+	[AI_CODE] [varchar](50) NULL,
+	[AI_AC_ID] [bigint] NULL,
+	[AI_IS_RMK_REQ] [bit] NULL,
+ CONSTRAINT [PK_MS_ACTION_ITEM] PRIMARY KEY CLUSTERED 
+(
+	[AI_ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
+ CONSTRAINT [UK_MS_ACTION_ITEM] UNIQUE NONCLUSTERED 
+(
+	[AI_NAME] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[MS_CAUSE_CATEGORY]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[MS_CAUSE_CATEGORY](
+	[CC_ID] [bigint] IDENTITY(1,1) NOT NULL,
+	[CC_NAME] [varchar](50) NOT NULL,
+	[CC_DESC] [varchar](100) NULL,
+ CONSTRAINT [PK_MS_CAUSE_CATEGORY] PRIMARY KEY CLUSTERED 
+(
+	[CC_ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
+ CONSTRAINT [UK_MS_CAUSE_CATEGORY] UNIQUE NONCLUSTERED 
+(
+	[CC_NAME] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[MS_CAUSE_ITEM]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[MS_CAUSE_ITEM](
+	[CI_ID] [bigint] IDENTITY(1,1) NOT NULL,
+	[CI_NAME] [varchar](200) NOT NULL,
+	[CI_CODE] [varchar](50) NULL,
+	[CI_CC_ID] [bigint] NULL,
+	[CI_AC_ID] [bigint] NULL,
+	[CI_IS_RMK_REQ] [bit] NULL,
+ CONSTRAINT [PK_MS_CAUSE_ITEM] PRIMARY KEY CLUSTERED 
+(
+	[CI_ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
+ CONSTRAINT [UK_MS_CAUSE_ITEM] UNIQUE NONCLUSTERED 
+(
+	[CI_NAME] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[MS_CONVERSION_RATE]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[MS_CONVERSION_RATE](
+	[CON_ID] [bigint] IDENTITY(1,1) NOT NULL,
+	[CON_CURRENCY] [varchar](50) NOT NULL,
+	[CON_RATE] [float] NOT NULL,
+	[IS_DELETED] [bit] NULL,
+	[DELETED_AT] [datetime] NULL,
+	[DELETED_BY] [varchar](50) NULL,
+ CONSTRAINT [PK_MS_CONVERSION_RATE] PRIMARY KEY CLUSTERED 
+(
+	[CON_ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[MS_DEPARTMENT]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[MS_DEPARTMENT](
+	[DEPART_ID] [bigint] IDENTITY(1,1) NOT NULL,
+	[DEPART_NAME] [varchar](100) NOT NULL,
+	[DEPART_DESC] [varchar](100) NULL,
+	[IS_DELETED] [bit] NULL,
+	[DELETED_AT] [datetime] NULL,
+	[DELETED_BY] [varchar](50) NULL,
+ CONSTRAINT [PK_MS_DEPARTMENT] PRIMARY KEY CLUSTERED 
+(
+	[DEPART_ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[MS_ERROR_LOG]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[MS_ERROR_LOG](
+	[ELOG_ID] [bigint] IDENTITY(1,1) NOT NULL,
+	[ELOG_CREATED_DATETIME] [datetime] NOT NULL,
+	[ELOG_STACKTRACE] [text] NULL,
+	[ELOG_MESSAGE] [text] NOT NULL,
+	[ELOG_INNERMESSAGE] [text] NULL,
+	[ELOG_URL] [varchar](400) NOT NULL,
+	[ELOG_SESSION] [varchar](50) NULL,
+	[ELOG_SOURCE] [varchar](50) NULL,
+	[ELOG_INNERSOURCE] [varchar](50) NULL,
+	[ELOG_SITEMAP] [varchar](50) NULL,
+	[ELOG_USERNAME] [varchar](50) NULL,
+ CONSTRAINT [PK_MS_ERROR_LOG] PRIMARY KEY CLUSTERED 
+(
+	[ELOG_ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[MS_ERROR_MAP]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[MS_ERROR_MAP](
+	[EMAP_ID] [bigint] IDENTITY(1,1) NOT NULL,
+	[EMAP_SOURCE] [varchar](50) NULL,
+	[EMAP_MESSAGE] [varchar](150) NULL,
+	[EMAP_INNERMESAGE] [varchar](150) NULL,
+	[EMAP_INNERSOURCE] [varchar](50) NULL,
+	[EMAP_DISPLAYMESSAGE] [varchar](500) NOT NULL,
+ CONSTRAINT [PK_MS_ERROR_MAP] PRIMARY KEY CLUSTERED 
+(
+	[EMAP_ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[MS_FIELDS]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[MS_FIELDS](
+	[FD_ID] [bigint] IDENTITY(1,1) NOT NULL,
+	[FD_NAME] [varchar](100) NOT NULL,
+	[FD_LABEL] [varchar](50) NOT NULL,
+	[FD_SUBMOD_ID] [bigint] NOT NULL,
+	[FD_TYPE] [int] NULL,
+	[FD_NAMESPACE] [varchar](150) NULL,
+	[FD_CAN_DISPLAY] [bit] NULL,
+	[FD_CAN_FILTER_QRY] [bit] NULL,
+	[FD_CAN_SORT] [bit] NULL,
+	[FD_URL] [nvarchar](300) NULL,
+ CONSTRAINT [PK_MS_FIELDS] PRIMARY KEY CLUSTERED 
+(
+	[FD_ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[MS_MACHINE_MEMBERS]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[MS_MACHINE_MEMBERS](
+	[MACM_ID] [bigint] IDENTITY(1,1) NOT NULL,
+	[MACM_PARENT_ID] [bigint] NOT NULL,
+	[MACM_CHILD_ID] [bigint] NOT NULL,
+	[IS_DELETED] [bit] NULL,
+	[DELETED_AT] [datetime] NULL,
+	[DELETED_BY] [varchar](50) NULL,
+ CONSTRAINT [PK_MS_MACHINE_MEMBERS] PRIMARY KEY CLUSTERED 
+(
+	[MACM_ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[MS_MODULE]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[MS_MODULE](
+	[MOD_ID] [bigint] IDENTITY(1,1) NOT NULL,
+	[MOD_NAME] [varchar](100) NOT NULL,
+ CONSTRAINT [PK_MS_MODULE] PRIMARY KEY CLUSTERED 
+(
+	[MOD_ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[MS_PART_MEMBERS]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[MS_PART_MEMBERS](
+	[PARTM_ID] [bigint] IDENTITY(1,1) NOT NULL,
+	[PARTM_PARENT_ID] [bigint] NOT NULL,
+	[PARTM_CHILD_ID] [bigint] NOT NULL,
+	[PARTM_DATE_START] [datetime] NOT NULL,
+	[PARTM_DATE_END] [datetime] NULL,
+	[IS_DELETED] [int] NOT NULL,
+	[DELETED_AT] [datetime] NULL,
+	[DELETED_BY] [varchar](100) NULL,
+ CONSTRAINT [PK_MS_PART_CHILD] PRIMARY KEY CLUSTERED 
+(
+	[PARTM_ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[MS_PERMISSIONS_PAGE]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[MS_PERMISSIONS_PAGE](
+	[PP_ID] [bigint] IDENTITY(1,1) NOT NULL,
+	[PP_SUBMOD_ID] [bigint] NOT NULL,
+	[PP_PERM_ID] [bigint] NOT NULL,
+	[PP_URL] [nvarchar](max) NOT NULL,
+	[PP_QRY_STR] [nvarchar](max) NULL,
+	[PP_CTRL_ID] [nvarchar](250) NULL,
+	[PP_CTRL_PROP] [nvarchar](250) NULL,
+	[PP_TRUE_VALUE] [nvarchar](250) NULL,
+	[PP_FALSE_VALUE] [nvarchar](250) NULL,
+ CONSTRAINT [PK_MS_PAGE_PERMISSIONS] PRIMARY KEY CLUSTERED 
+(
+	[PP_ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[MS_POSITION]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[MS_POSITION](
+	[POS_ID] [bigint] IDENTITY(1,1) NOT NULL,
+	[POS_NAME] [varchar](50) NOT NULL,
+	[POS_DESC] [varchar](50) NULL,
+ CONSTRAINT [PK_MS_POS] PRIMARY KEY CLUSTERED 
+(
+	[POS_ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
+ CONSTRAINT [UK_MS_POS] UNIQUE NONCLUSTERED 
+(
+	[POS_NAME] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[MS_PROPERTIES]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[MS_PROPERTIES](
+	[PROP_ID] [bigint] IDENTITY(1,1) NOT NULL,
+	[PROP_NAME] [varchar](50) NOT NULL,
+	[PROP_VALUE] [varchar](50) NOT NULL,
+ CONSTRAINT [PK_MS_PROPERTIES] PRIMARY KEY CLUSTERED 
+(
+	[PROP_ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[MS_SEARCH]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[MS_SEARCH](
+	[SRC_ID] [bigint] IDENTITY(1,1) NOT NULL,
+	[SRC_CODE] [varchar](50) NOT NULL,
+	[SRC_VW_ID] [bigint] NOT NULL,
+	[SRC_CREATED_DATETIME] [datetime] NOT NULL,
+ CONSTRAINT [PK_MS_SEARCH] PRIMARY KEY CLUSTERED 
+(
+	[SRC_ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[MS_SEARCH_DETAIL]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[MS_SEARCH_DETAIL](
+	[SD_ID] [bigint] IDENTITY(1,1) NOT NULL,
+	[SD_SRC_ID] [bigint] NOT NULL,
+	[SD_DISPLAY_VALUE] [varchar](50) NULL,
+	[SD_VFR_ID] [bigint] NOT NULL,
+ CONSTRAINT [PK_MS_SEARCH_DETAIL] PRIMARY KEY CLUSTERED 
+(
+	[SD_ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[MS_SESSION]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[MS_SESSION](
+	[SESSION_ID] [char](36) NOT NULL,
+	[SESSION_USR] [bigint] NOT NULL,
+	[SESSION_START] [datetime] NOT NULL,
+	[SESSION_LASTACCESS] [datetime] NOT NULL,
+	[SESSION_IP] [char](16) NULL,
+	[SESSION_STATION] [nvarchar](100) NULL,
+ CONSTRAINT [PK_MS_SESSION] PRIMARY KEY CLUSTERED 
+(
+	[SESSION_ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[MS_SUBMODULE_ACTIONS]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[MS_SUBMODULE_ACTIONS](
+	[SMA_ID] [bigint] IDENTITY(1,1) NOT NULL,
+	[SMA_SM_ID] [bigint] NOT NULL,
+	[SMA_NAME] [nvarchar](50) NOT NULL,
+	[SMA_LABEL] [nvarchar](100) NOT NULL,
+	[SMA_REQ_METHOD] [nvarchar](50) NULL,
+	[SMA_REQ_PARAMS] [nvarchar](300) NOT NULL,
+	[SMA_CONFIRMATION] [nvarchar](300) NULL,
+	[SMA_ORDER] [int] NULL,
+	[SMA_VISIBLE] [bit] NULL,
+	[SMA_ENABLE_COND] [nvarchar](1000) NULL,
+ CONSTRAINT [PK_MS_SUBMODULE_ACTIONS] PRIMARY KEY CLUSTERED 
+(
+	[SMA_ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[MS_SUBMODULE_FORMATS]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[MS_SUBMODULE_FORMATS](
+	[SMF_ID] [bigint] IDENTITY(1,1) NOT NULL,
+	[SMF_SM_ID] [bigint] NOT NULL,
+	[SMF_COLOR] [nvarchar](50) NOT NULL,
+	[SMF_CONDITION] [nvarchar](1000) NULL,
+ CONSTRAINT [PK_MS_SUBMODULE_FORMAT] PRIMARY KEY CLUSTERED 
+(
+	[SMF_ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[MS_SUBMODULE_PERMISSIONS]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[MS_SUBMODULE_PERMISSIONS](
+	[SMP_ID] [bigint] IDENTITY(1,1) NOT NULL,
+	[SMP_SUBMOD_ID] [bigint] NOT NULL,
+	[SMP_PERM_ID] [bigint] NOT NULL,
+ CONSTRAINT [PK_MS_SUBMODULE_PERMISSIONS_1] PRIMARY KEY CLUSTERED 
+(
+	[SMP_ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[MS_SUPPLIER]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[MS_SUPPLIER](
+	[SUP_ID] [bigint] IDENTITY(1,1) NOT NULL,
+	[SUP_NAME] [varchar](100) NOT NULL,
+	[SUP_ABBR] [varchar](50) NULL,
+	[IS_DELETED] [int] NOT NULL,
+	[DELETED_AT] [datetime] NULL,
+	[DELETED_BY] [varchar](100) NULL,
+	[CREATED_BY] [varchar](100) NULL,
+ CONSTRAINT [PK_MS_SUPPLIER] PRIMARY KEY CLUSTERED 
+(
+	[SUP_ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[MS_TOOL_TYPE]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[MS_TOOL_TYPE](
+	[TT_ID] [bigint] IDENTITY(1,1) NOT NULL,
+	[TT_NAME] [varchar](50) NOT NULL,
+	[TT_DESC] [varchar](100) NULL,
+	[IS_DELETED] [bit] NULL,
+	[CREATED_AT] [datetime] NULL,
+	[CREATED_BY] [nvarchar](50) NULL,
+ CONSTRAINT [PK_MS_TOOL_TYPE] PRIMARY KEY CLUSTERED 
+(
+	[TT_ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[MS_UOM]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[MS_UOM](
+	[UOM_ID] [bigint] IDENTITY(1,1) NOT NULL,
+	[UOM_NAME] [varchar](50) NOT NULL,
+	[UOM_DESC] [varchar](50) NULL,
+	[IS_DELETED] [int] NOT NULL,
+	[DELETED_AT] [datetime] NULL,
+	[DELETED_BY] [varchar](100) NULL,
+ CONSTRAINT [PK_MS_UOM] PRIMARY KEY CLUSTERED 
+(
+	[UOM_ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[MS_USERS_OPERATION]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[MS_USERS_OPERATION](
+	[USROP_ID] [bigint] IDENTITY(1,1) NOT NULL,
+	[USROP_USR_ID] [bigint] NOT NULL,
+	[USROP_OP_ID] [bigint] NOT NULL,
+ CONSTRAINT [PK_MS_USERS_OPERATION] PRIMARY KEY CLUSTERED 
+(
+	[USROP_ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
+ CONSTRAINT [UK_MS_USERS_OPERATION] UNIQUE NONCLUSTERED 
+(
+	[USROP_OP_ID] ASC,
+	[USROP_USR_ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[MS_VIEW]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[MS_VIEW](
+	[VW_ID] [bigint] IDENTITY(1,1) NOT NULL,
+	[VW_NAME] [varchar](50) NOT NULL,
+	[VW_SUBMOD_ID] [bigint] NOT NULL,
+	[VW_ITEM_SELECTION] [bit] NULL,
+	[VW_ITEM_SELECTION_ID_FIELD] [nvarchar](50) NULL,
+	[VW_ORDER_BY] [bigint] NULL,
+	[VW_ORDER_SEQUENCE] [smallint] NULL,
+ CONSTRAINT [PK_MS_VIEW] PRIMARY KEY CLUSTERED 
+(
+	[VW_ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[MS_VIEW_FIELDS]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[MS_VIEW_FIELDS](
+	[VF_ID] [bigint] IDENTITY(1,1) NOT NULL,
+	[VF_FD_ID] [bigint] NOT NULL,
+	[VF_VW_ID] [bigint] NOT NULL,
+	[VF_SORT_ORDER] [int] NOT NULL,
+ CONSTRAINT [PK_MS_VIEW_FIELDS] PRIMARY KEY CLUSTERED 
+(
+	[VF_ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[MS_VIEW_FILTERS]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[MS_VIEW_FILTERS](
+	[VFR_ID] [bigint] IDENTITY(1,1) NOT NULL,
+	[VFR_FD_ID] [bigint] NOT NULL,
+	[VFR_OP_TYPE] [int] NOT NULL,
+	[VFR_VALUE] [varchar](200) NOT NULL,
+	[VFR_VW_ID] [bigint] NOT NULL,
+ CONSTRAINT [PK_MS_VIEW_FILTERS] PRIMARY KEY CLUSTERED 
+(
+	[VFR_ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[NS_DELIVERY_OPTIONS]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[NS_DELIVERY_OPTIONS](
+	[DDCOPT_ID] [bigint] IDENTITY(1,1) NOT NULL,
+	[DDCOPT_SBCRDC_ID] [bigint] NOT NULL,
+	[DDCOPT_BATCH_LIMIT] [varchar](500) NULL,
+	[DDCOPT_TIMEOUT] [varchar](50) NULL,
+	[DDCOPT_FAILED_RETRY] [varchar](50) NULL,
+	[DDCOPT_FAILED_RETRY_COUNT] [bigint] NULL,
+	[DDCOPT_FAILED_RETRY_INTERVAL] [bigint] NULL
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[NS_DISTRIBUTION_LOG]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[NS_DISTRIBUTION_LOG](
+	[DISTRL_ID] [bigint] IDENTITY(1,1) NOT NULL,
+	[DISTRL_NOTIFY_TIME] [datetime] NOT NULL,
+	[DISTRL_SENT_TIME] [datetime] NOT NULL,
+	[DISTRL_MESSAGE] [varchar](500) NOT NULL
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[NS_EMAIL_TEMPLATE]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[NS_EMAIL_TEMPLATE](
+	[TMPLT_ID] [bigint] IDENTITY(1,1) NOT NULL,
+	[TMPLT_NAME] [varchar](50) NOT NULL,
+	[TMPLT_CONTENT] [varchar](1000) NULL,
+	[TMPLT_SUBJECT] [varchar](200) NULL,
+ CONSTRAINT [PK_EMAIL_TEMPLATE] PRIMARY KEY CLUSTERED 
+(
+	[TMPLT_NAME] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[NS_EVENT_PARAM_TYPE]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[NS_EVENT_PARAM_TYPE](
+	[EVTP_TYPE_ID] [bigint] IDENTITY(1,1) NOT NULL,
+	[EVTP_TYPE_VALUE] [varchar](50) NOT NULL,
+ CONSTRAINT [PK_EVENT_PARAM_TYPE] PRIMARY KEY CLUSTERED 
+(
+	[EVTP_TYPE_ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[NS_EXTERNAL_EMAIL]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[NS_EXTERNAL_EMAIL](
+	[EXT_ID] [bigint] IDENTITY(1,1) NOT NULL,
+	[EXT_EMAIL] [varchar](100) NOT NULL,
+ CONSTRAINT [PK_EXTERNAL_EMAIL] PRIMARY KEY CLUSTERED 
+(
+	[EXT_ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[OPTIONS]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[OPTIONS](
+	[OPT_ID] [bigint] IDENTITY(1,1) NOT NULL,
+	[OPT_NAME] [varchar](50) NOT NULL,
+	[OPT_VALUE] [varchar](500) NULL,
+	[OPT_DESC] [varchar](500) NULL,
+	[OPT_DATA_TYPE] [varchar](500) NULL,
+	[OPT_PARENT_ID] [bigint] NULL,
+	[OPT_FOLDER] [bit] NULL,
+	[OPT_ACCESS] [smallint] NULL,
+	[OPT_TYPE] [smallint] NULL,
+ CONSTRAINT [PK_OPTIONS] PRIMARY KEY CLUSTERED 
+(
+	[OPT_ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[tmp]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[tmp](
+	[Test] [varchar](10) NULL
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[TMS_ASSIGNED_TOOLS]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[TMS_ASSIGNED_TOOLS](
+	[ASSGN_ID] [bigint] IDENTITY(1,1) NOT NULL,
+	[ASSGN_TASGN_ID] [bigint] NOT NULL,
+	[ASSGN_MLR_ID] [bigint] NOT NULL,
+	[ASSGN_STD_REQ] [varchar](50) NULL,
+	[ASSGN_INV_ID] [bigint] NULL,
+	[ASSGN_TYPE] [bigint] NULL,
+	[ASSGN_ACTION] [bigint] NULL,
+	[ASSGN_ISSUED_DATE] [datetime] NULL,
+	[ASSGN_RETURN_DATE] [datetime] NULL,
+	[ASSGN_QTY_PRODUCED] [int] NULL,
+	[ASSGN_REPLACE_TOOL] [bigint] NULL,
+	[ASSGN_TOKSAI_REMARKS] [varchar](100) NULL,
+	[ASSGN_ALLOCATED_BY] [bigint] NULL,
+	[ASSGN_ALLOCATED_DATE] [datetime] NULL,
+	[ASSGN_CNR] [varchar](50) NULL,
+	[ASSGN_ISSUED_BY] [bigint] NULL,
+	[ASSGN_LOT_PRODUCED] [varchar](50) NULL,
+	[ASSGN_REPLACE_REASON] [varchar](100) NULL,
+	[ASSGN_REPLACE_REMARKS] [varchar](100) NULL,
+	[ASSGN_RETURN_BY] [bigint] NULL,
+	[ASSGN_RETURNED_TOOL_CONDITION] [varchar](50) NULL,
+	[ASSGN_TOKSAI_APPROVAL_BY] [bigint] NULL,
+	[ASSGN_MLR_SEQUENCE] [int] NULL,
+	[ASSGN_END_CYCLE] [bigint] NULL,
+ CONSTRAINT [PK_TMS_ASSIGNED_TOOLS] PRIMARY KEY CLUSTERED 
+(
+	[ASSGN_ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[TMS_ATTRIBUTES]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[TMS_ATTRIBUTES](
+	[ATTR_ID] [bigint] IDENTITY(1,1) NOT NULL,
+	[ATTR_NAME] [varchar](50) NOT NULL,
+	[ATTR_UOM] [bigint] NOT NULL,
+	[ATTR_DESC] [varchar](100) NULL,
+	[ATTR_TYPE] [bigint] NOT NULL,
+ CONSTRAINT [PK_MS_ATTRIBUTES] PRIMARY KEY CLUSTERED 
+(
+	[ATTR_ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
+ CONSTRAINT [UK_MS_ATTRIBUTES] UNIQUE NONCLUSTERED 
+(
+	[ATTR_NAME] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[TMS_MLR_ALLOW_OLD_REVISION]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[TMS_MLR_ALLOW_OLD_REVISION](
+	[AOR_ID] [bigint] IDENTITY(1,1) NOT NULL,
+	[AOR_MLR_ID] [bigint] NOT NULL,
+	[AOR_OLD_MLR_ID] [bigint] NOT NULL,
+	[AOR_INSTRUCTION] [varchar](100) NULL,
+	[AOR_ALLOW] [bit] NULL,
+ CONSTRAINT [PK_TMS_MLR_ALLOW_OLD_REVISION] PRIMARY KEY CLUSTERED 
+(
+	[AOR_ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[TMS_MLR_INTERCHANGABLE]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[TMS_MLR_INTERCHANGABLE](
+	[INT_ID] [uniqueidentifier] NOT NULL,
+	[INT_MLR_ID1] [bigint] NOT NULL,
+	[INT_MLR_ID2] [bigint] NOT NULL,
+ CONSTRAINT [PK_TMS_MLR_INTERCHANGABLE_1] PRIMARY KEY CLUSTERED 
+(
+	[INT_ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[TMS_REQUISITION_BOM_MLR]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[TMS_REQUISITION_BOM_MLR](
+	[RQBMMLR_ID] [bigint] IDENTITY(1,1) NOT NULL,
+	[RQBMMLR_RQDWGML_ID] [bigint] NOT NULL,
+	[RQBMMLR_BOM_MLR_ID] [bigint] NOT NULL,
+	[RQBMMLR_ORI_QTY] [int] NOT NULL,
+	[RQBMMLR_STD_QTY] [int] NOT NULL,
+ CONSTRAINT [PK_TMS_CURRINV_ALLOCATION] PRIMARY KEY CLUSTERED 
+(
+	[RQBMMLR_ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[TMS_REQUISITION_DRAWING_ML]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[TMS_REQUISITION_DRAWING_ML](
+	[RQDWGML_ID] [bigint] IDENTITY(1,1) NOT NULL,
+	[RQDWGML_RQ_ID] [bigint] NOT NULL,
+	[RQDWGML_DWG_ML_ID] [nchar](10) NULL,
+	[RQDWGML_CURRENT_QTY] [int] NOT NULL,
+	[RQDWGML_NGNR_QTY] [int] NULL,
+	[RQDWGML_NRCV_QTY] [int] NULL,
+ CONSTRAINT [PK_TMS_REQUISITION_CURRINV] PRIMARY KEY CLUSTERED 
+(
+	[RQDWGML_ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[TMS_REQUISITION_DRAWING_MLR]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[TMS_REQUISITION_DRAWING_MLR](
+	[RQDWGMLR_DWG_MLR_ID] [bigint] NOT NULL,
+	[RQDWGMLR_RQDWGML_ID] [bigint] NOT NULL
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[TMS_REQUISITION_NOT_REPAIRABLE_TOOL]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[TMS_REQUISITION_NOT_REPAIRABLE_TOOL](
+	[RQNRT_ID] [bigint] IDENTITY(1,1) NOT NULL,
+	[RQNRT_RQDWGML_ID] [bigint] NOT NULL,
+	[RQNRT_INV_ID] [bigint] NOT NULL,
+	[RQNRT_REASON] [varchar](150) NULL,
+	[RQNRT_CYCLE] [bigint] NULL
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[TMS_SCRAP_ATTACHMENT]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[TMS_SCRAP_ATTACHMENT](
+	[SCRAPATT_ID] [bigint] IDENTITY(1,1) NOT NULL,
+	[SCRAPATT_SCRAP_ID] [bigint] NOT NULL,
+	[SCRAPATT_TYPE] [bigint] NOT NULL,
+	[SCRAPATT_ATTACHMENT] [varchar](50) NOT NULL,
+ CONSTRAINT [PK_TMS_SCRAP_ATTACHMENT] PRIMARY KEY CLUSTERED 
+(
+	[SCRAPATT_ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[TMS_STORAGE_LOCATION]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[TMS_STORAGE_LOCATION](
+	[STORAGE_LOCATION_ID] [int] NOT NULL,
+	[STORAGE_LOCATION_NAME] [varchar](50) NOT NULL,
+	[STORAGE_LOCATION_DESC] [varchar](300) NULL,
+	[IS_DELETED] [bit] NULL,
+	[DELETED_AT] [datetime2](0) NULL,
+	[DELETED_BY] [varchar](50) NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[STORAGE_LOCATION_ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[TMS_TOOL_ASSIGNMENT]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[TMS_TOOL_ASSIGNMENT](
+	[TASGN_ID] [bigint] IDENTITY(1,1) NOT NULL,
+	[TASGN_TP_ID] [bigint] NULL,
+	[TASGN_ASSIGN_NO] [varchar](50) NOT NULL,
+	[TASGN_CURRENT_ASSIGN_NO] [bigint] NULL,
+	[TASGN_TOTAL_QUANTITY] [int] NULL,
+	[TASGN_PREPARED_BY] [bigint] NULL,
+	[TASGN_STATUS] [bigint] NULL,
+	[TASGN_LOT_PRODUCED] [varchar](100) NULL,
+	[TASGN_PROD_END] [datetime] NULL,
+	[TASGN_PROD_START] [datetime] NULL,
+	[TASGN_REMARKS] [varchar](100) NULL,
+	[TASGN_REQUEST_NO] [varchar](50) NULL,
+	[TASGN_TOTAL_ISSUE_DATE] [datetime] NULL,
+	[TASGN_TOTAL_RETURN_DATE] [datetime] NULL,
+	[TASGN_MAC_ID] [bigint] NULL,
+	[TASGN_OP_ID] [bigint] NULL,
+	[TASGN_PART_ID] [bigint] NULL,
+	[TASGN_TSET_ID] [bigint] NULL,
+ CONSTRAINT [PK_TMS_TOOL_ASSIGNMENT] PRIMARY KEY CLUSTERED 
+(
+	[TASGN_ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[TMS_TOOL_INSPECTION]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[TMS_TOOL_INSPECTION](
+	[TINSP_ID] [bigint] IDENTITY(1,1) NOT NULL,
+	[TINSP_ASSGN_ID] [bigint] NULL,
+	[TINSP_TASGN_ID] [bigint] NULL,
+	[TINSP_PCS_PRODUCED] [int] NULL,
+	[TINSP_JUDGEMENT] [varchar](50) NULL,
+	[TINSP_SKETCH] [varchar](50) NULL,
+	[TINSP_UPDATED_DATETIME] [datetime] NULL,
+ CONSTRAINT [PK_TMS_INSPECTION] PRIMARY KEY CLUSTERED 
+(
+	[TINSP_ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[TMS_TOOL_INSPECTION_VALUE]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[TMS_TOOL_INSPECTION_VALUE](
+	[TINSPV_ID] [bigint] IDENTITY(1,1) NOT NULL,
+	[TINSPV_TINSP_ID] [bigint] NOT NULL,
+	[TINSPV_TLSPEC_ID] [bigint] NOT NULL,
+	[TINSPV_VALUE] [float] NULL,
+	[TINSPV_JUDGEMENT] [varchar](50) NULL,
+	[TINSPV_UPDATED_DATETIME] [datetime] NULL,
+	[TINSPV_TEXT] [varchar](50) NULL,
+ CONSTRAINT [PK_TMS_INSPECTION_VALUE] PRIMARY KEY CLUSTERED 
+(
+	[TINSPV_ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[TMS_TOOL_INVENTORY_HISTORY]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[TMS_TOOL_INVENTORY_HISTORY](
+	[INVH_ID] [bigint] IDENTITY(1,1) NOT NULL,
+	[INVH_INV_ID] [bigint] NOT NULL,
+	[INVH_WO_ID] [bigint] NULL,
+	[INVH_ASSGN_ID] [bigint] NULL,
+	[INVH_DATE] [datetime] NOT NULL,
+	[INVH_ACTION] [varchar](50) NOT NULL,
+ CONSTRAINT [PK_TMS_TOOL_ACTIVITIES] PRIMARY KEY CLUSTERED 
+(
+	[INVH_ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[TMS_TOOL_PLANNING]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[TMS_TOOL_PLANNING](
+	[TP_ID] [bigint] IDENTITY(1,1) NOT NULL,
+	[TP_OP_ID] [bigint] NOT NULL,
+	[TP_PART_ID] [bigint] NOT NULL,
+	[TP_MLR_ID] [bigint] NOT NULL,
+	[TP_MAC_ID] [bigint] NOT NULL,
+	[TP_DATE_REQUIRED] [datetime] NOT NULL,
+	[TP_AVAILABILITY_REPORT] [varchar](100) NULL,
+	[TP_REQUESTED_BY] [bigint] NOT NULL,
+	[TP_REQUESTED_DATE] [datetime] NOT NULL,
+	[TP_STATUS] [bigint] NOT NULL,
+	[TP_REMARKS] [varchar](100) NULL,
+	[TP_URGENT] [varchar](50) NULL,
+	[TP_TMC] [bit] NULL,
+ CONSTRAINT [PK_TMS_TOOL_PLANNING] PRIMARY KEY CLUSTERED 
+(
+	[TP_ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[TMS_TOOL_SPEC]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[TMS_TOOL_SPEC](
+	[TLSPEC_ID] [bigint] IDENTITY(1,1) NOT NULL,
+	[TLSPEC_MLR_ID] [bigint] NOT NULL,
+	[TLSPEC_ATTR_ID] [bigint] NOT NULL,
+	[TLSPEC_UPPER_SPEC] [float] NULL,
+	[TLSPEC_NOMINAL] [float] NULL,
+	[TLSPEC_LOWER_SPEC] [float] NULL,
+	[TLSPEC_CALC_FORMULA] [nvarchar](max) NULL,
+	[TLSPEC_OPERATOR] [bigint] NULL,
+	[TLSPEC_VALUE] [varchar](50) NULL,
+ CONSTRAINT [PK_TMS_TOOL_SPEC] PRIMARY KEY CLUSTERED 
+(
+	[TLSPEC_ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY],
+ CONSTRAINT [UK_TMS_TOOL_SPEC] UNIQUE NONCLUSTERED 
+(
+	[TLSPEC_MLR_ID] ASC,
+	[TLSPEC_ATTR_ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[TMS_TOOLSET_COMPONENTS]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[TMS_TOOLSET_COMPONENTS](
+	[TSCOM_ID] [bigint] IDENTITY(1,1) NOT NULL,
+	[TSCOM_INV_ID] [bigint] NOT NULL,
+	[TSCOM_INVOICE_DATE] [datetime] NULL,
+	[TSCOM_INVOICE_NO] [varchar](20) NULL,
+	[TSCOM_MAKER_ID] [bigint] NULL,
+	[TSCOM_INVOICE_DESC] [varchar](50) NOT NULL,
+	[TSCOM_PO_NO] [varchar](20) NULL,
+	[TSCOM_RF_NO] [varchar](20) NULL,
+	[TSCOM_CURRENCY_TYPE] [bigint] NULL,
+	[TSCOM_PURCHASE_PRICE] [float] NULL,
+	[TSCOM_CONVERTION_RATE] [float] NULL,
+	[TSCOM_PRICE] [float] NULL,
+	[TSCOM_WO_ID] [bigint] NULL,
+	[TSCOM_PRORATED_TO] [float] NULL,
+ CONSTRAINT [PK_TMS_TOOLSET_COMPONENTS] PRIMARY KEY CLUSTERED 
+(
+	[TSCOM_ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[TMS_TOOLSET_COMPOSITIONS]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[TMS_TOOLSET_COMPOSITIONS](
+	[TSCOMP_ID] [bigint] IDENTITY(1,1) NOT NULL,
+	[TSCOMP_TSET_ID] [bigint] NOT NULL,
+	[TSCOMP_INV_ID] [bigint] NULL,
+	[TSCOMP_MLR_ID] [bigint] NOT NULL,
+	[TSCOMP_STD_REQ] [varchar](50) NOT NULL,
+	[TSCOMP_REMARKS] [varchar](200) NULL,
+ CONSTRAINT [PK_TMS_TOOLSET_COMPOSITIONS] PRIMARY KEY CLUSTERED 
+(
+	[TSCOMP_ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[TMS_TOOLSETS]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[TMS_TOOLSETS](
+	[TSET_ID] [bigint] IDENTITY(1,1) NOT NULL,
+	[TSET_NAME] [varchar](100) NOT NULL,
+	[TSET_BOM_MLR_ID] [bigint] NOT NULL,
+	[TSET_STATUS] [int] NOT NULL,
+ CONSTRAINT [PK_TMS_TOOLSETS] PRIMARY KEY CLUSTERED 
+(
+	[TSET_ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[TMS_USAGE_LOG]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[TMS_USAGE_LOG](
+	[ULOG_ID] [bigint] IDENTITY(1,1) NOT NULL,
+	[ULOG_WO_ID] [bigint] NOT NULL,
+	[ULOG_WA_ID] [bigint] NOT NULL,
+	[ULOG_USR_ID] [bigint] NULL,
+	[ULOG_TYPE] [bigint] NOT NULL,
+	[ULOG_UNIT_PRICE] [float] NULL,
+	[ULOG_QTY] [float] NULL,
+	[ULOG_COST] [float] NULL,
+	[ULOG_MAC_ID] [bigint] NULL,
+ CONSTRAINT [PK_TMS_USAGE_LOG] PRIMARY KEY CLUSTERED 
+(
+	[ULOG_ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[TMS_WO_ATTACHMENT]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[TMS_WO_ATTACHMENT](
+	[WOATT_ID] [bigint] IDENTITY(1,1) NOT NULL,
+	[WOATT_WO_ID] [bigint] NOT NULL,
+	[WOATT_TYPE] [bigint] NOT NULL,
+	[WOATT_ATTACHMENT] [varchar](50) NOT NULL,
+ CONSTRAINT [PK_TMS_WO_ATTACHMENT] PRIMARY KEY CLUSTERED 
+(
+	[WOATT_ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[TMS_WO_EXTERNAL_COSTS]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[TMS_WO_EXTERNAL_COSTS](
+	[EXTCOST_ID] [bigint] IDENTITY(1,1) NOT NULL,
+	[EXTCOST_WO_ID] [bigint] NOT NULL,
+	[EXTCOST_WA_ID] [bigint] NOT NULL,
+	[EXTCOST_SUP_ID] [bigint] NULL,
+	[EXTCOST_SUP_UNIT_PRICE] [float] NULL,
+	[EXTCOST_SUP_QTY] [float] NULL,
+	[EXTCOST_DATE] [datetime] NULL,
+	[EXTCOST_PO_NO] [varchar](50) NULL,
+	[EXTCOST_INVOICE_NO] [varchar](50) NULL,
+	[EXTCOST_GRN_NO] [varchar](50) NULL,
+	[EXTCOST_GRN_DATE] [datetime] NULL,
+	[EXTCOST_RF_NO] [varchar](50) NULL,
+ CONSTRAINT [PK_TMS_WO_EXTERNAL_COSTS] PRIMARY KEY CLUSTERED 
+(
+	[EXTCOST_ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[TMS_WO_MATERIAL_COSTS]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[TMS_WO_MATERIAL_COSTS](
+	[MATCOST_ID] [bigint] IDENTITY(1,1) NOT NULL,
+	[MATCOST_WO_ID] [bigint] NOT NULL,
+	[MATCOST_WA_ID] [bigint] NOT NULL,
+	[MATCOST_MAT_ID] [bigint] NULL,
+	[MATCOST_MAT_UNIT_PRICE] [float] NULL,
+	[MATCOST_MAT_QTY] [float] NULL,
+	[MATCOST_DATE] [datetime] NULL,
+	[MATCOST_PO_NO] [varchar](50) NULL,
+	[MATCOST_INVOICE_NO] [varchar](50) NULL,
+	[MATCOST_GRN_NO] [varchar](50) NULL,
+	[MATCOST_GRN_DATE] [datetime] NULL,
+	[MATCOST_RF_NO] [varchar](50) NULL,
+ CONSTRAINT [PK_TMS_WO_MATERIAL_COSTS] PRIMARY KEY CLUSTERED 
+(
+	[MATCOST_ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[TMS_WO_MCMH_COSTS]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[TMS_WO_MCMH_COSTS](
+	[MCMHCOST_ID] [bigint] IDENTITY(1,1) NOT NULL,
+	[MCMHCOST_WO_ID] [bigint] NOT NULL,
+	[MCMHCOST_WA_ID] [bigint] NOT NULL,
+	[MCMHCOST_MAC_ID] [bigint] NULL,
+	[MCMHCOST_MAC_UNIT_PRICE] [float] NULL,
+	[MCMHCOST_MAC_QTY] [float] NULL,
+	[MCMHCOST_USR_ID] [bigint] NULL,
+	[MCMHCOST_USR_UNIT_PRICE] [float] NULL,
+	[MCMHCOST_USR_QTY] [float] NULL,
+	[MCMHCOST_DATE] [datetime] NULL,
+ CONSTRAINT [PK_TMS_WO_MCMH_COSTS] PRIMARY KEY CLUSTERED 
+(
+	[MCMHCOST_ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[TMS_WORK_ACTIVITIES]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[TMS_WORK_ACTIVITIES](
+	[WA_ID] [bigint] IDENTITY(1,1) NOT NULL,
+	[WA_NAME] [varchar](100) NOT NULL,
+	[WA_DESC] [varchar](100) NULL,
+	[IS_DELETED] [bit] NULL,
+	[DELETED_AT] [datetime] NULL,
+	[DELETED_BY] [varchar](50) NULL,
+ CONSTRAINT [PK_TMS_WORK_ACTIVITIES] PRIMARY KEY CLUSTERED 
+(
+	[WA_ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[TMS_WORKORDER]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[TMS_WORKORDER](
+	[WO_ID] [bigint] IDENTITY(1,1) NOT NULL,
+	[WO_INV_ID] [bigint] NULL,
+	[WO_MLR_ID] [bigint] NULL,
+	[WO_NO] [varchar](50) NOT NULL,
+	[WO_TYPE] [bigint] NOT NULL,
+	[WO_CREATED_DATE] [datetime] NOT NULL,
+	[WO_CREATED_BY] [bigint] NOT NULL,
+	[WO_REQUESTED_BY] [bigint] NOT NULL,
+	[WO_DEPARTMENT] [varchar](50) NULL,
+	[WO_REASON] [bigint] NULL,
+	[WO_TARGET_COM_DATE] [datetime] NULL,
+	[WO_ACTUAL_COM_DATE] [datetime] NULL,
+	[WO_STATUS] [bigint] NOT NULL,
+	[WO_CONDITION] [bigint] NULL,
+	[WO_QTY] [int] NULL,
+	[WO_URGENCY] [varchar](50) NULL,
+	[WO_REMARKS] [varchar](200) NULL,
+	[WO_ORDI_ID] [bigint] NULL,
+ CONSTRAINT [PK_TMS_WORKORDER] PRIMARY KEY CLUSTERED 
+(
+	[WO_ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+SET ANSI_PADDING ON
+GO
+/****** Object:  Index [UK_MS_CUSTOMER_NAME_ACTIVE]    Script Date: 24/12/2025 13:06:31 ******/
+CREATE UNIQUE NONCLUSTERED INDEX [UK_MS_CUSTOMER_NAME_ACTIVE] ON [dbo].[MS_CUSTOMER]
+(
+	[CUS_NAME] ASC
+)
+WHERE ([IS_DELETED]=(0))
+WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+GO
+/****** Object:  Index [UK_MS_MACHINE_MEMBERS_ACTIVE]    Script Date: 24/12/2025 13:06:31 ******/
+CREATE UNIQUE NONCLUSTERED INDEX [UK_MS_MACHINE_MEMBERS_ACTIVE] ON [dbo].[MS_MACHINE_MEMBERS]
+(
+	[MACM_PARENT_ID] ASC,
+	[MACM_CHILD_ID] ASC
+)
+WHERE ([IS_DELETED]=(0))
+WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+GO
+SET ANSI_PADDING ON
+GO
+/****** Object:  Index [UK_MS_MACHINES_ACTIVE]    Script Date: 24/12/2025 13:06:31 ******/
+CREATE UNIQUE NONCLUSTERED INDEX [UK_MS_MACHINES_ACTIVE] ON [dbo].[MS_MACHINES]
+(
+	[MAC_NAME] ASC
+)
+WHERE ([IS_DELETED]=(0))
+WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+GO
+SET ANSI_PADDING ON
+GO
+/****** Object:  Index [UK_MS_MAKER_ACTIVE]    Script Date: 24/12/2025 13:06:31 ******/
+CREATE UNIQUE NONCLUSTERED INDEX [UK_MS_MAKER_ACTIVE] ON [dbo].[MS_MAKER]
+(
+	[MAKER_NAME] ASC
+)
+WHERE ([IS_DELETED]=(0))
+WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+GO
+SET ANSI_PADDING ON
+GO
+/****** Object:  Index [UK_MS_MATERIAL_ACTIVE]    Script Date: 24/12/2025 13:06:31 ******/
+CREATE UNIQUE NONCLUSTERED INDEX [UK_MS_MATERIAL_ACTIVE] ON [dbo].[MS_MATERIAL]
+(
+	[MAT_NAME] ASC
+)
+WHERE ([IS_DELETED]=(0))
+WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+GO
+SET ANSI_PADDING ON
+GO
+/****** Object:  Index [UK_MS_OP_NAME_ACTIVE]    Script Date: 24/12/2025 13:06:31 ******/
+CREATE UNIQUE NONCLUSTERED INDEX [UK_MS_OP_NAME_ACTIVE] ON [dbo].[MS_OPERATION]
+(
+	[OP_NAME] ASC
+)
+WHERE ([IS_DELETED]=(0))
+WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+GO
+SET ANSI_PADDING ON
+GO
+/****** Object:  Index [UK_MS_PARTS_NAME_ACTIVE]    Script Date: 24/12/2025 13:06:31 ******/
+CREATE UNIQUE NONCLUSTERED INDEX [UK_MS_PARTS_NAME_ACTIVE] ON [dbo].[MS_PARTS]
+(
+	[PART_NAME] ASC
+)
+WHERE ([IS_DELETED]=(0))
+WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+GO
+SET ANSI_PADDING ON
+GO
+/****** Object:  Index [UK_MS_TOOL_TYPE_ACTIVE]    Script Date: 24/12/2025 13:06:31 ******/
+CREATE UNIQUE NONCLUSTERED INDEX [UK_MS_TOOL_TYPE_ACTIVE] ON [dbo].[MS_TOOL_TYPE]
+(
+	[TT_NAME] ASC
+)
+WHERE ([IS_DELETED]=(0))
+WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+GO
+SET ANSI_PADDING ON
+GO
+/****** Object:  Index [UK_MS_UOM_ACTIVE]    Script Date: 24/12/2025 13:06:31 ******/
+CREATE UNIQUE NONCLUSTERED INDEX [UK_MS_UOM_ACTIVE] ON [dbo].[MS_UOM]
+(
+	[UOM_NAME] ASC
+)
+WHERE ([IS_DELETED]=(0))
+WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+GO
+ALTER TABLE [dbo].[MS_CUSTOMER] ADD  DEFAULT ((0)) FOR [IS_DELETED]
+GO
+ALTER TABLE [dbo].[MS_FIELDS] ADD  CONSTRAINT [DF_MS_FIELDS_FD_CAN_DISPLAY]  DEFAULT ((1)) FOR [FD_CAN_DISPLAY]
+GO
+ALTER TABLE [dbo].[MS_FIELDS] ADD  CONSTRAINT [DF_MS_FIELDS_FD_CAN_FILTER_QRY]  DEFAULT ((1)) FOR [FD_CAN_FILTER_QRY]
+GO
+ALTER TABLE [dbo].[MS_PART_MEMBERS] ADD  DEFAULT ((0)) FOR [IS_DELETED]
+GO
+ALTER TABLE [dbo].[MS_PARTS] ADD  DEFAULT ((0)) FOR [IS_DELETED]
+GO
+ALTER TABLE [dbo].[MS_SUPPLIER] ADD  DEFAULT ((0)) FOR [IS_DELETED]
+GO
+ALTER TABLE [dbo].[MS_UOM] ADD  DEFAULT ((0)) FOR [IS_DELETED]
+GO
+ALTER TABLE [dbo].[NS_EVENT_DEFINITIONS] ADD  CONSTRAINT [DF_EVENTS_EVT_SQL_SP]  DEFAULT ((0)) FOR [EVT_SQL_SP]
+GO
+ALTER TABLE [dbo].[TMS_STORAGE_LOCATION] ADD  DEFAULT ((0)) FOR [IS_DELETED]
+GO
+ALTER TABLE [dbo].[TMS_TOOL_MASTER_LIST_PARTS] ADD  CONSTRAINT [DF_TMS_TOOL_MASTER_LIST_PARTS_TMLP_ID]  DEFAULT (newid()) FOR [TMLP_ID]
+GO
+ALTER TABLE [dbo].[MS_ACTION_ITEM]  WITH CHECK ADD  CONSTRAINT [FK_MS_ACTION_ITEM_MS_ACTION_CATEGORY] FOREIGN KEY([AI_AC_ID])
+REFERENCES [dbo].[MS_ACTION_CATEGORY] ([AC_ID])
+GO
+ALTER TABLE [dbo].[MS_ACTION_ITEM] CHECK CONSTRAINT [FK_MS_ACTION_ITEM_MS_ACTION_CATEGORY]
+GO
+ALTER TABLE [dbo].[MS_CAUSE_ITEM]  WITH CHECK ADD  CONSTRAINT [FK_MS_CAUSE_ITEM_MS_ACTION_CATEGORY] FOREIGN KEY([CI_AC_ID])
+REFERENCES [dbo].[MS_ACTION_CATEGORY] ([AC_ID])
+GO
+ALTER TABLE [dbo].[MS_CAUSE_ITEM] CHECK CONSTRAINT [FK_MS_CAUSE_ITEM_MS_ACTION_CATEGORY]
+GO
+ALTER TABLE [dbo].[MS_CAUSE_ITEM]  WITH CHECK ADD  CONSTRAINT [FK_MS_CAUSE_ITEM_MS_CAUSE_CATEGORY] FOREIGN KEY([CI_CC_ID])
+REFERENCES [dbo].[MS_CAUSE_CATEGORY] ([CC_ID])
+GO
+ALTER TABLE [dbo].[MS_CAUSE_ITEM] CHECK CONSTRAINT [FK_MS_CAUSE_ITEM_MS_CAUSE_CATEGORY]
+GO
+ALTER TABLE [dbo].[MS_MATERIAL]  WITH CHECK ADD  CONSTRAINT [FK_MS_MATERIAL_MS_UOM] FOREIGN KEY([MAT_UNIT])
+REFERENCES [dbo].[MS_UOM] ([UOM_ID])
+GO
+ALTER TABLE [dbo].[MS_MATERIAL] CHECK CONSTRAINT [FK_MS_MATERIAL_MS_UOM]
+GO
+ALTER TABLE [dbo].[MS_PART_MEMBERS]  WITH NOCHECK ADD  CONSTRAINT [FK_MS_PART_CHILD_CHILD_MS_PARTS] FOREIGN KEY([PARTM_CHILD_ID])
+REFERENCES [dbo].[MS_PARTS] ([PART_ID])
+GO
+ALTER TABLE [dbo].[MS_PART_MEMBERS] CHECK CONSTRAINT [FK_MS_PART_CHILD_CHILD_MS_PARTS]
+GO
+ALTER TABLE [dbo].[MS_PART_MEMBERS]  WITH CHECK ADD  CONSTRAINT [FK_MS_PART_CHILD_PARENT_MS_PARTS] FOREIGN KEY([PARTM_PARENT_ID])
+REFERENCES [dbo].[MS_PARTS] ([PART_ID])
+GO
+ALTER TABLE [dbo].[MS_PART_MEMBERS] CHECK CONSTRAINT [FK_MS_PART_CHILD_PARENT_MS_PARTS]
+GO
+ALTER TABLE [dbo].[MS_PARTS]  WITH CHECK ADD  CONSTRAINT [FK_MS_PARTS_MS_CUSTOMER] FOREIGN KEY([PART_CUS_ID])
+REFERENCES [dbo].[MS_CUSTOMER] ([CUS_ID])
+GO
+ALTER TABLE [dbo].[MS_PARTS] CHECK CONSTRAINT [FK_MS_PARTS_MS_CUSTOMER]
+GO
+ALTER TABLE [dbo].[MS_PARTS]  WITH CHECK ADD  CONSTRAINT [FK_MS_PARTS_MS_UOM] FOREIGN KEY([PART_UNITS])
+REFERENCES [dbo].[MS_UOM] ([UOM_ID])
+GO
+ALTER TABLE [dbo].[MS_PARTS] CHECK CONSTRAINT [FK_MS_PARTS_MS_UOM]
+GO
+ALTER TABLE [dbo].[MS_PERMISSIONS_PAGE]  WITH CHECK ADD  CONSTRAINT [FK_MS_PAGE_PERMISSIONS_MS_PERMISSIONS] FOREIGN KEY([PP_PERM_ID])
+REFERENCES [dbo].[MS_PERMISSIONS] ([PERM_ID])
+GO
+ALTER TABLE [dbo].[MS_PERMISSIONS_PAGE] CHECK CONSTRAINT [FK_MS_PAGE_PERMISSIONS_MS_PERMISSIONS]
+GO
+ALTER TABLE [dbo].[MS_PERMISSIONS_PAGE]  WITH CHECK ADD  CONSTRAINT [FK_MS_PAGE_PERMISSIONS_MS_SUBMODULE] FOREIGN KEY([PP_SUBMOD_ID])
+REFERENCES [dbo].[MS_SUBMODULE] ([SUBMOD_ID])
+GO
+ALTER TABLE [dbo].[MS_PERMISSIONS_PAGE] CHECK CONSTRAINT [FK_MS_PAGE_PERMISSIONS_MS_SUBMODULE]
+GO
+ALTER TABLE [dbo].[MS_SUBMODULE]  WITH CHECK ADD  CONSTRAINT [FK_MS_SUBMODULE_MS_MODULE] FOREIGN KEY([SUBMOD_MOD_ID])
+REFERENCES [dbo].[MS_MODULE] ([MOD_ID])
+GO
+ALTER TABLE [dbo].[MS_SUBMODULE] CHECK CONSTRAINT [FK_MS_SUBMODULE_MS_MODULE]
+GO
+ALTER TABLE [dbo].[MS_SUBMODULE_ACTIONS]  WITH CHECK ADD  CONSTRAINT [FK_MS_SUBMODULE_ACTIONS_MS_SUBMODULE] FOREIGN KEY([SMA_SM_ID])
+REFERENCES [dbo].[MS_SUBMODULE] ([SUBMOD_ID])
+GO
+ALTER TABLE [dbo].[MS_SUBMODULE_ACTIONS] CHECK CONSTRAINT [FK_MS_SUBMODULE_ACTIONS_MS_SUBMODULE]
+GO
+ALTER TABLE [dbo].[MS_SUBMODULE_FORMATS]  WITH CHECK ADD  CONSTRAINT [FK_MS_SUBMODULE_FORMAT_MS_SUBMODULE] FOREIGN KEY([SMF_SM_ID])
+REFERENCES [dbo].[MS_SUBMODULE] ([SUBMOD_ID])
+GO
+ALTER TABLE [dbo].[MS_SUBMODULE_FORMATS] CHECK CONSTRAINT [FK_MS_SUBMODULE_FORMAT_MS_SUBMODULE]
+GO
+ALTER TABLE [dbo].[MS_SUBMODULE_PERMISSIONS]  WITH CHECK ADD  CONSTRAINT [FK_MS_SUBMODULE_PERMISSIONS_MS_PERMISSIONS] FOREIGN KEY([SMP_PERM_ID])
+REFERENCES [dbo].[MS_PERMISSIONS] ([PERM_ID])
+GO
+ALTER TABLE [dbo].[MS_SUBMODULE_PERMISSIONS] CHECK CONSTRAINT [FK_MS_SUBMODULE_PERMISSIONS_MS_PERMISSIONS]
+GO
+ALTER TABLE [dbo].[MS_SUBMODULE_PERMISSIONS]  WITH CHECK ADD  CONSTRAINT [FK_MS_SUBMODULE_PERMISSIONS_MS_SUBMODULE] FOREIGN KEY([SMP_SUBMOD_ID])
+REFERENCES [dbo].[MS_SUBMODULE] ([SUBMOD_ID])
+GO
+ALTER TABLE [dbo].[MS_SUBMODULE_PERMISSIONS] CHECK CONSTRAINT [FK_MS_SUBMODULE_PERMISSIONS_MS_SUBMODULE]
+GO
+ALTER TABLE [dbo].[MS_USERS_OPERATION]  WITH CHECK ADD  CONSTRAINT [FK_MS_USERS_OPERATION_MS_OPERATION] FOREIGN KEY([USROP_OP_ID])
+REFERENCES [dbo].[MS_OPERATION] ([OP_ID])
+GO
+ALTER TABLE [dbo].[MS_USERS_OPERATION] CHECK CONSTRAINT [FK_MS_USERS_OPERATION_MS_OPERATION]
+GO
+ALTER TABLE [dbo].[MS_USERS_OPERATION]  WITH CHECK ADD  CONSTRAINT [FK_MS_USERS_OPERATION_MS_USERS] FOREIGN KEY([USROP_USR_ID])
+REFERENCES [dbo].[MS_USERS] ([USR_ID])
+GO
+ALTER TABLE [dbo].[MS_USERS_OPERATION] CHECK CONSTRAINT [FK_MS_USERS_OPERATION_MS_USERS]
+GO
+ALTER TABLE [dbo].[MS_VIEW]  WITH CHECK ADD  CONSTRAINT [FK_MS_VIEW_MS_SUBMODULE] FOREIGN KEY([VW_SUBMOD_ID])
+REFERENCES [dbo].[MS_SUBMODULE] ([SUBMOD_ID])
+GO
+ALTER TABLE [dbo].[MS_VIEW] CHECK CONSTRAINT [FK_MS_VIEW_MS_SUBMODULE]
+GO
+ALTER TABLE [dbo].[MS_VIEW_FIELDS]  WITH CHECK ADD  CONSTRAINT [FK_MS_VIEW_FIELDS_MS_FIELDS] FOREIGN KEY([VF_FD_ID])
+REFERENCES [dbo].[MS_FIELDS] ([FD_ID])
+GO
+ALTER TABLE [dbo].[MS_VIEW_FIELDS] CHECK CONSTRAINT [FK_MS_VIEW_FIELDS_MS_FIELDS]
+GO
+ALTER TABLE [dbo].[MS_VIEW_FIELDS]  WITH CHECK ADD  CONSTRAINT [FK_MS_VIEW_FIELDS_MS_VIEW] FOREIGN KEY([VF_VW_ID])
+REFERENCES [dbo].[MS_VIEW] ([VW_ID])
+GO
+ALTER TABLE [dbo].[MS_VIEW_FIELDS] CHECK CONSTRAINT [FK_MS_VIEW_FIELDS_MS_VIEW]
+GO
+ALTER TABLE [dbo].[MS_VIEW_FILTERS]  WITH CHECK ADD  CONSTRAINT [FK_MS_VIEW_FILTERS_MS_FIELDS] FOREIGN KEY([VFR_FD_ID])
+REFERENCES [dbo].[MS_FIELDS] ([FD_ID])
+GO
+ALTER TABLE [dbo].[MS_VIEW_FILTERS] CHECK CONSTRAINT [FK_MS_VIEW_FILTERS_MS_FIELDS]
+GO
+ALTER TABLE [dbo].[MS_VIEW_FILTERS]  WITH CHECK ADD  CONSTRAINT [FK_MS_VIEW_FILTERS_MS_VIEW] FOREIGN KEY([VFR_VW_ID])
+REFERENCES [dbo].[MS_VIEW] ([VW_ID])
+GO
+ALTER TABLE [dbo].[MS_VIEW_FILTERS] CHECK CONSTRAINT [FK_MS_VIEW_FILTERS_MS_VIEW]
+GO
+ALTER TABLE [dbo].[NS_EVENT_DEFINITIONS]  WITH NOCHECK ADD  CONSTRAINT [FK_EVENTS_APPLICATIONS] FOREIGN KEY([EVT_APP_ID])
+REFERENCES [dbo].[NS_APPLICATIONS] ([APP_ID])
+ON DELETE CASCADE
+GO
+ALTER TABLE [dbo].[NS_EVENT_DEFINITIONS] CHECK CONSTRAINT [FK_EVENTS_APPLICATIONS]
+GO
+ALTER TABLE [dbo].[NS_EVENT_DELIVERY_CHANNEL]  WITH NOCHECK ADD  CONSTRAINT [FK_EVENT_DELIVERY_CHANNEL_DELIVERY_CHANNEL] FOREIGN KEY([EVTDLVC_DLVC_ID])
+REFERENCES [dbo].[NS_DELIVERY_CHANNEL] ([DLVC_ID])
+GO
+ALTER TABLE [dbo].[NS_EVENT_DELIVERY_CHANNEL] CHECK CONSTRAINT [FK_EVENT_DELIVERY_CHANNEL_DELIVERY_CHANNEL]
+GO
+ALTER TABLE [dbo].[NS_EVENT_DELIVERY_CHANNEL]  WITH NOCHECK ADD  CONSTRAINT [FK_EVENT_DELIVERY_CHANNEL_EVENTS] FOREIGN KEY([EVTDLVC_EVT_ID])
+REFERENCES [dbo].[NS_EVENT_DEFINITIONS] ([EVT_ID])
+GO
+ALTER TABLE [dbo].[NS_EVENT_DELIVERY_CHANNEL] CHECK CONSTRAINT [FK_EVENT_DELIVERY_CHANNEL_EVENTS]
+GO
+ALTER TABLE [dbo].[NS_EVENT_PARAM]  WITH NOCHECK ADD  CONSTRAINT [FK_EVENT_PARAM_EVENT_PARAM_TYPE] FOREIGN KEY([EVTP_FIELD_TYPE])
+REFERENCES [dbo].[NS_EVENT_PARAM_TYPE] ([EVTP_TYPE_ID])
+GO
+ALTER TABLE [dbo].[NS_EVENT_PARAM] CHECK CONSTRAINT [FK_EVENT_PARAM_EVENT_PARAM_TYPE]
+GO
+ALTER TABLE [dbo].[NS_EVENT_PARAM]  WITH NOCHECK ADD  CONSTRAINT [FK_EVENT_PARAM_EVENTS] FOREIGN KEY([EVTP_EVT_ID])
+REFERENCES [dbo].[NS_EVENT_DEFINITIONS] ([EVT_ID])
+GO
+ALTER TABLE [dbo].[NS_EVENT_PARAM] CHECK CONSTRAINT [FK_EVENT_PARAM_EVENTS]
+GO
+ALTER TABLE [dbo].[NS_SUBSCRIBER_CLASS]  WITH CHECK ADD  CONSTRAINT [FK_SUBSCRIBER_CLASS_DELIVERY_CHANNEL] FOREIGN KEY([SBCC_DLVC_ID])
+REFERENCES [dbo].[NS_DELIVERY_CHANNEL] ([DLVC_ID])
+GO
+ALTER TABLE [dbo].[NS_SUBSCRIBER_CLASS] CHECK CONSTRAINT [FK_SUBSCRIBER_CLASS_DELIVERY_CHANNEL]
+GO
+ALTER TABLE [dbo].[NS_SUBSCRIPTION_DELIVERY_CHANNEL]  WITH NOCHECK ADD  CONSTRAINT [FK_SUBSCRIPTION_DELIVERY_CHANNEL_DELIVERY_CHANNEL] FOREIGN KEY([SBCRDC_DLVC_ID])
+REFERENCES [dbo].[NS_DELIVERY_CHANNEL] ([DLVC_ID])
+GO
+ALTER TABLE [dbo].[NS_SUBSCRIPTION_DELIVERY_CHANNEL] CHECK CONSTRAINT [FK_SUBSCRIPTION_DELIVERY_CHANNEL_DELIVERY_CHANNEL]
+GO
+ALTER TABLE [dbo].[NS_SUBSCRIPTION_DELIVERY_CHANNEL]  WITH NOCHECK ADD  CONSTRAINT [FK_SUBSCRIPTION_DELIVERY_CHANNEL_SUBSCRIPTION] FOREIGN KEY([SBCRDC_SBCR_ID])
+REFERENCES [dbo].[NS_SUBSCRIPTIONS] ([SBCR_ID])
+ON DELETE CASCADE
+GO
+ALTER TABLE [dbo].[NS_SUBSCRIPTION_DELIVERY_CHANNEL] CHECK CONSTRAINT [FK_SUBSCRIPTION_DELIVERY_CHANNEL_SUBSCRIPTION]
+GO
+ALTER TABLE [dbo].[NS_SUBSCRIPTION_FIELD_VALUE]  WITH CHECK ADD  CONSTRAINT [FK_SUBSCRIPTION_FIELD_VALUE_SUBSCRIPTION_FIELDS] FOREIGN KEY([SBCRFV_SBCRF_ID])
+REFERENCES [dbo].[NS_SUBSCRIPTION_FIELDS] ([SBCRF_ID])
+GO
+ALTER TABLE [dbo].[NS_SUBSCRIPTION_FIELD_VALUE] CHECK CONSTRAINT [FK_SUBSCRIPTION_FIELD_VALUE_SUBSCRIPTION_FIELDS]
+GO
+ALTER TABLE [dbo].[NS_SUBSCRIPTION_FIELDS]  WITH NOCHECK ADD  CONSTRAINT [FK_SUBSCRIPTION_FIELDS_EVENT_PARAM] FOREIGN KEY([SBCRF_EVTP_ID])
+REFERENCES [dbo].[NS_EVENT_PARAM] ([EVTP_ID])
+GO
+ALTER TABLE [dbo].[NS_SUBSCRIPTION_FIELDS] CHECK CONSTRAINT [FK_SUBSCRIPTION_FIELDS_EVENT_PARAM]
+GO
+ALTER TABLE [dbo].[NS_SUBSCRIPTION_FIELDS]  WITH CHECK ADD  CONSTRAINT [FK_SUBSCRIPTION_FIELDS_SUBSCRIPTION] FOREIGN KEY([SBCRF_SBCR_ID])
+REFERENCES [dbo].[NS_SUBSCRIPTIONS] ([SBCR_ID])
+GO
+ALTER TABLE [dbo].[NS_SUBSCRIPTION_FIELDS] CHECK CONSTRAINT [FK_SUBSCRIPTION_FIELDS_SUBSCRIPTION]
+GO
+ALTER TABLE [dbo].[NS_SUBSCRIPTION_SUBSCRIBER_CLASS]  WITH CHECK ADD  CONSTRAINT [FK_SUBSCRIPTION_SUBSCRIBER_CLASS_SUBCRIBER_GROUP] FOREIGN KEY([SSBRSC_SBCG_ID])
+REFERENCES [dbo].[NS_SUBSCRIBER_GROUP] ([SBCG_ID])
+GO
+ALTER TABLE [dbo].[NS_SUBSCRIPTION_SUBSCRIBER_CLASS] CHECK CONSTRAINT [FK_SUBSCRIPTION_SUBSCRIBER_CLASS_SUBCRIBER_GROUP]
+GO
+ALTER TABLE [dbo].[NS_SUBSCRIPTION_SUBSCRIBER_CLASS]  WITH CHECK ADD  CONSTRAINT [FK_SUBSCRIPTION_SUBSCRIBER_CLASS_SUBSCRIBER_CLASS] FOREIGN KEY([SSBRSC_SBCC_ID])
+REFERENCES [dbo].[NS_SUBSCRIBER_CLASS] ([SBCC_ID])
+GO
+ALTER TABLE [dbo].[NS_SUBSCRIPTION_SUBSCRIBER_CLASS] CHECK CONSTRAINT [FK_SUBSCRIPTION_SUBSCRIBER_CLASS_SUBSCRIBER_CLASS]
+GO
+ALTER TABLE [dbo].[NS_SUBSCRIPTION_SUBSCRIBER_CLASS]  WITH NOCHECK ADD  CONSTRAINT [FK_SUBSCRIPTION_SUBSCRIBER_CLASS_SUBSCRIPTION] FOREIGN KEY([SSBRSC_SBCR_ID])
+REFERENCES [dbo].[NS_SUBSCRIPTIONS] ([SBCR_ID])
+ON DELETE CASCADE
+GO
+ALTER TABLE [dbo].[NS_SUBSCRIPTION_SUBSCRIBER_CLASS] CHECK CONSTRAINT [FK_SUBSCRIPTION_SUBSCRIBER_CLASS_SUBSCRIPTION]
+GO
+ALTER TABLE [dbo].[NS_SUBSCRIPTIONS]  WITH NOCHECK ADD  CONSTRAINT [FK_SUBSCRIPTION_EVENTS] FOREIGN KEY([SBCR_EVT_ID])
+REFERENCES [dbo].[NS_EVENT_DEFINITIONS] ([EVT_ID])
+ON DELETE CASCADE
+GO
+ALTER TABLE [dbo].[NS_SUBSCRIPTIONS] CHECK CONSTRAINT [FK_SUBSCRIPTION_EVENTS]
+GO
+ALTER TABLE [dbo].[TMS_ASSIGNED_TOOLS]  WITH CHECK ADD  CONSTRAINT [FK_TMS_ASSIGNED_TOOLS_TMS_TOOL_ASSIGNMENT] FOREIGN KEY([ASSGN_TASGN_ID])
+REFERENCES [dbo].[TMS_TOOL_ASSIGNMENT] ([TASGN_ID])
+GO
+ALTER TABLE [dbo].[TMS_ASSIGNED_TOOLS] CHECK CONSTRAINT [FK_TMS_ASSIGNED_TOOLS_TMS_TOOL_ASSIGNMENT]
+GO
+ALTER TABLE [dbo].[TMS_ORDERING]  WITH CHECK ADD  CONSTRAINT [FK_TMS_ORDERING_MS_MAKER] FOREIGN KEY([ORD_MAKER_ID])
+REFERENCES [dbo].[MS_MAKER] ([MAKER_ID])
+GO
+ALTER TABLE [dbo].[TMS_ORDERING] CHECK CONSTRAINT [FK_TMS_ORDERING_MS_MAKER]
+GO
+ALTER TABLE [dbo].[TMS_ORDERING_ITEMS]  WITH CHECK ADD  CONSTRAINT [FK_TMS_ORDERING_ITEMS_TMS_ORDERING] FOREIGN KEY([ORDI_ORD_ID])
+REFERENCES [dbo].[TMS_ORDERING] ([ORD_ID])
+GO
+ALTER TABLE [dbo].[TMS_ORDERING_ITEMS] CHECK CONSTRAINT [FK_TMS_ORDERING_ITEMS_TMS_ORDERING]
+GO
+ALTER TABLE [dbo].[TMS_ORDERING_ITEMS]  WITH CHECK ADD  CONSTRAINT [FK_TMS_ORDERING_ITEMS_TMS_REQUISITION] FOREIGN KEY([ORDI_RQ_ID])
+REFERENCES [dbo].[TMS_REQUISITION] ([RQ_ID])
+GO
+ALTER TABLE [dbo].[TMS_ORDERING_ITEMS] CHECK CONSTRAINT [FK_TMS_ORDERING_ITEMS_TMS_REQUISITION]
+GO
+ALTER TABLE [dbo].[TMS_REQUISITION]  WITH CHECK ADD  CONSTRAINT [FK_TMS_REQUISITION_MS_MAKER] FOREIGN KEY([RQ_MAKER_ID])
+REFERENCES [dbo].[MS_MAKER] ([MAKER_ID])
+GO
+ALTER TABLE [dbo].[TMS_REQUISITION] CHECK CONSTRAINT [FK_TMS_REQUISITION_MS_MAKER]
+GO
+ALTER TABLE [dbo].[TMS_REQUISITION]  WITH CHECK ADD  CONSTRAINT [FK_TMS_REQUISITION_MS_PARTS] FOREIGN KEY([RQ_PART_ID])
+REFERENCES [dbo].[MS_PARTS] ([PART_ID])
+GO
+ALTER TABLE [dbo].[TMS_REQUISITION] CHECK CONSTRAINT [FK_TMS_REQUISITION_MS_PARTS]
+GO
+ALTER TABLE [dbo].[TMS_REQUISITION]  WITH CHECK ADD  CONSTRAINT [FK_TMS_REQUISITION_TMS_TOOL_INVENTORY] FOREIGN KEY([RQ_INV_ID])
+REFERENCES [dbo].[TMS_TOOL_INVENTORY] ([INV_ID])
+GO
+ALTER TABLE [dbo].[TMS_REQUISITION] CHECK CONSTRAINT [FK_TMS_REQUISITION_TMS_TOOL_INVENTORY]
+GO
+ALTER TABLE [dbo].[TMS_REQUISITION]  WITH CHECK ADD  CONSTRAINT [FK_TMS_REQUISITION_TMS_TOOL_MASTER_LIST_REV] FOREIGN KEY([RQ_DWG_MLR_ID])
+REFERENCES [dbo].[TMS_TOOL_MASTER_LIST_REV] ([MLR_ID])
+GO
+ALTER TABLE [dbo].[TMS_REQUISITION] CHECK CONSTRAINT [FK_TMS_REQUISITION_TMS_TOOL_MASTER_LIST_REV]
+GO
+ALTER TABLE [dbo].[TMS_REQUISITION]  WITH CHECK ADD  CONSTRAINT [FK_TMS_REQUISITION_TMS_TOOL_SCRAP] FOREIGN KEY([RQ_SCRAP_ID])
+REFERENCES [dbo].[TMS_TOOL_SCRAP] ([SCRAP_ID])
+GO
+ALTER TABLE [dbo].[TMS_REQUISITION] CHECK CONSTRAINT [FK_TMS_REQUISITION_TMS_TOOL_SCRAP]
+GO
+ALTER TABLE [dbo].[TMS_REQUISITION_BOM_MLR]  WITH CHECK ADD  CONSTRAINT [FK_TMS_CURRINV_ALLOCATION_TMS_TOOL_MASTER_LIST_REV] FOREIGN KEY([RQBMMLR_BOM_MLR_ID])
+REFERENCES [dbo].[TMS_TOOL_MASTER_LIST_REV] ([MLR_ID])
+GO
+ALTER TABLE [dbo].[TMS_REQUISITION_BOM_MLR] CHECK CONSTRAINT [FK_TMS_CURRINV_ALLOCATION_TMS_TOOL_MASTER_LIST_REV]
+GO
+ALTER TABLE [dbo].[TMS_REQUISITION_BOM_MLR]  WITH CHECK ADD  CONSTRAINT [FK_TMS_REQUISITION_BOM_MLR_TMS_REQUISITION_DRAWING_ML] FOREIGN KEY([RQBMMLR_RQDWGML_ID])
+REFERENCES [dbo].[TMS_REQUISITION_DRAWING_ML] ([RQDWGML_ID])
+GO
+ALTER TABLE [dbo].[TMS_REQUISITION_BOM_MLR] CHECK CONSTRAINT [FK_TMS_REQUISITION_BOM_MLR_TMS_REQUISITION_DRAWING_ML]
+GO
+ALTER TABLE [dbo].[TMS_REQUISITION_DRAWING_ML]  WITH CHECK ADD  CONSTRAINT [FK_TMS_REQUISITION_CURRINV_TMS_REQUISITION] FOREIGN KEY([RQDWGML_RQ_ID])
+REFERENCES [dbo].[TMS_REQUISITION] ([RQ_ID])
+GO
+ALTER TABLE [dbo].[TMS_REQUISITION_DRAWING_ML] CHECK CONSTRAINT [FK_TMS_REQUISITION_CURRINV_TMS_REQUISITION]
+GO
+ALTER TABLE [dbo].[TMS_REQUISITION_DRAWING_MLR]  WITH CHECK ADD  CONSTRAINT [FK_TMS_CURRINV_MLR_TMS_TOOL_MASTER_LIST_REV] FOREIGN KEY([RQDWGMLR_DWG_MLR_ID])
+REFERENCES [dbo].[TMS_TOOL_MASTER_LIST_REV] ([MLR_ID])
+GO
+ALTER TABLE [dbo].[TMS_REQUISITION_DRAWING_MLR] CHECK CONSTRAINT [FK_TMS_CURRINV_MLR_TMS_TOOL_MASTER_LIST_REV]
+GO
+ALTER TABLE [dbo].[TMS_REQUISITION_DRAWING_MLR]  WITH CHECK ADD  CONSTRAINT [FK_TMS_REQUISITION_DRAWING_MLR_TMS_REQUISITION_DRAWING_ML] FOREIGN KEY([RQDWGMLR_RQDWGML_ID])
+REFERENCES [dbo].[TMS_REQUISITION_DRAWING_ML] ([RQDWGML_ID])
+GO
+ALTER TABLE [dbo].[TMS_REQUISITION_DRAWING_MLR] CHECK CONSTRAINT [FK_TMS_REQUISITION_DRAWING_MLR_TMS_REQUISITION_DRAWING_ML]
+GO
+ALTER TABLE [dbo].[TMS_REQUISITION_NOT_REPAIRABLE_TOOL]  WITH CHECK ADD  CONSTRAINT [FK_TMS_REQUISITION_NOT_REPAIRABLE_TOOL_TMS_REQUISITION_DRAWING_ML] FOREIGN KEY([RQNRT_RQDWGML_ID])
+REFERENCES [dbo].[TMS_REQUISITION_DRAWING_ML] ([RQDWGML_ID])
+GO
+ALTER TABLE [dbo].[TMS_REQUISITION_NOT_REPAIRABLE_TOOL] CHECK CONSTRAINT [FK_TMS_REQUISITION_NOT_REPAIRABLE_TOOL_TMS_REQUISITION_DRAWING_ML]
+GO
+ALTER TABLE [dbo].[TMS_REQUISITION_NOT_REPAIRABLE_TOOL]  WITH CHECK ADD  CONSTRAINT [FK_TMS_REQUISITION_NOT_REPAIRABLE_TOOL_TMS_TOOL_INVENTORY] FOREIGN KEY([RQNRT_INV_ID])
+REFERENCES [dbo].[TMS_TOOL_INVENTORY] ([INV_ID])
+GO
+ALTER TABLE [dbo].[TMS_REQUISITION_NOT_REPAIRABLE_TOOL] CHECK CONSTRAINT [FK_TMS_REQUISITION_NOT_REPAIRABLE_TOOL_TMS_TOOL_INVENTORY]
+GO
+ALTER TABLE [dbo].[TMS_SCRAP_ATTACHMENT]  WITH CHECK ADD  CONSTRAINT [FK_TMS_SCRAP_ATTACHMENT_TMS_TOOL_SCRAP] FOREIGN KEY([SCRAPATT_SCRAP_ID])
+REFERENCES [dbo].[TMS_TOOL_SCRAP] ([SCRAP_ID])
+GO
+ALTER TABLE [dbo].[TMS_SCRAP_ATTACHMENT] CHECK CONSTRAINT [FK_TMS_SCRAP_ATTACHMENT_TMS_TOOL_SCRAP]
+GO
+ALTER TABLE [dbo].[TMS_TOOL_ASSIGNMENT]  WITH CHECK ADD  CONSTRAINT [FK_TMS_TOOL_ASSIGNMENT_MS_MACHINES] FOREIGN KEY([TASGN_MAC_ID])
+REFERENCES [dbo].[MS_MACHINES] ([MAC_ID])
+GO
+ALTER TABLE [dbo].[TMS_TOOL_ASSIGNMENT] CHECK CONSTRAINT [FK_TMS_TOOL_ASSIGNMENT_MS_MACHINES]
+GO
+ALTER TABLE [dbo].[TMS_TOOL_ASSIGNMENT]  WITH CHECK ADD  CONSTRAINT [FK_TMS_TOOL_ASSIGNMENT_MS_OPERATION] FOREIGN KEY([TASGN_OP_ID])
+REFERENCES [dbo].[MS_OPERATION] ([OP_ID])
+GO
+ALTER TABLE [dbo].[TMS_TOOL_ASSIGNMENT] CHECK CONSTRAINT [FK_TMS_TOOL_ASSIGNMENT_MS_OPERATION]
+GO
+ALTER TABLE [dbo].[TMS_TOOL_ASSIGNMENT]  WITH CHECK ADD  CONSTRAINT [FK_TMS_TOOL_ASSIGNMENT_MS_PARTS] FOREIGN KEY([TASGN_PART_ID])
+REFERENCES [dbo].[MS_PARTS] ([PART_ID])
+GO
+ALTER TABLE [dbo].[TMS_TOOL_ASSIGNMENT] CHECK CONSTRAINT [FK_TMS_TOOL_ASSIGNMENT_MS_PARTS]
+GO
+ALTER TABLE [dbo].[TMS_TOOL_ASSIGNMENT]  WITH CHECK ADD  CONSTRAINT [FK_TMS_TOOL_ASSIGNMENT_TMS_TOOLSETS] FOREIGN KEY([TASGN_TSET_ID])
+REFERENCES [dbo].[TMS_TOOLSETS] ([TSET_ID])
+GO
+ALTER TABLE [dbo].[TMS_TOOL_ASSIGNMENT] CHECK CONSTRAINT [FK_TMS_TOOL_ASSIGNMENT_TMS_TOOLSETS]
+GO
+ALTER TABLE [dbo].[TMS_TOOL_INVENTORY]  WITH CHECK ADD  CONSTRAINT [FK_TMS_TOOL_INVENTORY_MS_MAKER] FOREIGN KEY([INV_MAKER_ID])
+REFERENCES [dbo].[MS_MAKER] ([MAKER_ID])
+GO
+ALTER TABLE [dbo].[TMS_TOOL_INVENTORY] CHECK CONSTRAINT [FK_TMS_TOOL_INVENTORY_MS_MAKER]
+GO
+ALTER TABLE [dbo].[TMS_TOOL_INVENTORY]  WITH CHECK ADD  CONSTRAINT [FK_TMS_TOOL_INVENTORY_MS_MATERIAL] FOREIGN KEY([INV_MAT_ID])
+REFERENCES [dbo].[MS_MATERIAL] ([MAT_ID])
+GO
+ALTER TABLE [dbo].[TMS_TOOL_INVENTORY] CHECK CONSTRAINT [FK_TMS_TOOL_INVENTORY_MS_MATERIAL]
+GO
+ALTER TABLE [dbo].[TMS_TOOL_INVENTORY]  WITH CHECK ADD  CONSTRAINT [FK_TMS_TOOL_INVENTORY_MS_STORAGE_LOCATION] FOREIGN KEY([INV_SL_ID])
+REFERENCES [dbo].[MS_STORAGE_LOCATION] ([SL_ID])
+GO
+ALTER TABLE [dbo].[TMS_TOOL_INVENTORY] CHECK CONSTRAINT [FK_TMS_TOOL_INVENTORY_MS_STORAGE_LOCATION]
+GO
+ALTER TABLE [dbo].[TMS_TOOL_INVENTORY]  WITH CHECK ADD  CONSTRAINT [FK_TMS_TOOL_INVENTORY_TMS_ORDERING_ITEMS] FOREIGN KEY([INV_ORDI_ID])
+REFERENCES [dbo].[TMS_ORDERING_ITEMS] ([ORDI_ID])
+GO
+ALTER TABLE [dbo].[TMS_TOOL_INVENTORY] CHECK CONSTRAINT [FK_TMS_TOOL_INVENTORY_TMS_ORDERING_ITEMS]
+GO
+ALTER TABLE [dbo].[TMS_TOOL_INVENTORY]  WITH CHECK ADD  CONSTRAINT [FK_TMS_TOOL_INVENTORY_TMS_REQUISITION] FOREIGN KEY([INV_REPLACED_BY])
+REFERENCES [dbo].[TMS_REQUISITION] ([RQ_ID])
+GO
+ALTER TABLE [dbo].[TMS_TOOL_INVENTORY] CHECK CONSTRAINT [FK_TMS_TOOL_INVENTORY_TMS_REQUISITION]
+GO
+ALTER TABLE [dbo].[TMS_TOOL_INVENTORY]  WITH CHECK ADD  CONSTRAINT [FK_TMS_TOOL_INVENTORY_TMS_TOOL_ASSIGNED_TOOLS] FOREIGN KEY([INV_ASSGN_ID])
+REFERENCES [dbo].[TMS_ASSIGNED_TOOLS] ([ASSGN_ID])
+GO
+ALTER TABLE [dbo].[TMS_TOOL_INVENTORY] CHECK CONSTRAINT [FK_TMS_TOOL_INVENTORY_TMS_TOOL_ASSIGNED_TOOLS]
+GO
+ALTER TABLE [dbo].[TMS_TOOL_INVENTORY]  WITH CHECK ADD  CONSTRAINT [FK_TMS_TOOL_INVENTORY_TMS_TOOL_MASTER_LIST_REV] FOREIGN KEY([INV_MLR_ID])
+REFERENCES [dbo].[TMS_TOOL_MASTER_LIST_REV] ([MLR_ID])
+GO
+ALTER TABLE [dbo].[TMS_TOOL_INVENTORY] CHECK CONSTRAINT [FK_TMS_TOOL_INVENTORY_TMS_TOOL_MASTER_LIST_REV]
+GO
+ALTER TABLE [dbo].[TMS_TOOL_INVENTORY]  WITH CHECK ADD  CONSTRAINT [FK_TMS_TOOL_INVENTORY_TMS_WORKORDER] FOREIGN KEY([INV_WO_ID])
+REFERENCES [dbo].[TMS_WORKORDER] ([WO_ID])
+GO
+ALTER TABLE [dbo].[TMS_TOOL_INVENTORY] CHECK CONSTRAINT [FK_TMS_TOOL_INVENTORY_TMS_WORKORDER]
+GO
+ALTER TABLE [dbo].[TMS_TOOL_MASTER_LIST_PARTS]  WITH CHECK ADD  CONSTRAINT [FK_TMS_TOOL_MASTER_LIST_PARTS_MS_PARTS] FOREIGN KEY([TMLP_PART_ID])
+REFERENCES [dbo].[MS_PARTS] ([PART_ID])
+GO
+ALTER TABLE [dbo].[TMS_TOOL_MASTER_LIST_PARTS] CHECK CONSTRAINT [FK_TMS_TOOL_MASTER_LIST_PARTS_MS_PARTS]
+GO
+ALTER TABLE [dbo].[TMS_TOOL_MASTER_LIST_REV]  WITH CHECK ADD  CONSTRAINT [FK_TMS_TOOL_MASTER_LIST_REV_MS_MACHINES] FOREIGN KEY([MLR_MACG_ID])
+REFERENCES [dbo].[MS_MACHINES] ([MAC_ID])
+GO
+ALTER TABLE [dbo].[TMS_TOOL_MASTER_LIST_REV] CHECK CONSTRAINT [FK_TMS_TOOL_MASTER_LIST_REV_MS_MACHINES]
+GO
+ALTER TABLE [dbo].[TMS_TOOL_MASTER_LIST_REV]  WITH CHECK ADD  CONSTRAINT [FK_TMS_TOOL_MASTER_LIST_REV_MS_MAKER] FOREIGN KEY([MLR_MAKER_ID])
+REFERENCES [dbo].[MS_MAKER] ([MAKER_ID])
+GO
+ALTER TABLE [dbo].[TMS_TOOL_MASTER_LIST_REV] CHECK CONSTRAINT [FK_TMS_TOOL_MASTER_LIST_REV_MS_MAKER]
+GO
+ALTER TABLE [dbo].[TMS_TOOL_MASTER_LIST_REV]  WITH CHECK ADD  CONSTRAINT [FK_TMS_TOOL_MASTER_LIST_REV_MS_MATERIAL] FOREIGN KEY([MLR_MAT_ID])
+REFERENCES [dbo].[MS_MATERIAL] ([MAT_ID])
+GO
+ALTER TABLE [dbo].[TMS_TOOL_MASTER_LIST_REV] CHECK CONSTRAINT [FK_TMS_TOOL_MASTER_LIST_REV_MS_MATERIAL]
+GO
+ALTER TABLE [dbo].[TMS_TOOL_MASTER_LIST_REV]  WITH CHECK ADD  CONSTRAINT [FK_TMS_TOOL_MASTER_LIST_REV_MS_OPERATION] FOREIGN KEY([MLR_OP_ID])
+REFERENCES [dbo].[MS_OPERATION] ([OP_ID])
+GO
+ALTER TABLE [dbo].[TMS_TOOL_MASTER_LIST_REV] CHECK CONSTRAINT [FK_TMS_TOOL_MASTER_LIST_REV_MS_OPERATION]
+GO
+ALTER TABLE [dbo].[TMS_TOOL_MASTER_LIST_REV]  WITH CHECK ADD  CONSTRAINT [FK_TMS_TOOL_MASTER_LIST_REV_MS_TOOL_CLASS] FOREIGN KEY([MLR_TC_ID])
+REFERENCES [dbo].[MS_TOOL_CLASS] ([TC_ID])
+GO
+ALTER TABLE [dbo].[TMS_TOOL_MASTER_LIST_REV] CHECK CONSTRAINT [FK_TMS_TOOL_MASTER_LIST_REV_MS_TOOL_CLASS]
+GO
+ALTER TABLE [dbo].[TMS_TOOL_MASTER_LIST_REV]  WITH CHECK ADD  CONSTRAINT [FK_TMS_TOOL_MASTER_LIST_REV_TMS_TOOL_MASTER_LIST] FOREIGN KEY([MLR_ML_ID])
+REFERENCES [dbo].[TMS_TOOL_MASTER_LIST] ([ML_ID])
+GO
+ALTER TABLE [dbo].[TMS_TOOL_MASTER_LIST_REV] CHECK CONSTRAINT [FK_TMS_TOOL_MASTER_LIST_REV_TMS_TOOL_MASTER_LIST]
+GO
+ALTER TABLE [dbo].[TMS_TOOL_PLANNING]  WITH CHECK ADD  CONSTRAINT [FK_TMS_TOOL_PLANNING_MS_MACHINES] FOREIGN KEY([TP_MAC_ID])
+REFERENCES [dbo].[MS_MACHINES] ([MAC_ID])
+GO
+ALTER TABLE [dbo].[TMS_TOOL_PLANNING] CHECK CONSTRAINT [FK_TMS_TOOL_PLANNING_MS_MACHINES]
+GO
+ALTER TABLE [dbo].[TMS_TOOL_PLANNING]  WITH CHECK ADD  CONSTRAINT [FK_TMS_TOOL_PLANNING_MS_OPERATION] FOREIGN KEY([TP_OP_ID])
+REFERENCES [dbo].[MS_OPERATION] ([OP_ID])
+GO
+ALTER TABLE [dbo].[TMS_TOOL_PLANNING] CHECK CONSTRAINT [FK_TMS_TOOL_PLANNING_MS_OPERATION]
+GO
+ALTER TABLE [dbo].[TMS_TOOL_PLANNING]  WITH CHECK ADD  CONSTRAINT [FK_TMS_TOOL_PLANNING_MS_PARTS] FOREIGN KEY([TP_PART_ID])
+REFERENCES [dbo].[MS_PARTS] ([PART_ID])
+GO
+ALTER TABLE [dbo].[TMS_TOOL_PLANNING] CHECK CONSTRAINT [FK_TMS_TOOL_PLANNING_MS_PARTS]
+GO
+ALTER TABLE [dbo].[TMS_TOOL_PLANNING]  WITH CHECK ADD  CONSTRAINT [FK_TMS_TOOL_PLANNING_TMS_TOOL_MASTER_LIST_REV] FOREIGN KEY([TP_MLR_ID])
+REFERENCES [dbo].[TMS_TOOL_MASTER_LIST_REV] ([MLR_ID])
+GO
+ALTER TABLE [dbo].[TMS_TOOL_PLANNING] CHECK CONSTRAINT [FK_TMS_TOOL_PLANNING_TMS_TOOL_MASTER_LIST_REV]
+GO
+ALTER TABLE [dbo].[TMS_TOOL_SCRAP]  WITH CHECK ADD  CONSTRAINT [FK_TMS_TOOL_SCRAP_MS_REASON] FOREIGN KEY([SCRAP_REASON_ID])
+REFERENCES [dbo].[MS_REASON] ([REASON_ID])
+GO
+ALTER TABLE [dbo].[TMS_TOOL_SCRAP] CHECK CONSTRAINT [FK_TMS_TOOL_SCRAP_MS_REASON]
+GO
+ALTER TABLE [dbo].[TMS_TOOL_SCRAP]  WITH CHECK ADD  CONSTRAINT [FK_TMS_TOOL_SCRAP_TMS_TOOL_INVENTORY] FOREIGN KEY([SCRAP_INV_ID])
+REFERENCES [dbo].[TMS_TOOL_INVENTORY] ([INV_ID])
+GO
+ALTER TABLE [dbo].[TMS_TOOL_SCRAP] CHECK CONSTRAINT [FK_TMS_TOOL_SCRAP_TMS_TOOL_INVENTORY]
+GO
+ALTER TABLE [dbo].[TMS_TOOL_SPEC]  WITH CHECK ADD  CONSTRAINT [FK_TMS_TOOL_SPEC_TMS_ATTRIBUTES] FOREIGN KEY([TLSPEC_ATTR_ID])
+REFERENCES [dbo].[TMS_ATTRIBUTES] ([ATTR_ID])
+GO
+ALTER TABLE [dbo].[TMS_TOOL_SPEC] CHECK CONSTRAINT [FK_TMS_TOOL_SPEC_TMS_ATTRIBUTES]
+GO
+ALTER TABLE [dbo].[TMS_TOOL_SPEC]  WITH CHECK ADD  CONSTRAINT [FK_TMS_TOOL_SPEC_TMS_TOOL_MASTER_LIST_REV] FOREIGN KEY([TLSPEC_MLR_ID])
+REFERENCES [dbo].[TMS_TOOL_MASTER_LIST_REV] ([MLR_ID])
+GO
+ALTER TABLE [dbo].[TMS_TOOL_SPEC] CHECK CONSTRAINT [FK_TMS_TOOL_SPEC_TMS_TOOL_MASTER_LIST_REV]
+GO
+ALTER TABLE [dbo].[TMS_TOOLSET_COMPONENTS]  WITH CHECK ADD  CONSTRAINT [FK_TMS_TOOLSET_COMPONENTS_TMS_TOOL_INVENTORY] FOREIGN KEY([TSCOM_INV_ID])
+REFERENCES [dbo].[TMS_TOOL_INVENTORY] ([INV_ID])
+GO
+ALTER TABLE [dbo].[TMS_TOOLSET_COMPONENTS] CHECK CONSTRAINT [FK_TMS_TOOLSET_COMPONENTS_TMS_TOOL_INVENTORY]
+GO
+ALTER TABLE [dbo].[TMS_TOOLSET_COMPOSITIONS]  WITH CHECK ADD  CONSTRAINT [FK_TMS_TOOLSET_COMPOSITIONS_TMS_TOOL_INVENTORY] FOREIGN KEY([TSCOMP_INV_ID])
+REFERENCES [dbo].[TMS_TOOL_INVENTORY] ([INV_ID])
+GO
+ALTER TABLE [dbo].[TMS_TOOLSET_COMPOSITIONS] CHECK CONSTRAINT [FK_TMS_TOOLSET_COMPOSITIONS_TMS_TOOL_INVENTORY]
+GO
+ALTER TABLE [dbo].[TMS_TOOLSET_COMPOSITIONS]  WITH CHECK ADD  CONSTRAINT [FK_TMS_TOOLSET_COMPOSITIONS_TMS_TOOL_MASTER_LIST_REV] FOREIGN KEY([TSCOMP_MLR_ID])
+REFERENCES [dbo].[TMS_TOOL_MASTER_LIST_REV] ([MLR_ID])
+GO
+ALTER TABLE [dbo].[TMS_TOOLSET_COMPOSITIONS] CHECK CONSTRAINT [FK_TMS_TOOLSET_COMPOSITIONS_TMS_TOOL_MASTER_LIST_REV]
+GO
+ALTER TABLE [dbo].[TMS_TOOLSET_COMPOSITIONS]  WITH CHECK ADD  CONSTRAINT [FK_TMS_TOOLSET_COMPOSITIONS_TMS_TOOLSETS] FOREIGN KEY([TSCOMP_TSET_ID])
+REFERENCES [dbo].[TMS_TOOLSETS] ([TSET_ID])
+GO
+ALTER TABLE [dbo].[TMS_TOOLSET_COMPOSITIONS] CHECK CONSTRAINT [FK_TMS_TOOLSET_COMPOSITIONS_TMS_TOOLSETS]
+GO
+ALTER TABLE [dbo].[TMS_TOOLSETS]  WITH CHECK ADD  CONSTRAINT [FK_TMS_TOOLSETS_TMS_TOOL_MASTER_LIST_REV] FOREIGN KEY([TSET_BOM_MLR_ID])
+REFERENCES [dbo].[TMS_TOOL_MASTER_LIST_REV] ([MLR_ID])
+GO
+ALTER TABLE [dbo].[TMS_TOOLSETS] CHECK CONSTRAINT [FK_TMS_TOOLSETS_TMS_TOOL_MASTER_LIST_REV]
+GO
+ALTER TABLE [dbo].[TMS_USAGE_LOG]  WITH CHECK ADD  CONSTRAINT [FK_TMS_USAGE_LOG_MS_MACHINES] FOREIGN KEY([ULOG_MAC_ID])
+REFERENCES [dbo].[MS_MACHINES] ([MAC_ID])
+GO
+ALTER TABLE [dbo].[TMS_USAGE_LOG] CHECK CONSTRAINT [FK_TMS_USAGE_LOG_MS_MACHINES]
+GO
+ALTER TABLE [dbo].[TMS_USAGE_LOG]  WITH CHECK ADD  CONSTRAINT [FK_TMS_USAGE_LOG_TMS_WORK_ACTIVITIES] FOREIGN KEY([ULOG_WA_ID])
+REFERENCES [dbo].[TMS_WORK_ACTIVITIES] ([WA_ID])
+GO
+ALTER TABLE [dbo].[TMS_USAGE_LOG] CHECK CONSTRAINT [FK_TMS_USAGE_LOG_TMS_WORK_ACTIVITIES]
+GO
+ALTER TABLE [dbo].[TMS_USAGE_LOG]  WITH CHECK ADD  CONSTRAINT [FK_TMS_USAGE_LOG_TMS_WORKORDER] FOREIGN KEY([ULOG_WO_ID])
+REFERENCES [dbo].[TMS_WORKORDER] ([WO_ID])
+GO
+ALTER TABLE [dbo].[TMS_USAGE_LOG] CHECK CONSTRAINT [FK_TMS_USAGE_LOG_TMS_WORKORDER]
+GO
+ALTER TABLE [dbo].[TMS_WO_ATTACHMENT]  WITH CHECK ADD  CONSTRAINT [FK_TMS_WO_ATTACHMENT_TMS_WO_ATTACHMENT] FOREIGN KEY([WOATT_WO_ID])
+REFERENCES [dbo].[TMS_WORKORDER] ([WO_ID])
+GO
+ALTER TABLE [dbo].[TMS_WO_ATTACHMENT] CHECK CONSTRAINT [FK_TMS_WO_ATTACHMENT_TMS_WO_ATTACHMENT]
+GO
+ALTER TABLE [dbo].[TMS_WO_EXTERNAL_COSTS]  WITH CHECK ADD  CONSTRAINT [FK_TMS_WO_EXTERNAL_COSTS_MS_SUPPLIER] FOREIGN KEY([EXTCOST_SUP_ID])
+REFERENCES [dbo].[MS_SUPPLIER] ([SUP_ID])
+GO
+ALTER TABLE [dbo].[TMS_WO_EXTERNAL_COSTS] CHECK CONSTRAINT [FK_TMS_WO_EXTERNAL_COSTS_MS_SUPPLIER]
+GO
+ALTER TABLE [dbo].[TMS_WO_EXTERNAL_COSTS]  WITH CHECK ADD  CONSTRAINT [FK_TMS_WO_EXTERNAL_COSTS_TMS_WORK_ACTIVITIES] FOREIGN KEY([EXTCOST_WA_ID])
+REFERENCES [dbo].[TMS_WORK_ACTIVITIES] ([WA_ID])
+GO
+ALTER TABLE [dbo].[TMS_WO_EXTERNAL_COSTS] CHECK CONSTRAINT [FK_TMS_WO_EXTERNAL_COSTS_TMS_WORK_ACTIVITIES]
+GO
+ALTER TABLE [dbo].[TMS_WO_EXTERNAL_COSTS]  WITH CHECK ADD  CONSTRAINT [FK_TMS_WO_EXTERNAL_COSTS_TMS_WORKORDER] FOREIGN KEY([EXTCOST_WO_ID])
+REFERENCES [dbo].[TMS_WORKORDER] ([WO_ID])
+GO
+ALTER TABLE [dbo].[TMS_WO_EXTERNAL_COSTS] CHECK CONSTRAINT [FK_TMS_WO_EXTERNAL_COSTS_TMS_WORKORDER]
+GO
+ALTER TABLE [dbo].[TMS_WO_MATERIAL_COSTS]  WITH CHECK ADD  CONSTRAINT [FK_TMS_WO_MATERIAL_COSTS_MS_MATERIAL] FOREIGN KEY([MATCOST_MAT_ID])
+REFERENCES [dbo].[MS_MATERIAL] ([MAT_ID])
+GO
+ALTER TABLE [dbo].[TMS_WO_MATERIAL_COSTS] CHECK CONSTRAINT [FK_TMS_WO_MATERIAL_COSTS_MS_MATERIAL]
+GO
+ALTER TABLE [dbo].[TMS_WO_MATERIAL_COSTS]  WITH CHECK ADD  CONSTRAINT [FK_TMS_WO_MATERIAL_COSTS_TMS_WORK_ACTIVITIES] FOREIGN KEY([MATCOST_WA_ID])
+REFERENCES [dbo].[TMS_WORK_ACTIVITIES] ([WA_ID])
+GO
+ALTER TABLE [dbo].[TMS_WO_MATERIAL_COSTS] CHECK CONSTRAINT [FK_TMS_WO_MATERIAL_COSTS_TMS_WORK_ACTIVITIES]
+GO
+ALTER TABLE [dbo].[TMS_WO_MATERIAL_COSTS]  WITH CHECK ADD  CONSTRAINT [FK_TMS_WO_MATERIAL_COSTS_TMS_WORKORDER] FOREIGN KEY([MATCOST_WO_ID])
+REFERENCES [dbo].[TMS_WORKORDER] ([WO_ID])
+GO
+ALTER TABLE [dbo].[TMS_WO_MATERIAL_COSTS] CHECK CONSTRAINT [FK_TMS_WO_MATERIAL_COSTS_TMS_WORKORDER]
+GO
+ALTER TABLE [dbo].[TMS_WO_MCMH_COSTS]  WITH CHECK ADD  CONSTRAINT [FK_TMS_WO_MCMH_COSTS_MS_MACHINES] FOREIGN KEY([MCMHCOST_MAC_ID])
+REFERENCES [dbo].[MS_MACHINES] ([MAC_ID])
+GO
+ALTER TABLE [dbo].[TMS_WO_MCMH_COSTS] CHECK CONSTRAINT [FK_TMS_WO_MCMH_COSTS_MS_MACHINES]
+GO
+ALTER TABLE [dbo].[TMS_WO_MCMH_COSTS]  WITH CHECK ADD  CONSTRAINT [FK_TMS_WO_MCMH_COSTS_TMS_WORK_ACTIVITIES] FOREIGN KEY([MCMHCOST_WA_ID])
+REFERENCES [dbo].[TMS_WORK_ACTIVITIES] ([WA_ID])
+GO
+ALTER TABLE [dbo].[TMS_WO_MCMH_COSTS] CHECK CONSTRAINT [FK_TMS_WO_MCMH_COSTS_TMS_WORK_ACTIVITIES]
+GO
+ALTER TABLE [dbo].[TMS_WO_MCMH_COSTS]  WITH CHECK ADD  CONSTRAINT [FK_TMS_WO_MCMH_COSTS_TMS_WORKORDER] FOREIGN KEY([MCMHCOST_WO_ID])
+REFERENCES [dbo].[TMS_WORKORDER] ([WO_ID])
+GO
+ALTER TABLE [dbo].[TMS_WO_MCMH_COSTS] CHECK CONSTRAINT [FK_TMS_WO_MCMH_COSTS_TMS_WORKORDER]
+GO
+ALTER TABLE [dbo].[TMS_WORKORDER]  WITH CHECK ADD  CONSTRAINT [FK_TMS_WORKORDER_TMS_TOOL_INVENTORY] FOREIGN KEY([WO_INV_ID])
+REFERENCES [dbo].[TMS_TOOL_INVENTORY] ([INV_ID])
+GO
+ALTER TABLE [dbo].[TMS_WORKORDER] CHECK CONSTRAINT [FK_TMS_WORKORDER_TMS_TOOL_INVENTORY]
+GO
+ALTER TABLE [dbo].[TMS_WORKORDER]  WITH CHECK ADD  CONSTRAINT [FK_TMS_WORKORDER_TMS_TOOL_MASTER_LIST_REV] FOREIGN KEY([WO_MLR_ID])
+REFERENCES [dbo].[TMS_TOOL_MASTER_LIST_REV] ([MLR_ID])
+GO
+ALTER TABLE [dbo].[TMS_WORKORDER] CHECK CONSTRAINT [FK_TMS_WORKORDER_TMS_TOOL_MASTER_LIST_REV]
+GO
+/****** Object:  StoredProcedure [dbo].[cspUpdateToolInventoryEndCycle]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+-- =============================================
+-- Author:		Tan YH
+-- Create date: 2010-07-25
+-- Description:	To calculate and update Tool Inventory End Cycle quantity
+-- =============================================
+CREATE PROCEDURE [dbo].[cspUpdateToolInventoryEndCycle]
+  @inv_id bigint
+AS
+BEGIN
+	-- SET NOCOUNT ON added to prevent extra result sets from
+	-- interfering with SELECT statements.
+	SET NOCOUNT ON;
+
+	declare @TOTAL_PRODUCED bigint;
+	SELECT @TOTAL_PRODUCED = SUM (assigned.ASSGN_QTY_PRODUCED) 
+	FROM TMS_TOOL_INVENTORY inv 
+       INNER JOIN TMS_TOOL_INVENTORY_HISTORY hist ON hist.INVH_INV_ID = inv.INV_ID 
+       INNER JOIN TMS_ASSIGNED_TOOLS assigned ON hist.INVH_ASSGN_ID = assigned.ASSGN_ID
+	WHERE (inv.INV_ID = @inv_id) AND (hist.INVH_ACTION LIKE '%InUsed%')
+
+	UPDATE TMS_TOOL_INVENTORY SET INV_END_CYCLE = ISNULL(INV_BEGIN_CYCLE, 0) + ISNULL(@TOTAL_PRODUCED,0) from TMS_TOOL_INVENTORY where INV_ID = @INV_ID;
+
+END
+
+------------------------
+GO
+/****** Object:  StoredProcedure [dbo].[cspUpdateToolInventoryEndCycle_2]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+
+-- =============================================
+-- Author:		NHC
+-- Create date: 2016-07-30
+-- Description:	To calculate and update Tool Inventory End Cycle quantity,
+--				updated from ealier version for simplification.  So earliver version will be retired
+-- =============================================
+CREATE PROCEDURE [dbo].[cspUpdateToolInventoryEndCycle_2]
+  @inv_id bigint
+AS
+BEGIN
+	-- SET NOCOUNT ON added to prevent extra result sets from
+	-- interfering with SELECT statements.
+	SET NOCOUNT ON;
+
+	declare @TOTAL_PRODUCED bigint;
+	SELECT @TOTAL_PRODUCED = SUM (assigned.ASSGN_QTY_PRODUCED) 
+	FROM TMS_ASSIGNED_TOOLS assigned 
+	WHERE (ASSGN_INV_ID = @inv_id)
+
+	UPDATE TMS_TOOL_INVENTORY SET INV_END_CYCLE = ISNULL(INV_BEGIN_CYCLE, 0) + ISNULL(@TOTAL_PRODUCED,0) from TMS_TOOL_INVENTORY where INV_ID = @INV_ID;
+
+END
+
+------------------------
+GO
+/****** Object:  StoredProcedure [dbo].[sp_CreateDataLoadScript]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE Procedure [dbo].[sp_CreateDataLoadScript]
+@databaseName	varchar(128) ,
+@TblNames varchar(max)
+as begin
+
+	set nocount on;
+
+	create table #a (id int identity (1,1), ColType int, ColName varchar(128))
+	create table #out (lnr int, statements varchar(max))
+	declare @sql nvarchar(4000)
+	declare @TblName as varchar(128)
+	declare @idx as bigint
+	declare @previdx as bigint
+	declare @last as bit
+	declare @hasIdentity as bit
+	declare @lnr as int
+
+	set @lnr=0
+
+	set @idx=charindex(',',@TblNames)
+	set @previdx=1
+
+	if @idx>0 begin  /* many tables */
+		set @TblName=ltrim(rtrim(substring(@TblNames,@previdx,@idx-@previdx)))
+		set @previdx=@idx+1
+		set @last=0
+	end
+	else begin /* 1 table */
+		set @TblName=ltrim(rtrim(@TblNames))
+		set @last=1
+	end
+
+	while len(@TblName)>0 begin
+	
+
+		select @sql = 'select case when DATA_TYPE like ''%char%'' or DATA_TYPE like ''%date%'' or DATA_TYPE like ''uniqueidentifier'' then 1 else 0 end , COLUMN_NAME
+			from 	information_schema.columns
+			where 	TABLE_NAME = ''' + @TblName + '''
+			order by ORDINAL_POSITION
+			'
+
+		select 	@sql = 'exec ' +  @databaseName + '.dbo.sp_executesql N''' + replace(@sql, '''', '''''') + ''''
+		
+		insert 	#a (ColType, ColName)
+		exec (@sql)
+		
+
+		select @hasIdentity=max(cast(clmns.is_identity as int))
+		from sys.tables AS tbl
+		INNER JOIN sys.all_columns AS clmns ON  clmns.object_id = tbl.object_id
+		where 	tbl.name = @TblName
+
+		declare	@id int ,
+		@maxid int ,
+		@cmd1 varchar(7000) ,
+		@cmd2 varchar(7000)
+
+		insert into #out select @lnr, '/* ' + @TblName + ' */'
+		set @lnr = @lnr+1
+		insert into #out select @lnr, 'truncate table ' + @TblName
+		set @lnr = @lnr+1
+
+		if @hasIdentity=1 begin
+			insert into #out select @lnr, 'set identity_insert ' + @TblName + ' ON'
+			set @lnr = @lnr+1
+		end
+			
+		select 	@id = 0 , @maxid = max(id)
+		from 	#a
+
+		select	@cmd1 = 'insert into #out select ' + cast(@lnr as varchar) + ', '' insert ' + @TblName + ' ( '
+		select	@cmd2 = ' + '' select '' + '
+		while @id < @maxid
+		begin
+			select @id = min(id) from #a where id > @id
+
+			select 	@cmd1 = @cmd1 + '[' + ColName + '],'
+			from	#a
+			where	id = @id
+
+			select @cmd2 = 	@cmd2
+					+ ' case when [' + ColName + '] is null '
+					+	' then ''null'' '
+					+	' else '
+					+	  case when ColType = 1 then  ''''''''' + replace(convert(varchar(max),[' + ColName + ']),'''''''','''''''''''') + ''''''''' else 'convert(varchar(50),[' + ColName + '])' end
+					+ ' end + '','' + '
+			from	#a
+			where	id = @id
+		end
+
+		select @cmd1 = left(@cmd1,len(@cmd1)-1) + ' ) '' '
+		select @cmd2 = left(@cmd2,len(@cmd2)-8) + ' from ' + @databaseName + '.dbo.' + @tblName
+
+		exec (@cmd1 + @cmd2)
+		truncate table #a
+
+		if @hasIdentity=1 begin
+			insert into #out select @lnr, 'set identity_insert ' + @TblName + ' OFF'
+			set @lnr = @lnr+1
+		end
+
+		insert into #out select @lnr, 'go'
+		set @lnr = @lnr+1
+
+		-- next table
+		set @idx=charindex(',',@TblNames,@previdx)
+		if @idx>0 begin  /* more tables */
+			set @TblName=ltrim(rtrim(substring(@TblNames,@previdx,@idx-@previdx)))
+			set @previdx=@idx+1
+		end
+		else if @last=0 begin /* one more */
+			set @TblName=ltrim(rtrim(substring(@TblNames,@previdx,8000)))
+			set @last=1
+		end
+		else  /* done */
+			set @TblName=''
+	end
+
+	drop table #a
+
+	print 'use ' + @databaseName
+	print 'go'
+	print 'set nocount on'
+
+
+	declare @statement varchar(max)
+	declare @o int
+	declare c_out cursor  LOCAL FAST_FORWARD for select statements from #out order by lnr
+	open c_out
+
+	declare @i int
+	set @i=0
+	fetch next from c_out into @statement
+
+	while @@fetch_status=0 begin
+		set @i=@i+1
+		if @i=1000 begin
+			print 'go'
+			set @i=0
+		end
+
+		print @statement
+
+		fetch next from c_out into @statement
+	end
+
+	close c_out
+	deallocate c_out
+	drop table #out
+end
+GO
+/****** Object:  StoredProcedure [dbo].[sp_ORDER_OVERDUE]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+-- =============================================
+-- Author:		Ng Heng Chong
+-- Create date: 3.5.2011
+-- Description:	Find all orders over overdue date
+-- =============================================
+CREATE PROCEDURE [dbo].[sp_ORDER_OVERDUE]
+@PARAM AS VARCHAR (2000) = NULL	
+AS
+BEGIN
+	-- SET NOCOUNT ON added to prevent extra result sets from
+	-- interfering with SELECT statements.
+	SET NOCOUNT ON
+    DECLARE @SQL AS VARCHAR(3000) 
+    DECLARE @SQL_UPDATE AS VARCHAR(3000) 
+    DECLARE @DISABLE_TRIGGER AS VARCHAR(3000)
+    DECLARE @ENABLE_TRIGGER AS VARCHAR(3000)
+	SET @SQL = 	'SELECT TMS_REQUISITION.RQ_INT_REQ_NO,  TMS_ORDERING.ORD_RQ_NO , TMS_ORDERING.ORD_ID, TMS_REQUISITION.RQ_DATE, 
+                 TMS_ORDERING.ORD_DATE_WANTED, TMS_ORDERING_ITEMS.ORDI_ID, TMS_REQUISITION.RQ_ORDER_QTY,
+                 TMS_REQUISITION.RQ_RECEIVE_QTY, PART_NAME, ML_TOOL_DRAW_NO, TC_NAME, MAKER_NAME
+                 FROM TMS_ORDERING INNER JOIN
+                 TMS_ORDERING_ITEMS ON TMS_ORDERING.ORD_ID = TMS_ORDERING_ITEMS.ORDI_ORD_ID INNER JOIN
+                 TMS_REQUISITION ON TMS_ORDERING_ITEMS.ORDI_RQ_ID = TMS_REQUISITION.RQ_ID INNER JOIN
+                 MS_PARTS ON RQ_PART_ID = PART_ID INNER JOIN
+                 TMS_TOOL_MASTER_LIST_REV ON RQ_DWG_MLR_ID = MLR_ID INNER JOIN
+                 TMS_TOOL_MASTER_LIST ON MLR_ML_ID = ML_ID INNER JOIN
+                 MS_TOOL_CLASS ON MLR_TC_ID = TC_ID LEFT JOIN
+                 MS_MAKER ON RQ_MAKER_ID = MAKER_ID           
+                 WHERE RQ_ORDER_QTY > RQ_RECEIVE_QTY AND (GETDATE() - ORD_DATE_WANTED >= '+ @PARAM + ') and ISNULL(ORDI_ALERTED, 0) <> 1; '
+   SET @DISABLE_TRIGGER = 'DISABLE TRIGGER TRIG_ORDERINGITEMSUPDATEREQUISITIONQUANTITY ON TMS_ORDERING_ITEMS;'	
+   SET @SQL_UPDATE = 'UPDATE TMS_ORDERING_ITEMS SET ORDI_ALERTED = 1 WHERE ORDI_ID IN (SELECT ORDI_ID FROM TMS_ORDERING INNER JOIN
+                      TMS_ORDERING_ITEMS ON TMS_ORDERING.ORD_ID = TMS_ORDERING_ITEMS.ORDI_ORD_ID INNER JOIN
+                      TMS_REQUISITION ON TMS_ORDERING_ITEMS.ORDI_RQ_ID = TMS_REQUISITION.RQ_ID
+                      WHERE RQ_ORDER_QTY > RQ_RECEIVE_QTY AND (GETDATE() - ORD_DATE_WANTED >= '+ @PARAM + ') and ISNULL(ORDI_ALERTED, 0) <> 1); '
+   SET @ENABLE_TRIGGER = 'ENABLE TRIGGER TRIG_ORDERINGITEMSUPDATEREQUISITIONQUANTITY ON TMS_ORDERING_ITEMS;'	
+   
+   EXEC (@SQL)
+   EXEC (@DISABLE_TRIGGER)
+   EXEC (@SQL_UPDATE)
+   EXEC (@ENABLE_TRIGGER)
+    -- Insert statements for procedure here
+END
+
+GO
+/****** Object:  StoredProcedure [dbo].[sp_TOOL_BOM_ITEMS_BELOW_STD_QTY]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+-- =============================================
+-- Author:        <Author,,Name>
+-- Create date: <Create Date,,>
+-- Description:    <Description,,>
+-- =============================================
+CREATE PROCEDURE [dbo].[sp_TOOL_BOM_ITEMS_BELOW_STD_QTY]
+@PARAM AS VARCHAR (2000) = NULL	
+AS
+BEGIN
+    -- SET NOCOUNT ON added to prevent extra result sets from
+    -- interfering with SELECT statements.
+    SET NOCOUNT ON;
+    DECLARE @SQL AS VARCHAR(3000)
+    DECLARE @SQL_UPDATE AS VARCHAR(3000)
+    SET @SQL = 'SELECT A.MLR_ID, A.ML_TOOL_DRAW_NO, A.MLR_REV,A.MLR_MINQTY_ALERT, A.ORI_QTY , A.STD_QTY, A.ACT_QTY, A.NRCV_QTY FROM (
+                SELECT TDWGR.MLR_ID, TDWGR.MLR_MINQTY_ALERT, TDWG.ML_TOOL_DRAW_NO, TDWGR.MLR_REV, SUM(BOMITEM.TB_QTY) AS ORI_QTY,
+                SUM(BOMITEM.TB_STD_QTY) AS STD_QTY, SUM(dbo.returnInventoryActQty(TDWGR.MLR_ID))  AS ACT_QTY, SUM(dbo.returnInventoryNRcvQty(TDWGR.MLR_ID))  AS NRCV_QTY
+                FROM TMS_TOOL_MASTER_LIST AS TBOM INNER JOIN
+                TMS_TOOL_MASTER_LIST_REV AS TBOMR ON TBOM.ML_ID = TBOMR.MLR_ML_ID INNER JOIN
+                TMS_TOOL_MASTER_LIST_MEMBERS AS BOMITEM ON TBOMR.MLR_ID = BOMITEM.TB_MLR_PARENT_ID INNER JOIN
+                TMS_TOOL_MASTER_LIST_REV AS TDWGR ON BOMITEM.TB_MLR_CHILD_ID = TDWGR.MLR_ID INNER JOIN
+                TMS_TOOL_MASTER_LIST AS TDWG ON TDWG.ML_ID = TDWGR.MLR_ML_ID INNER JOIN
+                TMS_TOOL_MASTER_LIST_PARTS ON TBOM.ML_ID = TMS_TOOL_MASTER_LIST_PARTS.TMLP_ML_ID INNER JOIN
+                MS_PARTS ON TMS_TOOL_MASTER_LIST_PARTS.TMLP_PART_ID = MS_PARTS.PART_ID INNER JOIN
+                MS_TOOL_CLASS ON TDWGR.MLR_TC_ID = MS_TOOL_CLASS.TC_ID INNER JOIN
+                MS_TOOL_TYPE ON MS_TOOL_TYPE.TT_ID = MS_TOOL_CLASS.TC_TYPE
+                WHERE     (TBOMR.MLR_STATUS = 2)
+                GROUP BY TDWGR.MLR_ID, TDWGR.MLR_MINQTY_ALERT, TDWGR.MLR_REV, TDWG.ML_TOOL_DRAW_NO) AS A
+                WHERE A.STD_QTY > A.ACT_QTY + A.NRCV_QTY AND ((DATEDIFF(DAY,A.MLR_MINQTY_ALERT,GETDATE()) > '+ @PARAM + ') OR A.MLR_MINQTY_ALERT IS NULL); '
+
+    SET @SQL_UPDATE = 'UPDATE TMS_TOOL_MASTER_LIST_REV SET MLR_MINQTY_ALERT = GETDATE() WHERE MLR_ID IN (
+                       SELECT A.MLR_ID FROM (SELECT TDWGR.MLR_ID, TDWGR.MLR_MINQTY_ALERT, TDWG.ML_TOOL_DRAW_NO, TDWGR.MLR_REV, SUM(BOMITEM.TB_QTY) AS ORI_QTY,
+                       SUM(BOMITEM.TB_STD_QTY) AS STD_QTY, SUM(dbo.returnInventoryActQty(TDWGR.MLR_ID))  AS ACT_QTY, SUM(dbo.returnInventoryNRcvQty(TDWGR.MLR_ID))  AS NRCV_QTY
+                       FROM TMS_TOOL_MASTER_LIST AS TBOM INNER JOIN
+                       TMS_TOOL_MASTER_LIST_REV AS TBOMR ON TBOM.ML_ID = TBOMR.MLR_ML_ID INNER JOIN
+                       TMS_TOOL_MASTER_LIST_MEMBERS AS BOMITEM ON TBOMR.MLR_ID = BOMITEM.TB_MLR_PARENT_ID INNER JOIN
+                       TMS_TOOL_MASTER_LIST_REV AS TDWGR ON BOMITEM.TB_MLR_CHILD_ID = TDWGR.MLR_ID INNER JOIN
+                       TMS_TOOL_MASTER_LIST AS TDWG ON TDWG.ML_ID = TDWGR.MLR_ML_ID INNER JOIN
+                       TMS_TOOL_MASTER_LIST_PARTS ON TBOM.ML_ID = TMS_TOOL_MASTER_LIST_PARTS.TMLP_ML_ID INNER JOIN
+                       MS_PARTS ON TMS_TOOL_MASTER_LIST_PARTS.TMLP_PART_ID = MS_PARTS.PART_ID INNER JOIN
+                       MS_TOOL_CLASS ON TDWGR.MLR_TC_ID = MS_TOOL_CLASS.TC_ID INNER JOIN
+                       MS_TOOL_TYPE ON MS_TOOL_TYPE.TT_ID = MS_TOOL_CLASS.TC_TYPE
+                       WHERE (TBOMR.MLR_STATUS = 2)
+                       GROUP BY TDWGR.MLR_ID, TDWGR.MLR_MINQTY_ALERT, TDWGR.MLR_REV, TDWG.ML_TOOL_DRAW_NO) AS A
+                       WHERE A.STD_QTY > A.ACT_QTY + A.NRCV_QTY AND ((DATEDIFF(DAY,A.MLR_MINQTY_ALERT,GETDATE()) > '+ @PARAM + ') OR A.MLR_MINQTY_ALERT IS NULL));'
+    EXEC (@SQL)
+    EXEC (@SQL_UPDATE)
+END
+GO
+/****** Object:  StoredProcedure [dbo].[sp_TOOL_EXCEED_TOOLLIFE]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+-- =============================================
+-- Author:        Ng Heng Chong
+-- Create date: 19-May-2011
+-- Description:    <Description,,>
+-- =============================================
+CREATE PROCEDURE [dbo].[sp_TOOL_EXCEED_TOOLLIFE]
+@PARAM AS VARCHAR (2000) = NULL	
+AS
+BEGIN
+    SET NOCOUNT ON;
+    DECLARE @SQL AS VARCHAR(3000)
+    DECLARE @SQL_UPDATE AS VARCHAR(3000)
+    DECLARE @DISABLE_TRIGGER AS VARCHAR(3000)
+    DECLARE @ENABLE_TRIGGER AS VARCHAR(3000)
+    SET @SQL =     'SELECT INV_ID, INV_TOOL_ID, INV_MLR_ID, ML_TOOL_DRAW_NO, TC_NAME, MLR_STD_TL_LIFE, INV_ID, INV_END_CYCLE, INV_STATUS
+					FROM TMS_TOOL_INVENTORY 
+					INNER JOIN TMS_TOOL_MASTER_LIST_REV ON INV_MLR_ID = MLR_ID
+					INNER JOIN TMS_TOOL_MASTER_LIST ON MLR_ML_ID = ML_ID
+					INNER JOIN MS_TOOL_CLASS ON MLR_TC_ID = TC_ID
+					WHERE (INV_STATUS NOT IN (5, 6)) AND (MLR_STD_TL_LIFE > 0)
+					AND ((INV_END_CYCLE - MLR_STD_TL_LIFE)/MLR_STD_TL_LIFE > '+ @PARAM + ') AND ISNULL(INV_OVER_TOOLLIFE_ALERTED,0) <> 1; '
+    SET @DISABLE_TRIGGER = 'DISABLE TRIGGER ALL ON TMS_TOOL_INVENTORY;'	
+    SET @SQL_UPDATE = 'UPDATE TMS_TOOL_INVENTORY SET INV_OVER_TOOLLIFE_ALERTED = 1 WHERE INV_ID IN (SELECT TMS_TOOL_INVENTORY.INV_ID FROM TMS_TOOL_INVENTORY INNER JOIN
+                       TMS_TOOL_MASTER_LIST_REV ON TMS_TOOL_INVENTORY.INV_MLR_ID = TMS_TOOL_MASTER_LIST_REV.MLR_ID
+                       WHERE (TMS_TOOL_INVENTORY.INV_STATUS NOT IN (5, 6)) AND (TMS_TOOL_MASTER_LIST_REV.MLR_STD_TL_LIFE > 0) AND
+                      ((TMS_TOOL_INVENTORY.INV_END_CYCLE - TMS_TOOL_MASTER_LIST_REV.MLR_STD_TL_LIFE)
+                      / TMS_TOOL_MASTER_LIST_REV.MLR_STD_TL_LIFE > '+ @PARAM + ') AND ISNULL(INV_OVER_TOOLLIFE_ALERTED,0) <> 1);'
+    SET @ENABLE_TRIGGER = 'ENABLE TRIGGER ALL ON TMS_TOOL_INVENTORY;'	
+   
+   EXEC (@SQL)
+   EXEC (@DISABLE_TRIGGER)
+   EXEC (@SQL_UPDATE)
+   EXEC (@ENABLE_TRIGGER)
+   
+END
+GO
+/****** Object:  StoredProcedure [dbo].[sp_TOOL_REQUISITION_APPROVE]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE PROCEDURE [dbo].[sp_TOOL_REQUISITION_APPROVE]
+AS
+BEGIN
+DECLARE @SQL AS VARCHAR(3000) 
+DECLARE @SQL_UPDATE AS VARCHAR(3000) 
+	SET @SQL = 	'SELECT RQ_ID, RQ_INT_REQ_NO, RQ_DATE, RQ_REQ_QTY, U1.USR_NAME AS APPROVER1, U2.USR_NAME AS APPROVER2, PART_NAME, ML_TOOL_DRAW_NO, MAKER_NAME, TC_NAME
+                 FROM TMS_REQUISITION
+                 INNER JOIN MS_USERS U1 ON RQ_APPROVER_1 = U1.USR_ID
+                 INNER JOIN MS_USERS U2 ON RQ_APPROVER_2 = U2.USR_ID
+                 INNER JOIN MS_PARTS ON RQ_PART_ID = PART_ID
+                 INNER JOIN TMS_TOOL_MASTER_LIST_REV ON RQ_DWG_MLR_ID = MLR_ID
+                 INNER JOIN TMS_TOOL_MASTER_LIST ON MLR_ML_ID = ML_ID
+                 INNER JOIN MS_TOOL_CLASS ON MLR_TC_ID = TC_ID
+                 INNER JOIN MS_MAKER ON RQ_MAKER_ID = MAKER_ID
+                 WHERE RQ_STATUS IN (4,5,6) AND ISNULL(RQ_APPROVE_ALERTED,0) <> 1; '
+	SET @SQL_UPDATE = 'UPDATE TMS_REQUISITION SET RQ_APPROVE_ALERTED = 1 WHERE RQ_ID IN (SELECT RQ_ID FROM TMS_REQUISITION WHERE RQ_STATUS IN (4,5,6) AND ISNULL(RQ_APPROVE_ALERTED,0) <> 1);'
+	EXEC (@SQL)
+	EXEC (@SQL_UPDATE)
+
+END
+
+
+
+GO
+/****** Object:  StoredProcedure [dbo].[sp_TOOL_REQUISITION_SUBMIT]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE PROCEDURE [dbo].[sp_TOOL_REQUISITION_SUBMIT]
+AS
+BEGIN
+DECLARE @SQL AS VARCHAR(3000) 
+DECLARE @SQL_UPDATE AS VARCHAR(3000) 
+	SET @SQL = 	'SELECT RQ_ID, RQ_INT_REQ_NO, RQ_DATE, RQ_REQ_QTY, USR_NAME AS REQUESTED_BY, PART_NAME, ML_TOOL_DRAW_NO, MAKER_NAME, TC_NAME
+                 FROM TMS_REQUISITION
+                 INNER JOIN MS_USERS ON RQ_REQUESTED_BY = USR_ID
+                 INNER JOIN MS_PARTS ON RQ_PART_ID = PART_ID
+                 INNER JOIN TMS_TOOL_MASTER_LIST_REV ON RQ_DWG_MLR_ID = MLR_ID
+                 INNER JOIN TMS_TOOL_MASTER_LIST ON MLR_ML_ID = ML_ID
+                 INNER JOIN MS_TOOL_CLASS ON MLR_TC_ID = TC_ID
+                 INNER JOIN MS_MAKER ON RQ_MAKER_ID = MAKER_ID
+                 WHERE RQ_STATUS = 3 AND ISNULL(RQ_SUBMIT_ALERTED,0) <> 1; '
+	SET @SQL_UPDATE = 'UPDATE TMS_REQUISITION SET RQ_SUBMIT_ALERTED = 1 WHERE RQ_ID IN (SELECT RQ_ID FROM TMS_REQUISITION WHERE RQ_STATUS = 3 AND ISNULL(RQ_SUBMIT_ALERTED,0) <> 1);'
+	EXEC (@SQL)
+	EXEC (@SQL_UPDATE)
+
+END
+GO
+/****** Object:  StoredProcedure [dbo].[sp_TOOL_SCARP_REQUEST_APPROVAL]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+-- ==================================================================
+-- Author:		Eng Ngah Looi
+-- Create date: 19.5.2011
+-- Description:	Find all scrap where approve by/ approve date is null
+-- ==================================================================
+
+CREATE PROCEDURE [dbo].[sp_TOOL_SCARP_REQUEST_APPROVAL]
+AS
+BEGIN
+	SET NOCOUNT ON;
+    DECLARE @SQL AS VARCHAR(3000) 
+    DECLARE @SQL_UPDATE AS VARCHAR(3000) 
+	SET @SQL = 	'SELECT SCRAP_ID, SCRAP_NO, SCRAP_DATE, SCRAP_ACC_DATE, INV_TOOL_ID, ML_TOOL_DRAW_NO, TC_NAME, SCRAP_REQUEST_APPROVE_ALERT
+                 FROM TMS_TOOL_SCRAP 
+                 INNER JOIN TMS_TOOL_INVENTORY ON SCRAP_INV_ID = INV_ID
+                 INNER JOIN TMS_TOOL_MASTER_LIST_REV ON INV_MLR_ID = MLR_ID
+                 INNER JOIN TMS_TOOL_MASTER_LIST ON MLR_ML_ID = ML_ID
+                 INNER JOIN MS_TOOL_CLASS ON MLR_TC_ID = TC_ID
+                 WHERE SCRAP_APPROVED_BY IS NULL AND SCRAP_REQUEST_APPROVE_ALERT IS NULL '
+
+   SET @SQL_UPDATE = 'UPDATE TMS_TOOL_SCRAP SET SCRAP_REQUEST_APPROVE_ALERT = 1
+                      WHERE SCRAP_ID IN (SELECT SCRAP_ID FROM TMS_TOOL_SCRAP WHERE SCRAP_APPROVED_BY IS NULL AND SCRAP_REQUEST_APPROVE_ALERT IS NULL)'
+   
+   EXEC (@SQL)
+   EXEC (@SQL_UPDATE)
+    -- Insert statements for procedure here
+END
+
+GO
+/****** Object:  StoredProcedure [dbo].[sp_TOOL_SCRAP_APPROVED]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+-- ==================================================================
+-- Author:		Eng Ngah Looi
+-- Create date: 19.5.2011
+-- Description:	Find all scrap that are approved
+-- ==================================================================
+
+CREATE PROCEDURE [dbo].[sp_TOOL_SCRAP_APPROVED]
+AS
+BEGIN
+	SET NOCOUNT ON;
+    DECLARE @SQL AS VARCHAR(3000) 
+    DECLARE @SQL_UPDATE AS VARCHAR(3000) 
+	SET @SQL = 	'SELECT SCRAP_ID, SCRAP_NO, SCRAP_DATE, SCRAP_ACC_DATE, SCRAP_APPROVED_DATE, USR_NAME AS APPROVED_BY, INV_TOOL_ID, ML_TOOL_DRAW_NO, TC_NAME, SCRAP_APPROVED_ALERT
+                 FROM TMS_TOOL_SCRAP 
+                 INNER JOIN TMS_TOOL_INVENTORY ON SCRAP_INV_ID = INV_ID
+                 INNER JOIN TMS_TOOL_MASTER_LIST_REV ON INV_MLR_ID = MLR_ID
+                 INNER JOIN TMS_TOOL_MASTER_LIST ON MLR_ML_ID = ML_ID
+                 INNER JOIN MS_TOOL_CLASS ON MLR_TC_ID = TC_ID
+                 INNER JOIN MS_USERS ON SCRAP_APPROVED_BY = USR_ID
+                 WHERE SCRAP_APPROVED_BY IS NOT NULL AND SCRAP_APPROVED_ALERT IS NULL'
+
+   SET @SQL_UPDATE = 'UPDATE TMS_TOOL_SCRAP SET SCRAP_APPROVED_ALERT = 1
+                      WHERE SCRAP_ID IN (SELECT SCRAP_ID FROM TMS_TOOL_SCRAP WHERE SCRAP_APPROVED_BY IS NOT NULL AND SCRAP_APPROVED_ALERT IS NULL)'
+   
+   EXEC (@SQL)
+   EXEC (@SQL_UPDATE)
+    -- Insert statements for procedure here
+END
+
+GO
+/****** Object:  StoredProcedure [dbo].[spUpdateStdToolLife]    Script Date: 24/12/2025 13:06:31 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+-- =============================================
+-- Author:		HC Ng
+-- Create date: 2016-12-22
+-- Description:	To enable user to update all Standard Tool Life of the same
+--				Tool Name for Active Tool Drawing only
+
+-- =============================================
+CREATE PROCEDURE [dbo].[spUpdateStdToolLife]
+  @TOOL_NAME varchar(50),
+  @Cycle int
+AS
+BEGIN
+	-- SET NOCOUNT ON added to prevent extra result sets from
+	-- interfering with SELECT statements.
+	SET NOCOUNT ON;
+
+UPDATE tms_tool_master_list_rev
+SET MLR_STD_TL_LIFE = @Cycle
+FROM tms_tool_master_list_rev
+INNER JOIN TMS_TOOL_MASTER_LIST ON ML_ID = MLR_ML_ID
+INNER JOIN MS_TOOL_CLASS ON TC_ID = MLR_TC_ID
+WHERE ML_TYPE = 1 and MLR_STATUS = 2 and TC_NAME = @TOOL_NAME;
+
+SELECT  ML_TOOL_DRAW_NO AS DRAWING_NO, MLR_REV AS REVISION, STATUS = 'ACTIVE',  TC_NAME AS TOOL_NAME, MLR_STD_TL_LIFE AS STD_TOOL_LIFE FROM tms_tool_master_list_rev
+INNER JOIN TMS_TOOL_MASTER_LIST ON ML_ID = MLR_ML_ID
+INNER JOIN MS_TOOL_CLASS ON TC_ID = MLR_TC_ID
+WHERE ML_TYPE = 1 and MLR_STATUS = 2 and TC_NAME = @TOOL_NAME;
+
+END
+GO
+/****** Object:  Trigger [dbo].[trig_AssignedToolCalcInventoryEndCycle]    Script Date: 24/12/2025 13:06:32 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TRIGGER [dbo].[trig_AssignedToolCalcInventoryEndCycle]
+   ON   [dbo].[TMS_ASSIGNED_TOOLS]
+   AFTER UPDATE,DELETE
+AS 
+BEGIN
+	-- SET NOCOUNT ON added to prevent extra result sets from
+	-- interfering with SELECT statements.
+	SET NOCOUNT ON;
+
+    declare @oldValue as int;
+    declare @newValue as int;
+	select @oldValue = ASSGN_QTY_PRODUCED from Deleted;
+	select @newValue = ASSGN_QTY_PRODUCED from Inserted;
+
+	if @oldValue IS NULL OR @newValue IS NULL OR @oldValue <> @newValue begin
+		declare @inv_id as bigint;
+		select @inv_id = hist.INVH_INV_ID from Deleted assigned
+          inner join TMS_TOOL_INVENTORY_HISTORY hist on hist.INVH_ASSGN_ID = assigned.ASSGN_ID
+		EXEC cspUpdateToolInventoryEndCycle @inv_id;
+	end
+END
+GO
+ALTER TABLE [dbo].[TMS_ASSIGNED_TOOLS] DISABLE TRIGGER [trig_AssignedToolCalcInventoryEndCycle]
+GO
+/****** Object:  Trigger [dbo].[trig_AssignedToolCalcInventoryEndCycle_2]    Script Date: 24/12/2025 13:06:32 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+
+CREATE TRIGGER [dbo].[trig_AssignedToolCalcInventoryEndCycle_2]
+   ON   [dbo].[TMS_ASSIGNED_TOOLS]
+   AFTER INSERT,UPDATE,DELETE
+AS 
+BEGIN
+	-- SET NOCOUNT ON added to prevent extra result sets from
+	-- interfering with SELECT statements.
+	SET NOCOUNT ON;
+
+    declare @oldValue as int;
+    declare @newValue as int;
+	select @oldValue = ASSGN_QTY_PRODUCED from Deleted;
+	select @newValue = ASSGN_QTY_PRODUCED from Inserted;
+
+	if @oldValue IS NULL OR @newValue IS NULL OR @oldValue <> @newValue begin
+		declare @inv_id as bigint;
+		select @inv_id = ASSGN_INV_ID from Deleted;
+		if @inv_id IS NULL
+		 select @inv_id = ASSGN_INV_ID from Inserted;
+		if @inv_id IS NOT NULL
+		 EXEC cspUpdateToolInventoryEndCycle_2 @inv_id;
+	end
+END
+
+-------------------------------------------------------------------------
+
+
+GO
+ALTER TABLE [dbo].[TMS_ASSIGNED_TOOLS] ENABLE TRIGGER [trig_AssignedToolCalcInventoryEndCycle_2]
+GO
+/****** Object:  Trigger [dbo].[trig_OrderingItemsUpdateRequisitionQuantity]    Script Date: 24/12/2025 13:06:32 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+-- =============================================
+-- Description:	TMS_REQUISITION.RQ_ORDER_QTY 
+--              = Sum of (TMS_REQUISITION.RQ_ID->TMS_ORDERING_ITEMS.ORDI_ORDER_QTY)
+-- =============================================
+CREATE TRIGGER [dbo].[trig_OrderingItemsUpdateRequisitionQuantity]
+   ON  [dbo].[TMS_ORDERING_ITEMS]
+   AFTER INSERT,UPDATE,DELETE
+AS 
+BEGIN
+	-- SET NOCOUNT ON added to prevent extra result sets from
+	-- interfering with SELECT statements.
+	SET NOCOUNT ON;
+
+	-- get the request id from changed row
+	declare @requestId as bigint;    
+	select @requestId = isnull((select ORDI_RQ_ID from Inserted), 
+                        isnull((select ORDI_RQ_ID from Deleted), 0));
+
+	-- update order quantity
+	update TMS_REQUISITION set RQ_ORDER_QTY = 
+		(select sum(ORDI_ORDER_QTY) from TMS_ORDERING_ITEMS where ORDI_RQ_ID = @requestId)
+    where RQ_ID = @requestId;
+
+	-- update receive quantity
+	declare @receiveQty as int;
+	select @receiveQty = count(INV_ID)
+						 from TMS_TOOL_INVENTORY ti 
+						 inner join TMS_ORDERING_ITEMS oi on ti.INV_ORDI_ID = oi.ORDI_ID
+						 where ORDI_RQ_ID = @requestId;
+
+	update TMS_REQUISITION set RQ_RECEIVE_QTY = @receiveQty where RQ_ID = @requestId;
+END
+GO
+ALTER TABLE [dbo].[TMS_ORDERING_ITEMS] ENABLE TRIGGER [trig_OrderingItemsUpdateRequisitionQuantity]
+GO
+/****** Object:  Trigger [dbo].[trig_InventoryUpdateRequisitionRcvQty]    Script Date: 24/12/2025 13:06:32 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+-- =============================================
+-- TMS_REQUISTION.RQ_RECEIVE_QTY = 
+-- Count of (TMS_REQUISITION.RQ_ID->TMS_ORDERING_ITEMS.ORDI_RQ_ID->TMS_TOOL_INVENTORY.INV_ORDI_ID)
+-- =============================================
+CREATE TRIGGER [dbo].[trig_InventoryUpdateRequisitionRcvQty]
+   ON  [dbo].[TMS_TOOL_INVENTORY]
+   AFTER INSERT,DELETE,UPDATE
+AS 
+BEGIN
+	-- SET NOCOUNT ON added to prevent extra result sets from
+	-- interfering with SELECT statements.
+	SET NOCOUNT ON;
+
+	-- get the order item id from changed row
+	declare @orderItemId as bigint;    
+	select @orderItemId = isnull((select INV_ORDI_ID from Inserted), 
+                          isnull((select INV_ORDI_ID from Deleted), 0));
+	
+	-- get the request id based on order item id
+	declare @requestId as bigint;
+	select @requestId = ORDI_RQ_ID from TMS_ORDERING_ITEMS where ORDI_ID = @orderItemId;
+
+	-- recalculate and update receive quantity
+	declare @receiveQty as int;
+	select @receiveQty = count(INV_ID)
+						 from TMS_TOOL_INVENTORY ti 
+						 inner join TMS_ORDERING_ITEMS oi on ti.INV_ORDI_ID = oi.ORDI_ID
+						 where ORDI_RQ_ID = @requestId;
+
+	update TMS_REQUISITION set RQ_RECEIVE_QTY = @receiveQty where RQ_ID = @requestId;
+	
+END
+GO
+ALTER TABLE [dbo].[TMS_TOOL_INVENTORY] ENABLE TRIGGER [trig_InventoryUpdateRequisitionRcvQty]
+GO
+/****** Object:  Trigger [dbo].[trig_ToolInventoryCalcEndCycle]    Script Date: 24/12/2025 13:06:32 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TRIGGER [dbo].[trig_ToolInventoryCalcEndCycle]
+   ON   [dbo].[TMS_TOOL_INVENTORY]
+   AFTER UPDATE
+AS 
+BEGIN
+	-- SET NOCOUNT ON added to prevent extra result sets from
+	-- interfering with SELECT statements.
+	SET NOCOUNT ON;
+
+    declare @oldValue as bigint;
+    declare @newValue as bigint;
+	select @oldValue = INV_BEGIN_CYCLE from Deleted;
+	select @newValue = INV_BEGIN_CYCLE from Inserted;
+
+	if @oldValue IS NULL OR @newValue IS NULL OR @oldValue <> @newValue begin
+		declare @inv_id as bigint;
+		select @inv_id = inv_id from inserted;
+		EXEC cspUpdateToolInventoryEndCycle @inv_id;
+	end
+END
+
+------------------
+
+/****** Object:  Trigger [dbo].[trig_AssignedToolCalcInventoryEndCycle]    Script Date: 07/26/2010 01:10:16 ******/
+SET ANSI_NULLS ON
+GO
+ALTER TABLE [dbo].[TMS_TOOL_INVENTORY] DISABLE TRIGGER [trig_ToolInventoryCalcEndCycle]
+GO
+/****** Object:  Trigger [dbo].[trig_ToolInventoryCalcEndCycle_2]    Script Date: 24/12/2025 13:06:32 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TRIGGER [dbo].[trig_ToolInventoryCalcEndCycle_2]
+   ON   [dbo].[TMS_TOOL_INVENTORY]
+   AFTER INSERT, UPDATE
+AS 
+BEGIN
+	-- SET NOCOUNT ON added to prevent extra result sets from
+	-- interfering with SELECT statements.
+	SET NOCOUNT ON;
+
+    declare @oldValue as bigint;
+    declare @newValue as bigint;
+	select @oldValue = INV_BEGIN_CYCLE from Deleted;
+	select @newValue = INV_BEGIN_CYCLE from Inserted;
+
+	if @oldValue IS NULL OR @newValue IS NULL OR @oldValue <> @newValue begin
+		declare @inv_id as bigint;
+		select @inv_id = inv_id from inserted;
+		EXEC cspUpdateToolInventoryEndCycle_2 @inv_id;
+	end
+END
+
+------------------
+
+/****** Object:  Trigger [dbo].[trig_AssignedToolCalcInventoryEndCycle]    Script Date: 07/26/2010 01:10:16 ******/
+SET ANSI_NULLS ON
+
+
+--------------------------------------------------------------
+
+GO
+ALTER TABLE [dbo].[TMS_TOOL_INVENTORY] ENABLE TRIGGER [trig_ToolInventoryCalcEndCycle_2]
+GO
+/****** Object:  Trigger [dbo].[trig_ToolInventoryHistoryCalcEndCycle]    Script Date: 24/12/2025 13:06:32 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TRIGGER [dbo].[trig_ToolInventoryHistoryCalcEndCycle]
+   ON   [dbo].[TMS_TOOL_INVENTORY_HISTORY]
+   AFTER INSERT,UPDATE,DELETE
+AS 
+BEGIN
+	-- SET NOCOUNT ON added to prevent extra result sets from
+	-- interfering with SELECT statements.
+	SET NOCOUNT ON;
+
+    declare @oldValue as bigint;
+    declare @newValue as bigint;
+	declare @oldValue2 as varchar(50);
+	declare @newValue2 as varchar(50);
+	select @oldValue = INVH_ASSGN_ID from Deleted;
+	select @newValue = INVH_ASSGN_ID from Inserted;
+	select @oldValue2 = INVH_ACTION from Deleted;
+	select @newValue2 = INVH_ACTION from Inserted;
+
+	if (@oldValue IS NULL OR @newValue IS NULL OR @oldValue <> @newValue)
+      OR (@oldValue2 IS NULL OR @newValue2 IS NULL OR @oldValue2 <> @newValue2)
+    begin
+		declare @inv_id as bigint;
+		select @inv_id = INVH_INV_ID from Inserted;
+		if @inv_id IS NULL BEGIN
+			select @inv_id = INVH_INV_ID from Deleted;
+		END
+		EXEC cspUpdateToolInventoryEndCycle @inv_id;
+	end
+END
+GO
+ALTER TABLE [dbo].[TMS_TOOL_INVENTORY_HISTORY] ENABLE TRIGGER [trig_ToolInventoryHistoryCalcEndCycle]
+GO
+/****** Object:  Trigger [dbo].[trig_ToolInventoryCalcToolCost]    Script Date: 24/12/2025 13:06:32 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+-- =============================================
+-- Author:		<Ng Heng Chong-Fexsoft,,Name>
+-- Create date: <24 Jan 2011,,>
+-- Description:	<Update sum of tool component costs to tool inventory,,>
+-- =============================================
+CREATE TRIGGER [dbo].[trig_ToolInventoryCalcToolCost]
+   ON  [dbo].[TMS_TOOLSET_COMPONENTS]
+   AFTER INSERT,DELETE,UPDATE
+AS 
+BEGIN
+	-- SET NOCOUNT ON added to prevent extra result sets from
+	-- interfering with SELECT statements.
+	SET NOCOUNT ON;
+
+    -- Insert statements for trigger here
+	-- get the Inventory ID of the changed row
+	declare @toolInventoryId as bigint;
+	select @toolInventoryId = isnull((select TSCOM_INV_ID from Inserted), 
+                          isnull((select TSCOM_INV_ID from Deleted),0));
+	declare @toolCost as float;
+	select @toolCost = sum(TSCOM_PRICE) FROM TMS_TOOLSET_COMPONENTS where TSCOM_INV_ID = @toolInventoryId GROUP BY TSCOM_INV_ID;
+
+	update TMS_TOOL_INVENTORY set INV_TOOL_COST = @toolCost where INV_ID = @toolInventoryID;
+END
+GO
+ALTER TABLE [dbo].[TMS_TOOLSET_COMPONENTS] ENABLE TRIGGER [trig_ToolInventoryCalcToolCost]
+GO
+EXEC sys.sp_addextendedproperty @name=N'MS_DiagramPane1', @value=N'[0E232FF0-B466-11cf-A24F-00AA00A3EFFF, 1.00]
+Begin DesignProperties = 
+   Begin PaneConfigurations = 
+      Begin PaneConfiguration = 0
+         NumPanes = 4
+         Configuration = "(H (1[41] 4[12] 2[28] 3) )"
+      End
+      Begin PaneConfiguration = 1
+         NumPanes = 3
+         Configuration = "(H (1 [50] 4 [25] 3))"
+      End
+      Begin PaneConfiguration = 2
+         NumPanes = 3
+         Configuration = "(H (1 [50] 2 [25] 3))"
+      End
+      Begin PaneConfiguration = 3
+         NumPanes = 3
+         Configuration = "(H (4 [30] 2 [40] 3))"
+      End
+      Begin PaneConfiguration = 4
+         NumPanes = 2
+         Configuration = "(H (1 [56] 3))"
+      End
+      Begin PaneConfiguration = 5
+         NumPanes = 2
+         Configuration = "(H (2 [66] 3))"
+      End
+      Begin PaneConfiguration = 6
+         NumPanes = 2
+         Configuration = "(H (4 [50] 3))"
+      End
+      Begin PaneConfiguration = 7
+         NumPanes = 1
+         Configuration = "(V (3))"
+      End
+      Begin PaneConfiguration = 8
+         NumPanes = 3
+         Configuration = "(H (1[56] 4[18] 2) )"
+      End
+      Begin PaneConfiguration = 9
+         NumPanes = 2
+         Configuration = "(H (1 [75] 4))"
+      End
+      Begin PaneConfiguration = 10
+         NumPanes = 2
+         Configuration = "(H (1[66] 2) )"
+      End
+      Begin PaneConfiguration = 11
+         NumPanes = 2
+         Configuration = "(H (4 [60] 2))"
+      End
+      Begin PaneConfiguration = 12
+         NumPanes = 1
+         Configuration = "(H (1) )"
+      End
+      Begin PaneConfiguration = 13
+         NumPanes = 1
+         Configuration = "(V (4))"
+      End
+      Begin PaneConfiguration = 14
+         NumPanes = 1
+         Configuration = "(V (2))"
+      End
+      ActivePaneConfig = 0
+   End
+   Begin DiagramPane = 
+      Begin Origin = 
+         Top = 0
+         Left = 0
+      End
+      Begin Tables = 
+         Begin Table = "ToolInventory"
+            Begin Extent = 
+               Top = 6
+               Left = 38
+               Bottom = 114
+               Right = 272
+            End
+            DisplayFlags = 280
+            TopColumn = 0
+         End
+         Begin Table = "MasterListRev"
+            Begin Extent = 
+               Top = 114
+               Left = 38
+               Bottom = 222
+               Right = 240
+            End
+            DisplayFlags = 280
+            TopColumn = 0
+         End
+         Begin Table = "ToolMasterList"
+            Begin Extent = 
+               Top = 114
+               Left = 278
+               Bottom = 222
+               Right = 462
+            End
+            DisplayFlags = 280
+            TopColumn = 0
+         End
+         Begin Table = "Operation"
+            Begin Extent = 
+               Top = 6
+               Left = 310
+               Bottom = 114
+               Right = 461
+            End
+            DisplayFlags = 280
+            TopColumn = 0
+         End
+         Begin Table = "ToolClass"
+            Begin Extent = 
+               Top = 222
+               Left = 38
+               Bottom = 330
+               Right = 189
+            End
+            DisplayFlags = 280
+            TopColumn = 0
+         End
+         Begin Table = "Maker"
+            Begin Extent = 
+               Top = 222
+               Left = 227
+               Bottom = 330
+               Right = 395
+            End
+            DisplayFlags = 280
+            TopColumn = 0
+         End
+         Begin Table = "Material"
+            Begin Extent = 
+               Top = 330
+               Left = 38
+               Bottom = 438
+               Right = 205
+            End
+          ' , @level0type=N'SCHEMA',@level0name=N'dbo', @level1type=N'VIEW',@level1name=N'VW_TOOL_INVENTORY'
+GO
+EXEC sys.sp_addextendedproperty @name=N'MS_DiagramPane2', @value=N'  DisplayFlags = 280
+            TopColumn = 0
+         End
+         Begin Table = "OrderingItems"
+            Begin Extent = 
+               Top = 330
+               Left = 243
+               Bottom = 438
+               Right = 416
+            End
+            DisplayFlags = 280
+            TopColumn = 0
+         End
+         Begin Table = "ToolOrdering"
+            Begin Extent = 
+               Top = 438
+               Left = 38
+               Bottom = 546
+               Right = 221
+            End
+            DisplayFlags = 280
+            TopColumn = 0
+         End
+         Begin Table = "StorageLocation"
+            Begin Extent = 
+               Top = 438
+               Left = 259
+               Bottom = 531
+               Right = 410
+            End
+            DisplayFlags = 280
+            TopColumn = 0
+         End
+      End
+   End
+   Begin SQLPane = 
+   End
+   Begin DataPane = 
+      Begin ParameterDefaults = ""
+      End
+   End
+   Begin CriteriaPane = 
+      Begin ColumnWidths = 11
+         Column = 2235
+         Alias = 900
+         Table = 1170
+         Output = 720
+         Append = 1400
+         NewValue = 1170
+         SortType = 1350
+         SortOrder = 1410
+         GroupBy = 1350
+         Filter = 1350
+         Or = 1350
+         Or = 1350
+         Or = 1350
+      End
+   End
+End
+' , @level0type=N'SCHEMA',@level0name=N'dbo', @level1type=N'VIEW',@level1name=N'VW_TOOL_INVENTORY'
+GO
+EXEC sys.sp_addextendedproperty @name=N'MS_DiagramPaneCount', @value=2 , @level0type=N'SCHEMA',@level0name=N'dbo', @level1type=N'VIEW',@level1name=N'VW_TOOL_INVENTORY'
+GO
+USE [master]
+GO
+ALTER DATABASE [TMS_NEW] SET  READ_WRITE 
+GO
