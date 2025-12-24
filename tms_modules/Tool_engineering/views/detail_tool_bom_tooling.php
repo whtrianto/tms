@@ -198,8 +198,8 @@
                                     $drawing_url = '';
                                     if (!empty($bom['DRAWING']) && isset($bom['MLR_ML_ID']) && $bom['MLR_ML_ID'] > 0 && isset($bom['REVISION'])) {
                                         // For BOM Tooling, DRAWING field contains drawing file
-                                        // Format: Attachment_TMS/BOM/{MLR_ML_ID}/{REVISION}/{filename}
-                                        $drawing_url = base_url('Attachment_TMS/BOM/' . (int)$bom['MLR_ML_ID'] . '/' . (int)$bom['REVISION'] . '/' . rawurlencode($bom['DRAWING']));
+                                        // Use query parameters for reliable filename handling
+                                        $drawing_url = base_url('Attachment_TMS/index?folder=BOM&mlr_ml_id=' . (int)$bom['MLR_ML_ID'] . '&mlr_rev=' . (int)$bom['REVISION'] . '&filename=' . urlencode($bom['DRAWING']));
                                     }
                                     if (!empty($drawing_url)): ?>
                                         <a href="<?= $drawing_url; ?>" target="_blank" class="text-primary">
@@ -219,8 +219,8 @@
                                     $sketch_url = '';
                                     if (!empty($bom['SKETCH']) && isset($bom['MLR_ML_ID']) && $bom['MLR_ML_ID'] > 0 && isset($bom['REVISION'])) {
                                         // For BOM Tooling, SKETCH field contains sketch file
-                                        // Format: Attachment_TMS/BOM_Sketch/{MLR_ML_ID}/{REVISION}/{filename}
-                                        $sketch_url = base_url('Attachment_TMS/BOM_Sketch/' . (int)$bom['MLR_ML_ID'] . '/' . (int)$bom['REVISION'] . '/' . rawurlencode($bom['SKETCH']));
+                                        // Use query parameters for reliable filename handling
+                                        $sketch_url = base_url('Attachment_TMS/index?folder=BOM_Sketch&mlr_ml_id=' . (int)$bom['MLR_ML_ID'] . '&mlr_rev=' . (int)$bom['REVISION'] . '&filename=' . urlencode($bom['SKETCH']));
                                     }
                                     if (!empty($sketch_url)): ?>
                                         <a href="<?= $sketch_url; ?>" target="_blank" class="text-primary">
@@ -302,8 +302,8 @@
                                                     $drawing_url = '';
                                                     if (!empty($row['TD_DRAWING_FILE']) && isset($row['TD_MLR_ML_ID']) && $row['TD_MLR_ML_ID'] > 0 && isset($row['TD_REVISION'])) {
                                                         // For Tool Drawing Engineering (additional info)
-                                                        // Format: Attachment_TMS/Drawing/{MLR_ML_ID}/{REVISION}/{filename}
-                                                        $drawing_url = base_url('Attachment_TMS/Drawing/' . (int)$row['TD_MLR_ML_ID'] . '/' . (int)$row['TD_REVISION'] . '/' . rawurlencode($row['TD_DRAWING_FILE']));
+                                                        // Use query parameters for reliable filename handling
+                                                        $drawing_url = base_url('Attachment_TMS/index?folder=Drawing&mlr_ml_id=' . (int)$row['TD_MLR_ML_ID'] . '&mlr_rev=' . (int)$row['TD_REVISION'] . '&filename=' . urlencode($row['TD_DRAWING_FILE']));
                                                     }
                                                     if (!empty($drawing_url)): ?>
                                                         <a href="<?= $drawing_url; ?>" target="_blank" class="text-primary">
