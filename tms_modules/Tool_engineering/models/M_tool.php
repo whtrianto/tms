@@ -24,6 +24,10 @@ class M_tool extends CI_Model
         return ($q && $q->num_rows() > 0);
     }
 
+    /**
+     * Get active tools
+     * Tabel: MS_TOOL_CLASS
+     */
     public function get_active()
     {
         return $this->tms_db
@@ -37,6 +41,7 @@ class M_tool extends CI_Model
 
     /**
      * get_all dengan optional search (per-column searching done clientside)
+     * Tabel: MS_TOOL_CLASS (T), MS_TOOL_TYPE (TT)
      */
     public function get_all($search = null)
     {
@@ -67,6 +72,10 @@ class M_tool extends CI_Model
         return $this->tms_db->query($sql, $params)->result_array();
     }
 
+    /**
+     * Get tool by ID
+     * Tabel: MS_TOOL_CLASS
+     */
     public function get_by_id($id)
     {
         $id = (int)$id;
@@ -75,6 +84,10 @@ class M_tool extends CI_Model
         return $this->tms_db->query($sql, array($id))->row_array();
     }
 
+    /**
+     * Get tool by name
+     * Tabel: MS_TOOL_CLASS
+     */
     public function get_by_name($name)
     {
         $name = trim((string)$name);
@@ -89,6 +102,10 @@ class M_tool extends CI_Model
         return (bool)$this->get_by_name($name);
     }
 
+    /**
+     * Get new sequence ID
+     * Tabel: MS_TOOL_CLASS
+     */
     public function get_new_sequence()
     {
         $row = $this->tms_db->select_max('TC_ID')->get($this->table)->row_array();
@@ -97,6 +114,10 @@ class M_tool extends CI_Model
 
     /* ===== MUTATORS ===== */
 
+    /**
+     * Add new tool
+     * Tabel: MS_TOOL_CLASS
+     */
     public function add_data($data)
     {
         $name = isset($data['TC_NAME']) ? trim($data['TC_NAME']) : '';
@@ -139,6 +160,10 @@ class M_tool extends CI_Model
         return false;
     }
 
+    /**
+     * Edit tool
+     * Tabel: MS_TOOL_CLASS
+     */
     public function edit_data($id, $data)
     {
         $id = (int)$id;
@@ -164,6 +189,10 @@ class M_tool extends CI_Model
         return false;
     }
 
+    /**
+     * Delete tool (soft delete)
+     * Tabel: MS_TOOL_CLASS
+     */
     public function delete_data($id)
     {
         $id = (int)$id;
@@ -210,6 +239,7 @@ class M_tool extends CI_Model
 
     /**
      * duplicate check excluding given id (optional)
+     * Tabel: MS_TOOL_CLASS
      */
     public function is_duplicate($name, $exclude_id = null)
     {

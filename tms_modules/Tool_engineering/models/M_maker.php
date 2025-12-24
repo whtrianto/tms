@@ -24,6 +24,10 @@ class M_maker extends CI_Model
         return ($q && $q->num_rows() > 0);
     }
 
+    /**
+     * Get all makers
+     * Tabel: MS_MAKER
+     */
     public function get_all()
     {
         return $this->tms_db
@@ -35,6 +39,10 @@ class M_maker extends CI_Model
             ->result_array();
     }
 
+    /**
+     * Get maker by ID
+     * Tabel: MS_MAKER
+     */
     public function get_by_id($id)
     {
         $id = (int)$id;
@@ -42,6 +50,10 @@ class M_maker extends CI_Model
         return $this->tms_db->where('MAKER_ID', $id)->limit(1)->get($this->table)->row_array();
     }
 
+    /**
+     * Get maker by name
+     * Tabel: MS_MAKER
+     */
     public function get_by_name($name)
     {
         $name = trim((string)$name);
@@ -51,6 +63,10 @@ class M_maker extends CI_Model
         return $q->row_array();
     }
 
+    /**
+     * Get maker by code
+     * Tabel: MS_MAKER
+     */
     public function get_by_code($code)
     {
         $code = trim((string)$code);
@@ -60,16 +76,28 @@ class M_maker extends CI_Model
         return $q->row_array();
     }
 
+    /**
+     * Check if maker exists by name
+     * Tabel: MS_MAKER
+     */
     public function exists_by_name($name)
     {
         return (bool)$this->get_by_name($name);
     }
 
+    /**
+     * Check if maker exists by code
+     * Tabel: MS_MAKER
+     */
     public function exists_by_code($code)
     {
         return (bool)$this->get_by_code($code);
     }
 
+    /**
+     * Get new sequence ID
+     * Tabel: MS_MAKER
+     */
     public function get_new_sequence()
     {
         $row = $this->tms_db->select_max('MAKER_ID')->get($this->table)->row_array();
@@ -78,6 +106,10 @@ class M_maker extends CI_Model
 
     /* ========== MUTATORS ========== */
 
+    /**
+     * Add new maker
+     * Tabel: MS_MAKER
+     */
     public function add_data($data)
     {
         $name = isset($data['MAKER_NAME']) ? trim($data['MAKER_NAME']) : '';
@@ -127,6 +159,10 @@ class M_maker extends CI_Model
         return false;
     }
 
+    /**
+     * Edit maker
+     * Tabel: MS_MAKER
+     */
     public function edit_data($id, $data)
     {
         $id = (int)$id;
@@ -157,6 +193,10 @@ class M_maker extends CI_Model
         return false;
     }
 
+    /**
+     * Delete maker (soft delete)
+     * Tabel: MS_MAKER
+     */
     public function delete_data($id)
     {
         $id = (int)$id;

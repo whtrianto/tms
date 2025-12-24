@@ -16,6 +16,7 @@ class M_storage_location extends CI_Model
 
     /**
      * Mengambil semua storage location yang aktif (IS_DELETED = 0)
+     * Source: MS_STORAGE_LOCATION
      */
     public function get_data_master_storage_locations()
     {
@@ -28,6 +29,7 @@ class M_storage_location extends CI_Model
 
     /**
      * Mengambil satu baris data berdasarkan ID
+     * Source: MS_STORAGE_LOCATION
      */
     public function get_data_master_storage_location_by_id($id)
     {
@@ -41,6 +43,7 @@ class M_storage_location extends CI_Model
 
     /**
      * Cek duplikat nama (case-insensitive)
+     * Source: MS_STORAGE_LOCATION
      */
     public function is_duplicate($name, $exclude_id = null)
     {
@@ -56,7 +59,10 @@ class M_storage_location extends CI_Model
         return $count > 0;
     }
 
-    /** Ambil ID baru (karena kolom bukan identity). */
+    /** 
+     * Ambil ID baru (karena kolom bukan identity).
+     * Source: MS_STORAGE_LOCATION
+     */
     public function get_new_sequence()
     {
         $row = $this->tms_db->select_max($this->primary_key)->get($this->table)->row_array();
@@ -65,6 +71,9 @@ class M_storage_location extends CI_Model
 
     /* ===================== MUTATORS (CREATE, UPDATE, DELETE) ===================== */
 
+    /**
+     * Source: MS_STORAGE_LOCATION
+     */
     public function add_data($actor = 'SYSTEM')
     {
         $name = trim((string)$this->input->post('storage_location_name'));
@@ -98,6 +107,9 @@ class M_storage_location extends CI_Model
         return FALSE;
     }
 
+    /**
+     * Source: MS_STORAGE_LOCATION
+     */
     public function update_by_id($id, array $data, $actor = 'SYSTEM')
     {
         $id = (int)$id;
@@ -124,6 +136,9 @@ class M_storage_location extends CI_Model
         return true;
     }
 
+    /**
+     * Source: MS_STORAGE_LOCATION
+     */
     public function delete_data($id, $actor = 'SYSTEM')
     {
         $id = (int)$id;

@@ -14,6 +14,7 @@ class M_reason extends CI_Model
     }
 
     // cek apakah kolom ada
+    // Source: INFORMATION_SCHEMA.COLUMNS
     protected function has_column($col)
     {
         $col = trim((string)$col);
@@ -28,6 +29,7 @@ class M_reason extends CI_Model
      * Tentukan nama kolom flag deleted yang tersedia pada tabel.
      * Prioritas: IS_DELETED, lalu IS_DELETE. Jika tidak ada, kembalikan IS_DELETED (default)
      * @return string
+     * Source: INFORMATION_SCHEMA.COLUMNS
      */
     protected function deleted_column()
     {
@@ -36,6 +38,9 @@ class M_reason extends CI_Model
         return 'IS_DELETED';
     }
 
+    /**
+     * Source: MS_REASON
+     */
     public function get_active()
     {
         $del = $this->deleted_column();
@@ -48,6 +53,9 @@ class M_reason extends CI_Model
             ->result_array();
     }
 
+    /**
+     * Source: MS_REASON
+     */
     public function get_all($search = null)
     {
         $del = $this->deleted_column();
@@ -66,6 +74,9 @@ class M_reason extends CI_Model
         return $this->tms_db->query($sql, $params)->result_array();
     }
 
+    /**
+     * Source: MS_REASON
+     */
     public function get_by_id($id)
     {
         $id = (int)$id;
@@ -74,6 +85,9 @@ class M_reason extends CI_Model
         return $this->tms_db->where('REASON_ID', $id)->where($del, 0)->limit(1)->get($this->table)->row_array();
     }
 
+    /**
+     * Source: MS_REASON
+     */
     public function get_by_name_or_code($value, $only_active = true)
     {
         $value = trim((string)$value);
@@ -94,6 +108,7 @@ class M_reason extends CI_Model
 
     /**
      * Cek eksistensi nama atau code (hanya baris non-deleted)
+     * Source: MS_REASON
      */
     public function exists_by_name_or_code($name, $code = null, $only_active = true)
     {
@@ -129,6 +144,9 @@ class M_reason extends CI_Model
         return ($row && (int)$row['CNT'] > 0);
     }
 
+    /**
+     * Source: MS_REASON
+     */
     public function get_new_sequence()
     {
         $row = $this->tms_db->select_max('REASON_ID')->get($this->table)->row_array();
@@ -137,6 +155,9 @@ class M_reason extends CI_Model
 
     /* ===== MUTATORS ===== */
 
+    /**
+     * Source: MS_REASON
+     */
     public function add_data($data)
     {
         $name = isset($data['REASON_NAME']) ? trim((string)$data['REASON_NAME']) : '';
@@ -195,6 +216,9 @@ class M_reason extends CI_Model
         return false;
     }
 
+    /**
+     * Source: MS_REASON
+     */
     public function edit_data($id, $data)
     {
         $id = (int)$id;
@@ -240,6 +264,9 @@ class M_reason extends CI_Model
         return false;
     }
 
+    /**
+     * Source: MS_REASON
+     */
     public function delete_data($id, $actor = null)
     {
         $id = (int)$id;
@@ -288,6 +315,9 @@ class M_reason extends CI_Model
         return true;
     }
 
+    /**
+     * Source: MS_REASON
+     */
     public function is_duplicate($nameOrCode, $exclude_id = null)
     {
         $nameOrCode = trim((string)$nameOrCode);

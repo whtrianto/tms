@@ -27,6 +27,7 @@ class M_tool_work_order extends CI_Model
 
     /**
      * Server-side DataTable processing
+     * Source: TMS_WORKORDER, TMS_TOOL_INVENTORY, TMS_TOOL_MASTER_LIST_REV, TMS_TOOL_MASTER_LIST, MS_USERS, TMS_ORDERING_ITEMS, TMS_REQUISITION, TMS_ORDERING
      */
     public function get_data_serverside($start, $length, $search, $order_col, $order_dir, $column_search = array())
     {
@@ -164,6 +165,7 @@ class M_tool_work_order extends CI_Model
 
     /**
      * Get WO Type name
+     * Source: (No database query - returns static mapping)
      */
     public function get_wo_type_name($type)
     {
@@ -180,6 +182,7 @@ class M_tool_work_order extends CI_Model
 
     /**
      * Get WO Reason name
+     * Source: (No database query - returns static mapping)
      */
     public function get_wo_reason_name($reason)
     {
@@ -199,6 +202,7 @@ class M_tool_work_order extends CI_Model
 
     /**
      * Get WO Status name
+     * Source: (No database query - returns static mapping)
      */
     public function get_wo_status_name($status)
     {
@@ -215,6 +219,7 @@ class M_tool_work_order extends CI_Model
 
     /**
      * Get WO Status badge HTML
+     * Source: (No database query - returns HTML string)
      */
     public function get_wo_status_badge($status)
     {
@@ -237,6 +242,7 @@ class M_tool_work_order extends CI_Model
 
     /**
      * Get Work Order by ID
+     * Source: TMS_WORKORDER, TMS_TOOL_INVENTORY, TMS_TOOL_MASTER_LIST_REV, TMS_TOOL_MASTER_LIST, MS_TOOL_CLASS, MS_USERS
      */
     public function get_by_id($id)
     {
@@ -286,6 +292,7 @@ class M_tool_work_order extends CI_Model
 
     /**
      * Get External Costs for Work Order
+     * Source: TMS_WO_EXTERNAL_COSTS, TMS_WORK_ACTIVITIES, MS_SUPPLIER
      */
     public function get_external_costs($wo_id)
     {
@@ -322,6 +329,7 @@ class M_tool_work_order extends CI_Model
 
     /**
      * Get Work Activities
+     * Source: TMS_WORK_ACTIVITIES
      */
     public function get_work_activities()
     {
@@ -334,6 +342,7 @@ class M_tool_work_order extends CI_Model
 
     /**
      * Get Suppliers
+     * Source: MS_SUPPLIER
      */
     public function get_suppliers()
     {
@@ -346,6 +355,7 @@ class M_tool_work_order extends CI_Model
 
     /**
      * Get Users with Position
+     * Source: MS_USERS, MS_POSITION
      */
     public function get_users()
     {
@@ -362,6 +372,7 @@ class M_tool_work_order extends CI_Model
 
     /**
      * Get Departments
+     * Source: MS_DEPARTMENT
      */
     public function get_departments()
     {
@@ -377,6 +388,7 @@ class M_tool_work_order extends CI_Model
 
     /**
      * Get External Cost by ID
+     * Source: TMS_WO_EXTERNAL_COSTS, TMS_WORK_ACTIVITIES, MS_SUPPLIER
      */
     public function get_external_cost_by_id($extcost_id)
     {
@@ -411,6 +423,7 @@ class M_tool_work_order extends CI_Model
 
     /**
      * Save External Cost (Add/Edit)
+     * Source: TMS_WO_EXTERNAL_COSTS
      */
     public function save_external_cost($action, $extcost_id, $wo_id, $wa_id, $sup_id, $unit_price, $qty, $date, $po_no, $invoice_no, $rf_no, $grn_date, $grn_no)
     {
@@ -477,6 +490,7 @@ class M_tool_work_order extends CI_Model
 
     /**
      * Delete External Cost
+     * Source: TMS_WO_EXTERNAL_COSTS
      */
     public function delete_external_cost($extcost_id)
     {
@@ -506,6 +520,7 @@ class M_tool_work_order extends CI_Model
 
     /**
      * Delete Work Order
+     * Source: TMS_WORKORDER
      */
     public function delete_data($id)
     {
@@ -535,6 +550,7 @@ class M_tool_work_order extends CI_Model
 
     /**
      * Add new Work Order
+     * Source: TMS_WORKORDER
      */
     public function add_data($data)
     {
@@ -608,6 +624,7 @@ class M_tool_work_order extends CI_Model
 
     /**
      * Update Work Order
+     * Source: TMS_WORKORDER
      */
     public function update_data($id, $data)
     {
@@ -710,6 +727,7 @@ class M_tool_work_order extends CI_Model
 
     /**
      * Generate Work Order Number
+     * Source: TMS_WORKORDER
      */
     private function generate_wo_no()
     {
@@ -732,6 +750,7 @@ class M_tool_work_order extends CI_Model
 
     /**
      * Get tool inventory for modal popup (ID, Tool ID, Tool Drawing No, Revision, Tool Name, Tool Status, Remarks)
+     * Source: TMS_TOOL_INVENTORY, TMS_TOOL_MASTER_LIST_REV, TMS_TOOL_MASTER_LIST, MS_TOOL_CLASS
      */
     public function get_tool_inventory_for_modal()
     {
@@ -770,6 +789,7 @@ class M_tool_work_order extends CI_Model
      * Get tool inventory details by Tool ID for auto-fill
      * PHP 5.6.36 & CI3 compatible
      * Using direct query from TMS_TOOL_INVENTORY for better compatibility
+     * Source: TMS_TOOL_INVENTORY, TMS_TOOL_MASTER_LIST_REV, TMS_TOOL_MASTER_LIST, MS_TOOL_CLASS
      */
     public function get_tool_inventory_details_by_tool_id($tool_id)
     {

@@ -35,6 +35,10 @@ if (!class_exists('M_tool_draw_tooling')) {
         return $this->tbl . $table;
     }
 
+    /**
+     * Get all tool drawings (tooling)
+     * Tabel: TMS_TOOL_MASTER_LIST_REV, TMS_TOOL_MASTER_LIST, MS_TOOL_CLASS, MS_MAKER, MS_MATERIAL
+     */
     public function get_all()
     {
         $sql = "SELECT 
@@ -62,6 +66,10 @@ if (!class_exists('M_tool_draw_tooling')) {
         return array();
     }
 
+    /**
+     * Get tool drawing by ID
+     * Tabel: TMS_TOOL_MASTER_LIST_REV, TMS_TOOL_MASTER_LIST, MS_TOOL_CLASS, MS_MAKER, MS_MATERIAL, MS_OPERATION
+     */
     public function get_by_id($id)
     {
         $id = (int)$id;
@@ -95,6 +103,7 @@ if (!class_exists('M_tool_draw_tooling')) {
 
     /**
      * Get by ID with Parts (Product) name
+     * Tabel: TMS_TOOL_MASTER_LIST_REV, TMS_TOOL_MASTER_LIST, MS_TOOL_CLASS, MS_MAKER, MS_MATERIAL, MS_OPERATION
      */
     public function get_by_id_with_parts($id)
     {
@@ -130,6 +139,7 @@ if (!class_exists('M_tool_draw_tooling')) {
 
     /**
      * Get all tools from MS_TOOL_CLASS
+     * Tabel: MS_TOOL_CLASS
      */
     public function get_tools()
     {
@@ -144,6 +154,10 @@ if (!class_exists('M_tool_draw_tooling')) {
         return array();
     }
 
+    /**
+     * Get tool by ID
+     * Tabel: MS_TOOL_CLASS
+     */
     public function get_tool_by_id($id)
     {
         $id = (int)$id;
@@ -157,6 +171,7 @@ if (!class_exists('M_tool_draw_tooling')) {
 
     /**
      * Get all makers from MS_MAKER
+     * Tabel: MS_MAKER
      */
     public function get_makers()
     {
@@ -171,6 +186,10 @@ if (!class_exists('M_tool_draw_tooling')) {
         return array();
     }
 
+    /**
+     * Get maker by ID
+     * Tabel: MS_MAKER
+     */
     public function get_maker_by_id($id)
     {
         $id = (int)$id;
@@ -184,6 +203,7 @@ if (!class_exists('M_tool_draw_tooling')) {
 
     /**
      * Get all materials from MS_MATERIAL
+     * Tabel: MS_MATERIAL
      */
     public function get_materials()
     {
@@ -198,6 +218,10 @@ if (!class_exists('M_tool_draw_tooling')) {
         return array();
     }
 
+    /**
+     * Get material by ID
+     * Tabel: MS_MATERIAL
+     */
     public function get_material_by_id($id)
     {
         $id = (int)$id;
@@ -211,6 +235,10 @@ if (!class_exists('M_tool_draw_tooling')) {
 
     /* ========== MUTATORS ========== */
 
+    /**
+     * Add new tool drawing (tooling)
+     * Tabel: TMS_TOOL_MASTER_LIST, TMS_TOOL_MASTER_LIST_REV
+     */
     public function add_data($tc_id, $min_qty, $replenish_qty, $maker_id, $price, $description, $mat_id, $tool_life)
     {
         $tc_id = (int)$tc_id;
@@ -265,6 +293,10 @@ if (!class_exists('M_tool_draw_tooling')) {
         return false;
     }
 
+    /**
+     * Edit tool drawing (tooling)
+     * Tabel: TMS_TOOL_MASTER_LIST_REV
+     */
     public function edit_data($id, $tc_id, $min_qty, $replenish_qty, $maker_id, $price, $description, $mat_id, $tool_life)
     {
         $id = (int)$id;
@@ -313,6 +345,10 @@ if (!class_exists('M_tool_draw_tooling')) {
         return false;
     }
 
+    /**
+     * Delete tool drawing (tooling)
+     * Tabel: TMS_TOOL_MASTER_LIST_REV
+     */
     public function delete_data($id)
     {
         $id = (int)$id;
@@ -336,6 +372,7 @@ if (!class_exists('M_tool_draw_tooling')) {
 
     /**
      * Get revision history for a specific record (based on ML_ID)
+     * Tabel: TMS_TOOL_MASTER_LIST_REV, TMS_TOOL_MASTER_LIST, MS_TOOL_CLASS, MS_MAKER, MS_MATERIAL, MS_OPERATION
      */
     public function get_history($id)
     {
@@ -384,6 +421,7 @@ if (!class_exists('M_tool_draw_tooling')) {
 
     /**
      * Get all parts from MS_PARTS (used as Products)
+     * Tabel: MS_PARTS
      */
     public function get_products()
     {
@@ -396,6 +434,7 @@ if (!class_exists('M_tool_draw_tooling')) {
 
     /**
      * Get all operations from MS_OPERATION
+     * Tabel: MS_OPERATION
      */
     public function get_operations()
     {
@@ -408,6 +447,7 @@ if (!class_exists('M_tool_draw_tooling')) {
 
     /**
      * Server-side DataTable processing
+     * Tabel: TMS_TOOL_MASTER_LIST_REV, TMS_TOOL_MASTER_LIST, MS_TOOL_CLASS, MS_MAKER, MS_MATERIAL
      */
     public function get_data_serverside($start, $length, $search, $order_col, $order_dir, $column_search = array())
     {
@@ -489,6 +529,7 @@ if (!class_exists('M_tool_draw_tooling')) {
     /**
      * Get Tool BOM list by ML_ID (master list id)
      * Uses TMS_TOOL_MASTER_LIST_MEMBERS (parent-child relationship)
+     * Tabel: TMS_TOOL_MASTER_LIST_MEMBERS, TMS_TOOL_MASTER_LIST_REV, TMS_TOOL_MASTER_LIST
      */
     public function get_tool_bom_by_ml_id($mlr_id)
     {

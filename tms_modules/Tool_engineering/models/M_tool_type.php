@@ -13,6 +13,10 @@ class M_tool_type extends CI_Model
         $this->tms_db = $this->load->database('tms_NEW', TRUE);
     }
 
+    /**
+     * Get active tool types
+     * Tabel: MS_TOOL_TYPE
+     */
     public function get_active()
     {
         return $this->tms_db
@@ -41,6 +45,10 @@ class M_tool_type extends CI_Model
         return ($q && $q->num_rows() > 0);
     }
 
+    /**
+     * Get all tool types
+     * Tabel: MS_TOOL_TYPE
+     */
     public function get_all()
     {
         return $this->tms_db
@@ -52,6 +60,10 @@ class M_tool_type extends CI_Model
             ->result_array();
     }
 
+    /**
+     * Get tool type by ID
+     * Tabel: MS_TOOL_TYPE
+     */
     public function get_by_id($id)
     {
         $id = (int)$id;
@@ -59,6 +71,10 @@ class M_tool_type extends CI_Model
         return $this->tms_db->where('TT_ID', $id)->limit(1)->get($this->table)->row_array();
     }
 
+    /**
+     * Get tool type by name
+     * Tabel: MS_TOOL_TYPE
+     */
     public function get_by_name($name)
     {
         $name = trim((string)$name);
@@ -68,11 +84,19 @@ class M_tool_type extends CI_Model
         return $q->row_array();
     }
 
+    /**
+     * Check if tool type exists by name
+     * Tabel: MS_TOOL_TYPE
+     */
     public function exists_by_name($name)
     {
         return (bool)$this->get_by_name($name);
     }
 
+    /**
+     * Get new sequence ID
+     * Tabel: MS_TOOL_TYPE
+     */
     public function get_new_sequence()
     {
         $row = $this->tms_db->select_max('TT_ID')->get($this->table)->row_array();
@@ -81,6 +105,10 @@ class M_tool_type extends CI_Model
 
     /* ========== MUTATORS ========== */
 
+    /**
+     * Add new tool type
+     * Tabel: MS_TOOL_TYPE
+     */
     public function add_data($name, $desc = null)
     {
         $name = trim((string)$name);
@@ -123,6 +151,10 @@ class M_tool_type extends CI_Model
         return false;
     }
 
+    /**
+     * Edit tool type
+     * Tabel: MS_TOOL_TYPE
+     */
     public function edit_data($id, $name, $desc = null)
     {
         $id = (int)$id;
@@ -161,6 +193,10 @@ class M_tool_type extends CI_Model
         return false;
     }
 
+    /**
+     * Delete tool type (soft delete)
+     * Tabel: MS_TOOL_TYPE
+     */
     public function delete_data($id)
     {
         $id = (int)$id;

@@ -16,6 +16,7 @@ class M_department extends CI_Model
 
     /**
      * Mengambil semua department yang aktif (IS_DELETED = 0)
+     * Source: MS_DEPARTMENT
      */
     public function get_data_master_departments()
     {
@@ -29,6 +30,7 @@ class M_department extends CI_Model
 
     /**
      * Mengambil satu baris data berdasarkan ID
+     * Source: MS_DEPARTMENT
      */
     public function get_data_master_department_by_id($id)
     {
@@ -42,6 +44,7 @@ class M_department extends CI_Model
 
     /**
      * Cek duplikat nama (case-insensitive)
+     * Source: MS_DEPARTMENT
      */
     public function is_duplicate($name, $exclude_id = null)
     {
@@ -57,7 +60,10 @@ class M_department extends CI_Model
         return $count > 0;
     }
 
-    /** Ambil ID baru (karena kolom bukan identity). */
+    /** 
+     * Ambil ID baru (karena kolom bukan identity).
+     * Source: MS_DEPARTMENT
+     */
     public function get_new_sequence()
     {
         $row = $this->tms_db->select_max($this->primary_key)->get($this->table)->row_array();
@@ -66,6 +72,9 @@ class M_department extends CI_Model
 
     /* ===================== MUTATORS (CREATE, UPDATE, DELETE) ===================== */
 
+    /**
+     * Source: MS_DEPARTMENT
+     */
     public function add_data($actor = 'SYSTEM')
     {
         $name = trim((string)$this->input->post('department_name'));
@@ -99,6 +108,9 @@ class M_department extends CI_Model
         return FALSE;
     }
 
+    /**
+     * Source: MS_DEPARTMENT
+     */
     public function update_by_id($id, array $data, $actor = 'SYSTEM')
     {
         $id = (int)$id;
@@ -123,6 +135,9 @@ class M_department extends CI_Model
         return true;
     }
 
+    /**
+     * Source: MS_DEPARTMENT
+     */
     public function delete_data($id, $actor = 'SYSTEM')
     {
         $id = (int)$id;

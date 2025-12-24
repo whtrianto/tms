@@ -28,6 +28,7 @@ class M_tool_inventory extends CI_Model
 
     /**
      * Server-side DataTable processing
+     * Source: TMS_TOOL_INVENTORY, TMS_TOOL_MASTER_LIST_REV, TMS_TOOL_MASTER_LIST, MS_TOOL_CLASS, MS_MATERIAL, MS_STORAGE_LOCATION, TMS_ORDERING_ITEMS, TMS_ORDERING, TMS_TOOL_MASTER_LIST_PARTS, MS_PARTS
      */
     public function get_data_serverside($start, $length, $search, $order_col, $order_dir, $column_search = array())
     {
@@ -164,6 +165,7 @@ class M_tool_inventory extends CI_Model
 
     /**
      * Get by ID
+     * Source: TMS_TOOL_INVENTORY, TMS_TOOL_MASTER_LIST_REV, TMS_TOOL_MASTER_LIST, MS_OPERATION, MS_TOOL_CLASS, MS_MATERIAL, MS_STORAGE_LOCATION, TMS_ORDERING_ITEMS, TMS_ORDERING, TMS_TOOL_MASTER_LIST_PARTS, MS_PARTS, MS_MAKER
      */
     public function get_by_id($id)
     {
@@ -233,6 +235,7 @@ class M_tool_inventory extends CI_Model
      * Get status name
      * ToolInventoryStatus enum:
      * 1=New, 2=Allocated, 3=Available, 4=InUsed, 5=Onhold, 6=Scrapped, 7=Repairing, 8=Modifying, 9=DesignChange
+     * Source: (No database query - returns static mapping)
      */
     public function get_status_name($status)
     {
@@ -253,6 +256,7 @@ class M_tool_inventory extends CI_Model
 
     /**
      * Get status badge HTML
+     * Source: (No database query - returns HTML string)
      */
     public function get_status_badge($status)
     {
@@ -289,6 +293,7 @@ class M_tool_inventory extends CI_Model
 
     /**
      * Get all data for export (no pagination)
+     * Source: TMS_TOOL_INVENTORY, TMS_TOOL_MASTER_LIST_REV, TMS_TOOL_MASTER_LIST, MS_TOOL_CLASS, MS_MATERIAL, MS_STORAGE_LOCATION, TMS_ORDERING_ITEMS, TMS_ORDERING, TMS_TOOL_MASTER_LIST_PARTS, MS_PARTS
      */
     public function get_all_for_export()
     {
@@ -333,6 +338,7 @@ class M_tool_inventory extends CI_Model
 
     /**
      * Get all products from MS_PARTS
+     * Source: MS_PARTS
      */
     public function get_products()
     {
@@ -345,6 +351,7 @@ class M_tool_inventory extends CI_Model
 
     /**
      * Get all operations from MS_OPERATION
+     * Source: MS_OPERATION
      */
     public function get_operations()
     {
@@ -357,6 +364,7 @@ class M_tool_inventory extends CI_Model
 
     /**
      * Get all tools from MS_TOOL_CLASS
+     * Source: MS_TOOL_CLASS
      */
     public function get_tools()
     {
@@ -369,6 +377,7 @@ class M_tool_inventory extends CI_Model
 
     /**
      * Get all storage locations from MS_STORAGE_LOCATION
+     * Source: MS_STORAGE_LOCATION
      */
     public function get_storage_locations()
     {
@@ -381,6 +390,7 @@ class M_tool_inventory extends CI_Model
 
     /**
      * Get storage locations for modal popup (with ID, Name, Description)
+     * Source: MS_STORAGE_LOCATION
      */
     public function get_storage_locations_for_modal()
     {
@@ -396,6 +406,7 @@ class M_tool_inventory extends CI_Model
 
     /**
      * Get all materials from MS_MATERIAL
+     * Source: MS_MATERIAL
      */
     public function get_materials()
     {
@@ -408,6 +419,7 @@ class M_tool_inventory extends CI_Model
 
     /**
      * Get all makers from MS_MAKER
+     * Source: MS_MAKER
      */
     public function get_makers()
     {
@@ -420,6 +432,7 @@ class M_tool_inventory extends CI_Model
 
     /**
      * Get makers for modal popup (with ID, Name, Description)
+     * Source: MS_MAKER
      */
     public function get_makers_for_modal()
     {
@@ -436,6 +449,7 @@ class M_tool_inventory extends CI_Model
 
     /**
      * Get tool drawing numbers from TMS_TOOL_MASTER_LIST (ML_TYPE = 1 for Engineering)
+     * Source: TMS_TOOL_MASTER_LIST, TMS_TOOL_MASTER_LIST_REV
      */
     public function get_tool_drawing_nos()
     {
@@ -453,6 +467,7 @@ class M_tool_inventory extends CI_Model
 
     /**
      * Get tool drawing data for modal popup (with ID, Drawing No., Tool Name, Revision, Description)
+     * Source: TMS_TOOL_MASTER_LIST, TMS_TOOL_MASTER_LIST_REV, MS_TOOL_CLASS
      */
     public function get_tool_drawings_for_modal()
     {
@@ -474,6 +489,7 @@ class M_tool_inventory extends CI_Model
 
     /**
      * Get revisions for a specific Tool Drawing (ML_ID)
+     * Source: TMS_TOOL_MASTER_LIST_REV
      */
     public function get_revisions_by_ml_id($ml_id)
     {
@@ -490,6 +506,7 @@ class M_tool_inventory extends CI_Model
 
     /**
      * Get Tool Drawing details by MLR_ID (for auto-fill Product, Process, Tool Name, Revision)
+     * Source: TMS_TOOL_MASTER_LIST_REV, TMS_TOOL_MASTER_LIST, TMS_TOOL_MASTER_LIST_PARTS
      */
     public function get_tool_drawing_details_by_mlr_id($mlr_id)
     {
@@ -511,6 +528,7 @@ class M_tool_inventory extends CI_Model
 
     /**
      * Get RQ Numbers from TMS_ORDERING or TMS_REQUISITION
+     * Source: TMS_ORDERING
      */
     public function get_rq_numbers()
     {
@@ -525,6 +543,7 @@ class M_tool_inventory extends CI_Model
 
     /**
      * Get next Tool Tag number (auto-increment based on INV_ID)
+     * Source: TMS_TOOL_INVENTORY
      */
     public function get_next_tool_tag()
     {
@@ -541,6 +560,7 @@ class M_tool_inventory extends CI_Model
 
     /**
      * Get existing Tool IDs for dropdown (optimized with limit and latest records first)
+     * Source: TMS_TOOL_INVENTORY, TMS_TOOL_MASTER_LIST_REV, TMS_TOOL_MASTER_LIST, TMS_TOOL_MASTER_LIST_PARTS
      */
     public function get_existing_tool_ids($limit = 500)
     {
@@ -574,6 +594,7 @@ class M_tool_inventory extends CI_Model
 
     /**
      * Get Tool ID details by Tool ID string
+     * Source: TMS_TOOL_INVENTORY, TMS_TOOL_MASTER_LIST_REV, TMS_TOOL_MASTER_LIST, TMS_TOOL_MASTER_LIST_PARTS
      */
     public function get_tool_id_details($tool_id)
     {
@@ -599,6 +620,7 @@ class M_tool_inventory extends CI_Model
 
     /**
      * Add new Tool Inventory
+     * Source: TMS_TOOL_INVENTORY
      */
     public function add_data($data)
     {
@@ -764,6 +786,7 @@ class M_tool_inventory extends CI_Model
 
     /**
      * Update Tool Inventory
+     * Source: TMS_TOOL_INVENTORY
      */
     public function update_data($data)
     {
@@ -975,6 +998,7 @@ class M_tool_inventory extends CI_Model
 
     /**
      * Delete
+     * Source: TMS_TOOL_INVENTORY
      */
     public function delete_data($id)
     {

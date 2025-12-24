@@ -28,6 +28,7 @@ class M_tool_scrap extends CI_Model
 
     /**
      * Server-side DataTable processing
+     * Source: TMS_TOOL_SCRAP, TMS_TOOL_INVENTORY, TMS_TOOL_MASTER_LIST_REV, TMS_TOOL_MASTER_LIST, MS_TOOL_CLASS, MS_REASON, MS_MACHINES, TMS_ASSIGNED_TOOLS
      */
     public function get_data_serverside($start, $length, $search, $order_col, $order_dir, $column_search = array())
     {
@@ -175,6 +176,7 @@ class M_tool_scrap extends CI_Model
 
     /**
      * Get by ID
+     * Source: TMS_TOOL_SCRAP, TMS_TOOL_INVENTORY, TMS_TOOL_MASTER_LIST_REV, TMS_TOOL_MASTER_LIST, MS_TOOL_CLASS, MS_REASON, MS_MACHINES, MS_CAUSE_ITEM, MS_USERS, TMS_ASSIGNED_TOOLS
      */
     public function get_by_id($id)
     {
@@ -244,6 +246,7 @@ class M_tool_scrap extends CI_Model
      * Get status name
      * Tool Scrap Status enum (typical values):
      * 0=Pending, 1=Approved, 2=Closed, etc. (may vary by system)
+     * Source: (No database query - returns static mapping)
      */
     public function get_status_name($status)
     {
@@ -259,6 +262,7 @@ class M_tool_scrap extends CI_Model
 
     /**
      * Get status badge HTML
+     * Source: (No database query - returns HTML string)
      */
     public function get_status_badge($status)
     {
@@ -286,6 +290,7 @@ class M_tool_scrap extends CI_Model
 
     /**
      * Delete
+     * Source: TMS_TOOL_SCRAP
      */
     public function delete_data($id)
     {
@@ -313,6 +318,7 @@ class M_tool_scrap extends CI_Model
 
     /**
      * Get users for modal popup (ID, User, Position)
+     * Source: MS_USERS, MS_POSITION
      */
     public function get_users_for_modal()
     {
@@ -329,6 +335,7 @@ class M_tool_scrap extends CI_Model
 
     /**
      * Get machines for modal popup (ID, Machine, Operation)
+     * Source: MS_MACHINES, MS_OPERATION
      */
     public function get_machines_for_modal()
     {
@@ -345,6 +352,7 @@ class M_tool_scrap extends CI_Model
 
     /**
      * Get reasons for modal popup (ID, Name, Description)
+     * Source: MS_REASON
      */
     public function get_reasons_for_modal()
     {
@@ -360,6 +368,7 @@ class M_tool_scrap extends CI_Model
 
     /**
      * Get causes for modal popup (ID, Name, Description)
+     * Source: MS_CAUSE_ITEM
      */
     public function get_causes_for_modal()
     {
@@ -375,6 +384,7 @@ class M_tool_scrap extends CI_Model
 
     /**
      * Get tool inventory for modal popup (ID, Tool ID, Tool Drawing No, Revision, Tool Name, Tool Status, Remarks)
+     * Source: TMS_TOOL_INVENTORY, TMS_TOOL_MASTER_LIST_REV, TMS_TOOL_MASTER_LIST, MS_TOOL_CLASS
      */
     public function get_tool_inventory_for_modal()
     {
@@ -410,6 +420,7 @@ class M_tool_scrap extends CI_Model
     /**
      * Get tool inventory details by Tool ID for auto-fill
      * REBUILT FROM SCRATCH - Using direct query matching VW_TOOL_INVENTORY view structure
+     * Source: VW_TOOL_INVENTORY, TMS_ASSIGNED_TOOLS, TMS_TOOL_ASSIGNMENT
      */
     public function get_tool_inventory_details_by_tool_id($tool_id)
     {
@@ -497,6 +508,7 @@ class M_tool_scrap extends CI_Model
 
     /**
      * Fallback method: Manual query if VIEW doesn't work
+     * Source: TMS_TOOL_INVENTORY, TMS_TOOL_MASTER_LIST_REV, TMS_TOOL_MASTER_LIST, MS_TOOL_CLASS, MS_MATERIAL, TMS_ORDERING_ITEMS, TMS_ORDERING, TMS_ASSIGNED_TOOLS, TMS_TOOL_ASSIGNMENT
      */
     private function get_tool_inventory_details_manual($tool_id)
     {
@@ -565,6 +577,7 @@ class M_tool_scrap extends CI_Model
 
     /**
      * Get materials for dropdown
+     * Source: MS_MATERIAL
      */
     public function get_materials()
     {
@@ -577,6 +590,7 @@ class M_tool_scrap extends CI_Model
 
     /**
      * Get RQ Numbers
+     * Source: TMS_ORDERING, TMS_REQUISITION
      */
     public function get_rq_numbers()
     {
@@ -594,6 +608,7 @@ class M_tool_scrap extends CI_Model
 
     /**
      * Get next Scrap No
+     * Source: TMS_TOOL_SCRAP
      */
     public function get_next_scrap_no()
     {

@@ -28,6 +28,7 @@ class M_tool_bom_tooling extends CI_Model
 
     /**
      * Server-side DataTable processing
+     * Tabel: TMS_TOOL_MASTER_LIST_REV, TMS_TOOL_MASTER_LIST, MS_OPERATION, MS_MACHINES, MS_USERS
      */
     public function get_data_serverside($start, $length, $search, $order_col, $order_dir, $column_search = array())
     {
@@ -129,6 +130,7 @@ class M_tool_bom_tooling extends CI_Model
 
     /**
      * Get all Tool BOM
+     * Tabel: TMS_TOOL_MASTER_LIST_REV, TMS_TOOL_MASTER_LIST, MS_MACHINES, MS_USERS
      */
     public function get_all()
     {
@@ -156,6 +158,7 @@ class M_tool_bom_tooling extends CI_Model
 
     /**
      * Get by ID
+     * Tabel: TMS_TOOL_MASTER_LIST_REV, TMS_TOOL_MASTER_LIST, MS_OPERATION, MS_MACHINES, MS_USERS, TMS_TOOL_MASTER_LIST_PARTS
      */
     public function get_by_id($id)
     {
@@ -220,6 +223,7 @@ class M_tool_bom_tooling extends CI_Model
 
     /**
      * Get history
+     * Tabel: TMS_TOOL_MASTER_LIST_REV, TMS_TOOL_MASTER_LIST, MS_USERS, MS_OPERATION, MS_MACHINES
      */
     public function get_history($id)
     {
@@ -261,6 +265,7 @@ class M_tool_bom_tooling extends CI_Model
 
     /**
      * Delete
+     * Tabel: TMS_TOOL_MASTER_LIST_REV
      */
     public function delete_data($id)
     {
@@ -285,6 +290,7 @@ class M_tool_bom_tooling extends CI_Model
 
     /**
      * Get machines
+     * Tabel: MS_MACHINES
      */
     public function get_machines()
     {
@@ -295,6 +301,7 @@ class M_tool_bom_tooling extends CI_Model
 
     /**
      * Get all products from MS_PARTS
+     * Tabel: MS_PARTS
      */
     public function get_products()
     {
@@ -310,6 +317,7 @@ class M_tool_bom_tooling extends CI_Model
 
     /**
      * Get all operations from MS_OPERATION
+     * Tabel: MS_OPERATION
      */
     public function get_operations()
     {
@@ -325,6 +333,7 @@ class M_tool_bom_tooling extends CI_Model
 
     /**
      * Get all tools from MS_TOOL_CLASS
+     * Tabel: MS_TOOL_CLASS
      */
     public function get_tools()
     {
@@ -340,6 +349,7 @@ class M_tool_bom_tooling extends CI_Model
 
     /**
      * Get all materials from MS_MATERIAL
+     * Tabel: MS_MATERIAL
      */
     public function get_materials()
     {
@@ -355,6 +365,7 @@ class M_tool_bom_tooling extends CI_Model
 
     /**
      * Get all makers from MS_MAKER
+     * Tabel: MS_MAKER
      */
     public function get_makers()
     {
@@ -370,6 +381,7 @@ class M_tool_bom_tooling extends CI_Model
 
     /**
      * Get all machine groups from MS_MACHINES
+     * Tabel: MS_MACHINES
      */
     public function get_machine_groups()
     {
@@ -385,6 +397,7 @@ class M_tool_bom_tooling extends CI_Model
 
     /**
      * Add new Tool BOM
+     * Tabel: TMS_TOOL_MASTER_LIST, TMS_TOOL_MASTER_LIST_REV, TMS_TOOL_MASTER_LIST_PARTS, MS_USERS
      */
     public function add_data($tool_bom, $product_id, $process_id, $machine_group_id, $revision, $status, $description, $effective_date, $change_summary, $is_trial_bom, $drawing_file = null, $sketch_file = null)
     {
@@ -497,6 +510,7 @@ class M_tool_bom_tooling extends CI_Model
 
     /**
      * Update Tool BOM
+     * Tabel: TMS_TOOL_MASTER_LIST, TMS_TOOL_MASTER_LIST_REV, TMS_TOOL_MASTER_LIST_PARTS, MS_USERS
      */
     public function update_data($id, $tool_bom, $product_id, $process_id, $machine_group_id, $revision, $status, $description, $effective_date, $change_summary, $is_trial_bom, $drawing_file = null, $sketch_file = null)
     {
@@ -617,6 +631,7 @@ class M_tool_bom_tooling extends CI_Model
     /**
      * Get additional information (Tool Drawing Engineering members) for BOM
      * Returns Tool Drawing Engineering data that are children of this BOM
+     * Tabel: TMS_TOOL_MASTER_LIST_MEMBERS, TMS_TOOL_MASTER_LIST_REV, TMS_TOOL_MASTER_LIST, MS_TOOL_CLASS, MS_OPERATION, MS_MATERIAL, MS_MAKER, TMS_TOOL_MASTER_LIST_PARTS, MS_PARTS
      */
     public function get_additional_info($bom_mlr_id)
     {

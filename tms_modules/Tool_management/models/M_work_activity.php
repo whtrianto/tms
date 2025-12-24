@@ -14,6 +14,9 @@ class M_work_activity extends CI_Model
         $this->tms_db = $this->load->database('tms_NEW', TRUE);
     }
 
+    /**
+     * Source: TMS_WORK_ACTIVITIES
+     */
     public function get_data_master_work_activity()
     {
         return $this->tms_db
@@ -24,6 +27,9 @@ class M_work_activity extends CI_Model
             ->result_array();
     }
 
+    /**
+     * Source: TMS_WORK_ACTIVITIES
+     */
     public function get_data_master_work_activity_by_id($id)
     {
         $id = (int)$id;
@@ -35,6 +41,9 @@ class M_work_activity extends CI_Model
     }
 
 
+    /**
+     * Source: TMS_WORK_ACTIVITIES
+     */
     public function is_duplicate($name, $exclude_id = null)
     {
         $name = trim((string)$name);
@@ -49,13 +58,18 @@ class M_work_activity extends CI_Model
         return $count > 0;
     }
 
+    /**
+     * Source: TMS_WORK_ACTIVITIES
+     */
     public function get_new_sequence()
     {
         $row = $this->tms_db->select_max($this->primary_key)->get($this->table)->row_array();
         return isset($row[$this->primary_key]) ? ((int)$row[$this->primary_key] + 1) : 1;
     }
 
-
+    /**
+     * Source: TMS_WORK_ACTIVITIES
+     */
     public function add_data($actor = 'SYSTEM')
     {
         $name = trim((string)$this->input->post('work_activity_name'));
@@ -89,6 +103,9 @@ class M_work_activity extends CI_Model
         return FALSE;
     }
 
+    /**
+     * Source: TMS_WORK_ACTIVITIES
+     */
     public function update_by_id($id, array $data, $actor = 'SYSTEM')
     {
         $id = (int)$id;
@@ -113,6 +130,9 @@ class M_work_activity extends CI_Model
         return true;
     }
 
+    /**
+     * Source: TMS_WORK_ACTIVITIES
+     */
     public function delete_data($id, $actor = 'SYSTEM')
     {
         $id = (int)$id;

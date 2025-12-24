@@ -18,6 +18,10 @@ class M_material extends CI_Model
         $this->load->model('Product_tms/M_uom', 'uom');
     }
 
+    /**
+     * Get all master materials with UOM
+     * Tabel: MS_MATERIAL (MAT), MS_UOM (UOM)
+     */
     public function get_data_master_materials()
     {
         return $this->tms_db
@@ -30,6 +34,10 @@ class M_material extends CI_Model
             ->result_array();
     }
 
+    /**
+     * Get material by ID
+     * Tabel: MS_MATERIAL
+     */
     public function get_data_master_material_by_id($material_id)
     {
         $material_id = (int)$material_id;
@@ -40,6 +48,10 @@ class M_material extends CI_Model
             ->row_array();
     }
 
+    /**
+     * Get material by name
+     * Tabel: MS_MATERIAL
+     */
     public function get_data_master_material_by_name($material_name, $only_active = true)
     {
         $material_name = trim((string)$material_name);
@@ -56,6 +68,10 @@ class M_material extends CI_Model
         return $query->row_array();
     }
 
+    /**
+     * Check if material is duplicate
+     * Tabel: MS_MATERIAL
+     */
     public function is_duplicate($material_name, $exclude_id = null)
     {
         $material_name = trim((string)$material_name);
@@ -70,18 +86,29 @@ class M_material extends CI_Model
         return $count > 0;
     }
 
+    /**
+     * Get new sequence ID
+     * Tabel: MS_MATERIAL
+     */
     public function get_new_sequence()
     {
         $row = $this->tms_db->select_max($this->primary_key)->get($this->table)->row_array();
         return isset($row[$this->primary_key]) ? ((int)$row[$this->primary_key] + 1) : 1;
     }
 
-
+    /**
+     * Get all UOMs
+     * Tabel: MS_UOM (via model M_uom)
+     */
     public function get_all_uoms()
     {
         return $this->uom->get_active();
     }
 
+    /**
+     * Add new material
+     * Tabel: MS_MATERIAL
+     */
     public function add_data($actor = 'SYSTEM')
     {
         $material_name = trim((string)$this->input->post('material_name'));
@@ -115,6 +142,10 @@ class M_material extends CI_Model
         return FALSE;
     }
 
+    /**
+     * Update material by ID
+     * Tabel: MS_MATERIAL
+     */
     public function update_by_id($material_id, array $data, $actor = 'SYSTEM')
     {
         $material_id = (int)$material_id;
@@ -139,6 +170,10 @@ class M_material extends CI_Model
         return true;
     }
 
+    /**
+     * Delete material (soft delete)
+     * Tabel: MS_MATERIAL
+     */
     public function delete_data($material_id, $actor = 'SYSTEM')
     {
         $material_id = (int)$material_id;

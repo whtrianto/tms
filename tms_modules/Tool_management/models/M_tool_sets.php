@@ -28,6 +28,7 @@ class M_tool_sets extends CI_Model
 
     /**
      * Server-side DataTable processing
+     * Source: TMS_TOOLSETS, TMS_TOOL_MASTER_LIST_REV, TMS_TOOL_MASTER_LIST, TMS_TOOL_MASTER_LIST_PARTS, MS_PARTS
      */
     public function get_data_serverside($start, $length, $search, $order_col, $order_dir, $column_search = array())
     {
@@ -121,6 +122,7 @@ class M_tool_sets extends CI_Model
 
     /**
      * Get by ID
+     * Source: TMS_TOOLSETS, TMS_TOOL_MASTER_LIST_REV, TMS_TOOL_MASTER_LIST, MS_OPERATION, TMS_TOOL_MASTER_LIST_PARTS, MS_PARTS
      */
     public function get_by_id($id)
     {
@@ -151,6 +153,7 @@ class M_tool_sets extends CI_Model
 
     /**
      * Get Toolset Compositions
+     * Source: TMS_TOOLSET_COMPOSITIONS, TMS_TOOL_MASTER_LIST_REV, TMS_TOOL_MASTER_LIST, MS_TOOL_CLASS, TMS_TOOL_INVENTORY
      */
     public function get_compositions($tset_id)
     {
@@ -184,6 +187,7 @@ class M_tool_sets extends CI_Model
 
     /**
      * Get Usage Assignments
+     * Source: TMS_TOOL_ASSIGNMENT, MS_OPERATION, MS_MACHINES, MS_PARTS
      */
     public function get_usage_assignments($tset_id)
     {
@@ -214,6 +218,7 @@ class M_tool_sets extends CI_Model
 
     /**
      * Get status name
+     * Source: (No database query - returns static mapping)
      */
     public function get_status_name($status)
     {
@@ -227,6 +232,7 @@ class M_tool_sets extends CI_Model
 
     /**
      * Get status badge HTML
+     * Source: (No database query - returns HTML string)
      */
     public function get_status_badge($status)
     {
@@ -245,6 +251,7 @@ class M_tool_sets extends CI_Model
 
     /**
      * Add new Tool Set
+     * Source: TMS_TOOLSETS, TMS_TOOL_MASTER_LIST_REV
      */
     public function add_data($data)
     {
@@ -297,6 +304,7 @@ class M_tool_sets extends CI_Model
 
     /**
      * Update Tool Set
+     * Source: TMS_TOOLSETS
      */
     public function update_data($id, $data)
     {
@@ -360,6 +368,7 @@ class M_tool_sets extends CI_Model
 
     /**
      * Delete
+     * Source: TMS_TOOLSETS, TMS_TOOL_ASSIGNMENT, TMS_TOOLSET_COMPOSITIONS
      */
     public function delete_data($id)
     {
@@ -407,6 +416,7 @@ class M_tool_sets extends CI_Model
 
     /**
      * Get Composition by ID
+     * Source: TMS_TOOLSET_COMPOSITIONS, TMS_TOOL_MASTER_LIST_REV, TMS_TOOL_MASTER_LIST, MS_TOOL_CLASS, TMS_TOOL_INVENTORY
      */
     public function get_composition_by_id($comp_id)
     {
@@ -440,6 +450,7 @@ class M_tool_sets extends CI_Model
 
     /**
      * Update Composition (Remarks and End Cycle only)
+     * Source: TMS_TOOLSET_COMPOSITIONS, TMS_TOOL_INVENTORY
      */
     public function update_composition($comp_id, $remarks, $end_cycle)
     {
@@ -492,6 +503,7 @@ class M_tool_sets extends CI_Model
 
     /**
      * Get available tools for replace (same MLR_ID, different INV_ID)
+     * Source: TMS_TOOL_INVENTORY, TMS_TOOL_MASTER_LIST_REV, TMS_TOOL_MASTER_LIST, MS_STORAGE_LOCATION
      */
     public function get_available_tools_for_replace($mlr_id, $exclude_inv_id = 0)
     {
@@ -522,6 +534,7 @@ class M_tool_sets extends CI_Model
 
     /**
      * Replace Composition (update INV_ID)
+     * Source: TMS_TOOLSET_COMPOSITIONS, TMS_TOOL_INVENTORY
      */
     public function replace_composition($comp_id, $new_inv_id, $remarks)
     {
@@ -583,6 +596,7 @@ class M_tool_sets extends CI_Model
     /**
      * Get Tool BOM data for popup modal
      * Returns: BOM No., Machine Group, BOM Description, BOM Revision
+     * Source: TMS_TOOL_MASTER_LIST_REV, TMS_TOOL_MASTER_LIST, MS_MACHINES, TMS_TOOL_MASTER_LIST_PARTS
      */
     public function get_tool_bom_for_modal()
     {
@@ -606,6 +620,7 @@ class M_tool_sets extends CI_Model
 
     /**
      * Get Tool BOM details by MLR_ID for auto-fill
+     * Source: TMS_TOOL_MASTER_LIST_REV, TMS_TOOL_MASTER_LIST, MS_MACHINES, TMS_TOOL_MASTER_LIST_PARTS, MS_PARTS, MS_OPERATION
      */
     public function get_tool_bom_details_by_mlr_id($mlr_id)
     {

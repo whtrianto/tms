@@ -15,6 +15,7 @@ class M_conversion_rate extends CI_Model
 
     protected function has_column($col)
     {
+        // Source: INFORMATION_SCHEMA.COLUMNS
         $col = trim((string)$col);
         if ($col === '') return false;
         $sql = "SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS
@@ -25,11 +26,15 @@ class M_conversion_rate extends CI_Model
 
     protected function deleted_column()
     {
+        // Source: INFORMATION_SCHEMA.COLUMNS
         if ($this->has_column('IS_DELETED')) return 'IS_DELETED';
         if ($this->has_column('IS_DELETE')) return 'IS_DELETE';
         return 'IS_DELETED';
     }
 
+    /**
+     * Source: MS_CONVERSION_RATE
+     */
     public function get_all($search = null)
     {
         $del = $this->deleted_column();
@@ -48,6 +53,9 @@ class M_conversion_rate extends CI_Model
         return $this->tms_db->query($sql, $params)->result_array();
     }
 
+    /**
+     * Source: MS_CONVERSION_RATE
+     */
     public function get_active()
     {
         $del = $this->deleted_column();
@@ -60,6 +68,9 @@ class M_conversion_rate extends CI_Model
             ->result_array();
     }
 
+    /**
+     * Source: MS_CONVERSION_RATE
+     */
     public function get_by_id($id)
     {
         $id = (int)$id;
@@ -68,6 +79,9 @@ class M_conversion_rate extends CI_Model
         return $this->tms_db->where('CON_ID', $id)->where($del, 0)->limit(1)->get($this->table)->row_array();
     }
 
+    /**
+     * Source: MS_CONVERSION_RATE
+     */
     public function get_by_currency($currency, $only_active = true)
     {
         $currency = trim((string)$currency);
@@ -84,6 +98,9 @@ class M_conversion_rate extends CI_Model
         return $q->row_array();
     }
 
+    /**
+     * Source: MS_CONVERSION_RATE
+     */
     public function exists_by_currency($currency, $only_active = true)
     {
         $currency = trim((string)$currency);
@@ -104,12 +121,18 @@ class M_conversion_rate extends CI_Model
         return ($row && (int)$row['CNT'] > 0);
     }
 
+    /**
+     * Source: MS_CONVERSION_RATE
+     */
     public function get_new_sequence()
     {
         $row = $this->tms_db->select_max('CON_ID')->get($this->table)->row_array();
         return isset($row['CON_ID']) ? ((int)$row['CON_ID'] + 1) : 1;
     }
 
+    /**
+     * Source: MS_CONVERSION_RATE
+     */
     public function add_data($data)
     {
         $currency = isset($data['CON_CURRENCY']) ? trim((string)$data['CON_CURRENCY']) : '';
@@ -165,6 +188,9 @@ class M_conversion_rate extends CI_Model
         return false;
     }
 
+    /**
+     * Source: MS_CONVERSION_RATE
+     */
     public function edit_data($id, $data)
     {
         $id = (int)$id;
@@ -210,6 +236,9 @@ class M_conversion_rate extends CI_Model
         return false;
     }
 
+    /**
+     * Source: MS_CONVERSION_RATE
+     */
     public function delete_data($id, $actor = 'SYSTEM')
     {
         $id = (int)$id;
@@ -262,6 +291,9 @@ class M_conversion_rate extends CI_Model
         return true;
     }
 
+    /**
+     * Source: MS_CONVERSION_RATE
+     */
     public function is_duplicate_currency($currency, $exclude_id = null)
     {
         $currency = trim((string)$currency);

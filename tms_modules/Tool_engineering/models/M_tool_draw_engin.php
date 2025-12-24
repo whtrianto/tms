@@ -47,6 +47,7 @@ class M_tool_draw_engin extends CI_Model
 
     /**
      * Server-side DataTable processing - pagination di database
+     * Tabel: TMS_TOOL_MASTER_LIST_REV, TMS_TOOL_MASTER_LIST, MS_OPERATION, MS_TOOL_CLASS, MS_MAKER, MS_MATERIAL, MS_MACHINES, MS_USERS, TMS_TOOL_MASTER_LIST_PARTS, MS_PARTS
      */
     public function get_data_serverside($start, $length, $search, $order_col, $order_dir, $column_search = array())
     {
@@ -147,6 +148,7 @@ class M_tool_draw_engin extends CI_Model
     /**
      * Ambil list tool drawing (engineering) dari struktur SQL bawaan.
      * Hanya mengambil ML_TYPE = 1 (tool) dan status aktif/pending/inaktif berdasar MLR_STATUS.
+     * Tabel: TMS_TOOL_MASTER_LIST_REV, TMS_TOOL_MASTER_LIST, MS_OPERATION, MS_TOOL_CLASS, MS_MAKER, MS_MATERIAL, MS_MACHINES, MS_USERS
      */
     public function get_all()
     {
@@ -199,6 +201,7 @@ class M_tool_draw_engin extends CI_Model
 
     /**
      * Get data by ID (MLR_ID)
+     * Tabel: TMS_TOOL_MASTER_LIST_REV, TMS_TOOL_MASTER_LIST, MS_OPERATION, MS_TOOL_CLASS, MS_MAKER, MS_MATERIAL, MS_MACHINES, TMS_TOOL_MASTER_LIST_PARTS, MS_PARTS
      */
     public function get_by_id($id)
     {
@@ -258,6 +261,7 @@ class M_tool_draw_engin extends CI_Model
 
     /**
      * Get all products from MS_PARTS
+     * Tabel: MS_PARTS
      */
     public function get_products()
     {
@@ -273,6 +277,7 @@ class M_tool_draw_engin extends CI_Model
 
     /**
      * Get all operations from MS_OPERATION
+     * Tabel: MS_OPERATION
      */
     public function get_operations()
     {
@@ -288,6 +293,7 @@ class M_tool_draw_engin extends CI_Model
 
     /**
      * Get all tools from MS_TOOL_CLASS
+     * Tabel: MS_TOOL_CLASS
      */
     public function get_tools()
     {
@@ -303,6 +309,7 @@ class M_tool_draw_engin extends CI_Model
 
     /**
      * Get tool by ID
+     * Tabel: MS_TOOL_CLASS
      */
     public function get_tool_by_id($id)
     {
@@ -320,6 +327,7 @@ class M_tool_draw_engin extends CI_Model
 
     /**
      * Get all materials from MS_MATERIAL
+     * Tabel: MS_MATERIAL
      */
     public function get_materials()
     {
@@ -335,6 +343,7 @@ class M_tool_draw_engin extends CI_Model
 
     /**
      * Get all makers from MS_MAKER
+     * Tabel: MS_MAKER
      */
     public function get_makers()
     {
@@ -350,6 +359,7 @@ class M_tool_draw_engin extends CI_Model
 
     /**
      * Get all machine groups from MS_MACHINES
+     * Tabel: MS_MACHINES
      */
     public function get_machine_groups()
     {
@@ -365,6 +375,7 @@ class M_tool_draw_engin extends CI_Model
 
     /**
      * Get Tool BOM by Product ID (placeholder - adjust based on actual BOM table structure)
+     * Tabel: (placeholder - tidak digunakan)
      */
     public function get_tool_bom_by_product_id($product_id)
     {
@@ -378,6 +389,7 @@ class M_tool_draw_engin extends CI_Model
     /**
      * Get Tool BOM list by MLR_ID (child)
      * Mengambil semua Tool BOM yang menggunakan tool drawing ini
+     * Tabel: TMS_TOOL_MASTER_LIST_MEMBERS, TMS_TOOL_MASTER_LIST_REV, TMS_TOOL_MASTER_LIST, TMS_TOOL_MASTER_LIST_PARTS, MS_PARTS
      */
     public function get_tool_bom_by_mlr_id($mlr_id)
     {
@@ -418,6 +430,7 @@ class M_tool_draw_engin extends CI_Model
 
     /**
      * Add new tool drawing
+     * Tabel: TMS_TOOL_MASTER_LIST, TMS_TOOL_MASTER_LIST_REV, TMS_TOOL_MASTER_LIST_PARTS
      */
     public function add_data($product_id, $process_id, $drawing_no, $tool_id, $revision, $status, $material_id, $maker_id = 0, $machine_group_id = null, $effective_date = null)
     {
@@ -510,6 +523,7 @@ class M_tool_draw_engin extends CI_Model
 
     /**
      * Edit tool drawing
+     * Tabel: TMS_TOOL_MASTER_LIST, TMS_TOOL_MASTER_LIST_REV, TMS_TOOL_MASTER_LIST_PARTS
      */
     public function edit_data_engineering($id, $product_id, $process_id, $drawing_no, $tool_id, $status, $material_id, $maker_id = null, $machine_group_id = null, $effective_date = null, $revision = null)
     {
@@ -604,6 +618,7 @@ class M_tool_draw_engin extends CI_Model
 
     /**
      * Save or update TMS_TOOL_MASTER_LIST_MEMBERS (relationship between BOM and Tool Drawing)
+     * Tabel: TMS_TOOL_MASTER_LIST_MEMBERS
      */
     public function save_bom_member($parent_mlr_id, $child_mlr_id, $qty, $std_qty, $seq, $remark, $tb_id = null)
     {
@@ -656,6 +671,7 @@ class M_tool_draw_engin extends CI_Model
 
     /**
      * Get MLR_ID by drawing_no and revision
+     * Tabel: TMS_TOOL_MASTER_LIST_REV, TMS_TOOL_MASTER_LIST
      */
     public function get_mlr_id_by_drawing_no($drawing_no, $revision = 0)
     {
@@ -688,6 +704,7 @@ class M_tool_draw_engin extends CI_Model
 
     /**
      * Delete tool drawing
+     * Tabel: TMS_TOOL_MASTER_LIST_REV, TMS_TOOL_MASTER_LIST, TMS_TOOL_MASTER_LIST_PARTS
      */
     public function delete_data($id)
     {
@@ -742,6 +759,7 @@ class M_tool_draw_engin extends CI_Model
      * Get history - semua revision dari MLR_ML_ID yang sama
      * @param int $id MLR_ID dari revision tertentu
      * @return array History records
+     * Tabel: TMS_TOOL_MASTER_LIST_REV, TMS_TOOL_MASTER_LIST, MS_OPERATION, MS_TOOL_CLASS, MS_MAKER, MS_MATERIAL, MS_MACHINES, MS_USERS, TMS_TOOL_MASTER_LIST_PARTS, MS_PARTS
      */
     public function get_history($id)
     {
