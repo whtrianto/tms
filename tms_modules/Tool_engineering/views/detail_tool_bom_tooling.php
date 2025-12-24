@@ -296,11 +296,11 @@
                                         ?>
                                             <tr>
                                                 <td><?= $no++; ?></td>
-                                                <td><?= htmlspecialchars($row['TD_ID']); ?></td>
+                                                <td><?= htmlspecialchars(isset($row['TD_ID']) ? $row['TD_ID'] : '-', ENT_QUOTES, 'UTF-8'); ?></td>
                                                 <td>
                                                     <?php 
                                                     $drawing_url = '';
-                                                    if (!empty($row['TD_DRAWING_FILE']) && isset($row['TD_MLR_ML_ID']) && $row['TD_MLR_ML_ID'] > 0 && isset($row['TD_REVISION'])) {
+                                                    if (!empty($row['TD_DRAWING_FILE']) && isset($row['TD_MLR_ML_ID']) && (int)$row['TD_MLR_ML_ID'] > 0 && isset($row['TD_REVISION'])) {
                                                         // For Tool Drawing Engineering (additional info)
                                                         // Use query parameters for reliable filename handling
                                                         $drawing_url = base_url('Attachment_TMS/index?folder=Drawing&mlr_ml_id=' . (int)$row['TD_MLR_ML_ID'] . '&mlr_rev=' . (int)$row['TD_REVISION'] . '&filename=' . urlencode($row['TD_DRAWING_FILE']));
@@ -310,7 +310,7 @@
                                                             <?= htmlspecialchars($row['TD_DRAWING_FILE'], ENT_QUOTES, 'UTF-8'); ?>
                                                         </a>
                                                     <?php elseif (!empty($row['TD_DRAWING_NO'])): ?>
-                                                        <?= htmlspecialchars($row['TD_DRAWING_NO'], ENT_QUOTES, 'UTF-8'); ?>
+                                                        <?= htmlspecialchars(isset($row['TD_DRAWING_NO']) ? $row['TD_DRAWING_NO'] : '-', ENT_QUOTES, 'UTF-8'); ?>
                                                     <?php else: ?>
                                                         -
                                                     <?php endif; ?>
@@ -349,17 +349,111 @@
 <script>
 (function($){
     $(function(){
-        var table = $('#table-additional').DataTable({
-            lengthMenu: [[10,25,50,-1],[10,25,50,"ALL"]],
-            pageLength: 10,
-            order: [], // No default sorting - maintain order from database (TB_SEQ)
-            autoWidth: false,
-            columnDefs: [
-                { orderable:false, targets:[0] }, // No. column not sortable (it's auto-increment)
-                { width: '50px', targets:0 },
-                { width: '70px', targets:1 }
-            ]
-        });
+        // Wait for DOM to be fully ready
+        setTimeout(function() {
+            // Validate table structure before initializing DataTables
+            var $table = $('#table-additional');
+            
+            if ($table.length === 0) {
+                console.warn('[DataTables] Table #table-additional not found');
+                return;
+            }
+            
+            // Check if table has thead and tbody
+            var $thead = $table.find('thead');
+            var $tbody = $table.find('tbody');
+            
+            if ($thead.length === 0 || $tbody.length === 0) {
+                console.warn('[DataTables] Table structure incomplete - missing thead or tbody');
+                return;
+            }
+            
+            // Get number of columns from thead
+            var $headerRow = $thead.find('tr').first();
+            var headerCols = $headerRow.find('th').length;
+            if (headerCols === 0) {
+                console.warn('[DataTables] No header columns found');
+                return;
+            }
+            
+            // Validate all tbody rows have the same number of columns
+            var $rows = $tbody.find('tr');
+            var isValid = true;
+            var hasDataRows = false;
+            
+            $rows.each(function(index) {
+                var $row = $(this);
+                var $cells = $row.find('td');
+                var colCount = $cells.length;
+                
+                // Check if it's a colspan row (no data message)
+                var $colspanCell = $cells.filter('[colspan]');
+                if ($colspanCell.length > 0) {
+                    // For colspan rows, validate colspan matches header count
+                    var colspan = parseInt($colspanCell.first().attr('colspan') || '0');
+                    if (colspan === headerCols) {
+                        // Valid "no data" row - skip DataTables initialization
+                        return true; // continue to next row
+                    } else {
+                        console.warn('[DataTables] Row ' + index + ' has invalid colspan. Expected: ' + headerCols + ', Found: ' + colspan);
+                        isValid = false;
+                        return false; // break loop
+                    }
+                } else {
+                    // Regular data row - must have exact column count
+                    hasDataRows = true;
+                    if (colCount !== headerCols) {
+                        console.warn('[DataTables] Row ' + index + ' has invalid structure. Expected: ' + headerCols + ' columns, Found: ' + colCount);
+                        console.warn('[DataTables] Row HTML:', $row[0].outerHTML);
+                        isValid = false;
+                        return false; // break loop
+                    }
+                }
+            });
+            
+            if (!isValid) {
+                console.error('[DataTables] Table structure validation failed. DataTables will not be initialized.');
+                return;
+            }
+            
+            // If no data rows, don't initialize DataTables (just show the "no data" message)
+            if (!hasDataRows) {
+                console.log('[DataTables] No data rows found. Skipping DataTables initialization.');
+                return;
+            }
+            
+            // Destroy existing DataTable instance if it exists
+            if ($.fn.DataTable.isDataTable('#table-additional')) {
+                try {
+                    $table.DataTable().destroy();
+                } catch (e) {
+                    console.warn('[DataTables] Error destroying existing instance:', e);
+                }
+            }
+            
+            // Initialize DataTables with error handling
+            try {
+                var table = $table.DataTable({
+                    lengthMenu: [[10,25,50,-1],[10,25,50,"ALL"]],
+                    pageLength: 10,
+                    order: [], // No default sorting - maintain order from database (TB_SEQ)
+                    autoWidth: false,
+                    columnDefs: [
+                        { orderable:false, targets:[0] }, // No. column not sortable (it's auto-increment)
+                        { width: '50px', targets:0 },
+                        { width: '70px', targets:1 }
+                    ],
+                    // Add error handling
+                    error: function(xhr, error, thrown) {
+                        console.error('[DataTables] Error:', error, thrown);
+                    }
+                });
+                console.log('[DataTables] Successfully initialized');
+            } catch (e) {
+                console.error('[DataTables] Initialization error:', e);
+                console.error('[DataTables] Stack trace:', e.stack);
+            }
+        }, 100); // Small delay to ensure DOM is fully ready
     });
 })(jQuery);
 </script>
