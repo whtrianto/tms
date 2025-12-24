@@ -191,13 +191,43 @@
                         </div>
 
                         <div class="form-row">
-                            <div class="form-group col-md-6">
+                            <div class="form-group col-md-3">
                                 <label class="info-label">Drawing</label>
                                 <div class="info-value">
-                                    <?php if (!empty($bom['DRAWING'])): ?>
-                                        <a href="<?= base_url('tool_engineering/img/' . htmlspecialchars($bom['DRAWING'], ENT_QUOTES, 'UTF-8')); ?>" target="_blank" class="text-primary">
-                                            <?= htmlspecialchars($bom['DRAWING'], ENT_QUOTES, 'UTF-8'); ?>
+                                    <?php 
+                                    $drawing_url = '';
+                                    if (!empty($bom['DRAWING']) && isset($bom['MLR_ML_ID']) && $bom['MLR_ML_ID'] > 0 && isset($bom['REVISION'])) {
+                                        // For BOM Tooling, DRAWING field contains drawing file
+                                        // Format: Attachment_TMS/BOM/{MLR_ML_ID}/{REVISION}/{filename}
+                                        $drawing_url = base_url('Attachment_TMS/BOM/' . (int)$bom['MLR_ML_ID'] . '/' . (int)$bom['REVISION'] . '/' . rawurlencode($bom['DRAWING']));
+                                    }
+                                    if (!empty($drawing_url)): ?>
+                                        <a href="<?= $drawing_url; ?>" target="_blank" class="text-primary">
+                                            <i class="fa fa-download"></i> <?= htmlspecialchars($bom['DRAWING'], ENT_QUOTES, 'UTF-8'); ?>
                                         </a>
+                                    <?php elseif (!empty($bom['DRAWING'])): ?>
+                                        <?= htmlspecialchars($bom['DRAWING'], ENT_QUOTES, 'UTF-8'); ?>
+                                    <?php else: ?>
+                                        -
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                            <div class="form-group col-md-3">
+                                <label class="info-label">Sketch</label>
+                                <div class="info-value">
+                                    <?php 
+                                    $sketch_url = '';
+                                    if (!empty($bom['SKETCH']) && isset($bom['MLR_ML_ID']) && $bom['MLR_ML_ID'] > 0 && isset($bom['REVISION'])) {
+                                        // For BOM Tooling, SKETCH field contains sketch file
+                                        // Format: Attachment_TMS/BOM_Sketch/{MLR_ML_ID}/{REVISION}/{filename}
+                                        $sketch_url = base_url('Attachment_TMS/BOM_Sketch/' . (int)$bom['MLR_ML_ID'] . '/' . (int)$bom['REVISION'] . '/' . rawurlencode($bom['SKETCH']));
+                                    }
+                                    if (!empty($sketch_url)): ?>
+                                        <a href="<?= $sketch_url; ?>" target="_blank" class="text-primary">
+                                            <i class="fa fa-download"></i> <?= htmlspecialchars($bom['SKETCH'], ENT_QUOTES, 'UTF-8'); ?>
+                                        </a>
+                                    <?php elseif (!empty($bom['SKETCH'])): ?>
+                                        <?= htmlspecialchars($bom['SKETCH'], ENT_QUOTES, 'UTF-8'); ?>
                                     <?php else: ?>
                                         -
                                     <?php endif; ?>
@@ -268,10 +298,19 @@
                                                 <td><?= $no++; ?></td>
                                                 <td><?= htmlspecialchars($row['TD_ID']); ?></td>
                                                 <td>
-                                                    <?php if (!empty($row['TD_DRAWING_NO'])): ?>
-                                                        <a href="<?= base_url('tool_engineering/img/' . htmlspecialchars($row['TD_DRAWING_NO'], ENT_QUOTES, 'UTF-8')); ?>" target="_blank" class="text-primary">
-                                                            <?= htmlspecialchars($row['TD_DRAWING_NO'], ENT_QUOTES, 'UTF-8'); ?>
+                                                    <?php 
+                                                    $drawing_url = '';
+                                                    if (!empty($row['TD_DRAWING_FILE']) && isset($row['TD_MLR_ML_ID']) && $row['TD_MLR_ML_ID'] > 0 && isset($row['TD_REVISION'])) {
+                                                        // For Tool Drawing Engineering (additional info)
+                                                        // Format: Attachment_TMS/Drawing/{MLR_ML_ID}/{REVISION}/{filename}
+                                                        $drawing_url = base_url('Attachment_TMS/Drawing/' . (int)$row['TD_MLR_ML_ID'] . '/' . (int)$row['TD_REVISION'] . '/' . rawurlencode($row['TD_DRAWING_FILE']));
+                                                    }
+                                                    if (!empty($drawing_url)): ?>
+                                                        <a href="<?= $drawing_url; ?>" target="_blank" class="text-primary">
+                                                            <?= htmlspecialchars($row['TD_DRAWING_FILE'], ENT_QUOTES, 'UTF-8'); ?>
                                                         </a>
+                                                    <?php elseif (!empty($row['TD_DRAWING_NO'])): ?>
+                                                        <?= htmlspecialchars($row['TD_DRAWING_NO'], ENT_QUOTES, 'UTF-8'); ?>
                                                     <?php else: ?>
                                                         -
                                                     <?php endif; ?>

@@ -317,6 +317,7 @@ class Tool_bom_tooling extends MY_Controller
         // Map data to view format
         $bom = array(
             'ID' => isset($row['TD_ID']) ? (int)$row['TD_ID'] : 0,
+            'MLR_ML_ID' => isset($row['MLR_ML_ID']) ? (int)$row['MLR_ML_ID'] : 0,
             'TOOL_BOM' => isset($row['TD_TOOL_BOM']) ? $row['TD_TOOL_BOM'] : '',
             'DESCRIPTION' => isset($row['TD_DESCRIPTION']) ? $row['TD_DESCRIPTION'] : '',
             'PRODUCT_ID' => isset($row['PRODUCT_ID']) ? (int)$row['PRODUCT_ID'] : 0,
@@ -329,6 +330,7 @@ class Tool_bom_tooling extends MY_Controller
             'EFFECTIVE_DATE' => isset($row['TD_EFFECTIVE_DATE']) ? $row['TD_EFFECTIVE_DATE'] : '',
             'CHANGE_SUMMARY' => isset($row['TD_CHANGE_SUMMARY']) ? $row['TD_CHANGE_SUMMARY'] : '',
             'DRAWING' => isset($row['MLR_DRAWING']) ? $row['MLR_DRAWING'] : '',
+            'SKETCH' => isset($row['MLR_SKETCH']) ? $row['MLR_SKETCH'] : '',
             'MODIFIED_DATE' => isset($row['TD_MODIFIED_DATE']) ? $row['TD_MODIFIED_DATE'] : '',
             'MODIFIED_BY' => isset($row['TD_MODIFIED_BY']) ? $row['TD_MODIFIED_BY'] : '',
             'IS_TRIAL_BOM' => isset($row['ML_IS_TRIAL_BOM']) ? (int)$row['ML_IS_TRIAL_BOM'] : (isset($row['ML_TRIAL']) ? (int)$row['ML_TRIAL'] : 0)

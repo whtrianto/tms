@@ -641,6 +641,7 @@ class M_tool_bom_tooling extends CI_Model
         $sql = "
             SELECT 
                 child_rev.MLR_ID AS TD_ID,
+                child_rev.MLR_ML_ID AS TD_MLR_ML_ID,
                 child_ml.ML_TOOL_DRAW_NO AS TD_DRAWING_NO,
                 ISNULL(tc.TC_NAME, '') AS TD_TOOL_NAME,
                 child_rev.MLR_REV AS TD_REVISION,
@@ -653,7 +654,8 @@ class M_tool_bom_tooling extends CI_Model
                 ISNULL(part.PART_ID, 0) AS TD_PRODUCT_ID,
                 ISNULL(op.OP_ID, 0) AS TD_PROCESS_ID,
                 ISNULL(mat.MAT_ID, 0) AS TD_MATERIAL_ID,
-                ISNULL(maker.MAKER_ID, 0) AS TD_MAKER_ID
+                ISNULL(maker.MAKER_ID, 0) AS TD_MAKER_ID,
+                ISNULL(child_rev.MLR_DRAWING, '') AS TD_DRAWING_FILE
             FROM {$this->t('TMS_TOOL_MASTER_LIST_MEMBERS')} members
             INNER JOIN {$this->t('TMS_TOOL_MASTER_LIST_REV')} child_rev 
                 ON child_rev.MLR_ID = members.TB_MLR_CHILD_ID
