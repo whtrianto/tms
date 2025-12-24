@@ -293,8 +293,8 @@ class Tool_draw_engin extends MY_Controller
             $uploaded_file_path = null; // Store temporary upload path for later move
             $file_name_for_storage = ''; // Store original filename for file storage
             if (!empty($_FILES) && isset($_FILES['TD_DRAWING_FILE']) && !empty($_FILES['TD_DRAWING_FILE']['name'])) {
-                // Temporary upload directory
-                $uploadDir = FCPATH . 'tool_drawing/img/';
+                // Temporary upload directory (will be moved to Attachment_TMS after getting ML_ID)
+                $uploadDir = sys_get_temp_dir() . '/tms_upload_' . time() . '/';
                 if (!is_dir($uploadDir)) {
                     @mkdir($uploadDir, 0755, true);
                 }

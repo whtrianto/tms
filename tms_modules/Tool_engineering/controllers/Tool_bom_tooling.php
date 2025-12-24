@@ -242,11 +242,13 @@ class Tool_bom_tooling extends MY_Controller
             $change_summary = trim($this->input->post('CHANGE_SUMMARY', TRUE));
             $is_trial_bom = $this->input->post('IS_TRIAL_BOM', TRUE) == '1' ? 1 : 0;
 
-            // Handle file uploads
+            // Handle file uploads - store temporarily, will be moved to Attachment_TMS after getting ML_ID
+            $sketch_file_temp = null;
             $sketch_file = null;
             
             if (!empty($_FILES) && isset($_FILES['SKETCH_FILE']) && !empty($_FILES['SKETCH_FILE']['name'])) {
-                $uploadDir = FCPATH . 'tool_drawing/img/';
+                // Temporary upload directory
+                $uploadDir = sys_get_temp_dir() . '/tms_upload_' . time() . '/';
                 if (!is_dir($uploadDir)) {
                     @mkdir($uploadDir, 0755, true);
                 }
@@ -256,18 +258,32 @@ class Tool_bom_tooling extends MY_Controller
                 $fileName = $tool_bom . '_sketch_' . time() . ($fileExt ? '.' . $fileExt : '');
                 $target = $uploadDir . $fileName;
                 if (move_uploaded_file($_FILES['SKETCH_FILE']['tmp_name'], $target)) {
-                    $sketch_file = $fileName;
+                    $sketch_file_temp = $target; // Store temp path for later move
+                    $sketch_file = $fileName; // Store filename for database
                 }
             }
+
+            // Get current MLR_ML_ID before update
+            $current = $this->tool_bom_tooling->get_by_id($id);
+            $ml_id = isset($current['MLR_ML_ID']) ? (int)$current['MLR_ML_ID'] : 0;
 
             $ok = $this->tool_bom_tooling->update_data(
                 $id, $tool_bom, $product_id, $process_id, $machine_group_id, $revision, $status,
                 $description, $effective_date, $change_summary, $is_trial_bom, null, $sketch_file
             );
             if ($ok) {
+                // Move file to Attachment_TMS folder after successful update
+                if ($ml_id > 0 && $sketch_file_temp && file_exists($sketch_file_temp)) {
+                    $this->_move_file_to_attachment_folder($sketch_file_temp, $ml_id, $revision, $sketch_file, 'BOM_Sketch');
+                }
+                
                 $result['success'] = true;
                 $result['message'] = $this->tool_bom_tooling->messages ?: 'Tool BOM berhasil diubah.';
             } else {
+                // Clean up uploaded file if database update failed
+                if ($sketch_file_temp && file_exists($sketch_file_temp)) {
+                    @unlink($sketch_file_temp);
+                }
                 $result['success'] = false;
                 $result['message'] = $this->tool_bom_tooling->messages ?: 'Gagal mengubah Tool BOM.';
             }
@@ -327,5 +343,63 @@ class Tool_bom_tooling extends MY_Controller
         $data['additional_info'] = $this->tool_bom_tooling->get_additional_info($id);
 
         $this->view('detail_tool_bom_tooling', $data, FALSE);
+    }
+
+    /**
+     * Move uploaded file to Attachment_TMS folder structure
+     * Folder structure: Attachment_TMS/{folder}/{ML_ID}/{REVISION}/{filename}
+     * @param string $source_file_path Full path to source file
+     * @param int $ml_id ML_ID (MLR_ML_ID)
+     * @param int $revision MLR_REV
+     * @param string $filename Original filename
+     * @param string $folder_name Folder name (BOM, BOM_Sketch, Drawing, Drawing_Sketch)
+     * @return bool True if successful, false otherwise
+     */
+    private function _move_file_to_attachment_folder($source_file_path, $ml_id, $revision, $filename, $folder_name = 'BOM_Sketch')
+    {
+        if (!file_exists($source_file_path) || !is_file($source_file_path)) {
+            log_message('error', '[Tool_bom_tooling::_move_file_to_attachment_folder] Source file does not exist: ' . $source_file_path);
+            return false;
+        }
+
+        // Sanitize filename
+        $safe_filename = preg_replace('/[^A-Za-z0-9_\-\.]/', '_', basename($filename));
+        if (empty($safe_filename)) {
+            $safe_filename = 'file_' . time();
+        }
+
+        // Use application folder: application/tms_modules/Attachment_TMS/{folder}/{ML_ID}/{REVISION}/
+        $target_dir = APPPATH . 'tms_modules/Attachment_TMS/' . $folder_name . '/' . (int)$ml_id . '/' . (int)$revision . '/';
+
+        log_message('debug', '[Tool_bom_tooling::_move_file_to_attachment_folder] Attempting to create/move to: ' . $target_dir);
+
+        // Create directory if it doesn't exist
+        if (!is_dir($target_dir)) {
+            $created = @mkdir($target_dir, 0755, true);
+            if (!$created) {
+                $error = error_get_last();
+                log_message('error', '[Tool_bom_tooling::_move_file_to_attachment_folder] Cannot create directory: ' . $target_dir . '. Error: ' . ($error ? $error['message'] : 'Unknown'));
+                return false;
+            }
+        }
+
+        $target_file = $target_dir . $safe_filename;
+
+        // Move file
+        if (@rename($source_file_path, $target_file)) {
+            log_message('info', '[Tool_bom_tooling::_move_file_to_attachment_folder] File successfully moved to: ' . $target_file);
+            return true;
+        } else {
+            // Try copy if rename fails
+            if (@copy($source_file_path, $target_file)) {
+                @unlink($source_file_path);
+                log_message('info', '[Tool_bom_tooling::_move_file_to_attachment_folder] File successfully copied to: ' . $target_file);
+                return true;
+            } else {
+                $error = error_get_last();
+                log_message('error', '[Tool_bom_tooling::_move_file_to_attachment_folder] Cannot move file to: ' . $target_file . '. Error: ' . ($error ? $error['message'] : 'Unknown'));
+                return false;
+            }
+        }
     }
 }
