@@ -10,7 +10,7 @@ class M_tool_scrap extends CI_Model
     private $db_tms;
     private $db_name = 'TMS_NEW';
     private $tbl;
-    
+
     public $messages = '';
     public $uid = '';
 
@@ -103,7 +103,7 @@ class M_tool_scrap extends CI_Model
             11 => 'ISNULL(scrap.SCRAP_CAUSE_REMARK, \'\')',
             12 => '\'Scrap\'' // Suggestion - always "Scrap", search for "Scrap" text
         );
-        
+
         foreach ($column_search as $col_idx => $col_val) {
             if (!empty($col_val) && isset($col_search_map[$col_idx])) {
                 if ($col_idx == 12) {
@@ -265,7 +265,7 @@ class M_tool_scrap extends CI_Model
         $status = (int)$status;
         $status_name = $this->get_status_name($status);
         $badge_class = 'badge-secondary';
-        
+
         switch ($status) {
             case 0: // Pending
                 $badge_class = 'badge-warning';
@@ -280,7 +280,7 @@ class M_tool_scrap extends CI_Model
                 $badge_class = 'badge-secondary';
                 break;
         }
-        
+
         return '<span class="badge ' . $badge_class . '">' . htmlspecialchars($status_name, ENT_QUOTES, 'UTF-8') . '</span>';
     }
 
@@ -298,7 +298,7 @@ class M_tool_scrap extends CI_Model
 
         // Check if scrap has dependencies (e.g., related requisitions)
         // For now, allow delete - add checks if needed
-        
+
         $sql = "DELETE FROM {$this->t('TMS_TOOL_SCRAP')} WHERE SCRAP_ID = ?";
         $ok = $this->db_tms->query($sql, array($id));
 
@@ -434,26 +434,26 @@ class M_tool_scrap extends CI_Model
                         '' AS TOOL_ASSIGNMENT_NO,
                         0 AS PCS_PRODUCED
                     FROM {$this->t('VW_TOOL_INVENTORY')}
-                    WHERE INV_TOOL_ID = ?
+                    WHERE LTRIM(RTRIM(INV_TOOL_ID)) = ?
                     ORDER BY INV_ID DESC";
-            
+
             log_message('debug', '[M_tool_scrap::get_tool_inventory_details_by_tool_id] Querying Tool ID using VW_TOOL_INVENTORY: [' . $tool_id . ']');
-            
+
             $q = $this->db_tms->query($sql, array($tool_id));
-            
+
             if (!$q) {
                 $error = $this->db_tms->error();
                 $error_msg = isset($error['message']) ? $error['message'] : 'Unknown error';
                 log_message('error', '[M_tool_scrap::get_tool_inventory_details_by_tool_id] Query error: ' . $error_msg . ' - Tool ID: [' . $tool_id . ']');
                 log_message('error', '[M_tool_scrap::get_tool_inventory_details_by_tool_id] SQL: ' . $sql);
-                
+
                 // Fallback: Try manual query if VIEW doesn't work
                 return $this->get_tool_inventory_details_manual($tool_id);
             }
-            
+
             if ($q->num_rows() > 0) {
                 $result = $q->row_array();
-                
+
                 // Get Tool Assignment No and Pcs Produced separately (not in VIEW)
                 $inv_id = isset($result['INV_ID']) ? (int)$result['INV_ID'] : 0;
                 if ($inv_id > 0) {
@@ -468,7 +468,7 @@ class M_tool_scrap extends CI_Model
                         $assign_row = $assign_q->row_array();
                         $result['TOOL_ASSIGNMENT_NO'] = isset($assign_row['TASGN_ASSIGN_NO']) ? $assign_row['TASGN_ASSIGN_NO'] : '';
                     }
-                    
+
                     // Pcs Produced
                     $pcs_sql = "SELECT SUM(ISNULL(ASSGN_QTY_PRODUCED, 0)) AS PCS_PRODUCED
                                 FROM {$this->t('TMS_ASSIGNED_TOOLS')}
@@ -479,7 +479,7 @@ class M_tool_scrap extends CI_Model
                         $result['PCS_PRODUCED'] = isset($pcs_row['PCS_PRODUCED']) ? (int)$pcs_row['PCS_PRODUCED'] : 0;
                     }
                 }
-                
+
                 log_message('debug', '[M_tool_scrap::get_tool_inventory_details_by_tool_id] Found data for Tool ID: [' . $tool_id . ']');
                 log_message('debug', '[M_tool_scrap::get_tool_inventory_details_by_tool_id] TOOL_NAME: [' . (isset($result['TOOL_NAME']) ? $result['TOOL_NAME'] : 'N/A') . '], MATERIAL: [' . (isset($result['MATERIAL']) ? $result['MATERIAL'] : 'N/A') . '], RQ_NO: [' . (isset($result['RQ_NO']) ? $result['RQ_NO'] : 'N/A') . '], TOOL_PRICE: [' . (isset($result['TOOL_PRICE']) ? $result['TOOL_PRICE'] : 'N/A') . ']');
                 return $result;
@@ -494,7 +494,7 @@ class M_tool_scrap extends CI_Model
             return $this->get_tool_inventory_details_manual($tool_id);
         }
     }
-    
+
     /**
      * Fallback method: Manual query if VIEW doesn't work
      */
@@ -522,12 +522,12 @@ class M_tool_scrap extends CI_Model
                     LEFT JOIN {$this->t('TMS_ORDERING')} ord ON ord.ORD_ID = ordi.ORDI_ORD_ID
                     WHERE inv.INV_TOOL_ID = ?
                     ORDER BY inv.INV_ID DESC";
-            
+
             $q = $this->db_tms->query($sql, array($tool_id));
-            
+
             if ($q && $q->num_rows() > 0) {
                 $result = $q->row_array();
-                
+
                 // Get Tool Assignment No and Pcs Produced
                 $inv_id = isset($result['INV_ID']) ? (int)$result['INV_ID'] : 0;
                 if ($inv_id > 0) {
@@ -541,7 +541,7 @@ class M_tool_scrap extends CI_Model
                         $assign_row = $assign_q->row_array();
                         $result['TOOL_ASSIGNMENT_NO'] = isset($assign_row['TASGN_ASSIGN_NO']) ? $assign_row['TASGN_ASSIGN_NO'] : '';
                     }
-                    
+
                     $pcs_sql = "SELECT SUM(ISNULL(ASSGN_QTY_PRODUCED, 0)) AS PCS_PRODUCED
                                 FROM {$this->t('TMS_ASSIGNED_TOOLS')}
                                 WHERE ASSGN_INV_ID = ?";
@@ -551,11 +551,11 @@ class M_tool_scrap extends CI_Model
                         $result['PCS_PRODUCED'] = isset($pcs_row['PCS_PRODUCED']) ? (int)$pcs_row['PCS_PRODUCED'] : 0;
                     }
                 }
-                
+
                 log_message('debug', '[M_tool_scrap::get_tool_inventory_details_manual] Found data for Tool ID: [' . $tool_id . ']');
                 return $result;
             }
-            
+
             return null;
         } catch (Exception $e) {
             log_message('error', '[M_tool_scrap::get_tool_inventory_details_manual] Exception: ' . $e->getMessage());
@@ -607,4 +607,3 @@ class M_tool_scrap extends CI_Model
         return 'SCRAP-000001';
     }
 }
-

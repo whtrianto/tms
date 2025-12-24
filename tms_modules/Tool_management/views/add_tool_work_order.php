@@ -829,6 +829,7 @@
         // Form submit Work Order
         $('#formWorkOrder').on('submit', function(e) {
             e.preventDefault();
+            e.stopPropagation(); // Prevent browser default validation
             
             // Validate Requested By
             var requestedBy = $('#selected_user_id').val();
@@ -839,12 +840,24 @@
                     alert('Requested By harus dipilih.');
                 }
                 $('#modalSelectUser').modal('show');
-                return;
+                return false;
             }
             
+            // Check HTML5 validation without showing browser default
             if (!this.checkValidity()) {
                 $(this).addClass('was-validated');
-                return;
+                // Find first invalid field and show custom message
+                var firstInvalid = this.querySelector(':invalid');
+                if (firstInvalid) {
+                    var fieldName = firstInvalid.getAttribute('name') || firstInvalid.getAttribute('id');
+                    if (typeof toastr !== 'undefined') {
+                        toastr.warning('Mohon lengkapi semua field yang wajib diisi.');
+                    } else {
+                        alert('Mohon lengkapi semua field yang wajib diisi.');
+                    }
+                    firstInvalid.focus();
+                }
+                return false;
             }
 
             var formData = new FormData(this);
@@ -860,28 +873,34 @@
                 timeout: 30000
             }).done(function(res) {
                 if (res && res.success) {
+                    // Only show one notification
+                    var message = res.message || 'Work Order berhasil ditambahkan';
                     if (typeof toastr !== 'undefined') {
-                        toastr.success(res.message || 'Work Order berhasil ditambahkan');
+                        toastr.success(message);
                     } else {
-                        alert(res.message || 'Work Order berhasil ditambahkan');
+                        alert(message);
                     }
                     setTimeout(function() {
                         window.location.href = '<?= base_url("Tool_management/tool_work_order"); ?>';
                     }, 1000);
                 } else {
+                    var errorMsg = (res && res.message) ? res.message : 'Gagal menyimpan Work Order';
                     if (typeof toastr !== 'undefined') {
-                        toastr.warning(res && res.message ? res.message : 'Gagal menyimpan Work Order');
+                        toastr.warning(errorMsg);
                     } else {
-                        alert(res && res.message ? res.message : 'Gagal menyimpan Work Order');
+                        alert(errorMsg);
                     }
                 }
             }).fail(function(xhr, status, error) {
+                var errorMsg = 'Gagal menyimpan: ' + (error || status);
                 if (typeof toastr !== 'undefined') {
-                    toastr.error('Gagal menyimpan: ' + (error || status));
+                    toastr.error(errorMsg);
                 } else {
-                    alert('Gagal menyimpan: ' + (error || status));
+                    alert(errorMsg);
                 }
             });
+            
+            return false;
         });
     });
 })(jQuery);
