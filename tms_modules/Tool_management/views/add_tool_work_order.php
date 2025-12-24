@@ -669,9 +669,19 @@
             $(this).closest('tr').trigger('click');
         });
 
+        // Flag to prevent multiple calls
+        var isLoadingToolDetails = false;
+
         // Handle Tool ID Selection
         $('#tableToolInventory tbody').on('click', 'tr.clickable-row, .btn-select-tool-id', function(e) {
             e.preventDefault();
+            e.stopPropagation(); // Prevent event bubbling
+            
+            // Prevent multiple calls
+            if (isLoadingToolDetails) {
+                return false;
+            }
+            
             var $row = $(this).closest('tr');
             var toolId = $row.data('tool-id') || $(this).data('tool-id');
             var invId = $row.data('inv-id') || $(this).data('inv-id');
@@ -680,8 +690,11 @@
                 if (typeof toastr !== 'undefined') {
                     toastr.warning('Tool ID tidak valid');
                 }
-                return;
+                return false;
             }
+            
+            // Set loading flag
+            isLoadingToolDetails = true;
             
             // Set Tool ID display
             $('#selected_tool_id').val(toolId);
@@ -693,17 +706,22 @@
             
             // Load Tool Inventory details to auto-fill fields
             loadToolInventoryDetails(toolId);
+            
+            return false;
         });
 
         $('#tableToolInventory tbody').on('click', 'a.select-tool-id-link', function(e) {
             e.preventDefault();
+            e.stopPropagation(); // Prevent event bubbling
             $(this).closest('tr').trigger('click');
+            return false;
         });
 
         // Function to load Tool Inventory details (PHP 5.6.36 & CI3 compatible)
         function loadToolInventoryDetails(toolId) {
             if (!toolId || toolId === '') {
                 clearToolFields();
+                isLoadingToolDetails = false;
                 return;
             }
 
@@ -711,6 +729,7 @@
             toolId = String(toolId).replace(/^\s+|\s+$/g, '');
             if (toolId === '') {
                 clearToolFields();
+                isLoadingToolDetails = false;
                 return;
             }
 
@@ -728,6 +747,7 @@
                 }
             }).done(function(res) {
                 $toolIdDisplay.val(originalVal);
+                isLoadingToolDetails = false; // Reset flag
                 
                 // Check response structure (compatible with PHP 5.6.36)
                 if (res && typeof res === 'object') {
@@ -745,10 +765,12 @@
                         $('#revision_display').text(revision);
                         $('#tool_name_display').text(toolName);
                         
-                        // Show success message
-                        if (typeof toastr !== 'undefined') {
-                            toastr.success('Tool Information loaded successfully');
-                        }
+                        // Show success message only once (removed duplicate notification)
+                        // User can see the fields are filled, so notification is optional
+                        // Commented out to prevent duplicate notifications
+                        // if (typeof toastr !== 'undefined') {
+                        //     toastr.success('Tool Information loaded successfully');
+                        // }
                     } else {
                         clearToolFields();
                         var errorMsg = (res.message !== undefined) ? String(res.message) : 'Tool ID tidak ditemukan';
@@ -769,6 +791,7 @@
             }).fail(function(xhr, status, error) {
                 $toolIdDisplay.val(originalVal);
                 clearToolFields();
+                isLoadingToolDetails = false; // Reset flag
                 
                 // Try to parse error response
                 var errorMsg = 'Gagal memuat data Tool';
