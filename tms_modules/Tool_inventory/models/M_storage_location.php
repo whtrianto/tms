@@ -3,15 +3,15 @@ defined('BASEPATH') or exit('No direct script access allowed');
 
 class M_storage_location extends CI_Model
 {
-    private $table = 'TMS_STORAGE_LOCATION';
-    private $primary_key = 'STORAGE_LOCATION_ID';
+    private $table = 'MS_STORAGE_LOCATION';
+    private $primary_key = 'SL_ID';
     private $tms_db;
     public $messages;
 
     public function __construct()
     {
         parent::__construct();
-        $this->tms_db = $this->load->database('tms_db', TRUE);
+        $this->tms_db = $this->load->database('tms_NEW', TRUE);
     }
 
     /**
@@ -21,7 +21,7 @@ class M_storage_location extends CI_Model
     {
         return $this->tms_db
             ->where('IS_DELETED', 0)
-            ->order_by('STORAGE_LOCATION_NAME', 'ASC')
+            ->order_by('SL_NAME', 'ASC')
             ->get($this->table)
             ->result_array();
     }
@@ -47,7 +47,7 @@ class M_storage_location extends CI_Model
         $name = trim((string)$name);
         if ($name === '') return false;
 
-        $this->tms_db->where('LOWER(STORAGE_LOCATION_NAME)', strtolower($name));
+        $this->tms_db->where('LOWER(SL_NAME)', strtolower($name));
         $this->tms_db->where('IS_DELETED', 0);
         if ($exclude_id !== null) {
             $this->tms_db->where($this->primary_key . ' <>', (int)$exclude_id);
@@ -80,9 +80,8 @@ class M_storage_location extends CI_Model
         }
 
         $data = [
-            'STORAGE_LOCATION_ID'   => $this->get_new_sequence(),
-            'STORAGE_LOCATION_NAME' => $name,
-            'STORAGE_LOCATION_DESC' => $desc ?: NULL,
+            'SL_NAME' => $name,
+            'SL_DESC' => $desc ?: NULL,
             'IS_DELETED'            => 0
         ];
 
@@ -106,9 +105,9 @@ class M_storage_location extends CI_Model
             $this->messages = 'Storage Location ID tidak valid.';
             return false;
         }
-        
+
         // Tidak ada kolom audit (UPDATED_AT/BY)
-        
+
         $this->tms_db->trans_begin();
         $ok = $this->tms_db->where($this->primary_key, $id)
             ->update($this->table, $data);

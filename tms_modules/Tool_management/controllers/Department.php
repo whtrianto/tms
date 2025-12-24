@@ -30,7 +30,7 @@ class Department extends MY_Controller
     {
         $data = array();
         $data['list_data'] = $this->department->get_data_master_departments();
-        
+
         $this->view('index_department', $data, FALSE);
     }
 
@@ -83,8 +83,8 @@ class Department extends MY_Controller
             }
 
             $dataUpdate = [
-                'DEPARTMENT_NAME' => $name,
-                'DEPARTMENT_DESC' => trim((string)$this->input->post('department_desc')) ?: NULL
+                'DEPART_NAME' => $name,
+                'DEPART_DESC' => trim((string)$this->input->post('department_desc')) ?: NULL
             ];
 
             $ok = $this->department->update_by_id($id, $dataUpdate, $this->uid);

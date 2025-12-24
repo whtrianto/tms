@@ -1,12 +1,38 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <?= $head; ?>
     <style>
-        html, body, #content-wrapper { color: #000; }
-        .table, .card, .modal, .dropdown-menu, .form-text, .dataTables_wrapper, label, .invalid-feedback, .valid-feedback { color: #000; }
-        .form-control, .custom-select, input, textarea, select { color: #000 !important; }
-        ::placeholder { color: #000 !important; }
+        html,
+        body,
+        #content-wrapper {
+            color: #000;
+        }
+
+        .table,
+        .card,
+        .modal,
+        .dropdown-menu,
+        .form-text,
+        .dataTables_wrapper,
+        label,
+        .invalid-feedback,
+        .valid-feedback {
+            color: #000;
+        }
+
+        .form-control,
+        .custom-select,
+        input,
+        textarea,
+        select {
+            color: #000 !important;
+        }
+
+        ::placeholder {
+            color: #000 !important;
+        }
     </style>
 </head>
 
@@ -42,9 +68,9 @@
                                             <?php foreach ($list_data as $key => $value) : ?>
                                                 <tr>
                                                     <td><?= $key + 1; ?></td>
-                                                    <td><?= $value['DEPARTMENT_ID']; ?></td>
-                                                    <td><?= $value['DEPARTMENT_NAME']; ?></td>
-                                                    <td><?= $value['DEPARTMENT_DESC']; ?></td>
+                                                    <td><?= $value['DEPART_ID']; ?></td>
+                                                    <td><?= $value['DEPART_NAME']; ?></td>
+                                                    <td><?= $value['DEPART_DESC']; ?></td>
                                                     <td>
                                                         <div style="display: flex; justify-content: center; gap: 8px;">
                                                             <button type="button" class="btn btn-secondary btn-sm btn-edit"
@@ -52,8 +78,8 @@
                                                                 Edit
                                                             </button>
                                                             <button type="button" class="btn btn-danger btn-sm btn-delete"
-                                                                data-id="<?= $value['DEPARTMENT_ID'] ?>"
-                                                                data-name="<?= htmlspecialchars($value['DEPARTMENT_NAME'], ENT_QUOTES, 'UTF-8') ?>">
+                                                                data-id="<?= $value['DEPART_ID'] ?>"
+                                                                data-name="<?= htmlspecialchars($value['DEPART_NAME'], ENT_QUOTES, 'UTF-8') ?>">
                                                                 Delete
                                                             </button>
                                                         </div>
@@ -81,7 +107,7 @@
                                     <input type="hidden" name="action">
                                     <input type="hidden" name="department_id">
                                     <div class="form-group">
-                                        <label for="department_name" class="form-label">DEPARTMENT NAME <span class="text-danger">*</span></label>
+                                        <label for="department_name" class="form-label">DEPART NAME <span class="text-danger">*</span></label>
                                         <input type="text" class="form-control" id="department_name" name="department_name" placeholder="Nama Department" required>
                                     </div>
                                     <div class="form-group">
@@ -111,10 +137,18 @@
     <script>
         $(function() {
             var table = $('#table-department').DataTable({
-                "lengthMenu": [ [10, 25, 50, 100, -1], [10, 25, 50, 100, "ALL"] ],
+                "lengthMenu": [
+                    [10, 25, 50, 100, -1],
+                    [10, 25, 50, 100, "ALL"]
+                ],
                 "pageLength": 25,
-                "columnDefs": [{ "orderable": false, "targets": [0, 4] }], 
-                order: [ [1, 'asc'] ], 
+                "columnDefs": [{
+                    "orderable": false,
+                    "targets": [0, 4]
+                }],
+                order: [
+                    [1, 'asc']
+                ],
                 "fnRowCallback": function(nRow, aData, iDisplayIndex, iDisplayIndexFull) {
                     $('td:eq(0)', nRow).html(iDisplayIndexFull + 1);
                 },
@@ -148,9 +182,9 @@
                 $("input[name='action']").val("EDIT");
 
                 // Isi form dengan data
-                $("input[name=department_id]").val(data.DEPARTMENT_ID);
-                $("input[name=department_name]").val(data.DEPARTMENT_NAME);
-                $("textarea[name=department_desc]").val(data.DEPARTMENT_DESC);
+                $("input[name=department_id]").val(data.DEPART_ID);
+                $("input[name=department_name]").val(data.DEPART_NAME);
+                $("textarea[name=department_desc]").val(data.DEPART_DESC);
 
                 $("#modalFormInput").modal('show');
             });
@@ -161,7 +195,7 @@
             });
 
             $('#formInput').on('submit', function(event) {
-                event.preventDefault(); 
+                event.preventDefault();
                 var inputData = $(this).serializeArray();
                 $.ajax({
                     url: $('#formInput').attr('action'),
@@ -170,11 +204,17 @@
                     dataType: "json",
                     success: function(response) {
                         if (response.success) {
-                            toastr.success(response.message, 'Success', { timeOut: 3000 });
-                            $('#modalFormInput').modal('hide'); 
-                            setTimeout(function(){ location.reload(); }, 1000); 
+                            toastr.success(response.message, 'Success', {
+                                timeOut: 3000
+                            });
+                            $('#modalFormInput').modal('hide');
+                            setTimeout(function() {
+                                location.reload();
+                            }, 1000);
                         } else {
-                            toastr.warning(response.message.replace(/<p>/g, '').replace(/<\/p>/g, '<br>'), 'Warning', { timeOut: 5000 });
+                            toastr.warning(response.message.replace(/<p>/g, '').replace(/<\/p>/g, '<br>'), 'Warning', {
+                                timeOut: 5000
+                            });
                         }
                     },
                     error: function(xhr, status, error) {
@@ -198,11 +238,15 @@
                     url: '<?= site_url("tool_management/department/delete_data") ?>',
                     type: 'POST',
                     dataType: 'json',
-                    data: { department_id: departmentId }
+                    data: {
+                        department_id: departmentId
+                    }
                 }).done(function(resp) {
                     if (resp && resp.success) {
                         toastr.success(resp.message || 'Data terhapus', 'Success!');
-                        setTimeout(function() { location.reload(); }, 800);
+                        setTimeout(function() {
+                            location.reload();
+                        }, 800);
                     } else {
                         toastr.error((resp && resp.message) || 'Gagal menghapus.', 'Error!');
                     }
@@ -213,4 +257,5 @@
         });
     </script>
 </body>
+
 </html>

@@ -355,7 +355,7 @@
                                             <label>Drawing File</label>
                                             <input type="file" name="TD_DRAWING_FILE" id="input_drawing_file" class="form-control" accept="*">
                                             <div id="drawing_file_info" class="small text-muted mt-1" style="display:none;"></div>
-                                            <small class="form-text text-muted">Wajib diunggah saat membuat data baru. Jika Tool Drawing No. sudah memiliki file, field ini tidak bisa diedit.</small>
+                                            <small class="form-text text-muted">*Opsional</small>
                                         </div>
                                     </div>
                                 </form>
@@ -366,7 +366,7 @@
                             </div>
                         </div>
                     </div>
-                </div>
+                </div><br><br><br>
 
             </div>
             <?= isset($modal_logout) ? $modal_logout : ''; ?>
@@ -692,4 +692,3 @@
 </script>
 </body>
 </html>
-

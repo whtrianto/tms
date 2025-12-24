@@ -665,4 +665,3 @@ class M_tool_bom_tooling extends CI_Model
         return $q && $q->num_rows() > 0 ? $q->result_array() : array();
     }
 }
-

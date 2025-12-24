@@ -1,4 +1,4 @@
-<?php
+﻿﻿<?php
 defined('BASEPATH') or exit('No direct script access allowed');
 
 /**
@@ -1755,4 +1755,3 @@ class Tool_draw_engin extends MY_Controller
         return false;
     }
 }
-

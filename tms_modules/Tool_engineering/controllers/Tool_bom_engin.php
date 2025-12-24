@@ -452,4 +452,3 @@ class Tool_bom_engin extends MY_Controller
         $this->view('detail_tool_bom_engin', $data, FALSE);
     }
 }
-

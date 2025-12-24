@@ -41,16 +41,16 @@
                                 <tbody>
                                     <?php foreach ($list_data as $row): ?>
                                         <tr>
-                                            <td><?= (int)$row['TOOL_TYPE_ID']; ?></td>
-                                            <td class="text-left"><?= htmlspecialchars($row['TOOL_TYPE_NAME'], ENT_QUOTES, 'UTF-8'); ?></td>
-                                            <td class="text-left"><?= htmlspecialchars(isset($row['TOOL_TYPE_DESC']) ? $row['TOOL_TYPE_DESC'] : '', ENT_QUOTES, 'UTF-8'); ?></td>
+                                            <td><?= (int)$row['TT_ID']; ?></td>
+                                            <td class="text-left"><?= htmlspecialchars($row['TT_NAME'], ENT_QUOTES, 'UTF-8'); ?></td>
+                                            <td class="text-left"><?= htmlspecialchars(isset($row['TT_DESC']) ? $row['TT_DESC'] : '', ENT_QUOTES, 'UTF-8'); ?></td>
                                             <td>
                                                 <div style="display:flex; justify-content:center; gap:8px;">
                                                     <button class="btn btn-secondary btn-sm btn-edit"
                                                         data-edit='<?= htmlspecialchars(json_encode($row), ENT_QUOTES, 'UTF-8') ?>'>Edit</button>
                                                     <button class="btn btn-danger btn-sm btn-delete"
-                                                        data-id="<?= (int)$row['TOOL_TYPE_ID']; ?>"
-                                                        data-name="<?= htmlspecialchars($row['TOOL_TYPE_NAME'], ENT_QUOTES, 'UTF-8'); ?>">Delete</button>
+                                                        data-id="<?= (int)$row['TT_ID']; ?>"
+                                                        data-name="<?= htmlspecialchars($row['TT_NAME'], ENT_QUOTES, 'UTF-8'); ?>">Delete</button>
                                                 </div>
                                             </td>
                                         </tr>
@@ -72,15 +72,15 @@
                             <div class="modal-body">
                                 <form id="formToolType" method="post" action="<?= base_url('tool_engineering/tool_type/submit_data'); ?>">
                                     <input type="hidden" name="action" value="">
-                                    <input type="hidden" name="TOOL_TYPE_ID" value="">
+                                    <input type="hidden" name="TT_ID" value="">
                                     <div class="form-group">
                                         <label class="label-required">Tool Type Name</label>
-                                        <input type="text" name="TOOL_TYPE_NAME" class="form-control">
+                                        <input type="text" name="TT_NAME" class="form-control">
                                         <div class="invalid-feedback">Tool Type name wajib diisi.</div>
                                     </div>
                                     <div class="form-group">
                                         <label>Description</label>
-                                        <textarea name="TOOL_TYPE_DESC" class="form-control" rows="3"></textarea>
+                                        <textarea name="TT_DESC" class="form-control" rows="3"></textarea>
                                     </div>
                                 </form>
                             </div>
@@ -129,8 +129,8 @@
                 $('#btn-new').on('click', function() {
                     $('#formToolType')[0].reset();
                     $('input[name="action"]').val('ADD');
-                    $('input[name="TOOL_TYPE_ID"]').val('');
-                    $('[name="TOOL_TYPE_NAME"]').removeClass('is-invalid');
+                    $('input[name="TT_ID"]').val('');
+                    $('[name="TT_NAME"]').removeClass('is-invalid');
                     $('#modalForm').modal('show');
                 });
 
@@ -144,10 +144,10 @@
                     }
                     $('#formToolType')[0].reset();
                     $('input[name="action"]').val('EDIT');
-                    $('input[name="TOOL_TYPE_ID"]').val(d.TOOL_TYPE_ID);
-                    $('[name="TOOL_TYPE_NAME"]').val(d.TOOL_TYPE_NAME);
-                    $('[name="TOOL_TYPE_DESC"]').val(d.TOOL_TYPE_DESC || '');
-                    $('[name="TOOL_TYPE_NAME"]').removeClass('is-invalid');
+                    $('input[name="TT_ID"]').val(d.TT_ID);
+                    $('[name="TT_NAME"]').val(d.TT_NAME);
+                    $('[name="TT_DESC"]').val(d.TT_DESC || '');
+                    $('[name="TT_NAME"]').removeClass('is-invalid');
                     $('#modalForm').modal('show');
                 });
 
@@ -159,9 +159,9 @@
 
                 $('#formToolType').on('submit', function(e) {
                     e.preventDefault();
-                    var name = $.trim($('[name="TOOL_TYPE_NAME"]').val());
+                    var name = $.trim($('[name="TT_NAME"]').val());
                     if (name === '') {
-                        $('[name="TOOL_TYPE_NAME"]').addClass('is-invalid');
+                        $('[name="TT_NAME"]').addClass('is-invalid');
                         return;
                     }
                     $.ajax({
@@ -198,7 +198,7 @@
                         type: 'POST',
                         dataType: 'json',
                         data: {
-                            TOOL_TYPE_ID: id
+                            TT_ID: id
                         }
                     }).done(function(res) {
                         if (res && res.success) {

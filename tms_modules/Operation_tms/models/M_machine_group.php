@@ -3,20 +3,20 @@ defined('BASEPATH') or exit('No direct script access allowed');
 
 /**
  * Model ini HANYA untuk mengelola item GRUP (IS_GROUP = 1)
- * di tabel TMS_M_MACHINES
+ * di tabel MAC_ID
  * @property M_machines $machines (helper)
  */
 class M_machine_group extends CI_Model
 {
-    private $table = 'TMS_M_MACHINES';
-    private $primary_key = 'MACHINE_ID';
+    private $table = 'MS_MACHINES';
+    private $primary_key = 'MAC_ID';
     private $tms_db;
     public $messages;
 
     public function __construct()
     {
         parent::__construct();
-        $this->tms_db = $this->load->database('tms_db', TRUE);
+        $this->tms_db = $this->load->database('tms_NEW', TRUE);
         // Kita butuh M_machines untuk 'get_new_sequence' dan 'is_name_duplicate'
         $this->load->model('M_machines', 'machines');
     }
@@ -26,18 +26,19 @@ class M_machine_group extends CI_Model
      */
     public function get_data_master_groups()
     {
-        $tbl_ops = 'TMS_M_OPERATION';
-        return $this->tms_db
-            ->select("M.*, O.OPERATION_NAME")
-            ->from("{$this->table} M")
-            ->join("{$tbl_ops} O", "O.OPERATION_ID = M.OPERATION_ID", 'left')
-            ->where('M.IS_DELETED', 0)
-            ->where('M.IS_GROUP', 1) // <-- HANYA GRUP
-            ->order_by('M.MACHINE_NAME', 'ASC')
-            ->get()
-            ->result_array();
+        $tbl_ops = 'MS_OPERATION';
+        // Gunakan parameter FALSE di select agar CI tidak otomatis menambah backtick yang kadang merusak query SQL Server
+        $this->tms_db->select("M.*, O.OP_NAME", FALSE);
+        $this->tms_db->from("{$this->table} M");
+        $this->tms_db->join("{$tbl_ops} O", "O.OP_ID = M.MAC_OP_ID", 'left');
+        $this->tms_db->where('M.IS_DELETED', 0);
+        $this->tms_db->where('M.MAC_IS_GROUP', 1);
+        $this->tms_db->order_by('M.MAC_NAME', 'ASC');
+
+        $query = $this->tms_db->get();
+        return $query->result_array();
     }
-    
+
     /**
      * Ambil data dropdown operation
      */
@@ -50,7 +51,7 @@ class M_machine_group extends CI_Model
         }
         return $this->machines->get_all_operations();
     }
-    
+
     /**
      * Ambil detail 1 grup (untuk edit)
      */
@@ -58,7 +59,7 @@ class M_machine_group extends CI_Model
     {
         return $this->tms_db
             ->where($this->primary_key, (int)$id)
-            ->where('IS_GROUP', 1)
+            ->where('MAC_IS_GROUP', 1)
             ->get($this->table)
             ->row_array();
     }
@@ -68,7 +69,7 @@ class M_machine_group extends CI_Model
     public function add_data($actor = 'SYSTEM')
     {
         $machine_name = trim((string)$this->input->post('machine_name'));
-        $operation_id = (int)$this->input->post('operation_id') ?: NULL;
+        $operation_id = (int)$this->input->post('operation_id');
 
         if ($machine_name === '') {
             $this->messages = "Group Name tidak boleh kosong.";
@@ -80,12 +81,11 @@ class M_machine_group extends CI_Model
         }
 
         $data = [
-            'MACHINE_ID'        => $this->machines->get_new_sequence(),
-            'MACHINE_NAME'      => $machine_name,
-            'OPERATION_ID'      => $operation_id,
-            'IS_GROUP'          => 1, 
-            'PARENT_ID'         => NULL, 
-            'CHARGE_RATE'       => NULL, 
+            // 'MAC_ID'        => $this->machines->get_new_sequence(),
+            'MAC_NAME'      => $machine_name,
+            'MAC_OP_ID'      => $operation_id,
+            'MAC_IS_GROUP'          => 1,
+            'MAC_CHARGE_RATE'       => NULL,
             'IS_DELETED'        => 0,
             'IS_ACTIVE'         => 1,
             'CREATED_AT'        => date('Y-m-d H:i:s'),
@@ -121,10 +121,9 @@ class M_machine_group extends CI_Model
         }
 
         $dataUpdate = [
-            'MACHINE_NAME' => $machine_name,
-            'OPERATION_ID' => $operation_id,
-            'IS_GROUP'     => 1, // Pastikan tetap grup
-            'PARENT_ID'    => NULL,
+            'MAC_NAME' => $machine_name,
+            'MAC_OP_ID' => $operation_id,
+            'MAC_IS_GROUP'     => 1, // Pastikan tetap grup           
             'UPDATED_AT'   => date('Y-m-d H:i:s'),
             'UPDATED_BY'   => $actor
         ];
@@ -146,7 +145,7 @@ class M_machine_group extends CI_Model
     {
         return $this->machines->delete_data($machine_id, $actor);
     }
-    
+
 
     public function is_parent($machine_id)
     {

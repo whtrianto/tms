@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <?= $head; ?>
@@ -161,6 +161,7 @@
             </div>
             <?= isset($modal_logout) ? $modal_logout : ''; ?>
         </div>
+        <br><br><br><br>
         <?= isset($footer) ? $footer : ''; ?>
     </div>
 </div>
@@ -265,4 +266,3 @@
 </script>
 </body>
 </html>
-

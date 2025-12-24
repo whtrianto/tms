@@ -92,30 +92,30 @@
                                             <?php foreach ($list_data as $k => $row): ?>
                                                 <tr>
                                                     <!-- <td><?= $k + 1 ?></td> -->
-                                                    <td><?= (int)$row['PRODUCT_ID']; ?></td>
+                                                    <td><?= (int)$row['PART_ID']; ?></td>
                                                     <td class="text-left">
-                                                        <a href="<?= base_url('product_tms/product/detail/' . (int)$row['PRODUCT_ID']); ?>" class="product-link">
-                                                            <?= htmlspecialchars($row['PRODUCT_NAME']); ?>
+                                                        <a href="<?= base_url('product_tms/product/detail/' . (int)$row['PART_ID']); ?>" class="product-link">
+                                                            <?= htmlspecialchars($row['PART_NAME']); ?>
                                                         </a>
                                                     </td>
                                                     <td class="text-left">
-                                                        <?= htmlspecialchars(isset($row['PRODUCT_DESC']) ? $row['PRODUCT_DESC'] : ''); ?>
+                                                        <?= htmlspecialchars(isset($row['PART_DESC']) ? $row['PART_DESC'] : ''); ?>
                                                     </td>
                                                     <td>
-                                                        <?= htmlspecialchars(isset($row['PRODUCT_CUSTOMER_CODE']) ? $row['PRODUCT_CUSTOMER_CODE'] : ''); ?>
+                                                        <?= htmlspecialchars(isset($row['PART_CUS_CODE']) ? $row['PART_CUS_CODE'] : ''); ?>
                                                     </td>
                                                     <td>
-                                                        <?= htmlspecialchars(isset($row['PRODUCT_TYPE']) ? $row['PRODUCT_TYPE'] : ''); ?>
+                                                        <?= htmlspecialchars(isset($row['PART_TYPE']) ? $row['PART_TYPE'] : ''); ?>
                                                     </td>
                                                     <td>
                                                         <div style="display:flex; justify-content:center; gap:8px;">
                                                             <button type="button" class="btn btn-secondary btn-sm btn-edit"
-                                                                data-edit='<?= htmlspecialchars(json_encode($row), ENT_QUOTES, "UTF-8"); ?>'>
+                                                                data-id="<?= (int)$row['PART_ID']; ?>">
                                                                 Edit
                                                             </button>
                                                             <button type="button" class="btn btn-danger btn-sm btn-delete"
-                                                                data-id="<?= (int)$row['PRODUCT_ID']; ?>"
-                                                                data-name="<?= htmlspecialchars($row['PRODUCT_NAME'], ENT_QUOTES, 'UTF-8'); ?>">
+                                                                data-id="<?= (int)$row['PART_ID']; ?>"
+                                                                data-name="<?= htmlspecialchars($row['PART_NAME'], ENT_QUOTES, 'UTF-8'); ?>">
                                                                 Delete
                                                             </button>
                                                         </div>
@@ -143,34 +143,32 @@
                             </div>
                             <div class="modal-body">
                                 <form id="formInput" method="post" action="<?= base_url('product_tms/product/submit_data'); ?>">
-                                    <input type="hidden" name="action" value="">
-                                    <input type="hidden" name="PRODUCT_ID" value="">
-                                    <input type="hidden" name="PRODUCT_IS_GROUP" value="0">
-
+                                    <input type="hidden" name="action" id="form-action" value="">
+                                    <input type="hidden" name="PART_ID" id="form-part-id" value="">
                                     <div class="form-group">
                                         <label class="label-required">Product Name</label>
-                                        <input type="text" class="form-control" name="PRODUCT_NAME">
+                                        <input type="text" class="form-control" name="PART_NAME" id="PART_NAME">
                                         <div class="invalid-feedback">Product name wajib diisi.</div>
                                     </div>
 
                                     <div class="form-group">
                                         <label>Product Group</label>
-                                        <select name="PRODUCT_GROUP_PARENT_ID" class="form-control">
+                                        <select name="PARTM_PARENT_ID" class="form-control select2">
                                             <option value="">-- Pilih Group --</option>
                                             <?php foreach ($product_groups as $g): ?>
-                                                <option value="<?= (int)$g['PRODUCT_ID']; ?>"><?= htmlspecialchars($g['PRODUCT_NAME'], ENT_QUOTES, 'UTF-8'); ?></option>
+                                                <option value="<?= (int)$g['PART_ID']; ?>"><?= htmlspecialchars($g['PART_NAME']); ?></option>
                                             <?php endforeach; ?>
                                         </select>
                                     </div>
 
                                     <div class="form-group">
                                         <label>Description</label>
-                                        <textarea class="form-control" name="PRODUCT_DESC" rows="2"></textarea>
+                                        <textarea class="form-control" name="PART_DESC" rows="2"></textarea>
                                     </div>
 
                                     <div class="form-group">
                                         <label>Product Type</label>
-                                        <input type="text" class="form-control" name="PRODUCT_TYPE">
+                                        <input type="text" class="form-control" name="PART_TYPE">
                                     </div>
 
                                     <div class="form-group">
@@ -185,22 +183,37 @@
 
                                     <div class="form-group">
                                         <label>Customer</label>
-                                        <select name="CUSTOMER_ID" class="form-control">
+                                        <select name="CUS_ID" class="form-control">
                                             <option value="">-- Pilih Customer --</option>
                                             <?php foreach ($customers as $c): ?>
-                                                <option value="<?= (int)$c['CUSTOMER_ID']; ?>"><?= htmlspecialchars($c['CUSTOMER_NAME']); ?></option>
+                                                <option value="<?= (int)$c['CUS_ID']; ?>"><?= htmlspecialchars($c['CUS_NAME']); ?></option>
                                             <?php endforeach; ?>
                                         </select>
                                     </div>
 
                                     <div class="form-group">
                                         <label>Customer Code</label>
-                                        <input type="text" class="form-control" name="PRODUCT_CUSTOMER_CODE">
+                                        <input type="text" class="form-control" name="PART_CUS_CODE">
                                     </div>
 
                                     <div class="form-group">
                                         <label>Drawing No</label>
-                                        <input type="text" class="form-control" name="PRODUCT_DRW_NO">
+                                        <input type="text" class="form-control" name="PART_DRW_NO">
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label>Unit Price</label>
+                                                <input type="number" step="0.01" class="form-control" name="PART_UNIT_PRICE" placeholder="0.00">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label>Weight (kg)</label>
+                                                <input type="number" step="0.001" class="form-control" name="PART_WEIGHT" placeholder="0.000">
+                                            </div>
+                                        </div>
                                     </div>
                                 </form>
                             </div>
@@ -232,9 +245,9 @@
                     [10, 25, 50, 100, -1],
                     [10, 25, 50, 100, "ALL"]
                 ],
-                pageLength: 25,
+                pageLength: 10,
                 order: [
-                    [0, 'asc']
+                    [1, 'asc']
                 ],
                 columnDefs: [{
                     orderable: false,
@@ -261,7 +274,7 @@
 
             function validateForm() {
                 var ok = true;
-                var $name = $('[name="PRODUCT_NAME"]');
+                var $name = $('[name="PART_NAME"]');
                 var $uom = $('[name="UOM_ID"]');
 
                 if ($.trim($name.val()) === '') {
@@ -286,13 +299,13 @@
                 e.preventDefault();
                 $('#formInput')[0].reset();
                 $('input[name="action"]').val('ADD');
-                $('input[name="PRODUCT_ID"]').val('');
-                $('input[name="PRODUCT_IS_GROUP"]').val('0');
-                setValid($('[name="PRODUCT_NAME"]'));
+                $('input[name="PART_ID"]').val('');
+                $('input[name="PART_IS_GROUP"]').val('0');
+                setValid($('[name="PART_NAME"]'));
                 setValid($('[name="UOM_ID"]'));
                 $('#modalFormInputLabel').text('New Product');
                 $('#modalFormInput').modal('show');
-                $('[name="PRODUCT_GROUP_PARENT_ID"]').val('');
+                $('[name="PARTM_PARENT_ID"]').val('');
             });
 
             // helper parse JSON in data-edit (robust)
@@ -312,35 +325,70 @@
 
             function fillForm(d) {
                 if (!d) return;
-                $('[name="PRODUCT_ID"]').val(d.PRODUCT_ID);
-                $('[name="PRODUCT_NAME"]').val(d.PRODUCT_NAME);
-                $('[name="PRODUCT_DESC"]').val(typeof d.PRODUCT_DESC !== 'undefined' ? d.PRODUCT_DESC : '');
-                $('[name="PRODUCT_TYPE"]').val(typeof d.PRODUCT_TYPE !== 'undefined' ? d.PRODUCT_TYPE : '');
+                $('[name="PART_ID"]').val(d.PART_ID);
+                $('[name="PART_NAME"]').val(d.PART_NAME);
+                $('[name="PART_DESC"]').val(typeof d.PART_DESC !== 'undefined' ? d.PART_DESC : '');
+                $('[name="PART_TYPE"]').val(typeof d.PART_TYPE !== 'undefined' ? d.PART_TYPE : '');
+                $('[name="PART_UNIT_PRICE"]').val(d.PART_UNIT_PRICE || 0); // Mapping baru
+                $('[name="PART_WEIGHT"]').val(d.PART_WEIGHT || 0);
                 $('[name="UOM_ID"]').val(typeof d.UOM_ID !== 'undefined' && d.UOM_ID !== null ? d.UOM_ID : '');
-                $('[name="CUSTOMER_ID"]').val(typeof d.CUSTOMER_ID !== 'undefined' && d.CUSTOMER_ID !== null ? d.CUSTOMER_ID : '');
-                $('[name="PRODUCT_CUSTOMER_CODE"]').val(typeof d.PRODUCT_CUSTOMER_CODE !== 'undefined' && d.PRODUCT_CUSTOMER_CODE !== null ? d.PRODUCT_CUSTOMER_CODE : '');
-                $('[name="PRODUCT_DRW_NO"]').val(typeof d.PRODUCT_DRW_NO !== 'undefined' && d.PRODUCT_DRW_NO !== null ? d.PRODUCT_DRW_NO : '');
-                $('[name="PRODUCT_IS_GROUP"]').val((typeof d.PRODUCT_IS_GROUP !== 'undefined') ? d.PRODUCT_IS_GROUP : 0);
-                $('[name="PRODUCT_GROUP_PARENT_ID"]').val(typeof d.PRODUCT_GROUP_PARENT_ID !== 'undefined' ? d.PRODUCT_GROUP_PARENT_ID : '');
+                $('[name="CUS_ID"]').val(typeof d.CUS_ID !== 'undefined' && d.CUS_ID !== null ? d.CUS_ID : '');
+                $('[name="PART_CUS_CODE"]').val(typeof d.PART_CUS_CODE !== 'undefined' && d.PART_CUS_CODE !== null ? d.PART_CUS_CODE : '');
+                $('[name="PART_DRW_NO"]').val(typeof d.PART_DRW_NO !== 'undefined' && d.PART_DRW_NO !== null ? d.PART_DRW_NO : '');
+                $('[name="PART_IS_GROUP"]').val((typeof d.PART_IS_GROUP !== 'undefined') ? d.PART_IS_GROUP : 0);
+                $('[name="PARTM_PARENT_ID"]').val(typeof d.PARTM_PARENT_ID !== 'undefined' ? d.PARTM_PARENT_ID : '');
             }
 
             // Edit (button)
             $('#table-product').on('click', '.btn-edit', function(e) {
                 e.preventDefault();
-                var raw = $(this).attr('data-edit');
-                var d = parseEditData(raw);
-                if (!d) {
-                    toastr.error('Data edit tidak valid.');
+
+                const id = $(this).data('id');
+                if (!id) {
+                    toastr.error('ID tidak valid');
                     return;
                 }
 
-                $('#formInput')[0].reset();
-                setValid($('[name="PRODUCT_NAME"]'));
-                setValid($('[name="UOM_ID"]'));
-                $('input[name="action"]').val('EDIT');
-                $('#modalFormInputLabel').text('Edit Product');
-                fillForm(d);
-                $('#modalFormInput').modal('show');
+                $.ajax({
+                    url: '<?= base_url("product_tms/product/get_product_detail"); ?>',
+                    type: 'POST',
+                    dataType: 'json',
+                    data: {
+                        PART_ID: id
+                    },
+                    success: function(res) {
+                        if (!res || !res.success) {
+                            toastr.error(res.message || 'Gagal mengambil data');
+                            return;
+                        }
+
+                        const d = res.data;
+
+                        $('#formInput')[0].reset();
+                        $('input[name="action"]').val('EDIT');
+                        $('input[name="PART_ID"]').val(d.PART_ID);
+
+                        $('[name="PART_NAME"]').val(d.PART_NAME || '');
+                        $('[name="PART_DESC"]').val(d.PART_DESC || '');
+                        $('[name="PART_TYPE"]').val(d.PART_TYPE || '');
+                        $('[name="PART_CUS_CODE"]').val(d.PART_CUS_CODE || '');
+                        $('[name="PART_DRW_NO"]').val(d.PART_DRW_NO || '');
+
+                        // 🔥 INI YANG SEBELUMNYA KOSONG
+                        $('[name="UOM_ID"]').val(d.PART_UNITS || '').trigger('change');
+                        $('[name="CUS_ID"]').val(d.PART_CUS_ID || '').trigger('change');
+                        $('[name="PARTM_PARENT_ID"]').val(d.PARTM_PARENT_ID || '').trigger('change');
+
+                        $('[name="PART_UNIT_PRICE"]').val(d.PART_UNIT_PRICE || 0);
+                        $('[name="PART_WEIGHT"]').val(d.PART_WEIGHT || 0);
+
+                        $('#modalFormInputLabel').text('Edit Product');
+                        $('#modalFormInput').modal('show');
+                    },
+                    error: function() {
+                        toastr.error('Gagal mengambil data product');
+                    }
+                });
             });
 
             // Submit
@@ -391,7 +439,7 @@
                     type: 'POST',
                     dataType: 'json',
                     data: {
-                        PRODUCT_ID: id
+                        PART_ID: id
                     },
                     success: function(res) {
                         if (res && res.success) {
@@ -410,7 +458,7 @@
             });
 
             $('#modalFormInput').on('hidden.bs.modal', function() {
-                setValid($('[name="PRODUCT_NAME"]'));
+                setValid($('[name="PART_NAME"]'));
                 setValid($('[name="UOM_ID"]'));
             });
         });

@@ -329,4 +329,3 @@ class Tool_bom_tooling extends MY_Controller
         $this->view('detail_tool_bom_tooling', $data, FALSE);
     }
 }
-

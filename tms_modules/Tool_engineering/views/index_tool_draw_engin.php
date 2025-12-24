@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <?= $head; ?>
@@ -64,14 +64,6 @@
         .drawing-no-link:hover {
             color: #0056b3 !important;
             text-decoration: underline !important;
-        }
-        body, html {
-            margin: 0;
-            padding: 0;
-        }
-        #wrapper {
-            margin: 0;
-            padding: 0;
         }
     </style>
 </head>
@@ -478,4 +470,3 @@
 </script>
 </body>
 </html>
-

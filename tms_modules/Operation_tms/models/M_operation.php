@@ -3,8 +3,8 @@ defined('BASEPATH') or exit('No direct script access allowed');
 
 class M_operation extends CI_Model
 {
-    private $table = 'TMS_M_OPERATION';
-    private $primary_key = 'OPERATION_ID';
+    private $table = 'MS_OPERATION';
+    private $primary_key = 'OP_ID';
     private $tms_db;
     public $messages;
 
@@ -12,7 +12,7 @@ class M_operation extends CI_Model
     {
         parent::__construct();
         // Asumsi DB Anda bernama 'tms_db' di config/database.php
-        $this->tms_db = $this->load->database('tms_db', TRUE); 
+        $this->tms_db = $this->load->database('tms_NEW', TRUE);
     }
 
     /**
@@ -22,7 +22,7 @@ class M_operation extends CI_Model
     {
         return $this->tms_db
             ->where('IS_DELETED', 0) // hanya yang aktif
-            ->order_by('OPERATION_NAME', 'ASC') // Urutkan berdasarkan nama
+            ->order_by('OP_NAME', 'ASC') // Urutkan berdasarkan nama
             ->get($this->table)
             ->result_array();
     }
@@ -52,10 +52,10 @@ class M_operation extends CI_Model
 
         // Case-insensitive: gunakan LOWER
         if ($only_active) {
-            $sql = "SELECT TOP 1 * FROM {$this->table} WHERE LOWER(OPERATION_NAME) = ? AND IS_DELETED = 0";
+            $sql = "SELECT TOP 1 * FROM {$this->table} WHERE LOWER(OP_NAME) = ? AND IS_DELETED = 0";
             $params = [strtolower($operation_name)];
         } else {
-            $sql = "SELECT TOP 1 * FROM {$this->table} WHERE LOWER(OPERATION_NAME) = ?";
+            $sql = "SELECT TOP 1 * FROM {$this->table} WHERE LOWER(OP_NAME) = ?";
             $params = [strtolower($operation_name)];
         }
 
@@ -72,24 +72,15 @@ class M_operation extends CI_Model
         if ($operation_name === '') return false;
 
         if ($exclude_id === null) {
-            $sql = "SELECT COUNT(1) AS cnt FROM {$this->table} WHERE LOWER(OPERATION_NAME) = ? AND IS_DELETED = 0";
+            $sql = "SELECT COUNT(1) AS cnt FROM {$this->table} WHERE LOWER(OP_NAME) = ? AND IS_DELETED = 0";
             $r = $this->tms_db->query($sql, [strtolower($operation_name)])->row_array();
         } else {
-            $sql = "SELECT COUNT(1) AS cnt FROM {$this->table} WHERE LOWER(OPERATION_NAME) = ? AND {$this->primary_key} <> ? AND IS_DELETED = 0";
+            $sql = "SELECT COUNT(1) AS cnt FROM {$this->table} WHERE LOWER(OP_NAME) = ? AND {$this->primary_key} <> ? AND IS_DELETED = 0";
             $r = $this->tms_db->query($sql, [strtolower($operation_name), (int)$exclude_id])->row_array();
         }
 
         $cnt = isset($r['cnt']) ? (int)$r['cnt'] : 0;
         return $cnt > 0;
-    }
-
-    /**
-     * Ambil ID baru (karena kolom bukan identity).
-     */
-    public function get_new_sequence()
-    {
-        $row = $this->tms_db->select_max($this->primary_key)->get($this->table)->row_array();
-        return isset($row[$this->primary_key]) ? ((int)$row[$this->primary_key] + 1) : 1;
     }
 
     /* ===================== MUTATORS (CREATE, UPDATE, DELETE) ===================== */
@@ -113,18 +104,18 @@ class M_operation extends CI_Model
         }
 
         $data = [
-            'OPERATION_ID'   => $this->get_new_sequence(),
-            'OPERATION_NAME' => $operation_name,
+            'OP_NAME' => $operation_name,
             'IS_DELETED'     => 0
         ];
 
         $this->tms_db->trans_start();
         $this->tms_db->insert($this->table, $data);
+        $new_id = $this->tms_db->insert_id();
         $this->tms_db->trans_complete();
 
         if ($this->tms_db->trans_status()) {
             $this->messages = "Data Operation berhasil ditambahkan.";
-            return TRUE;
+            return $new_id;
         }
         $err = $this->tms_db->error();
         $this->messages = "Gagal menambahkan data Operation. {$err['message']}";

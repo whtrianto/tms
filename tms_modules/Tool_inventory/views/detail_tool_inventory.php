@@ -302,4 +302,3 @@
 <?= isset($foot) ? $foot : ''; ?>
 </body>
 </html>
-

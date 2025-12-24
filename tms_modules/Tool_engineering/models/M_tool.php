@@ -3,14 +3,14 @@ defined('BASEPATH') or exit('No direct script access allowed');
 
 class M_tool extends CI_Model
 {
-    private $table = 'TMS_NEW.dbo.TMS_M_TOOL';
+    private $table = 'MS_TOOL_CLASS';
     public $tms_db;
     public $messages = '';
 
     public function __construct()
     {
         parent::__construct();
-        $this->tms_db = $this->load->database('tms_db', TRUE);
+        $this->tms_db = $this->load->database('tms_NEW', TRUE);
     }
 
     // defensive: cek kolom ada atau tidak
@@ -19,7 +19,7 @@ class M_tool extends CI_Model
         $col = trim((string)$col);
         if ($col === '') return false;
         $sql = "SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS
-                WHERE TABLE_SCHEMA = 'dbo' AND TABLE_NAME = 'TMS_M_TOOL' AND COLUMN_NAME = ?";
+                WHERE TABLE_SCHEMA = 'dbo' AND TABLE_NAME = 'MS_TOOL_CLASS' AND COLUMN_NAME = ?";
         $q = $this->tms_db->query($sql, array($col));
         return ($q && $q->num_rows() > 0);
     }
@@ -27,10 +27,10 @@ class M_tool extends CI_Model
     public function get_active()
     {
         return $this->tms_db
-            ->select('TOOL_ID, TOOL_NAME, TOOL_DESC')
+            ->select('TC_ID, TC_NAME, TC_DESC')
             ->from($this->table)
             ->where('IS_DELETED', 0)
-            ->order_by('TOOL_NAME', 'ASC')
+            ->order_by('TC_NAME', 'ASC')
             ->get()
             ->result_array();
     }
@@ -44,25 +44,25 @@ class M_tool extends CI_Model
 
         $sql = "
             SELECT
-                T.TOOL_ID,
-                T.TOOL_NAME,
-                T.TOOL_DESC,
-                T.TOOL_TYPE,
-                TT.TOOL_TYPE_NAME
+                T.TC_ID,
+                T.TC_NAME,
+                T.TC_DESC,
+                T.TC_TYPE,
+                TT.TT_NAME
             FROM {$this->table} T
-            LEFT JOIN TMS_NEW.dbo.TMS_M_TOOL_TYPE TT
-                ON TT.TOOL_TYPE_ID = T.TOOL_TYPE
+            LEFT JOIN MS_TOOL_TYPE TT
+                ON TT.TT_ID = T.TC_TYPE
                 AND TT.IS_DELETED = 0
             WHERE T.IS_DELETED = 0
         ";
 
         if (!empty($search)) {
-            $sql .= " AND (T.TOOL_NAME LIKE ? OR T.TOOL_DESC LIKE ? OR TT.TOOL_TYPE_NAME LIKE ?)";
+            $sql .= " AND (T.TC_NAME LIKE ? OR T.TC_DESC LIKE ? OR TT.TT_NAME LIKE ?)";
             $like = '%' . $search . '%';
             $params = array($like, $like, $like);
         }
 
-        $sql .= " ORDER BY T.TOOL_NAME ASC";
+        $sql .= " ORDER BY T.TC_NAME ASC";
 
         return $this->tms_db->query($sql, $params)->result_array();
     }
@@ -71,7 +71,7 @@ class M_tool extends CI_Model
     {
         $id = (int)$id;
         if ($id <= 0) return null;
-        $sql = "SELECT TOOL_ID, TOOL_NAME, TOOL_DESC, TOOL_TYPE FROM {$this->table} WHERE IS_DELETED = 0 AND TOOL_ID = ?";
+        $sql = "SELECT TC_ID, TC_NAME, TC_DESC, TC_TYPE FROM {$this->table} WHERE IS_DELETED = 0 AND TC_ID = ?";
         return $this->tms_db->query($sql, array($id))->row_array();
     }
 
@@ -79,7 +79,7 @@ class M_tool extends CI_Model
     {
         $name = trim((string)$name);
         if ($name === '') return null;
-        $sql = "SELECT TOP 1 * FROM {$this->table} WHERE UPPER(RTRIM(LTRIM(TOOL_NAME))) = ? AND IS_DELETED = 0";
+        $sql = "SELECT TOP 1 * FROM {$this->table} WHERE UPPER(RTRIM(LTRIM(TC_NAME))) = ? AND IS_DELETED = 0";
         $q = $this->tms_db->query($sql, array(strtoupper($name)));
         return $q->row_array();
     }
@@ -91,15 +91,15 @@ class M_tool extends CI_Model
 
     public function get_new_sequence()
     {
-        $row = $this->tms_db->select_max('TOOL_ID')->get($this->table)->row_array();
-        return isset($row['TOOL_ID']) ? ((int)$row['TOOL_ID'] + 1) : 1;
+        $row = $this->tms_db->select_max('TC_ID')->get($this->table)->row_array();
+        return isset($row['TC_ID']) ? ((int)$row['TC_ID'] + 1) : 1;
     }
 
     /* ===== MUTATORS ===== */
 
     public function add_data($data)
     {
-        $name = isset($data['TOOL_NAME']) ? trim($data['TOOL_NAME']) : '';
+        $name = isset($data['TC_NAME']) ? trim($data['TC_NAME']) : '';
         if ($name === '') {
             $this->messages = 'Tool name tidak boleh kosong.';
             return false;
@@ -108,10 +108,10 @@ class M_tool extends CI_Model
         $new_id = $this->get_new_sequence();
 
         $insert = array(
-            'TOOL_ID'   => $new_id,
-            'TOOL_NAME' => $name,
-            'TOOL_DESC' => isset($data['TOOL_DESC']) ? $data['TOOL_DESC'] : null,
-            'TOOL_TYPE' => (isset($data['TOOL_TYPE']) && $data['TOOL_TYPE'] !== '') ? (int)$data['TOOL_TYPE'] : null,
+            // 'TC_ID'   => $new_id,
+            'TC_NAME' => $name,
+            'TC_DESC' => isset($data['TC_DESC']) ? $data['TC_DESC'] : null,
+            'TC_TYPE' => (isset($data['TC_TYPE']) && $data['TC_TYPE'] !== '') ? (int)$data['TC_TYPE'] : null,
             'IS_DELETED' => 0
         );
 
@@ -119,15 +119,15 @@ class M_tool extends CI_Model
         $ok = $this->tms_db->insert($this->table, $insert);
 
         // set CREATED_AT/CREATED_BY jika kolom ada
-        if ($this->has_column('CREATED_AT')) {
-            $this->tms_db->query("UPDATE {$this->table} SET CREATED_AT = GETDATE() WHERE TOOL_ID = ?", array($new_id));
-        }
-        if ($this->has_column('CREATED_BY') && isset($this->session)) {
-            $u = $this->session->userdata('username') ?: null;
-            if ($u !== null) {
-                $this->tms_db->query("UPDATE {$this->table} SET CREATED_BY = ? WHERE TOOL_ID = ?", array($u, $new_id));
-            }
-        }
+        // if ($this->has_column('CREATED_AT')) {
+        //     $this->tms_db->query("UPDATE {$this->table} SET CREATED_AT = GETDATE() WHERE TC_ID = ?", array($new_id));
+        // }
+        // if ($this->has_column('CREATED_BY') && isset($this->session)) {
+        //     $u = $this->session->userdata('username') ?: null;
+        //     if ($u !== null) {
+        //         $this->tms_db->query("UPDATE {$this->table} SET CREATED_BY = ? WHERE TC_ID = ?", array($u, $new_id));
+        //     }
+        // }
         $this->tms_db->trans_complete();
 
         if ($this->tms_db->trans_status()) {
@@ -149,12 +149,12 @@ class M_tool extends CI_Model
         }
 
         $update = array(
-            'TOOL_NAME' => isset($data['TOOL_NAME']) ? $data['TOOL_NAME'] : $current['TOOL_NAME'],
-            'TOOL_DESC' => isset($data['TOOL_DESC']) ? $data['TOOL_DESC'] : $current['TOOL_DESC'],
-            'TOOL_TYPE' => (isset($data['TOOL_TYPE']) && $data['TOOL_TYPE'] !== '') ? (int)$data['TOOL_TYPE'] : null,
+            'TC_NAME' => isset($data['TC_NAME']) ? $data['TC_NAME'] : $current['TC_NAME'],
+            'TC_DESC' => isset($data['TC_DESC']) ? $data['TC_DESC'] : $current['TC_DESC'],
+            'TC_TYPE' => (isset($data['TC_TYPE']) && $data['TC_TYPE'] !== '') ? (int)$data['TC_TYPE'] : null,
         );
 
-        $ok = $this->tms_db->where('TOOL_ID', $id)->update($this->table, $update);
+        $ok = $this->tms_db->where('TC_ID', $id)->update($this->table, $update);
         if ($ok) {
             $this->messages = 'Tool berhasil diubah.';
             return true;
@@ -190,10 +190,10 @@ class M_tool extends CI_Model
         if ($this->has_column('DELETED_BY')) $updateData['DELETED_BY'] = $deletedBy;
 
         // update and set DELETED_AT if exists
-        $this->tms_db->where('TOOL_ID', $id);
+        $this->tms_db->where('TC_ID', $id);
         $ok = $this->tms_db->update($this->table, $updateData);
         if ($ok && $this->has_column('DELETED_AT')) {
-            $ok2 = $this->tms_db->query("UPDATE {$this->table} SET DELETED_AT = GETDATE() WHERE TOOL_ID = ?", array($id));
+            $ok2 = $this->tms_db->query("UPDATE {$this->table} SET DELETED_AT = GETDATE() WHERE TC_ID = ?", array($id));
             if (!$ok2) $ok = false;
         }
 
@@ -218,9 +218,9 @@ class M_tool extends CI_Model
 
         $sql = "SELECT COUNT(1) AS CNT FROM {$this->table}
                 WHERE IS_DELETED = 0
-                  AND UPPER(RTRIM(LTRIM(TOOL_NAME))) = ?";
+                  AND UPPER(RTRIM(LTRIM(TC_NAME))) = ?";
         if (!empty($exclude_id)) {
-            $sql .= " AND TOOL_ID <> ?";
+            $sql .= " AND TC_ID <> ?";
             $params[] = (int)$exclude_id;
         }
         $row = $this->tms_db->query($sql, $params)->row();

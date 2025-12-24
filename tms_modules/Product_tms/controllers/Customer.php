@@ -20,13 +20,11 @@ class Customer extends MY_Controller
     public function index()
     {
         $data = array();
-        $data['list_data'] = $this->customer->get_data_master_customer();
+        // Menggunakan method baru get_active
+        $data['list_data'] = $this->customer->get_active();
         $this->view('index_customer', $data, FALSE);
     }
 
-    /**
-     * submit_data: ADD / EDIT Customer (AJAX)
-     */
     public function submit_data()
     {
         $this->output->set_content_type('application/json');
@@ -34,7 +32,7 @@ class Customer extends MY_Controller
         $action = strtoupper($this->input->post('action', TRUE));
         $id     = (int)$this->input->post('customer_id', TRUE);
 
-        // rules
+        // Rules
         $this->form_validation->set_rules('customer_name', 'Customer Name', 'required|trim');
 
         if ($this->form_validation->run() == FALSE) {
@@ -43,61 +41,54 @@ class Customer extends MY_Controller
             return;
         }
 
-        $customer_name = $this->input->post('customer_name', TRUE);
+        $name = $this->input->post('customer_name', TRUE);
+        $abbr = $this->input->post('customer_abbr', TRUE);
 
+        // Mapping ke kolom database
+        $data = [
+            'CUS_NAME' => $name,
+            'CUS_ABBR' => $abbr
+            // 'CUS_ABBR' => ... (bisa ditambahkan jika ada inputnya di view)
+        ];
+
+        // --- ADD ---
         if ($action === 'ADD') {
-            $exists = $this->customer->get_data_master_customer_by_name($customer_name);
-            if ($exists) {
+            if ($this->customer->is_duplicate($name)) {
                 echo json_encode(['success' => false, 'message' => 'Customer dengan nama tersebut sudah ada.']);
                 return;
             }
 
-            $ok = $this->customer->add_data();
-            if (!$ok) {
-                echo json_encode(['success' => false, 'message' => $this->customer->messages ?: 'Gagal menambahkan customer.']);
-                return;
+            $new_id = $this->customer->insert($data);
+
+            if ($new_id > 0) {
+                echo json_encode(['success' => true, 'message' => 'Customer berhasil ditambahkan.', 'new_id' => $new_id]);
+            } else {
+                echo json_encode(['success' => false, 'message' => 'Gagal menambahkan customer.']);
             }
-
-            $newRow = $this->customer->get_data_master_customer_by_name($customer_name);
-            $new_id = $newRow ? (int)$newRow['CUSTOMER_ID'] : null;
-
-            echo json_encode(['success' => true, 'message' => $this->customer->messages ?: 'Customer berhasil ditambahkan.', 'new_id' => $new_id]);
             return;
         }
 
+        // --- EDIT ---
         if ($action === 'EDIT' && $id > 0) {
-            $current = $this->customer->get_data_master_customer_by_id($id);
-            if (!$current) {
-                echo json_encode(['success' => false, 'message' => 'Data Customer tidak ditemukan.']);
-                return;
-            }
-
-            $dup = $this->customer->get_data_master_customer_by_name($customer_name);
-            if ($dup && (int)$dup['CUSTOMER_ID'] !== $id) {
+            // Cek Duplicate exclude self
+            if ($this->customer->is_duplicate($name, $id)) {
                 echo json_encode(['success' => false, 'message' => 'Nama Customer sudah digunakan oleh data lain.']);
                 return;
             }
 
-            // === Fix: set $_POST so model.edit_data() can read (CI Input has no set_post)
-            $_POST['customer_id']   = $id;
-            $_POST['customer_name'] = $customer_name;
+            $ok = $this->customer->update($id, $data);
 
-            $ok = $this->customer->edit_data();
-            if (!$ok) {
-                echo json_encode(['success' => false, 'message' => $this->customer->messages ?: 'Gagal memperbarui Customer.']);
-                return;
+            if ($ok) {
+                echo json_encode(['success' => true, 'message' => 'Customer berhasil diperbarui.']);
+            } else {
+                echo json_encode(['success' => false, 'message' => 'Gagal memperbarui Customer.']);
             }
-
-            echo json_encode(['success' => true, 'message' => $this->customer->messages ?: 'Customer berhasil diperbarui.']);
             return;
         }
 
         echo json_encode(['success' => false, 'message' => 'Parameter action/ID tidak valid.']);
     }
 
-    /**
-     * delete_data: soft delete (AJAX)
-     */
     public function delete_data()
     {
         $this->output->set_content_type('application/json');
@@ -108,24 +99,23 @@ class Customer extends MY_Controller
             return;
         }
 
-        $ok = $this->customer->delete_data($id);
-        echo json_encode(array('success' => (bool)$ok, 'message' => $this->customer->messages ?: ($ok ? 'Customer berhasil dihapus.' : 'Gagal menghapus Customer.')));
+        $deleted_by = $this->session->userdata('username') ?: 'SYSTEM';
+        $ok = $this->customer->soft_delete($id, $deleted_by);
+
+        if ($ok) {
+            echo json_encode(array('success' => true, 'message' => 'Customer berhasil dihapus.'));
+        } else {
+            echo json_encode(array('success' => false, 'message' => 'Gagal menghapus Customer.'));
+        }
     }
 
-    /**
-     * get_customer_detail: ambil data customer by id (AJAX)
-     */
     public function get_customer_detail()
     {
         $this->output->set_content_type('application/json');
 
         $id = (int)$this->input->post('customer_id', TRUE);
-        if ($id <= 0) {
-            echo json_encode(array('success' => false, 'message' => 'CUSTOMER ID tidak ditemukan.'));
-            return;
-        }
+        $row = $this->customer->get_by_id($id);
 
-        $row = $this->customer->get_data_master_customer_by_id($id);
         if ($row) {
             echo json_encode(array('success' => true, 'data' => $row));
         } else {

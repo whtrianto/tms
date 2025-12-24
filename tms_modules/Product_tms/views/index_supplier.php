@@ -42,16 +42,16 @@
                                 <tbody>
                                     <?php foreach ($list_data as $row): ?>
                                         <tr>
-                                            <td><?= (int)$row['SUPPLIER_ID']; ?></td>
-                                            <td class="text-left"><?= htmlspecialchars($row['SUPPLIER_NAME'], ENT_QUOTES, 'UTF-8'); ?></td>
-                                            <td><?= htmlspecialchars(isset($row['SUPPLIER_ABBR']) ? $row['SUPPLIER_ABBR'] : '', ENT_QUOTES, 'UTF-8'); ?></td>
+                                            <td><?= (int)$row['SUP_ID']; ?></td>
+                                            <td class="text-left"><?= htmlspecialchars($row['SUP_NAME'], ENT_QUOTES, 'UTF-8'); ?></td>
+                                            <td><?= htmlspecialchars(isset($row['SUP_ABBR']) ? $row['SUP_ABBR'] : '', ENT_QUOTES, 'UTF-8'); ?></td>
                                             <td>
                                                 <div style="display:flex; justify-content:center; gap:8px;">
                                                     <button class="btn btn-secondary btn-sm btn-edit"
                                                         data-edit='<?= htmlspecialchars(json_encode($row), ENT_QUOTES, 'UTF-8') ?>'>Edit</button>
                                                     <button class="btn btn-danger btn-sm btn-delete"
-                                                        data-id="<?= (int)$row['SUPPLIER_ID']; ?>"
-                                                        data-name="<?= htmlspecialchars($row['SUPPLIER_NAME'], ENT_QUOTES, 'UTF-8'); ?>">Delete</button>
+                                                        data-id="<?= (int)$row['SUP_ID']; ?>"
+                                                        data-name="<?= htmlspecialchars($row['SUP_NAME'], ENT_QUOTES, 'UTF-8'); ?>">Delete</button>
                                                 </div>
                                             </td>
                                         </tr>
@@ -73,15 +73,15 @@
                             <div class="modal-body">
                                 <form id="formSupplier" method="post" action="<?= base_url('product_tms/supplier/submit_data'); ?>">
                                     <input type="hidden" name="action" value="">
-                                    <input type="hidden" name="SUPPLIER_ID" value="">
+                                    <input type="hidden" name="SUP_ID" value="">
                                     <div class="form-group">
                                         <label class="label-required">Supplier Name</label>
-                                        <input type="text" name="SUPPLIER_NAME" class="form-control">
+                                        <input type="text" name="SUP_NAME" class="form-control">
                                         <div class="invalid-feedback">Supplier name wajib diisi.</div>
                                     </div>
                                     <div class="form-group">
                                         <label>Abbreviation</label>
-                                        <input type="text" name="SUPPLIER_ABBR" class="form-control">
+                                        <input type="text" name="SUP_ABBR" class="form-control">
                                     </div>
                                 </form>
                             </div>
@@ -132,8 +132,8 @@
                 $('#btn-new').on('click', function() {
                     $('#formSupplier')[0].reset();
                     $('input[name="action"]').val('ADD');
-                    $('input[name="SUPPLIER_ID"]').val('');
-                    $('[name="SUPPLIER_NAME"]').removeClass('is-invalid');
+                    $('input[name="SUP_ID"]').val('');
+                    $('[name="SUP_NAME"]').removeClass('is-invalid');
                     $('#modalForm').modal('show');
                 });
 
@@ -146,10 +146,10 @@
                     }
                     $('#formSupplier')[0].reset();
                     $('input[name="action"]').val('EDIT');
-                    $('input[name="SUPPLIER_ID"]').val(d.SUPPLIER_ID);
-                    $('[name="SUPPLIER_NAME"]').val(d.SUPPLIER_NAME);
-                    $('[name="SUPPLIER_ABBR"]').val(d.SUPPLIER_ABBR || '');
-                    $('[name="SUPPLIER_NAME"]').removeClass('is-invalid');
+                    $('input[name="SUP_ID"]').val(d.SUP_ID);
+                    $('[name="SUP_NAME"]').val(d.SUP_NAME);
+                    $('[name="SUP_ABBR"]').val(d.SUP_ABBR || '');
+                    $('[name="SUP_NAME"]').removeClass('is-invalid');
                     $('#modalForm').modal('show');
                 });
 
@@ -161,9 +161,9 @@
 
                 $('#formSupplier').on('submit', function(e) {
                     e.preventDefault();
-                    var name = $.trim($('[name="SUPPLIER_NAME"]').val());
+                    var name = $.trim($('[name="SUP_NAME"]').val());
                     if (name === '') {
-                        $('[name="SUPPLIER_NAME"]').addClass('is-invalid');
+                        $('[name="SUP_NAME"]').addClass('is-invalid');
                         return;
                     }
                     $.ajax({
@@ -200,7 +200,7 @@
                         type: 'POST',
                         dataType: 'json',
                         data: {
-                            SUPPLIER_ID: id
+                            SUP_ID: id
                         }
                     }).done(function(res) {
                         if (res && res.success) {

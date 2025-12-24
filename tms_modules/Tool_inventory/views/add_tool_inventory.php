@@ -155,13 +155,13 @@
                                         <label class="form-check-label" for="assetized">Assetized</label>
                                         <input type="checkbox" class="form-check-input" id="assetized" name="assetized" value="1">
                                     </div>
-
+                                    
                                     <div class="form-group">
                                         <label class="label-required">Tool Tag</label>
                                         <input type="text" name="tool_tag" id="tool_tag" class="form-control" placeholder="Enter Tool Tag" value="<?= isset($next_tool_tag) ? htmlspecialchars($next_tool_tag, ENT_QUOTES, 'UTF-8') : '1'; ?>" required>
                                         <small class="form-text text-muted">Auto-generated from latest number</small>
                                     </div>
-
+    
                                     <div class="form-group">
                                         <label class="label-required">Tool Status</label>
                                         <select name="tool_status" class="form-control" required>
@@ -176,7 +176,7 @@
                                             <option value="9">DesignChange</option>
                                         </select>
                                     </div>
-
+    
                                     <div class="form-group">
                                         <label>Tool Condition</label>
                                         <input type="number" name="tool_condition" class="form-control" placeholder="Enter Tool Condition" min="0">
@@ -651,11 +651,11 @@
                         }
                         // Auto-fill Product, Process, Tool Name, Revision from Tool Drawing No
                         loadToolDrawingDetails(latestMlrId);
-                    $('<input>').attr({
-                        type: 'hidden',
-                        name: 'mlr_id',
-                        value: latestMlrId
-                    }).appendTo('#formToolInventory');
+                        $('<input>').attr({
+                            type: 'hidden',
+                            name: 'mlr_id',
+                            value: latestMlrId
+                        }).appendTo('#formToolInventory');
                     }
                 } else {
                     // Clear fields if no Tool Drawing No selected
@@ -801,11 +801,11 @@
                             generateToolId(drawingNo);
                         }
                         loadToolDrawingDetails(latestMlrId);
-                    $('<input>').attr({
-                        type: 'hidden',
-                        name: 'mlr_id',
-                        value: latestMlrId
-                    }).appendTo('#formToolInventory');
+                        $('<input>').attr({
+                            type: 'hidden',
+                            name: 'mlr_id',
+                            value: latestMlrId
+                        }).appendTo('#formToolInventory');
                     }
                 } else {
                     clearAutoFillFields();
@@ -868,4 +868,3 @@
 </script>
 </body>
 </html>
-

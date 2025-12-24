@@ -113,7 +113,7 @@
                                     <div class="form-row">
                                         <div class="form-group col-md-8">
                                             <label>Address</label>
-                                            <input type="text" name="MAKER_ADDRESS" class="form-control">
+                                            <input type="text" name="MAKER_ADDR" class="form-control">
                                         </div>
                                         <div class="form-group col-md-4">
                                             <label>City</label>
@@ -202,7 +202,7 @@
                     $('[name="MAKER_NAME"]').val(d.MAKER_NAME || '');
                     $('[name="MAKER_CODE"]').val(d.MAKER_CODE || '');
                     $('[name="MAKER_DESC"]').val(d.MAKER_DESC || '');
-                    $('[name="MAKER_ADDRESS"]').val(d.MAKER_ADDRESS || '');
+                    $('[name="MAKER_ADDR"]').val(d.MAKER_ADDR || '');
                     $('[name="MAKER_CITY"]').val(d.MAKER_CITY || '');
                     $('[name="MAKER_COUNTRY"]').val(d.MAKER_COUNTRY || '');
                     $('[name="MAKER_STATE"]').val(d.MAKER_STATE || '');

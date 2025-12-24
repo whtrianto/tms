@@ -3,7 +3,7 @@ defined('BASEPATH') or exit('No direct script access allowed');
 
 class M_product extends CI_Model
 {
-    private $table = 'TMS_NEW.dbo.TMS_M_PRODUCT';
+    private $table = 'MS_PARTS';
 
     /** @var CI_DB_sqlsrv_driver */
     public $tms_db;
@@ -11,12 +11,12 @@ class M_product extends CI_Model
     public function __construct()
     {
         parent::__construct();
-        $this->tms_db = $this->load->database('tms_db', TRUE);
+        $this->tms_db = $this->load->database('tms_NEW', TRUE);
     }
 
     /**
      * Ambil daftar product untuk feature "Product".
-     * Sekarang hanya mengambil PRODUCT_IS_GROUP = 0 (child / bukan group).
+     * Sekarang hanya mengambil PART_IS_GROUP = 0 (child / bukan group).
      *
      * @param string|null $search
      * @return array
@@ -27,58 +27,60 @@ class M_product extends CI_Model
 
         $sql = "
             SELECT
-                P.PRODUCT_ID,
-                P.PRODUCT_NAME,
-                P.PRODUCT_IS_GROUP,
-                P.PRODUCT_DESC,
-                P.PRODUCT_CUSTOMER_CODE,
-                P.UOM_ID,
-                P.CUSTOMER_ID,
-                P.PRODUCT_DRW_NO,
-                P.PRODUCT_TYPE,
+                P.PART_ID,
+                P.PART_NAME,
+                P.PART_IS_GROUP,
+                P.PART_DESC,
+                P.PART_CUS_CODE,
+                P.PART_UNITS    ,
+                P.PART_CUS_ID,
+                P.PART_DRW_NO,
+                P.PART_UNIT_PRICE,
+                P.PART_WEIGHT,
+                P.PART_TYPE,
                 U.UOM_NAME,
-                C.CUSTOMER_NAME
+                C.CUS_NAME
             FROM {$this->table} P
-            LEFT JOIN TMS_NEW.dbo.TMS_M_UOM U
-                   ON U.UOM_ID = P.UOM_ID
+            LEFT JOIN MS_UOM U
+                   ON U.UOM_ID = P.PART_UNITS
                   AND U.IS_DELETED = 0
-            LEFT JOIN TMS_NEW.dbo.TMS_M_CUSTOMER C
-                   ON C.CUSTOMER_ID = P.CUSTOMER_ID
+            LEFT JOIN MS_CUSTOMER C
+                   ON C.CUS_ID = P.PART_CUS_ID
                   AND C.IS_DELETED = 0
             WHERE P.IS_DELETED = 0
-              AND P.PRODUCT_IS_GROUP = 0  -- hanya produk bukan group
+              AND P.PART_IS_GROUP = 0  -- hanya produk bukan group
         ";
 
         if (!empty($search)) {
             $sql .= "
                 AND (
-                    P.PRODUCT_NAME LIKE ?
-                    OR P.PRODUCT_CUSTOMER_CODE LIKE ?
-                    OR P.PRODUCT_DRW_NO LIKE ?
-                    OR P.PRODUCT_TYPE LIKE ?
+                    P.PART_NAME LIKE ?
+                    OR P.PART_CUS_CODE LIKE ?
+                    OR P.PART_DRW_NO LIKE ?
+                    OR P.PART_TYPE LIKE ?
                     OR U.UOM_NAME LIKE ?
-                    OR C.CUSTOMER_NAME LIKE ?
+                    OR C.CUS_NAME LIKE ?
                 )
             ";
             $like   = '%' . $search . '%';
             $params = array($like, $like, $like, $like, $like, $like);
         }
 
-        $sql .= " ORDER BY P.PRODUCT_NAME ASC";
+        $sql .= " ORDER BY P.PART_NAME ASC";
 
         return $this->tms_db->query($sql, $params)->result_array();
     }
 
     /**
-     * Ambil semua product yang bertindak sebagai group (PRODUCT_IS_GROUP = 1)
+     * Ambil semua product yang bertindak sebagai group (PART_IS_GROUP = 1)
      * Digunakan untuk dropdown di form.
      */
     public function get_groups()
     {
-        $sql = "SELECT PRODUCT_ID, PRODUCT_NAME, PRODUCT_DESC, PRODUCT_IS_GROUP
-            FROM TMS_NEW.dbo.TMS_M_PRODUCT
-            WHERE IS_DELETED = 0 AND PRODUCT_IS_GROUP = 1
-            ORDER BY PRODUCT_NAME";
+        $sql = "SELECT PART_ID, PART_NAME, PART_DESC, PART_IS_GROUP
+            FROM MS_PARTS
+            WHERE IS_DELETED = 0 AND PART_IS_GROUP = 1
+            ORDER BY PART_NAME";
         return $this->tms_db->query($sql)->result_array();
     }
 
@@ -90,33 +92,33 @@ class M_product extends CI_Model
         if ($group_id === null) {
             $sql = "
             SELECT 
-                p.PRODUCT_ID, 
-                p.PRODUCT_NAME, 
-                p.PRODUCT_DESC, 
-                p.PRODUCT_IS_GROUP,
-                pg.PRODUCT_GROUP_PARENT_ID
-            FROM TMS_NEW.dbo.TMS_M_PRODUCT_GROUP pg
-            JOIN TMS_NEW.dbo.TMS_M_PRODUCT p 
-                ON pg.PRODUCT_GROUP_CHILD_ID = p.PRODUCT_ID
+                p.PART_ID, 
+                p.PART_NAME, 
+                p.PART_DESC, 
+                p.PART_IS_GROUP,
+                pg.PART_GROUP_PARENT_ID
+            FROM MS_PART_MEMBERS pg
+            JOIN MS_PARTS p 
+                ON pg.PART_GROUP_CHILD_ID = p.PART_ID
             WHERE p.IS_DELETED = 0
-            ORDER BY p.PRODUCT_NAME
+            ORDER BY p.PART_NAME
         ";
             return $this->tms_db->query($sql)->result_array();
         }
 
         $sql = "
         SELECT 
-            p.PRODUCT_ID, 
-            p.PRODUCT_NAME, 
-            p.PRODUCT_DESC, 
-            p.PRODUCT_IS_GROUP,
-            pg.PRODUCT_GROUP_PARENT_ID
-        FROM TMS_NEW.dbo.TMS_M_PRODUCT_GROUP pg
-        JOIN TMS_NEW.dbo.TMS_M_PRODUCT p 
-            ON pg.PRODUCT_GROUP_CHILD_ID = p.PRODUCT_ID
-        WHERE pg.PRODUCT_GROUP_PARENT_ID = ?
+            p.PART_ID, 
+            p.PART_NAME, 
+            p.PART_DESC, 
+            p.PART_IS_GROUP,
+            pg.PART_GROUP_PARENT_ID
+        FROM MS_PART_MEMBERS pg
+        JOIN MS_PARTS p 
+            ON pg.PART_GROUP_CHILD_ID = p.PART_ID
+        WHERE pg.PART_GROUP_PARENT_ID = ?
           AND p.IS_DELETED = 0
-        ORDER BY p.PRODUCT_NAME
+        ORDER BY p.PART_NAME
     ";
 
         return $this->tms_db->query($sql, array($group_id))->result_array();
@@ -126,115 +128,108 @@ class M_product extends CI_Model
     {
         $sql = "
             SELECT
-                P.PRODUCT_ID,
-                P.PRODUCT_NAME,
-                P.PRODUCT_IS_GROUP,
-                P.PRODUCT_DESC,
-                P.PRODUCT_CUSTOMER_CODE,
-                P.UOM_ID,
-                P.CUSTOMER_ID,
-                P.PRODUCT_DRW_NO,
-                P.PRODUCT_TYPE
+                P.PART_ID,
+                P.PART_NAME,
+                P.PART_IS_GROUP,
+                P.PART_DESC,
+                P.PART_CUS_CODE,
+                P.PART_UNITS,
+                P.PART_CUS_ID,
+                P.PART_DRW_NO,
+                P.PART_TYPE,
+                P.PART_UNIT_PRICE,
+                P.PART_WEIGHT
             FROM {$this->table} P
             WHERE P.IS_DELETED = 0
-              AND P.PRODUCT_ID = ?
+              AND P.PART_ID = ?
         ";
         return $this->tms_db->query($sql, array($id))->row_array();
     }
 
     public function insert($data, $use_transaction = true)
     {
-        // normalisasi input
-        $name = isset($data['PRODUCT_NAME']) ? strtoupper(trim($data['PRODUCT_NAME'])) : '';
-        $is_group = isset($data['PRODUCT_IS_GROUP']) ? (int)$data['PRODUCT_IS_GROUP'] : 0;
-        $desc = isset($data['PRODUCT_DESC']) ? $data['PRODUCT_DESC'] : null;
-        $custcode = isset($data['PRODUCT_CUSTOMER_CODE']) ? $data['PRODUCT_CUSTOMER_CODE'] : null;
-        $uom = ($data['UOM_ID'] !== '' && $data['UOM_ID'] !== null) ? (int)$data['UOM_ID'] : null;
-        $cust = ($data['CUSTOMER_ID'] !== '' && $data['CUSTOMER_ID'] !== null) ? (int)$data['CUSTOMER_ID'] : null;
-        $drw = isset($data['PRODUCT_DRW_NO']) ? $data['PRODUCT_DRW_NO'] : null;
-        $type = isset($data['PRODUCT_TYPE']) ? $data['PRODUCT_TYPE'] : null;
-
-        // mulai transaksi jika diminta
         if ($use_transaction) {
             $this->tms_db->trans_begin();
         }
 
-        // Dapatkan next PRODUCT_ID secara eksklusif (mengunci tabel)
-        $nextq = $this->tms_db->query("SELECT ISNULL(MAX(PRODUCT_ID),0) + 1 AS next_id FROM {$this->table} WITH (TABLOCKX)");
-        if (!$nextq) {
-            if ($use_transaction) $this->tms_db->trans_rollback();
-            return 0;
-        }
-        $nextrow = $nextq->row();
-        $next_id = isset($nextrow->next_id) ? (int)$nextrow->next_id : 0;
-        if ($next_id <= 0) {
+        // Persiapkan data sesuai nama kolom di database MS_PARTS
+        $insert_data = array(
+            'PART_NAME'       => strtoupper(trim($data['PART_NAME'])),
+            'PART_IS_GROUP'   => isset($data['PART_IS_GROUP']) ? (int)$data['PART_IS_GROUP'] : 0,
+            'PART_DESC'       => !empty($data['PART_DESC']) ? $data['PART_DESC'] : null,
+            'PART_CUS_CODE'   => !empty($data['PART_CUS_CODE']) ? $data['PART_CUS_CODE'] : null,
+            'PART_UNITS'      => (!empty($data['PART_UNITS'])) ? (int)$data['PART_UNITS'] : null,
+            'PART_CUS_ID'     => (!empty($data['PART_CUS_ID'])) ? (int)$data['PART_CUS_ID'] : null,
+            'PART_DRW_NO'     => !empty($data['PART_DRW_NO']) ? $data['PART_DRW_NO'] : null,
+            'PART_TYPE'       => !empty($data['PART_TYPE']) ? $data['PART_TYPE'] : null,
+            'PART_UNIT_PRICE' => isset($data['PART_UNIT_PRICE']) ? (float)$data['PART_UNIT_PRICE'] : 0,
+            'PART_WEIGHT'     => isset($data['PART_WEIGHT']) ? (float)$data['PART_WEIGHT'] : 0,
+            'IS_DELETED'      => 0
+        );
+
+        // Gunakan Query Builder agar CI menangani escaping karakter otomatis
+        $execute = $this->tms_db->insert($this->table, $insert_data);
+
+        if (!$execute) {
+            // Jika gagal, log errornya
+            $db_error = $this->tms_db->error();
+            log_message('error', 'Database Insert Error: ' . $db_error['message']);
             if ($use_transaction) $this->tms_db->trans_rollback();
             return 0;
         }
 
-        // Insert explicit PRODUCT_ID
-        $sql = "
-        INSERT INTO {$this->table}
-        (
-            PRODUCT_ID,
-            PRODUCT_NAME,
-            PRODUCT_IS_GROUP,
-            PRODUCT_DESC,
-            PRODUCT_CUSTOMER_CODE,
-            UOM_ID,
-            CUSTOMER_ID,
-            IS_DELETED,
-            PRODUCT_DRW_NO,
-            PRODUCT_TYPE
-        )
-        VALUES (?,?,?,?,?,?,?,0,?,?)
-    ";
-        $params = array($next_id, $name, $is_group, $desc, $custcode, $uom, $cust, $drw, $type);
-        $this->tms_db->query($sql, $params);
+        // Ambil ID Identity yang baru saja dibuat
+        // Pada driver sqlsrv CI3, ini akan menjalankan SELECT SCOPE_IDENTITY() secara otomatis
+        $new_id = $this->tms_db->insert_id();
+
+        // Fallback: Jika insert_id() tetap 0 padahal baris bertambah
+        if ($new_id == 0) {
+            $res = $this->tms_db->query("SELECT SCOPE_IDENTITY() AS last_id")->row();
+            $new_id = (isset($res->last_id)) ? (int)$res->last_id : 0;
+        }
 
         if ($use_transaction) {
-            if ($this->tms_db->trans_status() === FALSE) {
+            if ($this->tms_db->trans_status() === FALSE || $new_id == 0) {
                 $this->tms_db->trans_rollback();
                 return 0;
             } else {
                 $this->tms_db->trans_commit();
-                return (int)$next_id;
-            }
-        } else {
-            // jika tidak mengelola trans (controller akan commit/rollback), periksa status query
-            if ($this->tms_db->affected_rows() >= 0) {
-                return (int)$next_id;
-            } else {
-                return 0;
+                return $new_id;
             }
         }
+
+        return $new_id;
     }
 
     public function update($id, $data)
     {
         $sql = "
             UPDATE {$this->table}
-               SET PRODUCT_NAME          = ?,
-                   PRODUCT_IS_GROUP      = ?,
-                   PRODUCT_DESC          = ?,
-                   PRODUCT_CUSTOMER_CODE = ?,
-                   UOM_ID                = ?,
-                   CUSTOMER_ID           = ?,
-                   PRODUCT_DRW_NO        = ?,
-                   PRODUCT_TYPE          = ?
-             WHERE PRODUCT_ID = ?
+               SET PART_NAME          = ?,
+                   PART_IS_GROUP      = ?,
+                   PART_DESC          = ?,
+                   PART_CUS_CODE      = ?,
+                   PART_UNITS         = ?,
+                   PART_CUS_ID        = ?,
+                   PART_DRW_NO        = ?,
+                   PART_TYPE          = ?,
+                   PART_UNIT_PRICE = ?, 
+                    PART_WEIGHT = ?
+             WHERE PART_ID = ?
                AND IS_DELETED = 0
         ";
 
         $params = array(
-            strtoupper(trim($data['PRODUCT_NAME'])),
-            isset($data['PRODUCT_IS_GROUP']) ? (int)$data['PRODUCT_IS_GROUP'] : 0,
-            isset($data['PRODUCT_DESC']) ? $data['PRODUCT_DESC'] : null,
-            isset($data['PRODUCT_CUSTOMER_CODE']) ? $data['PRODUCT_CUSTOMER_CODE'] : null,
-            ($data['UOM_ID'] !== '' && $data['UOM_ID'] !== null) ? (int)$data['UOM_ID'] : null,
-            ($data['CUSTOMER_ID'] !== '' && $data['CUSTOMER_ID'] !== null) ? (int)$data['CUSTOMER_ID'] : null,
-            isset($data['PRODUCT_DRW_NO']) ? $data['PRODUCT_DRW_NO'] : null,
-            isset($data['PRODUCT_TYPE']) ? $data['PRODUCT_TYPE'] : null,
+            strtoupper(trim($data['PART_NAME'])),
+            isset($data['PART_IS_GROUP']) ? (int)$data['PART_IS_GROUP'] : 0,
+            isset($data['PART_DESC']) ? $data['PART_DESC'] : null,
+            isset($data['PART_CUS_CODE']) ? $data['PART_CUS_CODE'] : null,
+            isset($data['PART_UNITS']) ? (int)$data['PART_UNITS'] : null,
+            isset($data['PART_CUS_ID']) ? (int)$data['PART_CUS_ID'] : null,
+            isset($data['PART_DRW_NO']) ? $data['PART_DRW_NO'] : null,
+            isset($data['PART_TYPE']) ? $data['PART_TYPE'] : null,
+            isset($data['PART_UNIT_PRICE']) ? (int)$data['PART_UNIT_PRICE'] : null,
+            isset($data['PART_WEIGHT']) ? (int)$data['PART_WEIGHT'] : null,
             (int)$id
         );
 
@@ -255,7 +250,7 @@ class M_product extends CI_Model
             $params[] = $deleted_by;
         }
 
-        $sql .= " WHERE PRODUCT_ID = ? AND IS_DELETED = 0";
+        $sql .= " WHERE PART_ID = ? AND IS_DELETED = 0";
         $params[] = (int)$id;
 
         return $this->tms_db->query($sql, $params);
@@ -269,10 +264,10 @@ class M_product extends CI_Model
         // gunakan UPPER pada kolom agar case-insensitive
         $sql = "SELECT COUNT(1) AS CNT FROM {$this->table}
             WHERE IS_DELETED = 0
-              AND UPPER(RTRIM(LTRIM(PRODUCT_NAME))) = ?";
+              AND UPPER(RTRIM(LTRIM(PART_NAME))) = ?";
 
         if (!empty($exclude_id)) {
-            $sql .= " AND PRODUCT_ID <> ?";
+            $sql .= " AND PART_ID <> ?";
             $params[] = (int)$exclude_id;
         }
 

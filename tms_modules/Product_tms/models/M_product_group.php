@@ -3,76 +3,85 @@ defined('BASEPATH') or exit('No direct script access allowed');
 
 class M_product_group extends CI_Model
 {
-    private $table = 'TMS_NEW.dbo.TMS_M_PRODUCT_GROUP';
-    private $product_table = 'TMS_NEW.dbo.TMS_M_PRODUCT';
+    private $table = 'MS_PART_MEMBERS'; // Tabel Relasi
+    private $product_table = 'MS_PARTS'; // Tabel Master Part
 
     /** @var CI_DB_sqlsrv_driver */
-    public $tms_db;
+    public $db_tms;
 
-    // pesan terakhir
     public $messages = '';
 
     public function __construct()
     {
         parent::__construct();
-        $this->tms_db = $this->load->database('tms_db', TRUE);
+        $this->db_tms = $this->load->database('tms_NEW', TRUE);
     }
 
     /**
-     * Ambil relasi aktif (end_date IS NULL)
+     * Ambil relasi aktif (PARTM_DATE_END IS NULL)
+     * Menggunakan Query Builder
      */
     public function get_all($search = null)
     {
-        $params = array();
+        $this->db_tms->select('
+            G.PARTM_ID,
+            G.PARTM_PARENT_ID,
+            G.PARTM_CHILD_ID,
+            G.PARTM_DATE_START,
+            G.PATRM_DATE_END,
+            PARENT.PART_NAME AS PARENT_NAME,
+            PARENT.PART_DESC AS PARENT_DESC,
+            CHILD.PART_NAME  AS CHILD_NAME,
+            CHILD.PART_DESC  AS CHILD_DESC
+        ');
+        $this->db_tms->from($this->table . ' G');
 
-        $sql = "
-        SELECT
-            G.PRODUCT_GROUP_ID,
-            G.PRODUCT_GROUP_PARENT_ID,
-            G.PRODUCT_GROUP_CHILD_ID,
-            G.PRODUCT_GROUP_START_DATE,
-            G.PRODUCT_GROUP_END_DATE,
-            PARENT.PRODUCT_NAME AS PARENT_NAME,
-            PARENT.PRODUCT_DESC AS PARENT_DESC,
-            CHILD.PRODUCT_NAME  AS CHILD_NAME,
-            CHILD.PRODUCT_DESC  AS CHILD_DESC
-        FROM {$this->table} G
-        LEFT JOIN {$this->product_table} PARENT
-               ON PARENT.PRODUCT_ID = G.PRODUCT_GROUP_PARENT_ID
-        LEFT JOIN {$this->product_table} CHILD
-               ON CHILD.PRODUCT_ID = G.PRODUCT_GROUP_CHILD_ID
-        WHERE G.PRODUCT_GROUP_END_DATE IS NULL
-    ";
+        // Join ke Parent
+        $this->db_tms->join($this->product_table . ' PARENT', 'PARENT.PART_ID = G.PARTM_PARENT_ID', 'LEFT');
+
+        // Join ke Child
+        $this->db_tms->join($this->product_table . ' CHILD', 'CHILD.PART_ID = G.PARTM_CHILD_ID', 'LEFT');
+
+        // Filter Aktif (Typo DB: PATRM_DATE_END)
+        $this->db_tms->where('G.PATRM_DATE_END IS NULL', null, false);
 
         if (!empty($search)) {
-            $sql .= " AND (PARENT.PRODUCT_NAME LIKE ? OR CHILD.PRODUCT_NAME LIKE ?)";
-            $like = '%' . $search . '%';
-            $params = array($like, $like);
+            $this->db_tms->group_start();
+            $this->db_tms->like('PARENT.PART_NAME', $search);
+            $this->db_tms->or_like('CHILD.PART_NAME', $search);
+            $this->db_tms->group_end();
         }
 
-        $sql .= " ORDER BY PARENT.PRODUCT_NAME, CHILD.PRODUCT_NAME";
+        $this->db_tms->order_by('PARENT.PART_NAME', 'ASC');
+        $this->db_tms->order_by('CHILD.PART_NAME', 'ASC');
 
-        return $this->tms_db->query($sql, $params)->result_array();
+        return $this->db_tms->get()->result_array();
     }
 
+    /**
+     * Ambil list product untuk dropdown
+     */
     public function get_products($only_groups = false)
     {
-        $sql = "SELECT PRODUCT_ID, PRODUCT_NAME, PRODUCT_IS_GROUP FROM {$this->product_table}
-                WHERE IS_DELETED = 0";
+        $this->db_tms->select('PART_ID, PART_NAME, PART_IS_GROUP');
+        $this->db_tms->from($this->product_table);
+        $this->db_tms->where('IS_DELETED', 0);
 
         if ($only_groups) {
-            $sql .= " AND PRODUCT_IS_GROUP = 1";
+            $this->db_tms->where('PART_IS_GROUP', 1);
         }
 
-        $sql .= " ORDER BY PRODUCT_NAME";
+        $this->db_tms->order_by('PART_NAME', 'ASC');
 
-        return $this->tms_db->query($sql)->result_array();
+        return $this->db_tms->get()->result_array();
     }
 
     public function get_relation_by_child($child_id)
     {
-        $sql = "SELECT * FROM {$this->table} WHERE PRODUCT_GROUP_CHILD_ID = ? AND PRODUCT_GROUP_END_DATE IS NULL";
-        return $this->tms_db->query($sql, array((int)$child_id))->row_array();
+        return $this->db_tms->get_where($this->table, [
+            'PARTM_CHILD_ID' => (int)$child_id,
+            'PARTM_DATE_END' => null // Active only
+        ])->row_array();
     }
 
     public function insert_relation($parent_id, $child_id)
@@ -80,43 +89,30 @@ class M_product_group extends CI_Model
         $parent_id = (int)$parent_id;
         $child_id  = (int)$child_id;
 
-        if ($parent_id <= 0 || $child_id <= 0) {
-            $this->messages = 'Parent/Child tidak valid.';
-            return false;
-        }
-        if ($parent_id === $child_id) {
-            $this->messages = 'Parent dan Child tidak boleh sama.';
-            return false;
-        }
+        // Cek relasi aktif
+        $sql = "SELECT COUNT(1) AS CNT FROM MS_PART_MEMBERS 
+            WHERE PARTM_PARENT_ID = ? AND PARTM_CHILD_ID = ? AND PATRM_DATE_END IS NULL";
+        $row = $this->db_tms->query($sql, array($parent_id, $child_id))->row();
 
-        // cek apakah relation aktif sudah ada
-        $sql = "SELECT COUNT(1) AS CNT FROM {$this->table}
-            WHERE PRODUCT_GROUP_PARENT_ID = ? AND PRODUCT_GROUP_CHILD_ID = ? AND PRODUCT_GROUP_END_DATE IS NULL";
-        $row = $this->tms_db->query($sql, array($parent_id, $child_id))->row();
         if ($row && (int)$row->CNT > 0) {
             $this->messages = 'Relasi sudah ada.';
             return false;
         }
 
-        $sql = "INSERT INTO {$this->table}
-            (PRODUCT_GROUP_PARENT_ID, PRODUCT_GROUP_CHILD_ID, PRODUCT_GROUP_START_DATE, PRODUCT_GROUP_END_DATE)
-            VALUES (?, ?, GETDATE(), NULL)";
-        $this->tms_db->query($sql, array($parent_id, $child_id));
+        // Insert tanpa PARTM_ID
+        $this->db_tms->set('PARTM_PARENT_ID', $parent_id);
+        $this->db_tms->set('PARTM_CHILD_ID', $child_id);
+        $this->db_tms->set('PARTM_DATE_START', 'GETDATE()', FALSE);
+        $this->db_tms->set('IS_DELETED', 0);
 
-        $insert_id = $this->tms_db->insert_id();
-        if (empty($insert_id)) {
-            $r = $this->tms_db->query("SELECT SCOPE_IDENTITY() AS id")->row();
-            $insert_id = isset($r->id) ? (int)$r->id : 0;
+        $ok = $this->db_tms->insert('MS_PART_MEMBERS');
+
+        if ($ok) {
+            $res = $this->db_tms->query("SELECT SCOPE_IDENTITY() AS last_id")->row();
+            return (isset($res->last_id)) ? (int)$res->last_id : true;
         }
 
-        if ($insert_id) {
-            $this->messages = 'Relasi berhasil ditambahkan.';
-            return (int)$insert_id;
-        }
-
-        // fallback: jika driver tms_db tidak mengembalikan insert_id, kembalikan true dan pesan
-        $this->messages = 'Relasi berhasil ditambahkan.';
-        return true;
+        return false;
     }
 
     public function update_relation($id, $parent_id, $child_id)
@@ -130,25 +126,30 @@ class M_product_group extends CI_Model
             return false;
         }
 
-        // Validasi sederhana: parent != child
         if ($parent_id === $child_id) {
             $this->messages = 'Parent dan Child tidak boleh sama.';
             return false;
         }
 
-        // Bisa tambah cek duplicate relasi aktif yang sama (kecuali id sendiri)
-        $sql = "SELECT COUNT(1) AS CNT FROM {$this->table}
-            WHERE PRODUCT_GROUP_PARENT_ID = ? AND PRODUCT_GROUP_CHILD_ID = ? AND PRODUCT_GROUP_ID <> ? AND PRODUCT_GROUP_END_DATE IS NULL";
-        $r = $this->tms_db->query($sql, array($parent_id, $child_id, $id))->row();
-        if ($r && (int)$r->CNT > 0) {
+        // Cek duplicate selain diri sendiri
+        $this->db_tms->where('PARTM_PARENT_ID', $parent_id);
+        $this->db_tms->where('PARTM_CHILD_ID', $child_id);
+        $this->db_tms->where('PARTM_ID !=', $id);
+        $this->db_tms->where('PATRM_DATE_END IS NULL', null, false);
+        $cnt = $this->db_tms->count_all_results($this->table);
+
+        if ($cnt > 0) {
             $this->messages = 'Relasi yang sama sudah ada.';
             return false;
         }
 
-        $sql = "UPDATE {$this->table}
-               SET PRODUCT_GROUP_PARENT_ID = ?, PRODUCT_GROUP_CHILD_ID = ?
-             WHERE PRODUCT_GROUP_ID = ?";
-        $ok = $this->tms_db->query($sql, array($parent_id, $child_id, $id));
+        $data = [
+            'PARTM_PARENT_ID' => $parent_id,
+            'PARTM_CHILD_ID'  => $child_id
+        ];
+
+        $this->db_tms->where('PARTM_ID', $id);
+        $ok = $this->db_tms->update($this->table, $data);
 
         if ($ok) {
             $this->messages = 'Relasi berhasil diubah.';
@@ -162,42 +163,28 @@ class M_product_group extends CI_Model
     public function soft_delete($id)
     {
         $id = (int)$id;
-        if ($id <= 0) {
-            $this->messages = 'ID relasi tidak valid.';
-            return false;
-        }
-        $sql = "UPDATE {$this->table}
-               SET PRODUCT_GROUP_END_DATE = GETDATE()
-             WHERE PRODUCT_GROUP_ID = ? AND PRODUCT_GROUP_END_DATE IS NULL";
-        $ok = $this->tms_db->query($sql, array($id));
+        if ($id <= 0) return false;
+
+        $this->db_tms->set('PARTM_DATE_END', 'GETDATE()', FALSE);
+        $this->db_tms->where('PARTM_ID', $id);
+        $this->db_tms->where('PATRM_DATE_END IS NULL', null, false);
+
+        $ok = $this->db_tms->update($this->table);
+
         if ($ok) {
             $this->messages = 'Relasi berhasil dinonaktifkan.';
             return true;
-        } else {
-            $this->messages = 'Gagal menonaktifkan relasi.';
-            return false;
         }
+        $this->messages = 'Gagal menonaktifkan relasi.';
+        return false;
     }
 
+    // Dipakai saat delete product
     public function end_relation_by_child($child_id)
     {
-        $child_id = (int)$child_id;
-        $sql = "UPDATE {$this->table}
-                   SET PRODUCT_GROUP_END_DATE = GETDATE()
-                 WHERE PRODUCT_GROUP_CHILD_ID = ? AND PRODUCT_GROUP_END_DATE IS NULL";
-        return $this->tms_db->query($sql, array($child_id));
-    }
-
-    public function get_child($group_id)
-    {
-        $sql = "SELECT p.PRODUCT_ID, p.PRODUCT_NAME, p.PRODUCT_DESC, p.PRODUCT_IS_GROUP
-            FROM TMS_NEW.dbo.TMS_M_PRODUCT_GROUP pg
-            JOIN TMS_NEW.dbo.TMS_M_PRODUCT p 
-              ON pg.PRODUCT_GROUP_CHILD_ID = p.PRODUCT_ID
-            WHERE pg.PRODUCT_GROUP_PARENT_ID = ?
-              AND p.IS_DELETED = 0
-            ORDER BY p.PRODUCT_NAME";
-
-        return $this->tms_db->query($sql, array($group_id))->result_array();
+        $this->db_tms->set('PARTM_DATE_END', 'GETDATE()', FALSE);
+        $this->db_tms->where('PARTM_CHILD_ID', (int)$child_id);
+        $this->db_tms->where('PATRM_DATE_END IS NULL', null, false);
+        return $this->db_tms->update($this->table);
     }
 }

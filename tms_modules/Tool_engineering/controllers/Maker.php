@@ -36,7 +36,7 @@ class Maker extends MY_Controller
         $this->form_validation->set_rules('MAKER_NAME', 'Maker Name', 'required|trim');
         $this->form_validation->set_rules('MAKER_CODE', 'Maker Code', 'trim');
         $this->form_validation->set_rules('MAKER_DESC', 'Description', 'trim');
-        $this->form_validation->set_rules('MAKER_ADDRESS', 'Address', 'trim');
+        $this->form_validation->set_rules('MAKER_ADDR', 'Address', 'trim');
         $this->form_validation->set_rules('MAKER_CITY', 'City', 'trim');
         $this->form_validation->set_rules('MAKER_COUNTRY', 'Country', 'trim');
         $this->form_validation->set_rules('MAKER_STATE', 'State', 'trim');
@@ -52,7 +52,7 @@ class Maker extends MY_Controller
             'MAKER_NAME'    => $this->input->post('MAKER_NAME', TRUE),
             'MAKER_CODE'    => $this->input->post('MAKER_CODE', TRUE),
             'MAKER_DESC'    => $this->input->post('MAKER_DESC', TRUE),
-            'MAKER_ADDRESS' => $this->input->post('MAKER_ADDRESS', TRUE),
+            'MAKER_ADDR' => $this->input->post('MAKER_ADDR', TRUE),
             'MAKER_CITY'    => $this->input->post('MAKER_CITY', TRUE),
             'MAKER_COUNTRY' => $this->input->post('MAKER_COUNTRY', TRUE),
             'MAKER_STATE'   => $this->input->post('MAKER_STATE', TRUE),
@@ -176,7 +176,7 @@ class Maker extends MY_Controller
                 'MAKER_NAME'    => isset($row['MAKER_NAME']) ? $row['MAKER_NAME'] : '',
                 'MAKER_CODE'    => isset($row['MAKER_CODE']) ? $row['MAKER_CODE'] : '',
                 'MAKER_DESC'    => isset($row['MAKER_DESC']) ? $row['MAKER_DESC'] : '',
-                'MAKER_ADDRESS' => isset($row['MAKER_ADDRESS']) ? $row['MAKER_ADDRESS'] : '',
+                'MAKER_ADDR' => isset($row['MAKER_ADDR']) ? $row['MAKER_ADDR'] : '',
                 'MAKER_CITY'    => isset($row['MAKER_CITY']) ? $row['MAKER_CITY'] : '',
                 'MAKER_STATE'   => isset($row['MAKER_STATE']) ? $row['MAKER_STATE'] : '',
                 'MAKER_COUNTRY' => isset($row['MAKER_COUNTRY']) ? $row['MAKER_COUNTRY'] : '',

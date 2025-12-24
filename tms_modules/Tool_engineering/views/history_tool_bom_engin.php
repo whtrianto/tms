@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <?= $head; ?>
@@ -172,4 +172,3 @@
 </script>
 </body>
 </html>
-

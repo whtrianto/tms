@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <?= $head; ?>
@@ -168,7 +168,7 @@
                                     </select>
                                 </div>
                                 <div class="form-group col-md-3">
-                                    <label>Maker (*Optional)</label>
+                                    <label>Maker (*opsional)</label>
                                     <select name="TD_MAKER_ID" class="form-control">
                                         <option value="">-- Select Maker --</option>
                                         <?php 
@@ -184,7 +184,7 @@
                             
                             <div class="form-row">
                                 <div class="form-group col-md-6">
-                                    <label>Machine Group (*Optional)</label>
+                                    <label>Machine Group (*opsional)</label>
                                     <select name="TD_MACG_ID" class="form-control">
                                         <option value="">-- Select Machine Group --</option>
                                         <?php 
@@ -364,4 +364,3 @@
 </script>
 </body>
 </html>
-

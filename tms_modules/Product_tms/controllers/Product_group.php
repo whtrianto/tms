@@ -12,32 +12,37 @@ class Product_group extends MY_Controller
         $this->load->library(array('form_validation', 'session'));
         $this->load->helper(array('url', 'form'));
 
-        $this->load->model('M_product_group', 'pg');
-        $this->load->model('M_product', 'product');
+        $this->load->model('M_product_group');
+        $this->load->model('M_product');
     }
 
     public function index()
     {
-        // ambil semua product yang ditandai sebagai group
-        $data['list_data'] = $this->product->get_groups(); // hanya PRODUCT_IS_GROUP = 1 dan IS_DELETED = 0
-        $data['products'] = $this->pg->get_products(); // untuk dropdown relasi
-        $data['product_groups_only'] = $this->product->get_groups();
+        // View ini menampilkan LIST GROUP (Master Data), bukan list relasi.
+        // Data diambil dari MS_PARTS where PART_IS_GROUP = 1
+        $data['list_data'] = $this->M_product->get_groups();
+
+        // Untuk dropdown jika nanti diperlukan
+        $data['products'] = $this->M_product_group->get_products();
+        $data['product_groups_only'] = $this->M_product->get_groups();
 
         $this->view('index_product_group', $data, FALSE);
     }
 
     /**
-     * submit_data untuk relasi (ADD/EDIT)
-     * Keep JSON response, tanpa permission checks
+     * submit_data untuk RELASI (ADD/EDIT Members)
+     * Note: Form ini biasanya dipanggil dari menu yang mengatur anggota group,
+     * bukan dari halaman index utama yang hanya create Master Group.
      */
     public function submit_data()
     {
         $this->output->set_content_type('application/json');
 
         $action    = strtoupper($this->input->post('action', TRUE));
-        $id        = (int)$this->input->post('PRODUCT_GROUP_ID', TRUE);
-        $parent_id = (int)$this->input->post('PRODUCT_GROUP_PARENT_ID', TRUE);
-        $child_id  = (int)$this->input->post('PRODUCT_GROUP_CHILD_ID', TRUE);
+        // Sesuaikan parameter ID Relasi
+        $id        = (int)$this->input->post('PARTM_ID', TRUE);
+        $parent_id = (int)$this->input->post('PARTM_PARENT_ID', TRUE);
+        $child_id  = (int)$this->input->post('PARTM_CHILD_ID', TRUE);
 
         if (!in_array($action, array('ADD', 'EDIT'), true)) {
             echo json_encode(['success' => false, 'message' => 'Action tidak dikenali.']);
@@ -45,16 +50,15 @@ class Product_group extends MY_Controller
         }
 
         if ($action === 'ADD') {
-            // validation
             if ($parent_id <= 0 || $child_id <= 0) {
                 echo json_encode(['success' => false, 'message' => 'Parent/Child tidak valid.']);
                 return;
             }
-            $new_id = $this->pg->insert_relation($parent_id, $child_id);
+            $new_id = $this->M_product_group->insert_relation($parent_id, $child_id);
             if ($new_id === false) {
-                echo json_encode(['success' => false, 'message' => $this->pg->messages ?: 'Gagal menambahkan relasi.']);
+                echo json_encode(['success' => false, 'message' => $this->M_product_group->messages ?: 'Gagal menambahkan relasi.']);
             } else {
-                echo json_encode(['success' => true, 'message' => $this->pg->messages ?: 'Relasi berhasil ditambahkan.', 'new_id' => (int)$new_id]);
+                echo json_encode(['success' => true, 'message' => $this->M_product_group->messages ?: 'Relasi berhasil ditambahkan.', 'new_id' => (int)$new_id]);
             }
             return;
         }
@@ -69,72 +73,73 @@ class Product_group extends MY_Controller
                 return;
             }
 
-            $ok = $this->pg->update_relation($id, $parent_id, $child_id);
+            $ok = $this->M_product_group->update_relation($id, $parent_id, $child_id);
             if ($ok) {
-                echo json_encode(['success' => true, 'message' => $this->pg->messages ?: 'Relasi berhasil diubah.']);
+                echo json_encode(['success' => true, 'message' => $this->M_product_group->messages ?: 'Relasi berhasil diubah.']);
             } else {
-                echo json_encode(['success' => false, 'message' => $this->pg->messages ?: 'Gagal mengubah relasi.']);
+                echo json_encode(['success' => false, 'message' => $this->M_product_group->messages ?: 'Gagal mengubah relasi.']);
             }
             return;
         }
     }
 
     /**
-     * delete_data: soft-delete relasi (set end_date)
+     * delete_data: soft-delete RELASI
      */
     public function delete_data()
     {
         $this->output->set_content_type('application/json');
 
-        $id = (int)$this->input->post('PRODUCT_GROUP_ID', TRUE);
+        $id = (int)$this->input->post('PARTM_ID', TRUE);
         if ($id <= 0) {
             echo json_encode(['success' => false, 'message' => 'ID relasi tidak ditemukan.']);
             return;
         }
 
-        $ok = $this->pg->soft_delete($id);
+        $ok = $this->M_product_group->soft_delete($id);
         if ($ok) {
-            echo json_encode(['success' => true, 'message' => $this->pg->messages ?: 'Relasi berhasil dinonaktifkan.']);
+            echo json_encode(['success' => true, 'message' => $this->M_product_group->messages ?: 'Relasi berhasil dinonaktifkan.']);
         } else {
-            echo json_encode(['success' => false, 'message' => $this->pg->messages ?: 'Gagal menonaktifkan relasi.']);
+            echo json_encode(['success' => false, 'message' => $this->M_product_group->messages ?: 'Gagal menonaktifkan relasi.']);
         }
     }
 
     /**
-     * create_group: create new product entry where PRODUCT_IS_GROUP = 1
-     * Mirip pola UoM: cek duplicate hanya pada product aktif (IS_DELETED = 0)
+     * create_group: Membuat MASTER GROUP BARU (Header) di tabel MS_PARTS
      */
     public function create_group()
     {
         $this->output->set_content_type('application/json');
 
-        $name = $this->input->post('PRODUCT_NAME', TRUE);
-        $desc = $this->input->post('PRODUCT_DESC', TRUE);
+        $name = $this->input->post('PART_NAME', TRUE);
+        $desc = $this->input->post('PART_DESC', TRUE);
 
         if (empty(trim($name))) {
             echo json_encode(['success' => false, 'message' => 'Product Group name wajib diisi.']);
             return;
         }
 
-        // product->is_duplicate harus mengecek IS_DELETED = 0 (implementasi di model Product)
-        if ($this->product->is_duplicate($name, null)) {
+        // Cek duplicate di MS_PARTS
+        if ($this->M_product->is_duplicate($name, null)) {
             echo json_encode(['success' => false, 'message' => 'Product Group sudah ada (aktif).']);
             return;
         }
 
+        // Siapkan data untuk MS_PARTS
         $data = [
-            'PRODUCT_NAME' => $name,
-            'PRODUCT_IS_GROUP' => 1,
-            'PRODUCT_DESC' => $desc,
-            'PRODUCT_CUSTOMER_CODE' => null,
-            'UOM_ID' => null,
-            'CUSTOMER_ID' => null,
-            'PRODUCT_DRW_NO' => null,
-            'PRODUCT_TYPE' => null,
-            'IS_DELETED' => 0
+            'PART_NAME'     => $name,
+            'PART_IS_GROUP' => 1,       // Tandai sebagai Group
+            'PART_DESC'     => $desc,
+            'PART_CUS_CODE' => null,
+            'PART_UNITS'    => null,
+            'PART_CUS_ID'   => null,
+            'PART_DRW_NO'   => null,
+            'PART_TYPE'     => null,
+            'PART_UNIT_PRICE' => 0,
+            'PART_WEIGHT'   => 0
         ];
 
-        $new_id = $this->product->insert($data);
+        $new_id = $this->M_product->insert($data);
         if ($new_id) {
             echo json_encode(['success' => true, 'message' => 'Product Group berhasil dibuat.', 'new_id' => (int)$new_id]);
         } else {

@@ -3,14 +3,14 @@ defined('BASEPATH') or exit('No direct script access allowed');
 
 class M_reason extends CI_Model
 {
-    private $table = 'TMS_NEW.dbo.TMS_M_REASON';
+    private $table = 'MS_REASON';
     public $tms_db;
     public $messages = '';
 
     public function __construct()
     {
         parent::__construct();
-        $this->tms_db = $this->load->database('tms_db', TRUE);
+        $this->tms_db = $this->load->database('tms_NEW', TRUE);
     }
 
     // cek apakah kolom ada
@@ -19,7 +19,7 @@ class M_reason extends CI_Model
         $col = trim((string)$col);
         if ($col === '') return false;
         $sql = "SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS
-                WHERE TABLE_SCHEMA = 'dbo' AND TABLE_NAME = 'TMS_M_REASON' AND COLUMN_NAME = ?";
+                WHERE TABLE_SCHEMA = 'dbo' AND TABLE_NAME = 'MS_REASON' AND COLUMN_NAME = ?";
         $q = $this->tms_db->query($sql, array($col));
         return ($q && $q->num_rows() > 0);
     }
@@ -163,9 +163,9 @@ class M_reason extends CI_Model
         $new_id = $this->get_new_sequence();
 
         $insert = array(
-            'REASON_ID'   => $new_id,
             'REASON_NAME' => $name,
             'REASON_CODE' => $code,
+            'IS_DELETED'  => 0,
         );
 
         if ($this->has_column($delCol)) $insert[$delCol] = 0;
@@ -240,54 +240,50 @@ class M_reason extends CI_Model
         return false;
     }
 
-    public function delete_data($id)
+    public function delete_data($id, $actor = null)
     {
         $id = (int)$id;
         $row = $this->get_by_id($id);
+
         if (!$row) {
             $this->messages = 'Data tidak ditemukan.';
             return false;
         }
 
         $delCol = $this->deleted_column();
-        // already deleted check
-        if (!empty($row[$delCol])) {
-            $this->messages = 'Reason sudah dihapus.';
-            return false;
-        }
 
-        $deletedBy = 'SYSTEM';
-        if (isset($this->session) && method_exists($this->session, 'userdata')) {
-            $u = $this->session->userdata('username');
-            if (!empty($u)) $deletedBy = $u;
-        }
+        // 1. Ambil Session Username secara akurat
+        $CI = &get_instance();
+        $sessionUser = $CI->session->userdata('username');
 
-        $this->tms_db->trans_begin();
+        // Prioritas: Parameter $actor -> Session -> Fallback 'SYSTEM'
+        $deletedBy = $actor ?: ($sessionUser ?: 'SYSTEM');
 
-        $updateData = array();
-        // set deleted flag to 1 if column exists
-        if ($this->has_column($delCol)) $updateData[$delCol] = 1;
-
-        if ($this->has_column('DELETED_BY')) $updateData['DELETED_BY'] = $deletedBy;
+        $this->tms_db->trans_start();
 
         $this->tms_db->where('REASON_ID', $id);
-        $ok = true;
-        if (!empty($updateData)) {
-            $ok = $this->tms_db->update($this->table, $updateData);
+
+        // 2. Set data flag delete dan user
+        $updateData = [
+            $delCol      => 1,
+            'DELETED_BY' => $deletedBy
+        ];
+
+        // 3. Set waktu delete menggunakan fungsi SQL Server GETDATE()
+        if ($this->has_column('DELETED_AT')) {
+            $this->tms_db->set('DELETED_AT', 'GETDATE()', FALSE);
         }
 
-        if ($ok && $this->has_column('DELETED_AT')) {
-            $ok2 = $this->tms_db->query("UPDATE {$this->table} SET DELETED_AT = GETDATE() WHERE REASON_ID = ?", array($id));
-            if (!$ok2) $ok = false;
-        }
+        $this->tms_db->update($this->table, $updateData);
 
-        if (!$ok || $this->tms_db->trans_status() === FALSE) {
+        $this->tms_db->trans_complete();
+
+        if ($this->tms_db->trans_status() === FALSE) {
             $err = $this->tms_db->error();
-            $this->tms_db->trans_rollback();
-            $this->messages = 'Gagal menghapus reason. ' . (isset($err['message']) ? $err['message'] : '');
+            $this->messages = 'Gagal menghapus reason: ' . (isset($err['message']) ? $err['message'] : 'Database Error');
             return false;
         }
-        $this->tms_db->trans_commit();
+
         $this->messages = 'Reason berhasil dihapus';
         return true;
     }

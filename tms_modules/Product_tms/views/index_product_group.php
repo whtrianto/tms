@@ -87,7 +87,6 @@
                                     <table id="table-pg" class="table table-bordered table-striped table-sm w-100 text-center">
                                         <thead>
                                             <tr>
-                                                <!-- <th>NO</th> -->
                                                 <th>ID</th>
                                                 <th>GROUP NAME</th>
                                                 <th>DESCRIPTION</th>
@@ -98,10 +97,9 @@
                                             <?php if (!empty($list_data)): ?>
                                                 <?php foreach ($list_data as $k => $row): ?>
                                                     <tr>
-                                                        <!-- <td><?= $k + 1 ?></td> -->
-                                                        <td><?= (int)$row['PRODUCT_ID']; ?></td>
-                                                        <td><?= htmlspecialchars($row['PRODUCT_NAME']); ?></td>
-                                                        <td><?= htmlspecialchars(isset($row['PRODUCT_DESC']) ? $row['PRODUCT_DESC'] : ''); ?></td>
+                                                        <td><?= (int)$row['PART_ID']; ?></td>
+                                                        <td><?= htmlspecialchars($row['PART_NAME']); ?></td>
+                                                        <td><?= htmlspecialchars(isset($row['PART_DESC']) ? $row['PART_DESC'] : ''); ?></td>
                                                         <td>
                                                             <div style="display:flex; justify-content:center; gap:8px;">
                                                                 <button type="button" class="btn btn-secondary btn-sm btn-edit-group"
@@ -109,8 +107,8 @@
                                                                     Edit
                                                                 </button>
                                                                 <button type="button" class="btn btn-danger btn-sm btn-delete-group"
-                                                                    data-id="<?= (int)$row['PRODUCT_ID'] ?>"
-                                                                    data-name="<?= htmlspecialchars($row['PRODUCT_NAME'], ENT_QUOTES, 'UTF-8') ?>">
+                                                                    data-id="<?= (int)$row['PART_ID'] ?>"
+                                                                    data-name="<?= htmlspecialchars($row['PART_NAME'], ENT_QUOTES, 'UTF-8') ?>">
                                                                     Delete
                                                                 </button>
                                                             </div>
@@ -126,7 +124,6 @@
                     </div>
                 </div>
 
-                <!-- Modal Create/Edit Group -->
                 <div class="modal fade" id="modalCreateGroup" tabindex="-1" role="dialog" aria-labelledby="modalCreateGroupLabel" aria-hidden="true">
                     <div class="modal-dialog modal-lg" role="document">
                         <div class="modal-content">
@@ -140,17 +137,18 @@
                             <div class="modal-body">
                                 <form id="formCreateGroup" method="post" action="<?php echo base_url('product_tms/product-group/create_group'); ?>">
                                     <input type="hidden" name="action" value="ADD">
-                                    <input type="hidden" name="PRODUCT_ID" value="">
+
+                                    <input type="hidden" name="PART_ID" value="">
 
                                     <div class="form-group">
                                         <label class="label-required">Product Group Name</label>
-                                        <input type="text" name="PRODUCT_NAME" class="form-control">
+                                        <input type="text" name="PART_NAME" class="form-control">
                                         <div class="invalid-feedback">Product group name wajib diisi.</div>
                                     </div>
 
                                     <div class="form-group">
                                         <label>Description</label>
-                                        <textarea name="PRODUCT_DESC" class="form-control" rows="2"></textarea>
+                                        <textarea name="PART_DESC" class="form-control" rows="2"></textarea>
                                     </div>
                                 </form>
                             </div>
@@ -202,9 +200,12 @@
                 function resetForm() {
                     $('#formCreateGroup')[0].reset();
                     $('input[name="action"]').val('ADD');
-                    $('input[name="PRODUCT_ID"]').val('');
+
+                    // PERBAIKAN: Reset PART_ID
+                    $('input[name="PART_ID"]').val('');
+
                     // remove invalid state
-                    $('[name="PRODUCT_NAME"]').removeClass('is-invalid');
+                    $('[name="PART_NAME"]').removeClass('is-invalid');
                 }
 
                 // New Group
@@ -225,9 +226,11 @@
 
                     $('#modalCreateGroupLabel').text('Edit Product Group');
                     $('input[name="action"]').val('EDIT');
-                    $('input[name="PRODUCT_ID"]').val(data.PRODUCT_ID);
-                    $('input[name="PRODUCT_NAME"]').val(data.PRODUCT_NAME);
-                    $('textarea[name="PRODUCT_DESC"]').val(data.PRODUCT_DESC || '');
+
+                    // PERBAIKAN: Mapping data JSON dari database (PART_...) ke Input Form (PART_...)
+                    $('input[name="PART_ID"]').val(data.PART_ID);
+                    $('input[name="PART_NAME"]').val(data.PART_NAME);
+                    $('textarea[name="PART_DESC"]').val(data.PART_DESC || '');
 
                     // set form action to product submit (edit product)
                     $('#formCreateGroup').attr('action', '<?= base_url("product_tms/product/submit_data") ?>');
@@ -245,9 +248,9 @@
                     e.preventDefault();
 
                     // simple client validation
-                    var name = $.trim($('[name="PRODUCT_NAME"]').val());
+                    var name = $.trim($('[name="PART_NAME"]').val());
                     if (name === '') {
-                        $('[name="PRODUCT_NAME"]').addClass('is-invalid');
+                        $('[name="PART_NAME"]').addClass('is-invalid');
                         return;
                     }
 
@@ -257,7 +260,7 @@
 
                     if (action === 'EDIT') {
                         // we must tell product controller this is a group
-                        data = data + '&PRODUCT_IS_GROUP=1';
+                        data = data + '&PART_IS_GROUP=1'; // Sesuaikan jika controller butuh flag ini
                     }
 
                     $.ajax({
@@ -298,7 +301,8 @@
                         type: 'POST',
                         dataType: 'json',
                         data: {
-                            PRODUCT_ID: id
+                            // PERBAIKAN: Key yang dikirim harus PART_ID sesuai controller Product
+                            PART_ID: id
                         },
                         success: function(res) {
                             if (res && res.success) {

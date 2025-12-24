@@ -13,14 +13,14 @@ class Work_activity extends MY_Controller
         $this->load->helper(array('url', 'form'));
 
         $this->load->model('M_work_activity', 'work_activity');
-        $this ->uid = $this->session->userdata('username') ?: 'SYSTEM';
+        $this->uid = $this->session->userdata('username') ?: 'SYSTEM';
     }
 
     public function index()
     {
         $data = array();
         $data['list_data'] = $this->work_activity->get_data_master_work_activity();
-        
+
         $this->view('index_work_activity', $data, FALSE);
     }
 
@@ -70,8 +70,8 @@ class Work_activity extends MY_Controller
             }
 
             $dataUpdate = [
-                'WORK_ACTIVITY_NAME' => $name,
-                'WORK_ACTIVITY_DESC' => trim((string)$this->input->post('work_activity_desc')) ?: NULL
+                'WA_NAME' => $name,
+                'WA_DESC' => trim((string)$this->input->post('work_activity_desc')) ?: NULL
             ];
 
             $ok = $this->work_activity->update_by_id($id, $dataUpdate, $this->uid);

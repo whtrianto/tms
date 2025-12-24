@@ -30,7 +30,7 @@ class Storage_location extends MY_Controller
     {
         $data = array();
         $data['list_data'] = $this->storage_location->get_data_master_storage_locations();
-        
+
         $this->view('index_storage_location', $data, FALSE);
     }
 
@@ -83,8 +83,8 @@ class Storage_location extends MY_Controller
             }
 
             $dataUpdate = [
-                'STORAGE_LOCATION_NAME' => $name,
-                'STORAGE_LOCATION_DESC' => trim((string)$this->input->post('storage_location_desc')) ?: NULL
+                'SL_NAME' => $name,
+                'SL_DESC' => trim((string)$this->input->post('storage_location_desc')) ?: NULL
             ];
 
             $ok = $this->storage_location->update_by_id($id, $dataUpdate, $this->uid);

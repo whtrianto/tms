@@ -40,14 +40,16 @@
                                             <tr>
                                                 <th>ID</th>
                                                 <th>NAME</th>
+                                                <th>ABBR</th>
                                                 <th>ACTION</th>
                                             </tr>
                                         </thead>
                                         <tbody>
                                             <?php foreach ($list_data as $row): ?>
                                                 <tr>
-                                                    <td><?= htmlspecialchars($row['CUSTOMER_ID'], ENT_QUOTES, 'UTF-8'); ?></td>
-                                                    <td><?= htmlspecialchars($row['CUSTOMER_NAME'], ENT_QUOTES, 'UTF-8'); ?></td>
+                                                    <td><?= htmlspecialchars($row['CUS_ID'], ENT_QUOTES, 'UTF-8'); ?></td>
+                                                    <td><?= htmlspecialchars($row['CUS_NAME'], ENT_QUOTES, 'UTF-8'); ?></td>
+                                                    <td><?= htmlspecialchars($row['CUS_ABBR'], ENT_QUOTES, 'UTF-8'); ?></td>
                                                     <td>
                                                         <div style="display:flex; justify-content:center; gap:8px;">
                                                             <button type="button" class="btn btn-secondary btn-sm btn-edit"
@@ -55,8 +57,8 @@
                                                                 Edit
                                                             </button>
                                                             <button type="button" class="btn btn-danger btn-sm btn-delete"
-                                                                data-id="<?= (int)$row['CUSTOMER_ID'] ?>"
-                                                                data-name="<?= htmlspecialchars($row['CUSTOMER_NAME'], ENT_QUOTES, 'UTF-8') ?>">
+                                                                data-id="<?= (int)$row['CUS_ID'] ?>"
+                                                                data-name="<?= htmlspecialchars($row['CUS_NAME'], ENT_QUOTES, 'UTF-8') ?>">
                                                                 Delete
                                                             </button>
                                                         </div>
@@ -86,6 +88,14 @@
                                         <label>Customer Name</label>
                                         <input type="text" class="form-control" name="customer_name" required>
                                     </div>
+                                    <div class="form-group">
+                                        <label>Customer Abbr</label>
+                                        <input type="text"
+                                            class="form-control"
+                                            name="customer_abbr"
+                                            maxlength="10"
+                                            placeholder="Optional">
+                                    </div>
                                 </form>
                             </div>
                             <div class="modal-footer">
@@ -98,7 +108,6 @@
 
                 <?= isset($modal_logout) ? $modal_logout : ''; ?>
             </div>
-
             <?= isset($footer) ? $footer : ''; ?>
         </div>
     </div>
@@ -118,7 +127,7 @@
                 pageLength: 25,
                 columnDefs: [{
                     orderable: false,
-                    targets: [2]
+                    targets: [3]
                 }],
                 order: [
                     [0, 'asc']
@@ -146,9 +155,14 @@
                 resetForm();
                 var row = $(this).data('edit');
                 $('#modalFormInputLabel').text('Edit Customer');
+
                 $("input[name='action']").val('EDIT');
-                $("input[name='customer_id']").val(row.CUSTOMER_ID);
-                $("input[name='customer_name']").val(row.CUSTOMER_NAME);
+
+                // Mapping field dari JSON database ke Input Form
+                $("input[name='customer_id']").val(row.CUS_ID);
+                $("input[name='customer_name']").val(row.CUS_NAME);
+                $("input[name='customer_abbr']").val(row.CUS_ABBR || '');
+
                 $('#modalFormInput').modal('show');
             });
 

@@ -94,12 +94,12 @@ class Tool extends MY_Controller
     {
         $this->output->set_content_type('application/json');
         $action = strtoupper($this->input->post('action', TRUE));
-        $id     = (int)$this->input->post('TOOL_ID', TRUE);
+        $id     = (int)$this->input->post('TC_ID', TRUE);
 
         // validation
-        $this->form_validation->set_rules('TOOL_NAME', 'Tool Name', 'required|trim');
-        $this->form_validation->set_rules('TOOL_TYPE', 'Tool Type', 'trim');
-        $this->form_validation->set_rules('TOOL_DESC', 'Description', 'trim');
+        $this->form_validation->set_rules('TC_NAME', 'Tool Name', 'required|trim');
+        $this->form_validation->set_rules('TC_TYPE', 'Tool Type', 'trim');
+        $this->form_validation->set_rules('TC_DESC', 'Description', 'trim');
 
         if ($this->form_validation->run() == FALSE) {
             $this->form_validation->set_error_delimiters('', '');
@@ -107,29 +107,29 @@ class Tool extends MY_Controller
             return;
         }
 
-        $name = $this->input->post('TOOL_NAME', TRUE);
-        $type = $this->input->post('TOOL_TYPE', TRUE);
-        $desc = $this->input->post('TOOL_DESC', TRUE);
+        $name = $this->input->post('TC_NAME', TRUE);
+        $type = $this->input->post('TC_TYPE', TRUE);
+        $desc = $this->input->post('TC_DESC', TRUE);
 
         $tool_type_id = ($type === '' || $type === null) ? null : (int)$type;
 
         $data = array(
-            'TOOL_NAME' => $name,
-            'TOOL_TYPE' => $tool_type_id,
-            'TOOL_DESC' => $desc
+            'TC_NAME' => $name,
+            'TC_TYPE' => $tool_type_id,
+            'TC_DESC' => $desc
         );
 
         if ($action === 'ADD') {
             // duplicate check by name
-            if ($this->tool->exists_by_name($data['TOOL_NAME'])) {
+            if ($this->tool->exists_by_name($data['TC_NAME'])) {
                 echo json_encode(array('success' => false, 'message' => 'Tool name sudah digunakan.'));
                 return;
             }
 
             $ok = $this->tool->add_data($data);
             if ($ok) {
-                $row = $this->tool->get_by_name($data['TOOL_NAME']);
-                $new_id = $row ? (int)$row['TOOL_ID'] : null;
+                $row = $this->tool->get_by_name($data['TC_NAME']);
+                $new_id = $row ? (int)$row['TC_ID'] : null;
                 echo json_encode(array('success' => true, 'message' => $this->tool->messages ?: 'Tool berhasil ditambahkan.', 'new_id' => $new_id));
                 return;
             } else {
@@ -146,7 +146,7 @@ class Tool extends MY_Controller
             }
 
             // exclude current id on duplicate check
-            if ($this->tool->is_duplicate($data['TOOL_NAME'], $id)) {
+            if ($this->tool->is_duplicate($data['TC_NAME'], $id)) {
                 echo json_encode(array('success' => false, 'message' => 'Tool name sudah digunakan oleh data lain.'));
                 return;
             }
@@ -171,9 +171,9 @@ class Tool extends MY_Controller
     {
         $this->output->set_content_type('application/json');
 
-        $id = (int)$this->input->post('TOOL_ID', TRUE);
+        $id = (int)$this->input->post('TC_ID', TRUE);
         if ($id <= 0) {
-            echo json_encode(array('success' => false, 'message' => 'TOOL_ID tidak ditemukan.'));
+            echo json_encode(array('success' => false, 'message' => 'TC_ID tidak ditemukan.'));
             return;
         }
 
@@ -191,9 +191,9 @@ class Tool extends MY_Controller
     public function get_tool_detail()
     {
         $this->output->set_content_type('application/json');
-        $id = (int)$this->input->post('TOOL_ID', TRUE);
+        $id = (int)$this->input->post('TC_ID', TRUE);
         if ($id <= 0) {
-            echo json_encode(array('success' => false, 'message' => 'TOOL_ID tidak ditemukan.'));
+            echo json_encode(array('success' => false, 'message' => 'TC_ID tidak ditemukan.'));
             return;
         }
         $row = $this->tool->get_by_id($id);
@@ -218,16 +218,16 @@ class Tool extends MY_Controller
 
         // jika tool_type model ada, ambil nama tipe
         $type_name = '';
-        if (!empty($row['TOOL_TYPE']) && isset($this->tool_type) && method_exists($this->tool_type, 'get_by_id')) {
-            $tt = $this->tool_type->get_by_id($row['TOOL_TYPE']);
-            $type_name = $tt ? (isset($tt['TOOL_TYPE_NAME']) ? $tt['TOOL_TYPE_NAME'] : '') : '';
+        if (!empty($row['TC_TYPE']) && isset($this->tool_type) && method_exists($this->tool_type, 'get_by_id')) {
+            $tt = $this->tool_type->get_by_id($row['TC_TYPE']);
+            $type_name = $tt ? (isset($tt['TT_NAME']) ? $tt['TT_NAME'] : '') : '';
         }
 
         $data['tool'] = array(
-            'TOOL_ID'   => $row['TOOL_ID'],
-            'TOOL_NAME' => $row['TOOL_NAME'],
-            'TOOL_DESC' => isset($row['TOOL_DESC']) ? $row['TOOL_DESC'] : '',
-            'TOOL_TYPE' => $type_name
+            'TC_ID'   => $row['TC_ID'],
+            'TC_NAME' => $row['TC_NAME'],
+            'TC_DESC' => isset($row['TC_DESC']) ? $row['TC_DESC'] : '',
+            'TC_TYPE' => $type_name
         );
 
         $this->view('detail_tool', $data, FALSE);
@@ -242,8 +242,8 @@ class Tool extends MY_Controller
             return;
         }
 
-        $name = $this->input->post('TOOL_TYPE_NAME', TRUE);
-        $desc = $this->input->post('TOOL_TYPE_DESC', TRUE);
+        $name = $this->input->post('TT_NAME', TRUE);
+        $desc = $this->input->post('TT_DESC', TRUE);
 
         if (trim($name) === '') {
             echo json_encode(['success' => false, 'message' => 'Nama Tool Type wajib diisi.']);

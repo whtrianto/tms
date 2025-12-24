@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <?= $head; ?>
@@ -81,9 +81,9 @@
                                                     </option>
                                                 <?php endforeach; ?>
                                             </select>
-                                            <button type="button" class="btn btn-primary btn-sm" onclick="alert('Submit Product functionality')">
+                                            <!-- <button type="button" class="btn btn-primary btn-sm" onclick="alert('Submit Product functionality')">
                                                 Submit
-                                            </button>
+                                            </button> -->
                                         </div>
                                     </div>
 
@@ -103,9 +103,9 @@
                                                     </option>
                                                 <?php endforeach; ?>
                                             </select>
-                                            <button type="button" class="btn btn-primary btn-sm" onclick="alert('Submit Machine Group functionality')">
+                                            <!-- <button type="button" class="btn btn-primary btn-sm" onclick="alert('Submit Machine Group functionality')">
                                                 Submit
-                                            </button>
+                                            </button> -->
                                         </div>
                                     </div>
 
@@ -138,9 +138,9 @@
                                                     </option>
                                                 <?php endforeach; ?>
                                             </select>
-                                            <button type="button" class="btn btn-primary btn-sm" onclick="alert('Submit Process functionality')">
+                                            <!-- <button type="button" class="btn btn-primary btn-sm" onclick="alert('Submit Process functionality')">
                                                 Submit
-                                            </button>
+                                            </button> -->
                                         </div>
                                     </div>
 
@@ -153,9 +153,9 @@
                                         <label>Effective Date</label>
                                         <div class="date-with-submit">
                                             <input type="date" name="EFFECTIVE_DATE" id="effective_date" class="form-control">
-                                            <button type="button" class="btn btn-primary btn-sm" onclick="alert('Submit Effective Date functionality')">
+                                            <!-- <button type="button" class="btn btn-primary btn-sm" onclick="alert('Submit Effective Date functionality')">
                                                 Submit
-                                            </button>
+                                            </button> -->
                                         </div>
                                     </div>
                                 </div>
@@ -205,9 +205,8 @@
                             </div>
                         </form>
                     </div>
-                </div>
+                </div><br><br><br>
             </div>
-            <div style="height: 15rem; min-height: 15rem; clear: both;"></div>
             <?= isset($modal_logout) ? $modal_logout : ''; ?>
         </div>
         <?= isset($footer) ? $footer : ''; ?>
@@ -283,4 +282,3 @@
 </script>
 </body>
 </html>
-

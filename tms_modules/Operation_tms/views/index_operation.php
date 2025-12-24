@@ -6,11 +6,40 @@
     <link href="<?= base_url('assets/vendor/select2/dist/css/select2.min.css'); ?>" rel="stylesheet" type="text/css">
     <style>
         /* (Style teks hitam Anda) */
-        html, body, #content-wrapper { color: #000; }
-        .table, .card, .modal, .dropdown-menu, .form-text, .dataTables_wrapper, label, .invalid-feedback, .valid-feedback { color: #000; }
-        .form-control, .custom-select, input, textarea, select { color: #000 !important; }
-        ::placeholder { color: #000 !important; }
-        .select2-container--default .select2-selection--single .select2-selection__rendered, .select2-results__option { color: #000 !important; }
+        html,
+        body,
+        #content-wrapper {
+            color: #000;
+        }
+
+        .table,
+        .card,
+        .modal,
+        .dropdown-menu,
+        .form-text,
+        .dataTables_wrapper,
+        label,
+        .invalid-feedback,
+        .valid-feedback {
+            color: #000;
+        }
+
+        .form-control,
+        .custom-select,
+        input,
+        textarea,
+        select {
+            color: #000 !important;
+        }
+
+        ::placeholder {
+            color: #000 !important;
+        }
+
+        .select2-container--default .select2-selection--single .select2-selection__rendered,
+        .select2-results__option {
+            color: #000 !important;
+        }
     </style>
 </head>
 
@@ -50,8 +79,8 @@
                                             <?php foreach ($list_data as $key => $value) : ?>
                                                 <tr>
                                                     <td><?= $key + 1; ?></td>
-                                                    <td><?= $value['OPERATION_ID']; ?></td>
-                                                    <td><?= $value['OPERATION_NAME']; ?></td>
+                                                    <td><?= $value['OP_ID']; ?></td>
+                                                    <td><?= $value['OP_NAME']; ?></td>
                                                     <td>
                                                         <div style="display: flex; justify-content: center; gap: 8px;">
                                                             <button type="button" class="btn btn-secondary btn-sm btn-edit"
@@ -59,8 +88,8 @@
                                                                 Edit
                                                             </button>
                                                             <button type="button" class="btn btn-danger btn-sm btn-delete"
-                                                                data-id="<?= $value['OPERATION_ID'] ?>"
-                                                                data-name="<?= htmlspecialchars($value['OPERATION_NAME'], ENT_QUOTES, 'UTF-8') ?>">
+                                                                data-id="<?= $value['OP_ID'] ?>"
+                                                                data-name="<?= htmlspecialchars($value['OP_NAME'], ENT_QUOTES, 'UTF-8') ?>">
                                                                 Delete
                                                             </button>
                                                         </div>
@@ -115,10 +144,18 @@
                     $(function() {
                         var action;
                         var table = $('#table-operation').DataTable({
-                            "lengthMenu": [ [10, 25, 50, 100, -1], [10, 25, 50, 100, "ALL"] ],
+                            "lengthMenu": [
+                                [10, 25, 50, 100, -1],
+                                [10, 25, 50, 100, "ALL"]
+                            ],
                             "pageLength": 25,
-                            "columnDefs": [{ "orderable": false, "targets": [0, 3] }], // Kolom No dan Action
-                            order: [ [1, 'asc'] ], // Default sort by ID
+                            "columnDefs": [{
+                                "orderable": false,
+                                "targets": [0, 3]
+                            }], // Kolom No dan Action
+                            order: [
+                                [1, 'asc']
+                            ], // Default sort by ID
                             "fnRowCallback": function(nRow, aData, iDisplayIndex, iDisplayIndexFull) {
                                 $('td:eq(0)', nRow).html(iDisplayIndexFull + 1);
                             },
@@ -155,8 +192,8 @@
                             $("input[name='action']").val("EDIT");
 
                             // Isi form dengan data
-                            $("input[name=operation_id]").val(data.OPERATION_ID);
-                            $("input[name=operation_name]").val(data.OPERATION_NAME);
+                            $("input[name=operation_id]").val(data.OP_ID);
+                            $("input[name=operation_name]").val(data.OP_NAME);
 
                             $("#modalFormInput").modal('show');
                         });
@@ -167,7 +204,7 @@
                         });
 
                         $('#formInput').on('submit', function(event) {
-                            event.preventDefault(); 
+                            event.preventDefault();
                             var inputData = $(this).serializeArray();
 
                             $.ajax({
@@ -177,11 +214,15 @@
                                 dataType: "json",
                                 success: function(response) {
                                     if (response.success) {
-                                        toastr.success(response.message, 'Success', { timeOut: 5000 });
-                                        $('#modalFormInput').modal('hide'); 
+                                        toastr.success(response.message, 'Success', {
+                                            timeOut: 5000
+                                        });
+                                        $('#modalFormInput').modal('hide');
                                         location.reload();
                                     } else {
-                                        toastr.warning(response.message.replace(/<font[^>]*>/g, '<p>').replace(/<\/font>/g, '</p>'), 'Warning', { timeOut: 5000 });
+                                        toastr.warning(response.message.replace(/<font[^>]*>/g, '<p>').replace(/<\/font>/g, '</p>'), 'Warning', {
+                                            timeOut: 5000
+                                        });
                                     }
                                 },
                                 error: function(xhr, status, error) {
@@ -228,4 +269,5 @@
                     });
                 </script>
 </body>
+
 </html>

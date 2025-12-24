@@ -1,17 +1,54 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <?= $head; ?>
     <link href="<?= base_url('assets/vendor/select2/dist/css/select2.min.css'); ?>" rel="stylesheet" type="text/css">
     <style>
-        html, body, #content-wrapper { color: #000; }
-        .table, .card, .modal, .dropdown-menu, .form-text, .dataTables_wrapper, label, .invalid-feedback, .valid-feedback { color: #000; }
-        .form-control, .custom-select, input, textarea, select { color: #000 !important; }
-        ::placeholder { color: #000 !important; }
-        .select2-container--default .select2-selection--single .select2-selection__rendered, .select2-results__option { color: #000 !important; }
-        .select2-container { z-index: 1051; width: 100% !important; } 
+        html,
+        body,
+        #content-wrapper {
+            color: #000;
+        }
+
+        .table,
+        .card,
+        .modal,
+        .dropdown-menu,
+        .form-text,
+        .dataTables_wrapper,
+        label,
+        .invalid-feedback,
+        .valid-feedback {
+            color: #000;
+        }
+
+        .form-control,
+        .custom-select,
+        input,
+        textarea,
+        select {
+            color: #000 !important;
+        }
+
+        ::placeholder {
+            color: #000 !important;
+        }
+
+        .select2-container--default .select2-selection--single .select2-selection__rendered,
+        .select2-results__option {
+            color: #000 !important;
+        }
+
+        .select2-container {
+            z-index: 1051;
+            width: 100% !important;
+        }
+
         /* Sembunyikan field group secara default */
-        #group_dropdown_wrapper { display: none; }
+        #group_dropdown_wrapper {
+            display: none;
+        }
     </style>
 </head>
 
@@ -49,9 +86,9 @@
                                             <?php foreach ($list_data as $key => $value) : ?>
                                                 <tr>
                                                     <td><?= $key + 1; ?></td>
-                                                    <td><?= $value['MACHINE_ID']; ?></td>
-                                                    <td><?= $value['MACHINE_NAME']; ?></td>
-                                                    <td><?= $value['OPERATION_NAME']; ?></td>
+                                                    <td><?= $value['MAC_ID']; ?></td>
+                                                    <td><?= $value['MAC_NAME']; ?></td>
+                                                    <td><?= $value['OP_NAME']; ?></td>
                                                     <td><?= $value['MACHINES_GROUP_NAME']; ?></td>
                                                     <td>
                                                         <div style="display: flex; justify-content: center; gap: 8px;">
@@ -60,8 +97,8 @@
                                                                 Edit
                                                             </button>
                                                             <button type="button" class="btn btn-danger btn-sm btn-delete"
-                                                                data-id="<?= $value['MACHINE_ID'] ?>"
-                                                                data-name="<?= htmlspecialchars($value['MACHINE_NAME'], ENT_QUOTES, 'UTF-8') ?>">
+                                                                data-id="<?= $value['MAC_ID'] ?>"
+                                                                data-name="<?= htmlspecialchars($value['MAC_NAME'], ENT_QUOTES, 'UTF-8') ?>">
                                                                 Delete
                                                             </button>
                                                         </div>
@@ -88,19 +125,19 @@
                                 <form id="formInput" method="post" action="<?= base_url('operation_tms/machines/submit_data') ?>">
                                     <input type="hidden" name="action">
                                     <input type="hidden" name="machine_id">
-                                    
+
                                     <div class="form-group">
                                         <label for="machine_name" class="form-label">Name (Machine / Group) <span class="text-danger">*</span></label>
                                         <input type="text" class="form-control" id="machine_name" name="machine_name" placeholder="Nama Mesin atau Grup Mesin" required>
                                     </div>
-                                    
+
                                     <div class="row">
                                         <div class="form-group col-md-6">
                                             <label for="operation_id" class="form-label">OPERATION <span class="text-danger">*</span></label>
                                             <select class="form-control select2-modal" id="operation_id" name="operation_id" required>
                                                 <option value="" selected disabled>-- Pilih Operation --</option>
-                                                <?php foreach($dropdown_operations as $o): ?>
-                                                <option value="<?= $o['OPERATION_ID'] ?>"><?= $o['OPERATION_NAME'] ?></option>
+                                                <?php foreach ($dropdown_operations as $o): ?>
+                                                    <option value="<?= $o['OP_ID'] ?>"><?= $o['OP_NAME'] ?></option>
                                                 <?php endforeach; ?>
                                             </select>
                                         </div>
@@ -123,8 +160,8 @@
                                         <label for="parent_id" class="form-label">MACHINE GROUP (Induk) <span class="text-danger">*</span></label>
                                         <select class="form-control select2-modal" id="parent_id" name="parent_id">
                                             <option value="" selected>-- Pilih Grup (Wajib untuk Mesin) --</option>
-                                            <?php foreach($dropdown_groups as $g): ?>
-                                            <option value="<?= $g['MACHINE_ID'] ?>"><?= $g['MACHINE_NAME'] ?></option>
+                                            <?php foreach ($dropdown_groups as $g): ?>
+                                                <option value="<?= $g['MAC_ID'] ?>"><?= $g['MAC_NAME'] ?></option>
                                             <?php endforeach; ?>
                                         </select>
                                     </div>
@@ -157,10 +194,18 @@
             });
 
             var table = $('#table-machines').DataTable({
-                "lengthMenu": [ [10, 25, 50, 100, -1], [10, 25, 50, 100, "ALL"] ],
+                "lengthMenu": [
+                    [10, 25, 50, 100, -1],
+                    [10, 25, 50, 100, "ALL"]
+                ],
                 "pageLength": 25,
-                "columnDefs": [{ "orderable": false, "targets": [0, 5] }],
-                order: [ [1, 'asc'] ], 
+                "columnDefs": [{
+                    "orderable": false,
+                    "targets": [0, 5]
+                }],
+                order: [
+                    [1, 'asc']
+                ],
                 "fnRowCallback": function(nRow, aData, iDisplayIndex, iDisplayIndexFull) {
                     $('td:eq(0)', nRow).html(iDisplayIndexFull + 1);
                 },
@@ -181,7 +226,7 @@
             }
 
             // Logika untuk checkbox "Is Group"
-            $('#is_group').on('change', function(){
+            $('#is_group').on('change', function() {
                 if (this.checked) {
                     // Jika ini ADALAH GRUP, sembunyikan pilihan grup
                     $('#group_dropdown_wrapper').slideUp();
@@ -206,7 +251,7 @@
                 e.preventDefault();
                 resetForm();
                 var data = $(this).data('edit');
-                
+
                 // Ambil data lengkap (termasuk IS_GROUP dan PARENT_ID)
                 // karena data di tabel adalah data 'anak' (IS_GROUP=0)
                 // kita perlu AJAX call untuk data edit yang akurat
@@ -214,26 +259,28 @@
                     url: "<?= base_url('operation_tms/machines/get_machine_detail') ?>", // Anda perlu buat method ini
                     type: "POST",
                     dataType: 'json',
-                    data: { machine_id: data.MACHINE_ID },
+                    data: {
+                        machine_id: data.MAC_ID
+                    },
                     success: function(response) {
-                        if(response.success) {
+                        if (response.success) {
                             var editData = response.data;
-                            
+
                             $("#modalFormInputLabel").text("Form Edit Machine");
                             $("input[name='action']").val("EDIT");
 
                             // Isi form dengan data
-                            $("input[name=machine_id]").val(editData.MACHINE_ID);
-                            $("input[name=machine_name]").val(editData.MACHINE_NAME);
+                            $("input[name=machine_id]").val(editData.MAC_ID);
+                            $("input[name=machine_name]").val(editData.MAC_NAME);
                             // $("input[name=charge_rate]").val(editData.CHARGE_RATE);
-                            
+
                             // Set checkbox
                             var isGroup = (editData.IS_GROUP == 1);
                             $('#is_group').prop('checked', isGroup).trigger('change');
 
                             // Set value untuk select2
-                            $("#operation_id").val(editData.OPERATION_ID).trigger('change');
-                            $("#parent_id").val(editData.PARENT_ID).trigger('change');
+                            $("#operation_id").val(editData.MAC_OP_ID).trigger('change');
+                            $("#parent_id").val(editData.MACM_PARENT_ID).trigger('change');
 
                             $("#modalFormInput").modal('show');
                         } else {
@@ -252,7 +299,7 @@
             });
 
             $('#formInput').on('submit', function(event) {
-                event.preventDefault(); 
+                event.preventDefault();
                 var inputData = $(this).serializeArray();
                 $.ajax({
                     url: $('#formInput').attr('action'),
@@ -261,11 +308,17 @@
                     dataType: "json",
                     success: function(response) {
                         if (response.success) {
-                            toastr.success(response.message, 'Success', { timeOut: 3000 });
-                            $('#modalFormInput').modal('hide'); 
-                            setTimeout(function(){ location.reload(); }, 1000); 
+                            toastr.success(response.message, 'Success', {
+                                timeOut: 3000
+                            });
+                            $('#modalFormInput').modal('hide');
+                            setTimeout(function() {
+                                location.reload();
+                            }, 1000);
                         } else {
-                            toastr.warning(response.message.replace(/<p>/g, '').replace(/<\/p>/g, '<br>'), 'Warning', { timeOut: 5000 });
+                            toastr.warning(response.message.replace(/<p>/g, '').replace(/<\/p>/g, '<br>'), 'Warning', {
+                                timeOut: 5000
+                            });
                         }
                     },
                     error: function(xhr, status, error) {
@@ -289,11 +342,15 @@
                     url: '<?= site_url("operation_tms/machines/delete_data") ?>',
                     type: 'POST',
                     dataType: 'json',
-                    data: { machine_id: machineId }
+                    data: {
+                        machine_id: machineId
+                    }
                 }).done(function(resp) {
                     if (resp && resp.success) {
                         toastr.success(resp.message || 'Data terhapus', 'Success!');
-                        setTimeout(function() { location.reload(); }, 800);
+                        setTimeout(function() {
+                            location.reload();
+                        }, 800);
                     } else {
                         toastr.error((resp && resp.message) || 'Gagal menghapus.', 'Error!');
                     }
@@ -304,4 +361,5 @@
         });
     </script>
 </body>
+
 </html>

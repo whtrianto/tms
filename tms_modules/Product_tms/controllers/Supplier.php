@@ -32,11 +32,11 @@ class Supplier extends MY_Controller
         $this->output->set_content_type('application/json');
 
         $action = strtoupper($this->input->post('action', TRUE));
-        $id     = (int)$this->input->post('SUPPLIER_ID', TRUE);
+        $id     = (int)$this->input->post('SUP_ID', TRUE);
 
         // validation rules
-        $this->form_validation->set_rules('SUPPLIER_NAME', 'Supplier Name', 'required|trim');
-        $this->form_validation->set_rules('SUPPLIER_ABBR', 'Abbreviation', 'trim');
+        $this->form_validation->set_rules('SUP_NAME', 'Supplier Name', 'required|trim');
+        $this->form_validation->set_rules('SUP_ABBR', 'Abbreviation', 'trim');
 
         if ($this->form_validation->run() == FALSE) {
             $this->form_validation->set_error_delimiters('', '');
@@ -44,8 +44,8 @@ class Supplier extends MY_Controller
             return;
         }
 
-        $name = $this->input->post('SUPPLIER_NAME', TRUE);
-        $abbr = $this->input->post('SUPPLIER_ABBR', TRUE);
+        $name = $this->input->post('SUP_NAME', TRUE);
+        $abbr = $this->input->post('SUP_ABBR', TRUE);
 
         if ($action === 'ADD') {
             // check duplicate active supplier name (IS_DELETED = 0)
@@ -58,7 +58,7 @@ class Supplier extends MY_Controller
             if ($ok) {
                 // try fetch inserted id
                 $row = $this->supplier->get_by_name($name);
-                $new_id = $row ? (int)$row['SUPPLIER_ID'] : null;
+                $new_id = $row ? (int)$row['SUP_ID'] : null;
                 echo json_encode(array('success' => true, 'message' => $this->supplier->messages ?: 'Supplier berhasil ditambahkan.', 'new_id' => $new_id));
                 return;
             } else {
@@ -76,7 +76,7 @@ class Supplier extends MY_Controller
 
             // duplicate name check excluding current id
             $dup = $this->supplier->get_by_name($name);
-            if ($dup && (int)$dup['SUPPLIER_ID'] !== $id) {
+            if ($dup && (int)$dup['SUP_ID'] !== $id) {
                 echo json_encode(array('success' => false, 'message' => 'Nama supplier sudah digunakan oleh data lain.'));
                 return;
             }
@@ -101,9 +101,9 @@ class Supplier extends MY_Controller
     {
         $this->output->set_content_type('application/json');
 
-        $id = (int)$this->input->post('SUPPLIER_ID', TRUE);
+        $id = (int)$this->input->post('SUP_ID', TRUE);
         if ($id <= 0) {
-            echo json_encode(array('success' => false, 'message' => 'SUPPLIER_ID tidak ditemukan.'));
+            echo json_encode(array('success' => false, 'message' => 'SUP_ID tidak ditemukan.'));
             return;
         }
 
@@ -122,9 +122,9 @@ class Supplier extends MY_Controller
     {
         $this->output->set_content_type('application/json');
 
-        $id = (int)$this->input->post('SUPPLIER_ID', TRUE);
+        $id = (int)$this->input->post('SUP_ID', TRUE);
         if ($id <= 0) {
-            echo json_encode(array('success' => false, 'message' => 'SUPPLIER_ID tidak ditemukan.'));
+            echo json_encode(array('success' => false, 'message' => 'SUP_ID tidak ditemukan.'));
             return;
         }
 

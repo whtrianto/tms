@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <?= $head; ?>
@@ -249,4 +249,3 @@
 <?= isset($foot) ? $foot : ''; ?>
 </body>
 </html>
-

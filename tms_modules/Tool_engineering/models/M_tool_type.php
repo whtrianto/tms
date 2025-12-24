@@ -3,23 +3,23 @@ defined('BASEPATH') or exit('No direct script access allowed');
 
 class M_tool_type extends CI_Model
 {
-    private $table = 'TMS_NEW.dbo.TMS_M_TOOL_TYPE';
+    private $table = 'MS_TOOL_TYPE';
     public $tms_db;
     public $messages = '';
 
     public function __construct()
     {
         parent::__construct();
-        $this->tms_db = $this->load->database('tms_db', TRUE);
+        $this->tms_db = $this->load->database('tms_NEW', TRUE);
     }
 
     public function get_active()
     {
         return $this->tms_db
-            ->select('TOOL_TYPE_ID, TOOL_TYPE_NAME, TOOL_TYPE_DESC')
+            ->select('TT_ID, TT_NAME, TT_DESC')
             ->from($this->table)
             ->where('IS_DELETED', 0)
-            ->order_by('TOOL_TYPE_NAME', 'ASC')
+            ->order_by('TT_NAME', 'ASC')
             ->get()
             ->result_array();
     }
@@ -36,7 +36,7 @@ class M_tool_type extends CI_Model
 
         // gunakan INFORMATION_SCHEMA untuk kompatibilitas SQL Server
         $sql = "SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS
-                WHERE TABLE_SCHEMA = 'dbo' AND TABLE_NAME = 'TMS_M_TOOL_TYPE' AND COLUMN_NAME = ?";
+                WHERE TABLE_SCHEMA = 'dbo' AND TABLE_NAME = 'TMS_M_TT' AND COLUMN_NAME = ?";
         $q = $this->tms_db->query($sql, array($col));
         return ($q && $q->num_rows() > 0);
     }
@@ -44,10 +44,10 @@ class M_tool_type extends CI_Model
     public function get_all()
     {
         return $this->tms_db
-            ->select('TOOL_TYPE_ID, TOOL_TYPE_NAME, TOOL_TYPE_DESC')
+            ->select('TT_ID, TT_NAME, TT_DESC')
             ->from($this->table)
             ->where('IS_DELETED', 0)
-            ->order_by('TOOL_TYPE_NAME', 'ASC')
+            ->order_by('TT_NAME', 'ASC')
             ->get()
             ->result_array();
     }
@@ -56,14 +56,14 @@ class M_tool_type extends CI_Model
     {
         $id = (int)$id;
         if ($id <= 0) return null;
-        return $this->tms_db->where('TOOL_TYPE_ID', $id)->limit(1)->get($this->table)->row_array();
+        return $this->tms_db->where('TT_ID', $id)->limit(1)->get($this->table)->row_array();
     }
 
     public function get_by_name($name)
     {
         $name = trim((string)$name);
         if ($name === '') return null;
-        $sql = "SELECT TOP 1 * FROM {$this->table} WHERE UPPER(TOOL_TYPE_NAME) = ? AND IS_DELETED = 0";
+        $sql = "SELECT TOP 1 * FROM {$this->table} WHERE UPPER(TT_NAME) = ? AND IS_DELETED = 0";
         $q = $this->tms_db->query($sql, array(strtoupper($name)));
         return $q->row_array();
     }
@@ -75,8 +75,8 @@ class M_tool_type extends CI_Model
 
     public function get_new_sequence()
     {
-        $row = $this->tms_db->select_max('TOOL_TYPE_ID')->get($this->table)->row_array();
-        return isset($row['TOOL_TYPE_ID']) ? ((int)$row['TOOL_TYPE_ID'] + 1) : 1;
+        $row = $this->tms_db->select_max('TT_ID')->get($this->table)->row_array();
+        return isset($row['TT_ID']) ? ((int)$row['TT_ID'] + 1) : 1;
     }
 
     /* ========== MUTATORS ========== */
@@ -100,17 +100,17 @@ class M_tool_type extends CI_Model
 
         $this->tms_db->trans_start();
         $ok = $this->tms_db->insert($this->table, array(
-            'TOOL_TYPE_ID'   => $new_id,
-            'TOOL_TYPE_NAME' => $name,
-            'TOOL_TYPE_DESC' => $desc,
+            // 'TT_ID'   => $new_id,
+            'TT_NAME' => $name,
+            'TT_DESC' => $desc,
             'IS_DELETED'     => 0
         ));
 
         // set CREATED_AT only when column exists
-        if ($this->has_column('CREATED_AT')) {
-            // menggunakan parameter untuk safety
-            $this->tms_db->query("UPDATE {$this->table} SET CREATED_AT = GETDATE() WHERE TOOL_TYPE_ID = ?", array($new_id));
-        }
+        // if ($this->has_column('CREATED_AT')) {
+        //     // menggunakan parameter untuk safety
+        //     $this->tms_db->query("UPDATE {$this->table} SET CREATED_AT = GETDATE() WHERE TT_ID = ?", array($new_id));
+        // }
 
         $this->tms_db->trans_complete();
 
@@ -141,7 +141,7 @@ class M_tool_type extends CI_Model
         }
 
         // cek duplikat pada baris lain
-        $sql = "SELECT COUNT(1) AS cnt FROM {$this->table} WHERE UPPER(TOOL_TYPE_NAME) = ? AND TOOL_TYPE_ID <> ? AND IS_DELETED = 0";
+        $sql = "SELECT COUNT(1) AS cnt FROM {$this->table} WHERE UPPER(TT_NAME) = ? AND TT_ID <> ? AND IS_DELETED = 0";
         $r = $this->tms_db->query($sql, array(strtoupper($name), $id))->row_array();
         $dup = isset($r['cnt']) ? (int)$r['cnt'] : 0;
         if ($dup > 0) {
@@ -149,8 +149,8 @@ class M_tool_type extends CI_Model
             return false;
         }
 
-        $ok = $this->tms_db->where('TOOL_TYPE_ID', $id)
-            ->update($this->table, array('TOOL_TYPE_NAME' => $name, 'TOOL_TYPE_DESC' => $desc));
+        $ok = $this->tms_db->where('TT_ID', $id)
+            ->update($this->table, array('TT_NAME' => $name, 'TT_DESC' => $desc));
 
         if ($ok) {
             $this->messages = 'Tool Type berhasil diubah.';
@@ -198,16 +198,16 @@ class M_tool_type extends CI_Model
         // perform update: if DELETED_AT needs raw GETDATE(), use query builder then raw query
         if ($set_deleted_at_raw) {
             // build where
-            $this->tms_db->where('TOOL_TYPE_ID', $id);
+            $this->tms_db->where('TT_ID', $id);
             $ok = $this->tms_db->update($this->table, $updateData);
             if ($ok) {
                 // run separate raw to set DELETED_AT to GETDATE()
-                $ok2 = $this->tms_db->query("UPDATE {$this->table} SET DELETED_AT = GETDATE() WHERE TOOL_TYPE_ID = ?", array($id));
+                $ok2 = $this->tms_db->query("UPDATE {$this->table} SET DELETED_AT = GETDATE() WHERE TT_ID = ?", array($id));
                 if (!$ok2) $ok = false;
             }
         } else {
             // safe update without raw GETDATE()
-            $this->tms_db->where('TOOL_TYPE_ID', $id);
+            $this->tms_db->where('TT_ID', $id);
             $ok = $this->tms_db->update($this->table, $updateData);
         }
 

@@ -3,14 +3,14 @@ defined('BASEPATH') or exit('No direct script access allowed');
 
 class M_maker extends CI_Model
 {
-    private $table = 'TMS_NEW.dbo.TMS_M_MAKER';
+    private $table = 'MS_MAKER';
     public $tms_db;
     public $messages = '';
 
     public function __construct()
     {
         parent::__construct();
-        $this->tms_db = $this->load->database('tms_db', TRUE);
+        $this->tms_db = $this->load->database('tms_NEW', TRUE);
     }
 
     // check column exists (defensive)
@@ -19,7 +19,7 @@ class M_maker extends CI_Model
         $col = trim((string)$col);
         if ($col === '') return false;
         $sql = "SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS
-                WHERE TABLE_SCHEMA = 'dbo' AND TABLE_NAME = 'TMS_M_MAKER' AND COLUMN_NAME = ?";
+                WHERE TABLE_SCHEMA = 'dbo' AND TABLE_NAME = 'MS_MAKER' AND COLUMN_NAME = ?";
         $q = $this->tms_db->query($sql, array($col));
         return ($q && $q->num_rows() > 0);
     }
@@ -27,7 +27,7 @@ class M_maker extends CI_Model
     public function get_all()
     {
         return $this->tms_db
-            ->select('MAKER_ID, MAKER_NAME, MAKER_CODE, MAKER_DESC, MAKER_ADDRESS, MAKER_CITY, MAKER_COUNTRY, MAKER_STATE, MAKER_ZIPCODE, ')
+            ->select('MAKER_ID, MAKER_NAME, MAKER_CODE, MAKER_DESC, MAKER_ADDR, MAKER_CITY, MAKER_COUNTRY, MAKER_STATE, MAKER_ZIPCODE, ')
             ->from($this->table)
             ->where('IS_DELETED', 0)
             ->order_by('MAKER_ID', 'ASC')
@@ -91,11 +91,10 @@ class M_maker extends CI_Model
         $new_id = $this->get_new_sequence();
 
         $insert = array(
-            'MAKER_ID'      => $new_id,
             'MAKER_NAME'    => $name,
             'MAKER_CODE'    => $code,
             'MAKER_DESC'    => isset($data['MAKER_DESC']) ? $data['MAKER_DESC'] : null,
-            'MAKER_ADDRESS' => isset($data['MAKER_ADDRESS']) ? $data['MAKER_ADDRESS'] : null,
+            'MAKER_ADDR' => isset($data['MAKER_ADDR']) ? $data['MAKER_ADDR'] : null,
             'MAKER_CITY'    => isset($data['MAKER_CITY']) ? $data['MAKER_CITY'] : null,
             'MAKER_COUNTRY' => isset($data['MAKER_COUNTRY']) ? $data['MAKER_COUNTRY'] : null,
             'MAKER_STATE'   => isset($data['MAKER_STATE']) ? $data['MAKER_STATE'] : null,
@@ -141,7 +140,7 @@ class M_maker extends CI_Model
             'MAKER_NAME'    => isset($data['MAKER_NAME']) ? $data['MAKER_NAME'] : $current['MAKER_NAME'],
             'MAKER_CODE'    => isset($data['MAKER_CODE']) ? $data['MAKER_CODE'] : $current['MAKER_CODE'],
             'MAKER_DESC'    => isset($data['MAKER_DESC']) ? $data['MAKER_DESC'] : $current['MAKER_DESC'],
-            'MAKER_ADDRESS' => isset($data['MAKER_ADDRESS']) ? $data['MAKER_ADDRESS'] : $current['MAKER_ADDRESS'],
+            'MAKER_ADDR' => isset($data['MAKER_ADDR']) ? $data['MAKER_ADDR'] : $current['MAKER_ADDR'],
             'MAKER_CITY'    => isset($data['MAKER_CITY']) ? $data['MAKER_CITY'] : $current['MAKER_CITY'],
             'MAKER_COUNTRY' => isset($data['MAKER_COUNTRY']) ? $data['MAKER_COUNTRY'] : $current['MAKER_COUNTRY'],
             'MAKER_STATE'   => isset($data['MAKER_STATE']) ? $data['MAKER_STATE'] : $current['MAKER_STATE'],

@@ -145,7 +145,7 @@
             order: [[0,'desc']],
             autoWidth: false,
             scrollX: true,
-            dom: 'lrtip', // Hide search box (default is 'lfrtip', remove 'f' to hide search)
+            dom:'lrtip',
             columnDefs: [
                 { orderable:false, targets:[15] },
                 { width:'50px', targets:0 },
@@ -243,4 +243,3 @@
 </script>
 </body>
 </html>
-

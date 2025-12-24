@@ -938,4 +938,3 @@ class Tool_scrap extends MY_Controller
         return $html;
     }
 }
-

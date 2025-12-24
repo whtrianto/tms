@@ -101,7 +101,7 @@
                             <div>
                                 <h4 class="m-0 font-weight-bold text-primary">Product Details</h4>
                                 <!-- <div class="meta-small">
-                                    ID: <?= isset($product['PRODUCT_ID']) ? (int)$product['PRODUCT_ID'] : ''; ?>
+                                    ID: <?= isset($product['PART_ID']) ? (int)$product['PART_ID'] : ''; ?>
                                 </div> -->
                             </div>
 
@@ -110,8 +110,8 @@
                                     <i class="fa fa-arrow-left"></i> Back
                                 </a>
 
-                                <?php if (isset($product['PRODUCT_ID']) && $product['PRODUCT_ID'] !== ''): ?>
-                                    <a href="<?= base_url('product_tms/product') . '/edit/' . (int)$product['PRODUCT_ID']; ?>" class="btn btn-primary btn-sm">Edit</a>
+                                <?php if (isset($product['PART_ID']) && $product['PART_ID'] !== ''): ?>
+                                    <a href="<?= base_url('product_tms/product') . '/edit/' . (int)$product['PART_ID']; ?>" class="btn btn-primary btn-sm">Edit</a>
                                 <?php endif; ?>
                             </div>
                         </div>
@@ -121,22 +121,22 @@
                                 <div class="col-md-6">
                                     <p>
                                         <span class="detail-label">Product Name</span>
-                                        <span class="detail-value"><?= isset($product['PRODUCT_NAME']) ? htmlspecialchars($product['PRODUCT_NAME'], ENT_QUOTES, 'UTF-8') : ''; ?></span>
+                                        <span class="detail-value"><?= isset($product['PART_NAME']) ? htmlspecialchars($product['PART_NAME'], ENT_QUOTES, 'UTF-8') : ''; ?></span>
                                     </p>
 
                                     <p>
                                         <span class="detail-label">Product Group</span>
-                                        <span class="detail-value"><?= isset($product['PRODUCT_GROUP']) ? htmlspecialchars($product['PRODUCT_GROUP'], ENT_QUOTES, 'UTF-8') : ''; ?></span>
+                                        <span class="detail-value"><?= isset($product['PART_GROUP']) ? htmlspecialchars($product['PART_GROUP'], ENT_QUOTES, 'UTF-8') : ''; ?></span>
                                     </p>
 
                                     <p>
                                         <span class="detail-label">Description</span>
-                                        <span class="detail-value"><?= isset($product['PRODUCT_DESC']) ? nl2br(htmlspecialchars($product['PRODUCT_DESC'], ENT_QUOTES, 'UTF-8')) : ''; ?></span>
+                                        <span class="detail-value"><?= isset($product['PART_DESC']) ? nl2br(htmlspecialchars($product['PART_DESC'], ENT_QUOTES, 'UTF-8')) : ''; ?></span>
                                     </p>
 
                                     <p>
                                         <span class="detail-label">Type</span>
-                                        <span class="detail-value"><?= isset($product['PRODUCT_TYPE']) ? htmlspecialchars($product['PRODUCT_TYPE'], ENT_QUOTES, 'UTF-8') : ''; ?></span>
+                                        <span class="detail-value"><?= isset($product['PART_TYPE']) ? htmlspecialchars($product['PART_TYPE'], ENT_QUOTES, 'UTF-8') : ''; ?></span>
                                     </p>
 
                                 </div>
@@ -144,12 +144,12 @@
                                 <div class="col-md-6">
                                     <p>
                                         <span class="detail-label">Customer Code</span>
-                                        <span class="detail-value"><?= isset($product['PRODUCT_CUSTOMER_CODE']) ? htmlspecialchars($product['PRODUCT_CUSTOMER_CODE'], ENT_QUOTES, 'UTF-8') : ''; ?></span>
+                                        <span class="detail-value"><?= isset($product['PART_CUS_CODE']) ? htmlspecialchars($product['PART_CUS_CODE'], ENT_QUOTES, 'UTF-8') : ''; ?></span>
                                     </p>
 
                                     <p>
                                         <span class="detail-label">Customer Name</span>
-                                        <span class="detail-value"><?= isset($product['CUSTOMER_NAME']) ? htmlspecialchars($product['CUSTOMER_NAME'], ENT_QUOTES, 'UTF-8') : ''; ?></span>
+                                        <span class="detail-value"><?= isset($product['CUS_NAME']) ? htmlspecialchars($product['CUS_NAME'], ENT_QUOTES, 'UTF-8') : ''; ?></span>
                                     </p>
 
                                     <p>
@@ -160,7 +160,7 @@
 
                                     <p>
                                         <span class="detail-label">Drawing No</span>
-                                        <span class="detail-value"><?= isset($product['PRODUCT_DRW_NO']) ? htmlspecialchars($product['PRODUCT_DRW_NO'], ENT_QUOTES, 'UTF-8') : ''; ?></span>
+                                        <span class="detail-value"><?= isset($product['PART_DRW_NO']) ? htmlspecialchars($product['PART_DRW_NO'], ENT_QUOTES, 'UTF-8') : ''; ?></span>
                                     </p>
                                 </div>
                             </div>
@@ -181,9 +181,9 @@
                                         <tbody>
                                             <?php foreach ($children as $c): ?>
                                                 <tr>
-                                                    <td><?= isset($c['PRODUCT_ID']) ? (int)$c['PRODUCT_ID'] : ''; ?></td>
-                                                    <td><?= isset($c['PRODUCT_NAME']) ? htmlspecialchars($c['PRODUCT_NAME'], ENT_QUOTES, 'UTF-8') : ''; ?></td>
-                                                    <td><?= isset($c['PRODUCT_DESC']) ? htmlspecialchars($c['PRODUCT_DESC'], ENT_QUOTES, 'UTF-8') : ''; ?></td>
+                                                    <td><?= isset($c['PART_ID']) ? (int)$c['PART_ID'] : ''; ?></td>
+                                                    <td><?= isset($c['PART_NAME']) ? htmlspecialchars($c['PART_NAME'], ENT_QUOTES, 'UTF-8') : ''; ?></td>
+                                                    <td><?= isset($c['PART_DESC']) ? htmlspecialchars($c['PART_DESC'], ENT_QUOTES, 'UTF-8') : ''; ?></td>
                                                 </tr>
                                             <?php endforeach; ?>
                                         </tbody>

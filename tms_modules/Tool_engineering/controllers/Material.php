@@ -20,9 +20,9 @@ class Material extends MY_Controller
     {
         $data = array();
         $data['list_data'] = $this->material->get_data_master_materials();
-        
+
         $data['dropdown_uoms'] = $this->material->get_all_uoms();
-        
+
         $this->view('index_material', $data, FALSE);
     }
 
@@ -32,10 +32,12 @@ class Material extends MY_Controller
 
         $action = strtoupper($this->input->post('action', TRUE));
         $id     = (int)$this->input->post('material_id', TRUE);
+        $uom_id = $this->input->post('uom_id', TRUE);
+        $uom_value = (!empty($uom_id) && $uom_id != 0) ? (int)$uom_id : NULL;
 
         // rules
         $this->form_validation->set_rules('material_name', 'Material Name', 'required|trim');
-        $this->form_validation->set_rules('uom_id', 'UoM', 'required|numeric');
+        $this->form_validation->set_rules('uom_id', 'UoM', 'trim|numeric');
 
         if ($this->form_validation->run() == FALSE) {
             $this->form_validation->set_error_delimiters('', '');
@@ -74,8 +76,8 @@ class Material extends MY_Controller
 
             // data yang akan di-update
             $dataUpdate = [
-                'MATERIAL_NAME' => $material_name,
-                'UOM_ID'        => (int)$this->input->post('uom_id')
+                'MAT_NAME' => $material_name,
+                'MAT_UNIT'        => $uom_value
             ];
 
             $ok = $this->material->update_by_id($id, $dataUpdate, $this->uid);

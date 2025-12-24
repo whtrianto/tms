@@ -3,14 +3,14 @@ defined('BASEPATH') or exit('No direct script access allowed');
 
 class M_conversion_rate extends CI_Model
 {
-    private $table = 'TMS_NEW.dbo.TMS_M_CONVERSION_RATE';
+    private $table = 'MS_CONVERSION_RATE';
     public $tms_db;
     public $messages = '';
 
     public function __construct()
     {
         parent::__construct();
-        $this->tms_db = $this->load->database('tms_db', TRUE);
+        $this->tms_db = $this->load->database('tms_NEW', TRUE);
     }
 
     protected function has_column($col)
@@ -18,7 +18,7 @@ class M_conversion_rate extends CI_Model
         $col = trim((string)$col);
         if ($col === '') return false;
         $sql = "SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS
-                WHERE TABLE_SCHEMA = 'dbo' AND TABLE_NAME = 'TMS_M_CONVERSION_RATE' AND COLUMN_NAME = ?";
+                WHERE TABLE_SCHEMA = 'dbo' AND TABLE_NAME = 'MS_CONVERSION_RATE' AND COLUMN_NAME = ?";
         $q = $this->tms_db->query($sql, array($col));
         return ($q && $q->num_rows() > 0);
     }
@@ -135,9 +135,10 @@ class M_conversion_rate extends CI_Model
         // Insert baru (jangan re-activate)
         $new_id = $this->get_new_sequence();
         $insert = array(
-            'CON_ID'       => $new_id,
+            // 'CON_ID'       => $new_id,
             'CON_CURRENCY' => $currency,
             'CON_RATE'     => $rate,
+            'IS_DELETED'   => 0,
         );
         if ($this->has_column($delCol)) $insert[$delCol] = 0;
 
@@ -209,49 +210,54 @@ class M_conversion_rate extends CI_Model
         return false;
     }
 
-    public function delete_data($id)
+    public function delete_data($id, $actor = 'SYSTEM')
     {
         $id = (int)$id;
+        // Ambil data untuk memastikan ID ada dan belum dihapus
         $row = $this->get_by_id($id);
+
         if (!$row) {
             $this->messages = 'Data tidak ditemukan.';
             return false;
         }
 
+        // 1. Tentukan nama kolom delete (IS_DELETED atau IS_DELETE)
         $delCol = $this->deleted_column();
-        if (!empty($row[$delCol])) {
-            $this->messages = 'Data sudah dihapus.';
-            return false;
-        }
 
-        $deletedBy = 'SYSTEM';
-        if (isset($this->session) && method_exists($this->session, 'userdata')) {
-            $u = $this->session->userdata('username');
-            if (!empty($u)) $deletedBy = $u;
-        }
+        // 2. Ambil Username dari Session secara akurat
+        // Menggunakan get_instance() adalah cara paling aman di CI3 Model
+        $CI = &get_instance();
+        $sessionUser = $CI->session->userdata('username');
+        $deletedBy = (!empty($sessionUser)) ? $sessionUser : 'SYSTEM';
 
-        $this->tms_db->trans_begin();
-        $updateData = array();
-        if ($this->has_column($delCol)) $updateData[$delCol] = 1;
-        if ($this->has_column('DELETED_BY')) $updateData['DELETED_BY'] = $deletedBy;
+        $this->tms_db->trans_start();
 
+        // 3. Susun Update
         $this->tms_db->where('CON_ID', $id);
-        $ok = true;
-        if (!empty($updateData)) {
-            $ok = $this->tms_db->update($this->table, $updateData);
-        }
-        if ($ok && $this->has_column('DELETED_AT')) {
-            $ok2 = $this->tms_db->query("UPDATE {$this->table} SET DELETED_AT = GETDATE() WHERE CON_ID = ?", array($id));
-            if (!$ok2) $ok = false;
+
+        // Set kolom IS_DELETED dan DELETED_BY
+        $updateData = [
+            $delCol      => 1,
+            'DELETED_BY' => $deletedBy
+        ];
+
+        // 4. Set DELETED_AT menggunakan fungsi SQL Server GETDATE()
+        // Parameter FALSE agar CI tidak membungkus GETDATE() dengan tanda kutip
+        if ($this->has_column('DELETED_AT')) {
+            $this->tms_db->set('DELETED_AT', 'GETDATE()', FALSE);
         }
 
-        if (!$ok || $this->tms_db->trans_status() === FALSE) {
+        $this->tms_db->update($this->table, $updateData);
+
+        $this->tms_db->trans_complete();
+
+        // 5. Cek status transaksi
+        if ($this->tms_db->trans_status() === FALSE) {
             $err = $this->tms_db->error();
-            $this->tms_db->trans_rollback();
-            $this->messages = 'Gagal menghapus data. ' . (isset($err['message']) ? $err['message'] : '');
+            $this->messages = 'Gagal menghapus data: ' . (isset($err['message']) ? $err['message'] : 'Database Error');
             return false;
         }
-        $this->tms_db->trans_commit();
+
         $this->messages = 'Data berhasil dihapus';
         return true;
     }

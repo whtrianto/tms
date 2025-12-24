@@ -3,14 +3,14 @@ defined('BASEPATH') or exit('No direct script access allowed');
 
 class M_supplier extends CI_Model
 {
-    private $table = 'TMS_NEW.dbo.TMS_M_SUPPLIER';
-    public $tms_db;
+    private $table = 'MS_SUPPLIER';
+    public $db_tms;
     public $messages = '';
 
     public function __construct()
     {
         parent::__construct();
-        $this->tms_db = $this->load->database('tms_db', TRUE);
+        $this->db_tms = $this->load->database('tms_NEW', TRUE);
     }
 
     /**
@@ -18,11 +18,11 @@ class M_supplier extends CI_Model
      */
     public function get_all()
     {
-        return $this->tms_db
-            ->select('SUPPLIER_ID, SUPPLIER_NAME, SUPPLIER_ABBR')
+        return $this->db_tms
+            ->select('SUP_ID, SUP_NAME, SUP_ABBR')
             ->from($this->table)
             ->where('IS_DELETED', 0)
-            ->order_by('SUPPLIER_NAME', 'ASC')
+            ->order_by('SUP_NAME', 'ASC')
             ->get()
             ->result_array();
     }
@@ -37,7 +37,7 @@ class M_supplier extends CI_Model
     {
         $id = (int)$id;
         if ($id <= 0) return null;
-        return $this->tms_db->where('SUPPLIER_ID', $id)->limit(1)->get($this->table)->row_array();
+        return $this->db_tms->where('SUP_ID', $id)->limit(1)->get($this->table)->row_array();
     }
 
     public function get_by_name($name)
@@ -45,8 +45,8 @@ class M_supplier extends CI_Model
         $name = trim((string)$name);
         if ($name === '') return null;
         // case-insensitive search
-        $sql = "SELECT TOP 1 * FROM {$this->table} WHERE LOWER(SUPPLIER_NAME) = ? AND IS_DELETED = 0";
-        $q = $this->tms_db->query($sql, array(strtolower($name)));
+        $sql = "SELECT TOP 1 * FROM {$this->table} WHERE LOWER(SUP_NAME) = ? AND IS_DELETED = 0";
+        $q = $this->db_tms->query($sql, array(strtolower($name)));
         return $q->row_array();
     }
 
@@ -57,8 +57,8 @@ class M_supplier extends CI_Model
 
     public function get_new_sequence()
     {
-        $row = $this->tms_db->select_max('SUPPLIER_ID')->get($this->table)->row_array();
-        return isset($row['SUPPLIER_ID']) ? ((int)$row['SUPPLIER_ID'] + 1) : 1;
+        $row = $this->db_tms->select_max('SUP_ID')->get($this->table)->row_array();
+        return isset($row['SUP_ID']) ? ((int)$row['SUP_ID'] + 1) : 1;
     }
 
     /* ========== MUTATORS ========== */
@@ -78,39 +78,42 @@ class M_supplier extends CI_Model
             return false;
         }
 
-        $data = array(
-            'SUPPLIER_ID'   => $this->get_new_sequence(),
-            'SUPPLIER_NAME' => $name,
-            'SUPPLIER_ABBR' => $abbr,
-            'IS_DELETED'    => 0,
-            'CREATED_AT'    => 'GETDATE()'
-        );
-
-        // jika driver tidak mendukung passing raw GETDATE(), kita set false pada escape
-        $this->tms_db->trans_start();
-        // gunakan query builder agar kompatibel: insert array, lalu jika ingin set GETDATE() gunakan query
+        // 1. JANGAN GENERATE ID MANUAL. Biarkan kosong agar SQL Server yang isi.
         $createdBy = 'SYSTEM';
         if (isset($this->session) && method_exists($this->session, 'userdata')) {
             $u = $this->session->userdata('username');
             if (!empty($u)) $createdBy = $u;
         }
 
-        $ok = $this->tms_db->insert($this->table, array(
-            'SUPPLIER_ID'   => $data['SUPPLIER_ID'],
-            'SUPPLIER_NAME' => $data['SUPPLIER_NAME'],
-            'SUPPLIER_ABBR' => $data['SUPPLIER_ABBR'],
-            'IS_DELETED'    => 0,
-            'CREATED_BY'    => $createdBy
-        ));
-        // set CREATED_AT via query (SQL Server)
-        $this->tms_db->query("UPDATE {$this->table} SET CREATED_AT = GETDATE() WHERE SUPPLIER_ID = ?", array($data['SUPPLIER_ID']));
-        $this->tms_db->trans_complete();
+        $this->db_tms->trans_start();
 
-        if ($this->tms_db->trans_status()) {
+        // 2. Insert tanpa kolom SUP_ID
+        $insert_data = array(
+            'SUP_NAME'   => $name,
+            'SUP_ABBR'   => $abbr,
+            'IS_DELETED' => 0,
+            'CREATED_BY' => $createdBy
+            // 'CREATED_AT' => tidak perlu di array ini karena akan di-update query bawah
+        );
+
+        $this->db_tms->insert($this->table, $insert_data);
+
+        // 3. AMBIL ID YANG BARU SAJA DIGENERATE OLEH SQL SERVER
+        $new_id = $this->db_tms->insert_id();
+
+        // 4. Update CREATED_AT menggunakan ID yang baru didapat
+        if ($new_id) {
+            $this->db_tms->query("UPDATE {$this->table} SET CREATED_BY = GETDATE() WHERE SUP_ID = ?", array($new_id));
+        }
+
+        $this->db_tms->trans_complete();
+
+        if ($this->db_tms->trans_status()) {
             $this->messages = 'Supplier berhasil ditambahkan.';
             return true;
         }
-        $err = $this->tms_db->error();
+
+        $err = $this->db_tms->error();
         $this->messages = 'Gagal menambahkan supplier. ' . (isset($err['message']) ? $err['message'] : '');
         return false;
     }
@@ -133,22 +136,22 @@ class M_supplier extends CI_Model
         }
 
         // cek duplikat pada baris lain
-        $sql = "SELECT COUNT(1) AS cnt FROM {$this->table} WHERE LOWER(SUPPLIER_NAME) = ? AND SUPPLIER_ID <> ? AND IS_DELETED = 0";
-        $r = $this->tms_db->query($sql, array(strtolower($name), $id))->row_array();
+        $sql = "SELECT COUNT(1) AS cnt FROM {$this->table} WHERE LOWER(SUP_NAME) = ? AND SUP_ID <> ? AND IS_DELETED = 0";
+        $r = $this->db_tms->query($sql, array(strtolower($name), $id))->row_array();
         $dup = isset($r['cnt']) ? (int)$r['cnt'] : 0;
         if ($dup > 0) {
             $this->messages = 'Nama supplier sudah digunakan oleh data lain.';
             return false;
         }
 
-        $ok = $this->tms_db->where('SUPPLIER_ID', $id)
-            ->update($this->table, array('SUPPLIER_NAME' => $name, 'SUPPLIER_ABBR' => $abbr));
+        $ok = $this->db_tms->where('SUP_ID', $id)
+            ->update($this->table, array('SUP_NAME' => $name, 'SUP_ABBR' => $abbr));
 
         if ($ok) {
             $this->messages = 'Supplier berhasil diubah.';
             return true;
         }
-        $err = $this->tms_db->error();
+        $err = $this->db_tms->error();
         $this->messages = 'Gagal mengubah supplier. ' . (isset($err['message']) ? $err['message'] : '');
         return false;
     }
@@ -172,22 +175,22 @@ class M_supplier extends CI_Model
             if (!empty($u)) $deletedBy = $u;
         }
 
-        $this->tms_db->trans_begin();
-        $ok = $this->tms_db
+        $this->db_tms->trans_begin();
+        $ok = $this->db_tms
             ->set('IS_DELETED', 1)
             ->set('DELETED_AT', 'GETDATE()', false)
             ->set('DELETED_BY', $deletedBy)
-            ->where('SUPPLIER_ID', $id)
+            ->where('SUP_ID', $id)
             ->update($this->table);
 
-        if (!$ok || $this->tms_db->trans_status() === FALSE) {
-            $err = $this->tms_db->error();
-            $this->tms_db->trans_rollback();
+        if (!$ok || $this->db_tms->trans_status() === FALSE) {
+            $err = $this->db_tms->error();
+            $this->db_tms->trans_rollback();
             $this->messages = 'Gagal menghapus supplier. ' . (isset($err['message']) ? $err['message'] : '');
             return false;
         }
-        $this->tms_db->trans_commit();
-        $this->messages = 'Supplier berhasil dihapus (soft delete).';
+        $this->db_tms->trans_commit();
+        $this->messages = 'Supplier berhasil dihapus';
         return true;
     }
 }

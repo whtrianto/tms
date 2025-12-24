@@ -3,15 +3,15 @@ defined('BASEPATH') or exit('No direct script access allowed');
 
 class M_department extends CI_Model
 {
-    private $table = 'TMS_M_DEPARTMENT';
-    private $primary_key = 'DEPARTMENT_ID';
+    private $table = 'MS_DEPARTMENT';
+    private $primary_key = 'DEPART_ID';
     private $tms_db;
     public $messages;
 
     public function __construct()
     {
         parent::__construct();
-        $this->tms_db = $this->load->database('tms_db', TRUE);
+        $this->tms_db = $this->load->database('tms_NEW', TRUE);
     }
 
     /**
@@ -22,7 +22,7 @@ class M_department extends CI_Model
         return $this->tms_db
             ->where('IS_DELETED', 0)
             ->or_where('IS_DELETED', NULL) // Menangani data lama jika IS_DELETED = NULL
-            ->order_by('DEPARTMENT_NAME', 'ASC')
+            ->order_by('DEPART_NAME', 'ASC')
             ->get($this->table)
             ->result_array();
     }
@@ -48,7 +48,7 @@ class M_department extends CI_Model
         $name = trim((string)$name);
         if ($name === '') return false;
 
-        $this->tms_db->where('LOWER(DEPARTMENT_NAME)', strtolower($name));
+        $this->tms_db->where('LOWER(DEPART_NAME)', strtolower($name));
         $this->tms_db->where_in('IS_DELETED', [0, NULL]); // Cek yang aktif
         if ($exclude_id !== null) {
             $this->tms_db->where($this->primary_key . ' <>', (int)$exclude_id);
@@ -81,9 +81,8 @@ class M_department extends CI_Model
         }
 
         $data = [
-            'DEPARTMENT_ID'   => $this->get_new_sequence(),
-            'DEPARTMENT_NAME' => $name,
-            'DEPARTMENT_DESC' => $desc ?: NULL,
+            'DEPART_NAME' => $name,
+            'DEPART_DESC' => $desc ?: NULL,
             'IS_DELETED'      => 0
         ];
 
@@ -92,11 +91,11 @@ class M_department extends CI_Model
         $this->tms_db->trans_complete();
 
         if ($this->tms_db->trans_status()) {
-            $this ->messages = "Data Department berhasil ditambahkan.";
+            $this->messages = "Data Department berhasil ditambahkan.";
             return TRUE;
         }
         $err = $this->tms_db->error();
-        $this ->messages = "Gagal menambahkan data. {$err['message']}";
+        $this->messages = "Gagal menambahkan data. {$err['message']}";
         return FALSE;
     }
 
@@ -107,7 +106,7 @@ class M_department extends CI_Model
             $this->messages = 'Department ID tidak valid.';
             return false;
         }
-        
+
         $this->tms_db->trans_begin();
         $ok = $this->tms_db->where($this->primary_key, $id)
             ->update($this->table, $data);
@@ -115,12 +114,12 @@ class M_department extends CI_Model
         if ($this->tms_db->trans_status() === FALSE || $ok === FALSE) {
             $err = $this->tms_db->error();
             $this->tms_db->trans_rollback();
-            $this ->messages = 'Gagal mengubah data' . ($err['message'] ? ': ' . $err['message'] : '');
+            $this->messages = 'Gagal mengubah data' . ($err['message'] ? ': ' . $err['message'] : '');
             return false;
         }
 
-        $this ->tms_db->trans_commit();
-        $this ->messages = 'Data berhasil diubah';
+        $this->tms_db->trans_commit();
+        $this->messages = 'Data berhasil diubah';
         return true;
     }
 
@@ -130,11 +129,11 @@ class M_department extends CI_Model
 
         $row = $this->get_data_master_department_by_id($id);
         if (!$row) {
-            $this ->messages = 'Data tidak ditemukan';
+            $this->messages = 'Data tidak ditemukan';
             return FALSE;
         }
         if (!empty($row['IS_DELETED'])) {
-            $this ->messages = 'Data sudah dihapus.';
+            $this->messages = 'Data sudah dihapus.';
             return FALSE;
         }
 
@@ -143,18 +142,18 @@ class M_department extends CI_Model
             ->set('IS_DELETED', 1)
             ->set('DELETED_AT', 'GETDATE()', false) // SQL Server
             ->set('DELETED_BY', $actor)
-            ->where($this ->primary_key, $id)
+            ->where($this->primary_key, $id)
             ->update($this->table);
 
         if (!$ok || $this->tms_db->trans_status() === FALSE) {
             $err = $this->tms_db->error();
             $this->tms_db->trans_rollback();
-            $this ->messages = 'Gagal menghapus data' . ($err['message'] ? ': ' . $err['message'] : '');
+            $this->messages = 'Gagal menghapus data' . ($err['message'] ? ': ' . $err['message'] : '');
             return FALSE;
         }
 
         $this->tms_db->trans_commit();
-        $this ->messages = 'Data berhasil dihapus';
+        $this->messages = 'Data berhasil dihapus';
         return TRUE;
     }
 }

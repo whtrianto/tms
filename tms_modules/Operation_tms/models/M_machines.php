@@ -3,18 +3,18 @@ defined('BASEPATH') or exit('No direct script access allowed');
 
 class M_machines extends CI_Model
 {
-    private $table = 'TMS_M_MACHINES';
-    private $table_group = 'TMS_M_MACHINES_GROUP';
-    private $primary_key = 'MACHINE_ID';
+    private $table = 'MS_MACHINES';
+    private $table_group = 'MS_MACHINE_MEMBERS';
+    private $primary_key = 'MAC_ID';
     private $tms_db;
     public $messages;
 
     public function __construct()
     {
         parent::__construct();
-        $this->tms_db = $this->load->database('tms_db', TRUE);
+        $this->tms_db = $this->load->database('tms_NEW', TRUE);
     }
-    
+
     /**
      * Helper untuk ID baru (digunakan oleh 2 tabel)
      */
@@ -30,24 +30,24 @@ class M_machines extends CI_Model
      */
     public function get_data_master_machines()
     {
-        $tbl_ops   = 'TMS_M_OPERATION';
-        
+        $tbl_ops   = 'MS_OPERATION';
+
         return $this->tms_db
             ->select("
                 M.*, 
-                O.OPERATION_NAME,
+                O.OP_NAME,
                 /* Ambil nama Grup dari Parent */
-                (SELECT TOP 1 G.MACHINE_NAME 
+                (SELECT TOP 1 G.MAC_NAME 
                  FROM {$this->table_group} MG 
-                 JOIN {$this->table} G ON G.MACHINE_ID = MG.MACHINES_PARENT_ID
-                 WHERE MG.MACHINES_MEMBER_ID = M.MACHINE_ID AND MG.IS_DELETED = 0
+                 JOIN {$this->table} G ON G.MAC_ID = MG.MACM_PARENT_ID
+                 WHERE MG.MACM_CHILD_ID = M.MAC_ID AND MG.IS_DELETED = 0
                 ) AS MACHINES_GROUP_NAME
             ")
             ->from("{$this->table} M")
-            ->join("{$tbl_ops} O", "O.OPERATION_ID = M.OPERATION_ID", 'left')
+            ->join("{$tbl_ops} O", "O.OP_ID = M.MAC_OP_ID", 'left')
             ->where('M.IS_DELETED', 0)
-            ->where('M.IS_GROUP', 0) // <-- Sesuai permintaan Anda
-            ->order_by('M.MACHINE_NAME', 'ASC')
+            ->where('M.MAC_IS_GROUP', 0) // <-- Sesuai permintaan Anda
+            ->order_by('M.MAC_NAME', 'ASC')
             ->get()
             ->result_array();
     }
@@ -64,20 +64,20 @@ class M_machines extends CI_Model
             ->get($this->table)
             ->row_array();
     }
-    
+
     /**
      * Helper untuk form EDIT: Mencari tahu siapa PARENT dari machine ini
      */
     public function get_parent_id_for_machine($machine_id)
     {
         $row = $this->tms_db
-            ->select('MACHINES_PARENT_ID')
-            ->where('MACHINES_MEMBER_ID', (int)$machine_id)
+            ->select('MACM_PARENT_ID')
+            ->where('MACM_CHILD_ID', (int)$machine_id)
             ->where('IS_DELETED', 0)
             ->limit(1)
             ->get($this->table_group)
             ->row_array();
-        return $row ? (int)$row['MACHINES_PARENT_ID'] : null;
+        return $row ? (int)$row['MACM_PARENT_ID'] : null;
     }
 
     /**
@@ -85,7 +85,7 @@ class M_machines extends CI_Model
      */
     public function is_name_duplicate($machine_name, $exclude_id = null)
     {
-        $this->tms_db->where('LOWER(MACHINE_NAME)', strtolower(trim($machine_name)));
+        $this->tms_db->where('LOWER(MAC_NAME)', strtolower(trim($machine_name)));
         $this->tms_db->where('IS_DELETED', 0);
         if ($exclude_id !== null) {
             $this->tms_db->where($this->primary_key . ' <>', (int)$exclude_id);
@@ -102,26 +102,26 @@ class M_machines extends CI_Model
     public function get_all_machine_groups()
     {
         return $this->tms_db
-            ->select('MACHINE_ID, MACHINE_NAME')
+            ->select('MAC_ID, MAC_NAME')
             ->where('IS_DELETED', 0)
-            ->where('IS_GROUP', 1) // <-- PENTING
-            ->order_by('MACHINE_NAME', 'ASC')
+            ->where('MAC_IS_GROUP', 1) // <-- PENTING
+            ->order_by('MAC_NAME', 'ASC')
             ->get($this->table)
             ->result_array();
     }
-    
+
     public function get_all_operations()
     {
-        return $this->tms_db->where('IS_DELETED', 0)->order_by('OPERATION_NAME', 'ASC')->get('TMS_M_OPERATION')->result_array();
+        return $this->tms_db->where('IS_DELETED', 0)->order_by('OP_NAME', 'ASC')->get('MS_OPERATION')->result_array();
     }
 
     public function is_parent($machine_id)
     {
         $count = $this->tms_db
-            ->where('MACHINES_PARENT_ID', (int)$machine_id)
+            ->where('MACM_PARENT_ID', (int)$machine_id)
             ->where('IS_DELETED', 0) // Hanya cek member yg masih aktif
             ->count_all_results($this->table_group); // $this->table_group adalah 'TMS_M_MACHINES_GROUP'
-            
+
         return $count > 0;
     }
     /* ===================== MUTATORS (CREATE, UPDATE, DELETE) ===================== */
@@ -141,37 +141,36 @@ class M_machines extends CI_Model
             $this->messages = "Machine/Group dengan nama tersebut sudah ada (aktif).";
             return FALSE;
         }
-        
+
         $this->tms_db->trans_start();
-        
-        // 1. Insert ke tabel Master
-        $new_machine_id = $this->get_new_sequence($this->table, $this->primary_key);
+
+        // 1. Insert ke tabel Master        
         $data_machine = [
-            'MACHINE_ID'        => $new_machine_id,
-            'MACHINE_NAME'      => $machine_name,
-            'OPERATION_ID'      => (int)$this->input->post('operation_id'),
-            'IS_GROUP'          => $is_group,
-            // 'CHARGE_RATE'       => $charge_rate ?: NULL,
-            'IS_DELETED'        => 0,
-            'IS_ACTIVE'         => 1,
-            'CREATED_AT'        => date('Y-m-d H:i:s'),
-            'CREATED_BY'        => $actor
+            'MAC_NAME'       => $machine_name,
+            'MAC_OP_ID'      => (int)$this->input->post('operation_id'),
+            'MAC_IS_GROUP'   => $is_group,
+            'IS_DELETED'     => 0,
+            'IS_ACTIVE'      => 1,
+            'CREATED_AT'     => date('Y-m-d H:i:s'),
+            'CREATED_BY'     => $actor
         ];
+
         $this->tms_db->insert($this->table, $data_machine);
+        $new_machine_id = $this->tms_db->insert_id();
 
         // 2. Jika ini MESIN (bukan grup), insert ke tabel mapping
         if ($is_group === 0 && $parent_id !== NULL) {
-            $new_map_id = $this->get_new_sequence($this->table_group, 'MACHINES_GROUP_ID');
+            // $new_map_id = $this->get_new_sequence($this->table_group, 'MACM_ID');
             $data_map = [
-                'MACHINES_GROUP_ID'  => $new_map_id,
-                'MACHINES_PARENT_ID' => $parent_id,
-                'MACHINES_MEMBER_ID' => $new_machine_id,
+                // 'MACM_ID'  => $new_map_id,
+                'MACM_PARENT_ID' => $parent_id,
+                'MACM_CHILD_ID' => $new_machine_id,
                 'IS_DELETED'         => 0
                 // (kolom audit lain jika ada di tabel group)
             ];
             $this->tms_db->insert($this->table_group, $data_map);
         }
-        
+
         $this->tms_db->trans_complete();
 
         if ($this->tms_db->trans_status()) {
@@ -188,7 +187,7 @@ class M_machines extends CI_Model
         $machine_id = (int)$machine_id;
         $is_group = (int)$this->input->post('is_group') === 1 ? 1 : 0;
         $parent_id = (int)$this->input->post('parent_id') ?: NULL;
-        
+
         if ($machine_id <= 0) {
             $this->messages = 'Machine ID tidak valid.';
             return false;
@@ -197,28 +196,34 @@ class M_machines extends CI_Model
         // Tambahkan data audit ke data update
         $data['UPDATED_AT'] = date('Y-m-d H:i:s');
         $data['UPDATED_BY'] = $actor;
-        $data['IS_GROUP']   = $is_group; // Pastikan IS_GROUP terupdate
+        $data['MAC_IS_GROUP']   = $is_group; // Pastikan IS_GROUP terupdate
 
         $this->tms_db->trans_begin();
-        
+
         // 1. Update tabel Master
         $this->tms_db->where($this->primary_key, $machine_id)
-                     ->where('IS_DELETED', 0)
-                     ->update($this->table, $data);
-                     
+            ->where('IS_DELETED', 0)
+            ->update($this->table, $data);
+
         // 2. Update tabel Mapping (Hapus-lalu-Sisip ulang)
-        
+
         // Hapus mapping lama untuk member ini
-        $this->tms_db->where('MACHINES_MEMBER_ID', $machine_id)->delete($this->table_group);
-        
+        $this->tms_db
+            ->where('MACM_CHILD_ID', $machine_id)
+            ->update($this->table_group, [
+                'IS_DELETED' => 1,
+                'DELETED_AT' => date('Y-m-d H:i:s'),
+                'DELETED_BY' => $actor
+            ]);
+
         // Jika ini MESIN (bukan grup) DAN parent-nya dipilih
         if ($is_group === 0 && $parent_id !== NULL) {
             // Sisipkan mapping baru
-            $new_map_id = $this->get_new_sequence($this->table_group, 'MACHINES_GROUP_ID');
+            // $new_map_id = $this->get_new_sequence($this->table_group, 'MACM_ID');
             $data_map = [
-                'MACHINES_GROUP_ID'  => $new_map_id,
-                'MACHINES_PARENT_ID' => $parent_id,
-                'MACHINES_MEMBER_ID' => $machine_id,
+                //  
+                'MACM_PARENT_ID' => $parent_id,
+                'MACM_CHILD_ID' => $machine_id,
                 'IS_DELETED'         => 0
             ];
             $this->tms_db->insert($this->table_group, $data_map);
@@ -250,7 +255,7 @@ class M_machines extends CI_Model
         }
 
         $this->tms_db->trans_begin();
-        
+
         // 1. Soft delete dari tabel Master
         $ok_master = $this->tms_db
             ->set('IS_DELETED', 1)
@@ -258,7 +263,7 @@ class M_machines extends CI_Model
             ->set('DELETED_BY', $actor)
             ->where($this->primary_key, $machine_id)
             ->update($this->table);
-            
+
         // 2. Soft delete dari tabel Group (baik sbg parent maupun member)
         // (Asumsi tabel group juga punya kolom audit)
         $audit_data = [
@@ -267,9 +272,9 @@ class M_machines extends CI_Model
             'DELETED_BY' => $actor
         ];
         // Hapus jika dia adalah MEMBER
-        $this->tms_db->where('MACHINES_MEMBER_ID', $machine_id)->update($this->table_group, $audit_data);
+        $this->tms_db->where('MACM_CHILD_ID', $machine_id)->update($this->table_group, $audit_data);
         // Hapus jika dia adalah PARENT
-        $this->tms_db->where('MACHINES_PARENT_ID', $machine_id)->update($this->table_group, $audit_data);
+        $this->tms_db->where('MACM_PARENT_ID', $machine_id)->update($this->table_group, $audit_data);
 
         if (!$ok_master || $this->tms_db->trans_status() === FALSE) {
             $err = $this->tms_db->error();
