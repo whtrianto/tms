@@ -41,27 +41,27 @@
                             <table id="table-conversion" class="table table-bordered table-striped w-100 text-center">
                                 <thead>
                                     <tr>
+                                        <th>ACTION</th>
                                         <th>NO</th>
                                         <th>ID</th>
                                         <th>Currency</th>
                                         <th>Rate</th>
-                                        <th>ACTION</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <?php $no = 1;
                                     foreach ($list_data as $row): ?>
                                         <tr>
-                                            <td><?= (int)$no++; ?></td>
-                                            <td><?= (int)$row['CON_ID']; ?></td>
-                                            <td class="text-left"><?= htmlspecialchars($row['CON_CURRENCY'], ENT_QUOTES, 'UTF-8'); ?></td>
-                                            <td><?= htmlspecialchars($row['CON_RATE'], ENT_QUOTES, 'UTF-8'); ?></td>
                                             <td>
                                                 <div style="display:flex; justify-content:center; gap:8px;">
                                                     <button class="btn btn-secondary btn-sm btn-edit" data-edit='<?= htmlspecialchars(json_encode($row), ENT_QUOTES, 'UTF-8') ?>'>Edit</button>
                                                     <button class="btn btn-danger btn-sm btn-delete" data-id="<?= (int)$row['CON_ID']; ?>" data-currency="<?= htmlspecialchars($row['CON_CURRENCY'], ENT_QUOTES, 'UTF-8'); ?>">Delete</button>
                                                 </div>
                                             </td>
+                                            <td><?= (int)$no++; ?></td>
+                                            <td><?= (int)$row['CON_ID']; ?></td>
+                                            <td class="text-left"><?= htmlspecialchars($row['CON_CURRENCY'], ENT_QUOTES, 'UTF-8'); ?></td>
+                                            <td><?= htmlspecialchars($row['CON_RATE'], ENT_QUOTES, 'UTF-8'); ?></td>
                                         </tr>
                                     <?php endforeach; ?>
                                 </tbody>
@@ -124,11 +124,11 @@
                     ],
                     pageLength: 25,
                     order: [
-                        [1, 'asc']
+                        [2, 'asc']
                     ],
                     columnDefs: [{
                         orderable: false,
-                        targets: [4]
+                        targets: [0, 1]
                     }]
                 });
 

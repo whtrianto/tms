@@ -41,23 +41,17 @@
                             <table id="table-reason" class="table table-bordered table-striped w-100 text-center">
                                 <thead>
                                     <tr>
+                                        <th>ACTION</th>
                                         <th>NO</th>
                                         <th>ID</th>
                                         <th>Reason Name</th>
                                         <th>Reason Code</th>
-                                        <th>ACTION</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <?php $no = 1;
                                     foreach ($list_data as $row): ?>
                                         <tr>
-                                            <td><?= (int)$no++; ?></td>
-                                            <td><?= (int)$row['REASON_ID']; ?></td>
-                                            <td class="text-left">
-                                                <?= htmlspecialchars($row['REASON_NAME'], ENT_QUOTES, 'UTF-8'); ?>
-                                            </td>
-                                            <td><?= htmlspecialchars(isset($row['REASON_CODE']) ? $row['REASON_CODE'] : '', ENT_QUOTES, 'UTF-8'); ?></td>
                                             <td>
                                                 <div style="display:flex; justify-content:center; gap:8px;">
                                                     <button class="btn btn-secondary btn-sm btn-edit"
@@ -67,6 +61,12 @@
                                                         data-name="<?= htmlspecialchars($row['REASON_NAME'], ENT_QUOTES, 'UTF-8'); ?>">Delete</button>
                                                 </div>
                                             </td>
+                                            <td><?= (int)$no++; ?></td>
+                                            <td><?= (int)$row['REASON_ID']; ?></td>
+                                            <td class="text-left">
+                                                <?= htmlspecialchars($row['REASON_NAME'], ENT_QUOTES, 'UTF-8'); ?>
+                                            </td>
+                                            <td><?= htmlspecialchars(isset($row['REASON_CODE']) ? $row['REASON_CODE'] : '', ENT_QUOTES, 'UTF-8'); ?></td>
                                         </tr>
                                     <?php endforeach; ?>
                                 </tbody>
@@ -127,13 +127,13 @@
                         [10, 25, 50, "ALL"]
                     ],
                     pageLength: 25,
-                    // default order by ID (kolom index 1, karena NO berada di index 0)
+                    // default order by ID (kolom index 2, karena ACTION di index 0, NO di index 1)
                     order: [
-                        [1, 'asc']
+                        [2, 'asc']
                     ],
                     columnDefs: [{
                         orderable: false,
-                        targets: [4] // ACTION column sekarang di index 4
+                        targets: [0, 1] // ACTION column di index 0, NO di index 1
                     }]
                 });
 

@@ -368,15 +368,19 @@ class M_tool_draw_engin extends CI_Model
      */
     public function get_machine_groups()
     {
-        $sql = "SELECT MAC_ID AS MACHINE_ID, MAC_NAME AS MACHINE_NAME 
-                FROM {$this->t('MS_MACHINES')} 
-                WHERE (IS_DELETED = 0 OR IS_DELETED IS NULL)
-                ORDER BY MAC_NAME ASC";
+        $sql = "
+            SELECT
+                M.MAC_ID   AS MACHINE_ID,
+                M.MAC_NAME AS MACHINE_NAME
+            FROM {$this->t('MS_MACHINES')} M
+            WHERE M.IS_DELETED = 0
+            AND M.MAC_IS_GROUP = 1
+            ORDER BY M.MAC_NAME ASC
+        ";
+
         $q = $this->db_tms->query($sql);
-        if ($q && $q->num_rows() > 0) {
-            return $q->result_array();
-        }
-        return array();
+        return ($q && $q->num_rows() > 0) ? $q->result_array() : [];
+
     }
 
     /**

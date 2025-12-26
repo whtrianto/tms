@@ -88,6 +88,7 @@
                             <table id="table-tool-draw-sql" class="table table-bordered table-striped w-100 text-center">
                                 <thead>
                                     <tr>
+                                        <th>Action</th>
                                         <th>ID</th>
                                         <th>Product</th>
                                         <th>Process</th>
@@ -98,11 +99,10 @@
                                         <th>Effective Date</th>
                                         <th>Modified Date</th>
                                         <th>Modified By</th>
-                                        <th>Action</th>
                                     </tr>
                                     <tr class="search-row">
                                         <th></th>
-                                        <th><input type="text" class="form-control form-control-sm column-search" placeholder="Search..." data-column="1" /></th>
+                                        <th></th>
                                         <th><input type="text" class="form-control form-control-sm column-search" placeholder="Search..." data-column="2" /></th>
                                         <th><input type="text" class="form-control form-control-sm column-search" placeholder="Search..." data-column="3" /></th>
                                         <th><input type="text" class="form-control form-control-sm column-search" placeholder="Search..." data-column="4" /></th>
@@ -111,7 +111,7 @@
                                         <th><input type="text" class="form-control form-control-sm column-search" placeholder="Search..." data-column="7" /></th>
                                         <th><input type="text" class="form-control form-control-sm column-search" placeholder="Search..." data-column="8" /></th>
                                         <th><input type="text" class="form-control form-control-sm column-search" placeholder="Search..." data-column="9" /></th>
-                                        <th></th>
+                                        <th><input type="text" class="form-control form-control-sm column-search" placeholder="Search..." data-column="10" /></th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -183,22 +183,22 @@
             },
             lengthMenu: [[10,25,50,100],[10,25,50,100]],
             pageLength: 25,
-            order: [[0,'desc']],
+            order: [[1,'desc']],
             autoWidth: false,
             scrollX: true,
             columnDefs: [
-                { orderable:false, targets:[10] },
-                { width:'50px', targets:0 },      // ID
-                { width:'120px', targets:1 },     // Product
-                { width:'90px', targets:2 },      // Process
-                { width:'140px', targets:3 },     // Drawing
-                { width:'120px', targets:4 },     // Tool Name
-                { width:'60px', targets:5 },      // Revision
-                { width:'80px', targets:6 },      // Status
-                { width:'110px', targets:7 },     // Effective
-                { width:'120px', targets:8 },     // Modified Date
-                { width:'110px', targets:9 },     // Modified By
-                { width:'115px', targets:10 }     // Action
+                { orderable:false, targets:[0] },
+                { width:'115px', targets:0 },     // Action
+                { width:'50px', targets:1 },      // ID
+                { width:'120px', targets:2 },     // Product
+                { width:'90px', targets:3 },      // Process
+                { width:'140px', targets:4 },     // Drawing
+                { width:'120px', targets:5 },     // Tool Name
+                { width:'60px', targets:6 },      // Revision
+                { width:'80px', targets:7 },      // Status
+                { width:'110px', targets:8 },     // Effective
+                { width:'120px', targets:9 },     // Modified Date
+                { width:'110px', targets:10 }     // Modified By
             ],
             language: {
                 processing: '<div class="spinner-border spinner-border-sm" role="status"><span class="sr-only">Loading...</span></div> Processing...',

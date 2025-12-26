@@ -69,6 +69,7 @@
                             <table id="table-tool-bom-tooling" class="table table-bordered table-striped w-100 text-left">
                                 <thead>
                                     <tr class="text-center">
+                                        <th>Action</th>
                                         <th>ID</th>
                                         <th>Product</th>
                                         <th>Tool BOM</th>
@@ -80,10 +81,9 @@
                                         <th>Modified Date</th>
                                         <th>Modified By</th>
                                         <th>Type</th>
-                                        <th>Action</th>
                                     </tr>
                                     <tr class="search-row">
-                                        <th><input type="text" class="form-control form-control-sm column-search" placeholder="Search..." data-column="0" /></th>
+                                        <th></th>
                                         <th><input type="text" class="form-control form-control-sm column-search" placeholder="Search..." data-column="1" /></th>
                                         <th><input type="text" class="form-control form-control-sm column-search" placeholder="Search..." data-column="2" /></th>
                                         <th><input type="text" class="form-control form-control-sm column-search" placeholder="Search..." data-column="3" /></th>
@@ -94,7 +94,7 @@
                                         <th><input type="text" class="form-control form-control-sm column-search" placeholder="Search..." data-column="8" /></th>
                                         <th><input type="text" class="form-control form-control-sm column-search" placeholder="Search..." data-column="9" /></th>
                                         <th><input type="text" class="form-control form-control-sm column-search" placeholder="Search..." data-column="10" /></th>
-                                        <th></th>
+                                        <th><input type="text" class="form-control form-control-sm column-search" placeholder="Search..." data-column="11" /></th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -126,23 +126,23 @@
             },
             lengthMenu: [[10,25,50,100],[10,25,50,100]],
             pageLength: 25,
-            order: [[2,'asc']], // Sort by Tool BOM (column 2) ascending
+            order: [[3,'asc']], // Sort by Tool BOM (column 3) ascending
             autoWidth: false,
             scrollX: true,
             columnDefs: [
-                { orderable:false, targets:[11] }, // Action column not sortable
-                { width:'50px', targets:0 }, // ID
-                { width:'120px', targets:1 }, // Product
-                { width:'120px', targets:2 }, // Tool BOM
-                { width:'100px', targets:3 }, // Process
-                { width:'100px', targets:4 }, // Machine Group
-                { width:'60px', targets:5 }, // Revision
-                { width:'80px', targets:6 }, // Status
-                { width:'100px', targets:7 }, // Effective Date
-                { width:'150px', targets:8 }, // Modified Date
-                { width:'100px', targets:9 }, // Modified By
-                { width:'80px', targets:10 }, // Type
-                { width:'120px', targets:11 } // Action
+                { orderable:false, targets:[0] }, // Action column not sortable
+                { width:'120px', targets:0 }, // Action
+                { width:'50px', targets:1 }, // ID
+                { width:'120px', targets:2 }, // Product
+                { width:'120px', targets:3 }, // Tool BOM
+                { width:'100px', targets:4 }, // Process
+                { width:'100px', targets:5 }, // Machine Group
+                { width:'60px', targets:6 }, // Revision
+                { width:'80px', targets:7 }, // Status
+                { width:'100px', targets:8 }, // Effective Date
+                { width:'150px', targets:9 }, // Modified Date
+                { width:'100px', targets:10 }, // Modified By
+                { width:'80px', targets:11 } // Type
             ],
             language: {
                 processing: '<div class="spinner-border spinner-border-sm" role="status"><span class="sr-only">Loading...</span></div> Processing...',

@@ -72,6 +72,7 @@
                             <table id="table-tool-bom" class="table table-bordered table-striped w-100 text-left">
                                 <thead>
                                     <tr class="text-center">
+                                        <th>Action</th>
                                         <th>ID</th>
                                         <th>Tool BOM</th>
                                         <th>Description</th>
@@ -80,18 +81,17 @@
                                         <th>Revision</th>
                                         <th>Status</th>
                                         <th>Modified By</th>
-                                        <th>Action</th>
                                     </tr>
                                     <tr class="search-row">
                                         <th></th>
-                                        <th><input type="text" class="form-control form-control-sm column-search" placeholder="Search..." data-column="1" /></th>
+                                        <th></th>
                                         <th><input type="text" class="form-control form-control-sm column-search" placeholder="Search..." data-column="2" /></th>
                                         <th><input type="text" class="form-control form-control-sm column-search" placeholder="Search..." data-column="3" /></th>
                                         <th><input type="text" class="form-control form-control-sm column-search" placeholder="Search..." data-column="4" /></th>
                                         <th><input type="text" class="form-control form-control-sm column-search" placeholder="Search..." data-column="5" /></th>
                                         <th><input type="text" class="form-control form-control-sm column-search" placeholder="Search..." data-column="6" /></th>
                                         <th><input type="text" class="form-control form-control-sm column-search" placeholder="Search..." data-column="7" /></th>
-                                        <th></th>
+                                        <th><input type="text" class="form-control form-control-sm column-search" placeholder="Search..." data-column="8" /></th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -123,20 +123,20 @@
             },
             lengthMenu: [[10,25,50,100],[10,25,50,100]],
             pageLength: 25,
-            order: [[1,'asc']],
+            order: [[2,'asc']],
             autoWidth: false,
             scrollX: true,
             columnDefs: [
-                { orderable:false, targets:[8] },
-                { width:'50px', targets:0 },
-                { width:'120px', targets:1 },
-                { width:'150px', targets:2 },
-                { width:'120px', targets:3 },
-                { width:'100px', targets:4 },
-                { width:'60px', targets:5 },
-                { width:'80px', targets:6 },
-                { width:'100px', targets:7 },
-                { width:'120px', targets:8 }
+                { orderable:false, targets:[0] },
+                { width:'120px', targets:0 },
+                { width:'50px', targets:1 },
+                { width:'120px', targets:2 },
+                { width:'150px', targets:3 },
+                { width:'120px', targets:4 },
+                { width:'100px', targets:5 },
+                { width:'60px', targets:6 },
+                { width:'80px', targets:7 },
+                { width:'100px', targets:8 }
             ],
             language: {
                 processing: '<div class="spinner-border spinner-border-sm" role="status"><span class="sr-only">Loading...</span></div> Processing...',

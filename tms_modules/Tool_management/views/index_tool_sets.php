@@ -74,22 +74,22 @@
                             <table id="table-tool-sets" class="table table-bordered table-striped w-100 text-left">
                                 <thead>
                                     <tr class="text-center">
+                                        <th>Action</th>
                                         <th>ID</th>
                                         <th>Name</th>
                                         <th>Tool BOM</th>
                                         <th>Product</th>
                                         <th>Revision</th>
                                         <th>Status</th>
-                                        <th>Action</th>
                                     </tr>
                                     <tr class="search-row">
                                         <th></th>
-                                        <th><input type="text" class="form-control form-control-sm column-search" placeholder="Search..." data-column="1" /></th>
+                                        <th></th>
                                         <th><input type="text" class="form-control form-control-sm column-search" placeholder="Search..." data-column="2" /></th>
                                         <th><input type="text" class="form-control form-control-sm column-search" placeholder="Search..." data-column="3" /></th>
                                         <th><input type="text" class="form-control form-control-sm column-search" placeholder="Search..." data-column="4" /></th>
                                         <th><input type="text" class="form-control form-control-sm column-search" placeholder="Search..." data-column="5" /></th>
-                                        <th></th>
+                                        <th><input type="text" class="form-control form-control-sm column-search" placeholder="Search..." data-column="6" /></th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -121,18 +121,18 @@
             },
             lengthMenu: [[10,25,50,100],[10,25,50,100]],
             pageLength: 25,
-            order: [[1,'asc']],
+            order: [[2,'asc']],
             autoWidth: false,
             scrollX: true,
             columnDefs: [
-                { orderable:false, targets:[6] },
-                { width:'50px', targets:0 },
-                { width:'150px', targets:1 },
-                { width:'120px', targets:2 },
+                { orderable:false, targets:[0] },
+                { width:'120px', targets:0 },
+                { width:'50px', targets:1 },
+                { width:'150px', targets:2 },
                 { width:'120px', targets:3 },
-                { width:'80px', targets:4 },
-                { width:'100px', targets:5 },
-                { width:'120px', targets:6 }
+                { width:'120px', targets:4 },
+                { width:'80px', targets:5 },
+                { width:'100px', targets:6 }
             ],
             language: {
                 processing: '<div class="spinner-border spinner-border-sm" role="status"><span class="sr-only">Loading...</span></div> Processing...',

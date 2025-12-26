@@ -101,6 +101,7 @@
                                 <table id="table-tool-work-order" class="table table-bordered table-striped w-100 text-left">
                                     <thead>
                                         <tr class="text-center">
+                                            <th>Action</th>
                                             <th>ID</th>
                                             <th>Date</th>
                                             <th>WO No.</th>
@@ -114,11 +115,10 @@
                                             <th>Reason</th>
                                             <th>Tool Making Draw. No.</th>
                                             <th>RQ No.</th>
-                                            <th>Action</th>
                                         </tr>
                                         <tr class="search-row">
                                             <th></th>
-                                            <th><input type="text" class="form-control form-control-sm column-search" placeholder="Search..." data-column="1" /></th>
+                                            <th></th>
                                             <th><input type="text" class="form-control form-control-sm column-search" placeholder="Search..." data-column="2" /></th>
                                             <th><input type="text" class="form-control form-control-sm column-search" placeholder="Search..." data-column="3" /></th>
                                             <th><input type="text" class="form-control form-control-sm column-search" placeholder="Search..." data-column="4" /></th>
@@ -130,7 +130,7 @@
                                             <th><input type="text" class="form-control form-control-sm column-search" placeholder="Search..." data-column="10" /></th>
                                             <th><input type="text" class="form-control form-control-sm column-search" placeholder="Search..." data-column="11" /></th>
                                             <th><input type="text" class="form-control form-control-sm column-search" placeholder="Search..." data-column="12" /></th>
-                                            <th></th>
+                                            <th><input type="text" class="form-control form-control-sm column-search" placeholder="Search..." data-column="13" /></th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -166,24 +166,24 @@
                     ],
                     pageLength: 25,
                     order: [
-                        [0, 'desc']
+                        [1, 'desc']
                     ],
                     autoWidth: false,
                     scrollX: true,
                     columnDefs: [{
                             orderable: false,
-                            targets: [13]
-                        },
-                        {
-                            width: '50px',
-                            targets: 0
-                        },
-                        {
-                            width: '100px',
-                            targets: 1
+                            targets: [0]
                         },
                         {
                             width: '120px',
+                            targets: 0
+                        },
+                        {
+                            width: '50px',
+                            targets: 1
+                        },
+                        {
+                            width: '100px',
                             targets: 2
                         },
                         {
@@ -227,7 +227,7 @@
                             targets: 12
                         },
                         {
-                            width: '120px',
+                            width: '100px',
                             targets: 13
                         }
                     ],

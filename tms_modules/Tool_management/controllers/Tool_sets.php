@@ -44,15 +44,20 @@ class Tool_sets extends MY_Controller
             $search = $this->input->post('search');
             $search_value = isset($search['value']) ? trim($search['value']) : '';
             $order = $this->input->post('order');
-            $order_column = isset($order[0]['column']) ? (int)$order[0]['column'] : 1;
+            $order_column_raw = isset($order[0]['column']) ? (int)$order[0]['column'] : 2;
             $order_dir = isset($order[0]['dir']) ? $order[0]['dir'] : 'asc';
+            
+            // Adjust order_column: Action is now at index 0 (non-sortable), so subtract 1 for other columns
+            // If order_column is 0 (Action), use default (1 = Name)
+            $order_column = ($order_column_raw == 0) ? 1 : ($order_column_raw - 1);
 
             $columns = $this->input->post('columns');
             $column_search = array();
             if (is_array($columns)) {
                 foreach ($columns as $idx => $col) {
+                    if ($idx == 0) continue; // Skip Action column (index 0)
                     if (isset($col['search']['value']) && $col['search']['value'] !== '') {
-                        $column_search[$idx] = $col['search']['value'];
+                        $column_search[$idx - 1] = $col['search']['value']; // Adjust index
                     }
                 }
             }
@@ -73,13 +78,13 @@ class Tool_sets extends MY_Controller
                     '</div>';
 
                 $formatted_data[] = array(
+                    $action_html,
                     $id,
                     htmlspecialchars(isset($row['TSET_NAME']) ? $row['TSET_NAME'] : '', ENT_QUOTES, 'UTF-8'),
                     htmlspecialchars(isset($row['TOOL_BOM']) ? $row['TOOL_BOM'] : '', ENT_QUOTES, 'UTF-8'),
                     htmlspecialchars(isset($row['PRODUCT']) ? $row['PRODUCT'] : '', ENT_QUOTES, 'UTF-8'),
                     htmlspecialchars(isset($row['REVISION']) ? $row['REVISION'] : '0', ENT_QUOTES, 'UTF-8'),
-                    $status_badge,
-                    $action_html
+                    $status_badge
                 );
             }
 

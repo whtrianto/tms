@@ -72,6 +72,7 @@
                             <table id="table-tool-scrap" class="table table-bordered table-striped w-100 text-left">
                                 <thead>
                                     <tr class="text-center">
+                                        <th>Action</th>
                                         <th>ID</th>
                                         <th>Issue Date</th>
                                         <th>Acc/Scrap Date</th>
@@ -85,11 +86,10 @@
                                         <th>Machine</th>
                                         <th>Cause Remark</th>
                                         <th>Suggestion</th>
-                                        <th>Action</th>
                                     </tr>
                                     <tr class="search-row">
                                         <th></th>
-                                        <th><input type="text" class="form-control form-control-sm column-search" placeholder="Search..." data-column="1" /></th>
+                                        <th></th>
                                         <th><input type="text" class="form-control form-control-sm column-search" placeholder="Search..." data-column="2" /></th>
                                         <th><input type="text" class="form-control form-control-sm column-search" placeholder="Search..." data-column="3" /></th>
                                         <th><input type="text" class="form-control form-control-sm column-search" placeholder="Search..." data-column="4" /></th>
@@ -101,7 +101,7 @@
                                         <th><input type="text" class="form-control form-control-sm column-search" placeholder="Search..." data-column="10" /></th>
                                         <th><input type="text" class="form-control form-control-sm column-search" placeholder="Search..." data-column="11" /></th>
                                         <th><input type="text" class="form-control form-control-sm column-search" placeholder="Search..." data-column="12" /></th>
-                                        <th></th>
+                                        <th><input type="text" class="form-control form-control-sm column-search" placeholder="Search..." data-column="13" /></th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -133,25 +133,25 @@
             },
             lengthMenu: [[10,25,50,100],[10,25,50,100]],
             pageLength: 25,
-            order: [[0,'desc']],
+            order: [[1,'desc']],
             autoWidth: false,
             scrollX: true,
             columnDefs: [
-                { orderable:false, targets:[13] },
-                { width:'50px', targets:0 },      // ID
-                { width:'110px', targets:1 },     // Issue Date
-                { width:'110px', targets:2 },     // Acc/Scrap Date
-                { width:'100px', targets:3 },     // Tool ID
-                { width:'120px', targets:4 },     // Tool Drawing No.
-                { width:'120px', targets:5 },     // Tool Name
-                { width:'100px', targets:6 },     // Reason
-                { width:'80px', targets:7 },      // Status
-                { width:'150px', targets:8 },     // Counter Measure
-                { width:'100px', targets:9 },     // Pcs Produced
-                { width:'120px', targets:10 },    // Machine
-                { width:'150px', targets:11 },    // Cause Remark
-                { width:'150px', targets:12 },    // Suggestion
-                { width:'150px', targets:13 }     // Action
+                { orderable:false, targets:[0] },
+                { width:'150px', targets:0 },     // Action
+                { width:'50px', targets:1 },      // ID
+                { width:'110px', targets:2 },     // Issue Date
+                { width:'110px', targets:3 },     // Acc/Scrap Date
+                { width:'100px', targets:4 },     // Tool ID
+                { width:'120px', targets:5 },     // Tool Drawing No.
+                { width:'120px', targets:6 },     // Tool Name
+                { width:'100px', targets:7 },     // Reason
+                { width:'80px', targets:8 },      // Status
+                { width:'150px', targets:9 },     // Counter Measure
+                { width:'100px', targets:10 },     // Pcs Produced
+                { width:'120px', targets:11 },    // Machine
+                { width:'150px', targets:12 },    // Cause Remark
+                { width:'150px', targets:13 }    // Suggestion
             ],
             language: {
                 processing: '<div class="spinner-border spinner-border-sm" role="status"><span class="sr-only">Loading...</span></div> Processing...',

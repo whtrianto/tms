@@ -57,20 +57,16 @@
                                     <table id="table-storage" class="table table-bordered table-striped text-center w-100">
                                         <thead>
                                             <tr>
+                                                <th>ACTION</th>
                                                 <th>NO</th>
                                                 <th>ID</th>
                                                 <th>NAME</th>
                                                 <th>DESCRIPTION</th>
-                                                <th>ACTION</th>
                                             </tr>
                                         </thead>
                                         <tbody>
                                             <?php foreach ($list_data as $key => $value) : ?>
                                                 <tr>
-                                                    <td><?= $key + 1; ?></td>
-                                                    <td><?= $value['SL_ID']; ?></td>
-                                                    <td><?= $value['SL_NAME']; ?></td>
-                                                    <td><?= $value['SL_DESC']; ?></td>
                                                     <td>
                                                         <div style="display: flex; justify-content: center; gap: 8px;">
                                                             <button type="button" class="btn btn-secondary btn-sm btn-edit"
@@ -84,6 +80,10 @@
                                                             </button>
                                                         </div>
                                                     </td>
+                                                    <td><?= $key + 1; ?></td>
+                                                    <td><?= $value['SL_ID']; ?></td>
+                                                    <td><?= $value['SL_NAME']; ?></td>
+                                                    <td><?= $value['SL_DESC']; ?></td>
                                                 </tr>
                                             <?php endforeach; ?>
                                         </tbody>
@@ -144,13 +144,13 @@
                 "pageLength": 25,
                 "columnDefs": [{
                     "orderable": false,
-                    "targets": [0, 4]
+                    "targets": [0, 1]
                 }],
                 order: [
-                    [1, 'asc']
+                    [2, 'asc']
                 ],
                 "fnRowCallback": function(nRow, aData, iDisplayIndex, iDisplayIndexFull) {
-                    $('td:eq(0)', nRow).html(iDisplayIndexFull + 1);
+                    $('td:eq(1)', nRow).html(iDisplayIndexFull + 1);
                 },
                 "initComplete": function() {
                     $('#table-storage_paginate').addClass('d-flex justify-content-end');

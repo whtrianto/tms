@@ -145,6 +145,7 @@ if (!class_exists('M_tool_draw_tooling')) {
     {
         $sql = "SELECT TC_ID, TC_NAME, TC_DESC 
                 FROM {$this->t('MS_TOOL_CLASS')} 
+                WHERE (IS_DELETED = 0 OR IS_DELETED IS NULL)
                 ORDER BY TC_NAME ASC";
         $result = $this->tms_NEW->query($sql);
 
@@ -177,6 +178,7 @@ if (!class_exists('M_tool_draw_tooling')) {
     {
         $sql = "SELECT MAKER_ID, MAKER_NAME, MAKER_CODE, MAKER_DESC 
                 FROM {$this->t('MS_MAKER')} 
+                WHERE (IS_DELETED = 0 OR IS_DELETED IS NULL)
                 ORDER BY MAKER_NAME ASC";
         $result = $this->tms_NEW->query($sql);
 
@@ -195,7 +197,9 @@ if (!class_exists('M_tool_draw_tooling')) {
         $id = (int)$id;
         if ($id <= 0) return null;
         
-        $sql = "SELECT MAKER_ID, MAKER_NAME FROM {$this->t('MS_MAKER')} WHERE MAKER_ID = ?";
+        $sql = "SELECT MAKER_ID, MAKER_NAME 
+        FROM {$this->t('MS_MAKER')} 
+        WHERE MAKER_ID = ?";
         $result = $this->tms_NEW->query($sql, array($id));
         if ($result && $result->num_rows() > 0) return $result->row_array();
         return null;
@@ -209,6 +213,7 @@ if (!class_exists('M_tool_draw_tooling')) {
     {
         $sql = "SELECT MAT_ID, MAT_NAME, MAT_DESC, MAT_CODE 
                 FROM {$this->t('MS_MATERIAL')} 
+                WHERE (IS_DELETED = 0 OR IS_DELETED IS NULL)
                 ORDER BY MAT_NAME ASC";
         $result = $this->tms_NEW->query($sql);
 

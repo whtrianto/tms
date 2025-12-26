@@ -51,16 +51,21 @@ class Tool_draw_tooling extends MY_Controller
         $search = isset($search_arr['value']) ? trim($search_arr['value']) : '';
         
         $order_arr = $this->input->post('order');
-        $order_col = isset($order_arr[0]['column']) ? (int)$order_arr[0]['column'] : 1;
+        $order_col_raw = isset($order_arr[0]['column']) ? (int)$order_arr[0]['column'] : 1;
         $order_dir = isset($order_arr[0]['dir']) ? $order_arr[0]['dir'] : 'asc';
+        
+        // Adjust order_col: Action is now at index 0 (non-sortable), so subtract 1 for other columns
+        // If order_col is 0 (Action), use default (1 = Tool Drawing No)
+        $order_col = ($order_col_raw == 0) ? 1 : ($order_col_raw - 1);
 
-        // Per-column search
+        // Per-column search - adjust index: skip index 0 (Action column)
         $columns_post = $this->input->post('columns');
         $column_search = array();
         if (is_array($columns_post)) {
             foreach ($columns_post as $idx => $col) {
+                if ($idx == 0) continue; // Skip Action column (index 0)
                 if (isset($col['search']['value']) && $col['search']['value'] !== '') {
-                    $column_search[$idx] = $col['search']['value'];
+                    $column_search[$idx - 1] = $col['search']['value']; // Adjust index
                 }
             }
         }
@@ -86,6 +91,10 @@ class Tool_draw_tooling extends MY_Controller
             $hist_url = base_url('Tool_engineering/tool_draw_tooling/history_page/' . $id);
 
             $data[] = array(
+                '<div class="action-buttons">
+                    <a href="' . $edit_url . '" class="btn btn-secondary btn-sm" title="Edit">Edit</a>
+                    <a href="' . $hist_url . '" class="btn btn-warning btn-sm" title="History">Hist</a>
+                </div>',
                 '<a href="' . $detail_url . '" class="cell-ellipsis" title="View Detail">' . $drawing_no . '</a>',
                 '<span class="cell-ellipsis">' . $tool_name . '</span>',
                 $min_qty,
@@ -95,11 +104,7 @@ class Tool_draw_tooling extends MY_Controller
                 '<span class="cell-ellipsis">' . $desc . '</span>',
                 $eff_date,
                 '<span class="cell-ellipsis">' . $material . '</span>',
-                $tool_life,
-                '<div class="action-buttons">
-                    <a href="' . $edit_url . '" class="btn btn-secondary btn-sm" title="Edit">Edit</a>
-                    <a href="' . $hist_url . '" class="btn btn-warning btn-sm" title="History">Hist</a>
-                </div>'
+                $tool_life
             );
         }
 

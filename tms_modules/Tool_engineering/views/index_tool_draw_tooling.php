@@ -75,6 +75,7 @@
                                 <table id="table-tool-draw-tooling" class="table table-bordered table-striped w-100 text-center">
                                     <thead>
                                         <tr>
+                                            <th>Action</th>
                                             <th>Tool Drawing No.</th>
                                             <th>Tool Name</th>
                                             <th>Min Quantity</th>
@@ -85,10 +86,9 @@
                                             <th>Effective Date</th>
                                             <th>Material</th>
                                             <th>Standard Tool Life</th>
-                                            <th>Action</th>
                                         </tr>
                                         <tr class="search-row">
-                                            <th><input type="text" class="form-control form-control-sm column-search" placeholder="Search..." data-column="0" /></th>
+                                            <th></th>
                                             <th><input type="text" class="form-control form-control-sm column-search" placeholder="Search..." data-column="1" /></th>
                                             <th><input type="text" class="form-control form-control-sm column-search" placeholder="Search..." data-column="2" /></th>
                                             <th><input type="text" class="form-control form-control-sm column-search" placeholder="Search..." data-column="3" /></th>
@@ -98,7 +98,7 @@
                                             <th><input type="text" class="form-control form-control-sm column-search" placeholder="Search..." data-column="7" /></th>
                                             <th><input type="text" class="form-control form-control-sm column-search" placeholder="Search..." data-column="8" /></th>
                                             <th><input type="text" class="form-control form-control-sm column-search" placeholder="Search..." data-column="9" /></th>
-                                            <th></th>
+                                            <th><input type="text" class="form-control form-control-sm column-search" placeholder="Search..." data-column="10" /></th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -132,22 +132,22 @@
                     },
                     lengthMenu: [[10, 25, 50, 100], [10, 25, 50, 100]],
                     pageLength: 25,
-                    order: [[1, 'asc']],
+                    order: [[2, 'asc']],
                     autoWidth: false,
                     scrollX: true,
                     columnDefs: [
-                        { orderable: false, targets: [10] },
-                        { width: '120px', targets: 0 },
+                        { orderable: false, targets: [0] },
+                        { width: '100px', targets: 0 },
                         { width: '120px', targets: 1 },
-                        { width: '80px', targets: 2 },
+                        { width: '120px', targets: 2 },
                         { width: '80px', targets: 3 },
-                        { width: '100px', targets: 4 },
-                        { width: '80px', targets: 5 },
-                        { width: '120px', targets: 6 },
-                        { width: '100px', targets: 7 },
+                        { width: '80px', targets: 4 },
+                        { width: '100px', targets: 5 },
+                        { width: '80px', targets: 6 },
+                        { width: '120px', targets: 7 },
                         { width: '100px', targets: 8 },
-                        { width: '80px', targets: 9 },
-                        { width: '100px', targets: 10 }
+                        { width: '100px', targets: 9 },
+                        { width: '80px', targets: 10 }
                     ],
                     language: {
                         processing: '<div class="spinner-border spinner-border-sm" role="status"><span class="sr-only">Loading...</span></div> Processing...',

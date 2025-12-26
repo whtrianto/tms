@@ -56,15 +56,20 @@ class Tool_work_order extends MY_Controller
             $search = $this->input->post('search');
             $search_value = isset($search['value']) ? trim($search['value']) : '';
             $order = $this->input->post('order');
-            $order_column = isset($order[0]['column']) ? (int)$order[0]['column'] : 0;
+            $order_column_raw = isset($order[0]['column']) ? (int)$order[0]['column'] : 1;
             $order_dir = isset($order[0]['dir']) ? $order[0]['dir'] : 'asc';
+            
+            // Adjust order_column: Action is now at index 0 (non-sortable), so subtract 1 for other columns
+            // If order_column is 0 (Action), use default (0 = ID)
+            $order_column = ($order_column_raw == 0) ? 0 : ($order_column_raw - 1);
 
             $columns = $this->input->post('columns');
             $column_search = array();
             if (is_array($columns)) {
                 foreach ($columns as $idx => $col) {
+                    if ($idx == 0) continue; // Skip Action column (index 0)
                     if (isset($col['search']['value']) && $col['search']['value'] !== '') {
-                        $column_search[$idx] = $col['search']['value'];
+                        $column_search[$idx - 1] = $col['search']['value']; // Adjust index
                     }
                 }
             }
@@ -101,6 +106,7 @@ class Tool_work_order extends MY_Controller
                 }
 
                 $formatted_data[] = array(
+                    $action_html,
                     $id,
                     htmlspecialchars($date, ENT_QUOTES, 'UTF-8'),
                     htmlspecialchars(isset($row['WO_NO']) ? $row['WO_NO'] : '', ENT_QUOTES, 'UTF-8'),
@@ -113,8 +119,7 @@ class Tool_work_order extends MY_Controller
                     $status_badge,
                     htmlspecialchars($wo_reason_name, ENT_QUOTES, 'UTF-8'),
                     htmlspecialchars(isset($row['TOOL_MAKING_DRAW_NO']) ? $row['TOOL_MAKING_DRAW_NO'] : '', ENT_QUOTES, 'UTF-8'),
-                    htmlspecialchars(isset($row['RQ_NO']) ? $row['RQ_NO'] : '', ENT_QUOTES, 'UTF-8'),
-                    $action_html
+                    htmlspecialchars(isset($row['RQ_NO']) ? $row['RQ_NO'] : '', ENT_QUOTES, 'UTF-8')
                 );
             }
 

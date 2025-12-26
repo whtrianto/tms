@@ -294,7 +294,10 @@ class M_tool_bom_tooling extends CI_Model
      */
     public function get_machines()
     {
-        $sql = "SELECT MAC_ID, MAC_NAME FROM {$this->t('MS_MACHINES')} ORDER BY MAC_NAME";
+        $sql = "SELECT MAC_ID, MAC_NAME 
+        FROM {$this->t('MS_MACHINES')} 
+        WHERE (IS_DELETED = 0 OR IS_DELETED IS NULL)
+        ORDER BY MAC_NAME";
         $q = $this->db_tms->query($sql);
         return $q ? $q->result_array() : array();
     }
@@ -307,6 +310,7 @@ class M_tool_bom_tooling extends CI_Model
     {
         $sql = "SELECT PART_ID AS PRODUCT_ID, PART_NAME AS PRODUCT_NAME 
                 FROM {$this->t('MS_PARTS')} 
+                WHERE (IS_DELETED = 0 OR IS_DELETED IS NULL)
                 ORDER BY PART_NAME ASC";
         $q = $this->db_tms->query($sql);
         if ($q && $q->num_rows() > 0) {
@@ -323,6 +327,7 @@ class M_tool_bom_tooling extends CI_Model
     {
         $sql = "SELECT OP_ID AS OPERATION_ID, OP_NAME AS OPERATION_NAME 
                 FROM {$this->t('MS_OPERATION')} 
+                WHERE (IS_DELETED = 0 OR IS_DELETED IS NULL)
                 ORDER BY OP_NAME ASC";
         $q = $this->db_tms->query($sql);
         if ($q && $q->num_rows() > 0) {
@@ -339,6 +344,7 @@ class M_tool_bom_tooling extends CI_Model
     {
         $sql = "SELECT TC_ID AS TOOL_ID, TC_NAME AS TOOL_NAME 
                 FROM {$this->t('MS_TOOL_CLASS')} 
+                WHERE (IS_DELETED = 0 OR IS_DELETED IS NULL)
                 ORDER BY TC_NAME ASC";
         $q = $this->db_tms->query($sql);
         if ($q && $q->num_rows() > 0) {
@@ -355,6 +361,7 @@ class M_tool_bom_tooling extends CI_Model
     {
         $sql = "SELECT MAT_ID AS MATERIAL_ID, MAT_NAME AS MATERIAL_NAME 
                 FROM {$this->t('MS_MATERIAL')} 
+                WHERE (IS_DELETED = 0 OR IS_DELETED IS NULL)
                 ORDER BY MAT_NAME ASC";
         $q = $this->db_tms->query($sql);
         if ($q && $q->num_rows() > 0) {
@@ -371,6 +378,7 @@ class M_tool_bom_tooling extends CI_Model
     {
         $sql = "SELECT MAKER_ID, MAKER_NAME 
                 FROM {$this->t('MS_MAKER')} 
+                WHERE (IS_DELETED = 0 OR IS_DELETED IS NULL)
                 ORDER BY MAKER_NAME ASC";
         $q = $this->db_tms->query($sql);
         if ($q && $q->num_rows() > 0) {
@@ -385,14 +393,19 @@ class M_tool_bom_tooling extends CI_Model
      */
     public function get_machine_groups()
     {
-        $sql = "SELECT MAC_ID AS MACHINE_ID, MAC_NAME AS MACHINE_NAME 
-                FROM {$this->t('MS_MACHINES')} 
-                ORDER BY MAC_NAME ASC";
+        $sql = "
+            SELECT
+                M.MAC_ID   AS MACHINE_ID,
+                M.MAC_NAME AS MACHINE_NAME
+            FROM {$this->t('MS_MACHINES')} M
+            WHERE M.IS_DELETED = 0
+            AND M.MAC_IS_GROUP = 1
+            ORDER BY M.MAC_NAME ASC
+        ";
+
         $q = $this->db_tms->query($sql);
-        if ($q && $q->num_rows() > 0) {
-            return $q->result_array();
-        }
-        return array();
+        return ($q && $q->num_rows() > 0) ? $q->result_array() : [];
+
     }
 
     /**
