@@ -165,6 +165,7 @@
                             <table id="table-additional" class="table table-bordered table-striped w-100 text-center">
                                 <thead>
                                     <tr>
+                                        <th>ACTION</th>
                                         <th>No.</th>
                                         <th>ID</th>
                                         <th>Drawing</th>
@@ -176,7 +177,6 @@
                                         <th>Std. Quantity</th>
                                         <th>Sequence</th>
                                         <th>Remarks</th>
-                                        <th>ACTION</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -189,6 +189,16 @@
                                         }
                                     ?>
                                         <tr>
+                                            <td>
+                                                <div class="action-buttons">
+                                                    <button class="btn btn-sm btn-warning btn-edit-additional" data-edit='<?= htmlspecialchars(json_encode($row), ENT_QUOTES, "UTF-8"); ?>'>
+                                                        <i class="fas fa-edit"></i>
+                                                    </button>
+                                                    <button class="btn btn-sm btn-danger btn-delete-additional" data-id="<?= (int)$row['TD_ID']; ?>">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
                                             <td><?= $no++; ?></td>
                                             <td><?= htmlspecialchars($row['TD_ID']); ?></td>
                                             <td><?= htmlspecialchars(isset($row['TD_DRAWING_NO']) ? $row['TD_DRAWING_NO'] : ''); ?></td>
@@ -200,16 +210,6 @@
                                             <td><?= htmlspecialchars(isset($row['TD_REPLENISH_QTY']) ? $row['TD_REPLENISH_QTY'] : ''); ?></td>
                                             <td><?= htmlspecialchars(isset($row['TD_SEQUENCE']) ? $row['TD_SEQUENCE'] : ''); ?></td>
                                             <td><?= htmlspecialchars(isset($row['TD_REMARKS']) && $row['TD_REMARKS'] !== '' ? $row['TD_REMARKS'] : '-', ENT_QUOTES, 'UTF-8'); ?></td>
-                                            <td>
-                                                <div class="action-buttons">
-                                                    <button class="btn btn-sm btn-warning btn-edit-additional" data-edit='<?= htmlspecialchars(json_encode($row), ENT_QUOTES, "UTF-8"); ?>'>
-                                                        <i class="fas fa-edit"></i>
-                                                    </button>
-                                                    <button class="btn btn-sm btn-danger btn-delete-additional" data-id="<?= (int)$row['TD_ID']; ?>">
-                                                        <i class="fas fa-trash"></i>
-                                                    </button>
-                                                </div>
-                                            </td>
                                         </tr>
                                     <?php endforeach; ?>
                                 </tbody>
@@ -417,9 +417,10 @@
             order: [], // No default sorting - maintain order from database (TB_SEQ)
             autoWidth: false,
             columnDefs: [
-                { orderable:false, targets:[0,11] }, // No. column not sortable (it's auto-increment)
-                { width: '50px', targets:0 },
-                { width: '70px', targets:1 }
+                { orderable:false, targets:[0,1] }, // ACTION column (0) and No. column (1) not sortable
+                { width: '120px', targets:0 },
+                { width: '50px', targets:1 },
+                { width: '70px', targets:2 }
             ]
         });
 

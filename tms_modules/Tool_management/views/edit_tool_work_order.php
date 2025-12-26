@@ -303,6 +303,7 @@
                                 <table id="table-external-costs" class="table table-bordered table-striped w-100 text-left">
                                     <thead>
                                         <tr class="text-center">
+                                            <th>Action</th>
                                             <th>ID</th>
                                             <th>Activity</th>
                                             <th>Supplier</th>
@@ -314,13 +315,18 @@
                                             <th>Qty</th>
                                             <th>Unit Price</th>
                                             <th>Sub Total</th>
-                                            <th>Action</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         <?php if (!empty($external_costs)): ?>
                                             <?php foreach ($external_costs as $ext): ?>
                                                 <tr>
+                                                    <td>
+                                                        <div class="action-buttons">
+                                                            <button class="btn btn-secondary btn-sm btn-edit-extcost" data-id="<?= isset($ext['EXTCOST_ID']) ? $ext['EXTCOST_ID'] : ''; ?>">Edit</button>
+                                                            <button class="btn btn-danger btn-sm btn-delete-extcost" data-id="<?= isset($ext['EXTCOST_ID']) ? $ext['EXTCOST_ID'] : ''; ?>">Delete</button>
+                                                        </div>
+                                                    </td>
                                                     <td><?= isset($ext['EXTCOST_ID']) ? htmlspecialchars($ext['EXTCOST_ID'], ENT_QUOTES, 'UTF-8') : ''; ?></td>
                                                     <td><?= isset($ext['ACTIVITY']) ? htmlspecialchars($ext['ACTIVITY'], ENT_QUOTES, 'UTF-8') : ''; ?></td>
                                                     <td><?= isset($ext['SUPPLIER']) ? htmlspecialchars($ext['SUPPLIER'], ENT_QUOTES, 'UTF-8') : ''; ?></td>
@@ -332,12 +338,6 @@
                                                     <td><?= isset($ext['EXTCOST_SUP_QTY']) ? htmlspecialchars($ext['EXTCOST_SUP_QTY'], ENT_QUOTES, 'UTF-8') : '0'; ?></td>
                                                     <td><?= isset($ext['EXTCOST_SUP_UNIT_PRICE']) ? number_format($ext['EXTCOST_SUP_UNIT_PRICE'], 2) : '0.00'; ?></td>
                                                     <td><?= isset($ext['SUB_TOTAL']) ? number_format($ext['SUB_TOTAL'], 2) : '0.00'; ?></td>
-                                                    <td>
-                                                        <div class="action-buttons">
-                                                            <button class="btn btn-secondary btn-sm btn-edit-extcost" data-id="<?= isset($ext['EXTCOST_ID']) ? $ext['EXTCOST_ID'] : ''; ?>">Edit</button>
-                                                            <button class="btn btn-danger btn-sm btn-delete-extcost" data-id="<?= isset($ext['EXTCOST_ID']) ? $ext['EXTCOST_ID'] : ''; ?>">Delete</button>
-                                                        </div>
-                                                    </td>
                                                 </tr>
                                             <?php endforeach; ?>
                                         <?php else: ?>
@@ -639,9 +639,12 @@
                 try {
                     $tableExternalCosts.DataTable({
                         pageLength: 10,
-                        order: [[0, 'desc']],
+                        order: [[1, 'desc']],
                         autoWidth: false,
-                        scrollX: true
+                        scrollX: true,
+                        columnDefs: [
+                            { orderable: false, targets: [0] } // Action column (index 0)
+                        ]
                     });
                 } catch(e) {
                     console.error('Error initializing table-external-costs DataTable:', e);

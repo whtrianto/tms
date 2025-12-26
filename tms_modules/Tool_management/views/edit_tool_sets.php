@@ -183,6 +183,7 @@
                             <table id="table-compositions" class="table table-bordered table-striped w-100 text-left">
                                 <thead>
                                     <tr class="text-center">
+                                        <th>Action</th>
                                         <th>No.</th>
                                         <th>ID</th>
                                         <th>Tool Drawing No.</th>
@@ -194,13 +195,18 @@
                                         <th>End Cycle</th>
                                         <th>Remarks</th>
                                         <th>Tool Status</th>
-                                        <th>Action</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <?php if (!empty($compositions)): ?>
                                         <?php $no = 1; foreach ($compositions as $comp): ?>
                                             <tr>
+                                                <td>
+                                                    <div class="action-buttons">
+                                                        <a href="<?= base_url('Tool_management/tool_sets/edit_composition_page/' . (isset($comp['TSCOMP_ID']) ? $comp['TSCOMP_ID'] : 0)); ?>" class="btn btn-secondary btn-sm">Edit</a>
+                                                        <a href="<?= base_url('Tool_management/tool_sets/replace_composition_page/' . (isset($comp['TSCOMP_ID']) ? $comp['TSCOMP_ID'] : 0)); ?>" class="btn btn-warning btn-sm">Replace</a>
+                                                    </div>
+                                                </td>
                                                 <td><?= $no++; ?></td>
                                                 <td><?= isset($comp['TSCOMP_ID']) ? htmlspecialchars($comp['TSCOMP_ID'], ENT_QUOTES, 'UTF-8') : ''; ?></td>
                                                 <td>
@@ -247,12 +253,6 @@
                                                     echo '<span class="badge ' . $badge_class . '">' . htmlspecialchars($status_name, ENT_QUOTES, 'UTF-8') . '</span>';
                                                     ?>
                                                 </td>
-                                                <td>
-                                                    <div class="action-buttons">
-                                                        <a href="<?= base_url('Tool_management/tool_sets/edit_composition_page/' . (isset($comp['TSCOMP_ID']) ? $comp['TSCOMP_ID'] : 0)); ?>" class="btn btn-secondary btn-sm">Edit</a>
-                                                        <a href="<?= base_url('Tool_management/tool_sets/replace_composition_page/' . (isset($comp['TSCOMP_ID']) ? $comp['TSCOMP_ID'] : 0)); ?>" class="btn btn-warning btn-sm">Replace</a>
-                                                    </div>
-                                                </td>
                                             </tr>
                                         <?php endforeach; ?>
                                     <?php else: ?>
@@ -281,6 +281,7 @@
                             <table id="table-assignments" class="table table-bordered table-striped w-100 text-left">
                                 <thead>
                                     <tr class="text-center">
+                                        <th>Action</th>
                                         <th>No.</th>
                                         <th>Operation Name</th>
                                         <th>Machine Name</th>
@@ -289,13 +290,18 @@
                                         <th>Production End</th>
                                         <th>Usage</th>
                                         <th>Remarks</th>
-                                        <th>Action</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <?php if (!empty($assignments)): ?>
                                         <?php $no = 1; foreach ($assignments as $assign): ?>
                                             <tr>
+                                                <td>
+                                                    <div class="action-buttons">
+                                                        <a href="<?= base_url('Tool_management/tool_sets/edit_assignment/' . (isset($assign['TASGN_ID']) ? $assign['TASGN_ID'] : 0)); ?>" class="btn btn-secondary btn-sm">Edit</a>
+                                                        <button class="btn btn-danger btn-sm btn-delete-assignment" data-id="<?= isset($assign['TASGN_ID']) ? $assign['TASGN_ID'] : ''; ?>">Delete</button>
+                                                    </div>
+                                                </td>
                                                 <td><?= $no++; ?></td>
                                                 <td><?= isset($assign['OPERATION_NAME']) ? htmlspecialchars($assign['OPERATION_NAME'], ENT_QUOTES, 'UTF-8') : ''; ?></td>
                                                 <td><?= isset($assign['MACHINE_NAME']) ? htmlspecialchars($assign['MACHINE_NAME'], ENT_QUOTES, 'UTF-8') : ''; ?></td>
@@ -304,12 +310,6 @@
                                                 <td><?= isset($assign['PRODUCTION_END']) ? htmlspecialchars($assign['PRODUCTION_END'], ENT_QUOTES, 'UTF-8') : ''; ?></td>
                                                 <td><?= isset($assign['USAGE']) ? htmlspecialchars($assign['USAGE'], ENT_QUOTES, 'UTF-8') : ''; ?></td>
                                                 <td><?= isset($assign['REMARKS']) ? htmlspecialchars($assign['REMARKS'], ENT_QUOTES, 'UTF-8') : ''; ?></td>
-                                                <td>
-                                                    <div class="action-buttons">
-                                                        <a href="<?= base_url('Tool_management/tool_sets/edit_assignment/' . (isset($assign['TASGN_ID']) ? $assign['TASGN_ID'] : 0)); ?>" class="btn btn-secondary btn-sm">Edit</a>
-                                                        <button class="btn btn-danger btn-sm btn-delete-assignment" data-id="<?= isset($assign['TASGN_ID']) ? $assign['TASGN_ID'] : ''; ?>">Delete</button>
-                                                    </div>
-                                                </td>
                                             </tr>
                                         <?php endforeach; ?>
                                     <?php else: ?>
@@ -370,11 +370,11 @@
                         
                         $tableCompositions.DataTable({
                             pageLength: 10,
-                            order: [[0, 'asc']],
+                            order: [[1, 'asc']],
                             autoWidth: false,
                             scrollX: true,
                             columnDefs: [
-                                { orderable: false, targets: [11] } // Action column (index 11)
+                                { orderable: false, targets: [0] } // Action column (index 0)
                             ]
                         });
                     } catch (e) {
@@ -415,11 +415,11 @@
                         
                         $tableAssignments.DataTable({
                             pageLength: 10,
-                            order: [[0, 'asc']],
+                            order: [[1, 'asc']],
                             autoWidth: false,
                             scrollX: true,
                             columnDefs: [
-                                { orderable: false, targets: [8] } // Action column (index 8)
+                                { orderable: false, targets: [0] } // Action column (index 0)
                             ]
                         });
                     } catch (e) {
