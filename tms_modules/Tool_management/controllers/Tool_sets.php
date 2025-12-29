@@ -421,4 +421,156 @@ class Tool_sets extends MY_Controller
             'message' => $this->tool_sets->messages
         ));
     }
+
+    /**
+     * Add Assignment page
+     */
+    public function add_assignment_page($tset_id = 0)
+    {
+        $tset_id = (int)$tset_id;
+        if ($tset_id <= 0) {
+            show_404();
+            return;
+        }
+
+        $tool_set = $this->tool_sets->get_by_id($tset_id);
+        if (!$tool_set) {
+            show_404();
+            return;
+        }
+
+        // Get machines list
+        $machines = $this->tool_sets->get_machines();
+
+        $data = array();
+        $data['tool_set'] = $tool_set;
+        $data['machines'] = $machines;
+        $this->view('add_tool_set_assignment', $data, FALSE);
+    }
+
+    /**
+     * Edit Assignment page
+     */
+    public function edit_assignment_page($tasgn_id = 0)
+    {
+        $tasgn_id = (int)$tasgn_id;
+        if ($tasgn_id <= 0) {
+            show_404();
+            return;
+        }
+
+        $assignment = $this->tool_sets->get_assignment_by_id($tasgn_id);
+        if (!$assignment) {
+            show_404();
+            return;
+        }
+
+        // Get TASGN_TSET_ID for back link
+        $tset_id = isset($assignment['TASGN_TSET_ID']) ? (int)$assignment['TASGN_TSET_ID'] : 0;
+
+        $data = array();
+        $data['assignment'] = $assignment;
+        $this->view('edit_tool_set_assignment', $data, FALSE);
+    }
+
+    /**
+     * Submit Assignment data (Add/Edit)
+     */
+    public function submit_assignment_data()
+    {
+        if (ob_get_level()) ob_clean();
+        $this->output->set_content_type('application/json', 'UTF-8');
+
+        try {
+            $action = $this->input->post('action', TRUE);
+            
+            if ($action === 'ADD') {
+                $tset_id = (int)$this->input->post('TSET_ID', TRUE);
+                $machine_id = (int)$this->input->post('machine_id', TRUE);
+                $production_start = $this->input->post('production_start', TRUE);
+                $production_finish = $this->input->post('production_finish', TRUE);
+                $total_quantity = (int)$this->input->post('total_quantity', TRUE);
+                $remarks = $this->input->post('remarks', TRUE);
+                
+                if ($tset_id <= 0) {
+                    echo json_encode(array('success' => false, 'message' => 'Tool Set ID tidak valid.'));
+                    return;
+                }
+                
+                if ($machine_id <= 0) {
+                    echo json_encode(array('success' => false, 'message' => 'Machine harus dipilih.'));
+                    return;
+                }
+                
+                if ($total_quantity < 0) {
+                    echo json_encode(array('success' => false, 'message' => 'Total Quantity tidak boleh negatif.'));
+                    return;
+                }
+                
+                $data = array(
+                    'TASGN_TSET_ID' => $tset_id,
+                    'TASGN_MAC_ID' => $machine_id,
+                    'TASGN_PROD_START' => !empty($production_start) ? $production_start : date('Y-m-d'),
+                    'TASGN_PROD_END' => !empty($production_finish) ? $production_finish : date('Y-m-d'),
+                    'TASGN_LOT_PRODUCED' => $total_quantity,
+                    'TASGN_REMARKS' => $remarks
+                );
+                
+                $ok = $this->tool_sets->add_assignment($data);
+                echo json_encode(array(
+                    'success' => $ok,
+                    'message' => $this->tool_sets->messages
+                ));
+            } elseif ($action === 'EDIT') {
+                $tasgn_id = (int)$this->input->post('TASGN_ID', TRUE);
+                $production_start = $this->input->post('production_start', TRUE);
+                $production_finish = $this->input->post('production_finish', TRUE);
+                $total_quantity = (int)$this->input->post('total_quantity', TRUE);
+                $remarks = $this->input->post('remarks', TRUE);
+                
+                if ($tasgn_id <= 0) {
+                    echo json_encode(array('success' => false, 'message' => 'Assignment ID tidak valid.'));
+                    return;
+                }
+                
+                if (empty($production_start)) {
+                    echo json_encode(array('success' => false, 'message' => 'Production Start wajib diisi.'));
+                    return;
+                }
+                
+                if (empty($production_finish)) {
+                    echo json_encode(array('success' => false, 'message' => 'Production Finish wajib diisi.'));
+                    return;
+                }
+                
+                if ($total_quantity < 0) {
+                    echo json_encode(array('success' => false, 'message' => 'Total Quantity tidak boleh negatif.'));
+                    return;
+                }
+                
+                $data = array(
+                    'TASGN_PROD_START' => $production_start,
+                    'TASGN_PROD_END' => $production_finish,
+                    'TASGN_LOT_PRODUCED' => $total_quantity,
+                    'TASGN_REMARKS' => $remarks
+                );
+                
+                $ok = $this->tool_sets->update_assignment($tasgn_id, $data);
+                echo json_encode(array(
+                    'success' => $ok,
+                    'message' => $this->tool_sets->messages
+                ));
+            } else {
+                echo json_encode(array('success' => false, 'message' => 'Action tidak valid.'));
+            }
+        } catch (Exception $e) {
+            log_message('error', '[Tool_sets::submit_assignment_data] Exception: ' . $e->getMessage());
+            log_message('error', '[Tool_sets::submit_assignment_data] Stack trace: ' . $e->getTraceAsString());
+            echo json_encode(array('success' => false, 'message' => 'Error: ' . $e->getMessage()));
+        } catch (Error $e) {
+            log_message('error', '[Tool_sets::submit_assignment_data] Error: ' . $e->getMessage());
+            log_message('error', '[Tool_sets::submit_assignment_data] Stack trace: ' . $e->getTraceAsString());
+            echo json_encode(array('success' => false, 'message' => 'System error occurred. Please check the logs.'));
+        }
+    }
 }

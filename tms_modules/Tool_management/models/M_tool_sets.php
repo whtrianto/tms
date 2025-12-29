@@ -647,4 +647,206 @@ class M_tool_sets extends CI_Model
         $q = $this->db_tms->query($sql, array($mlr_id));
         return $q && $q->num_rows() > 0 ? $q->row_array() : null;
     }
+
+    /**
+     * Get machines list
+     * Source: MS_MACHINES
+     */
+    public function get_machines()
+    {
+        $sql = "SELECT MAC_ID, MAC_NAME 
+                FROM {$this->t('MS_MACHINES')} 
+                WHERE (IS_DELETED = 0 OR IS_DELETED IS NULL)
+                ORDER BY MAC_NAME ASC";
+        $q = $this->db_tms->query($sql);
+        return $q && $q->num_rows() > 0 ? $q->result_array() : array();
+    }
+
+    /**
+     * Get Assignment by ID
+     * Source: TMS_TOOL_ASSIGNMENT, MS_OPERATION, MS_MACHINES, MS_PARTS, TMS_TOOLSETS
+     */
+    public function get_assignment_by_id($tasgn_id)
+    {
+        $tasgn_id = (int)$tasgn_id;
+        if ($tasgn_id <= 0) return null;
+
+        $sql = "SELECT 
+                    tasgn.TASGN_ID,
+                    tasgn.TASGN_TSET_ID,
+                    tasgn.TASGN_OP_ID,
+                    tasgn.TASGN_MAC_ID,
+                    tasgn.TASGN_PART_ID,
+                    tasgn.TASGN_PROD_START AS PRODUCTION_START,
+                    tasgn.TASGN_PROD_END AS PRODUCTION_END,
+                    tasgn.TASGN_LOT_PRODUCED AS USAGE,
+                    ISNULL(tasgn.TASGN_REMARKS, '') AS REMARKS,
+                    ISNULL(op.OP_NAME, '') AS OPERATION_NAME,
+                    ISNULL(mac.MAC_NAME, '') AS MACHINE_NAME,
+                    ISNULL(part.PART_NAME, '') AS PRODUCT_NAME
+                FROM {$this->t('TMS_TOOL_ASSIGNMENT')} tasgn
+                LEFT JOIN {$this->t('MS_OPERATION')} op ON op.OP_ID = tasgn.TASGN_OP_ID
+                LEFT JOIN {$this->t('MS_MACHINES')} mac ON mac.MAC_ID = tasgn.TASGN_MAC_ID
+                LEFT JOIN {$this->t('MS_PARTS')} part ON part.PART_ID = tasgn.TASGN_PART_ID
+                WHERE tasgn.TASGN_ID = ?";
+
+        $q = $this->db_tms->query($sql, array($tasgn_id));
+        return $q && $q->num_rows() > 0 ? $q->row_array() : null;
+    }
+
+    /**
+     * Add Assignment
+     * Source: TMS_TOOL_ASSIGNMENT, TMS_TOOLSETS
+     */
+    public function add_assignment($data)
+    {
+        try {
+            $this->db_tms->trans_start();
+
+            // Validate required fields
+            if (empty($data['TASGN_TSET_ID']) || (int)$data['TASGN_TSET_ID'] <= 0) {
+                $this->messages = 'Tool Set ID tidak valid.';
+                return false;
+            }
+
+            if (empty($data['TASGN_MAC_ID']) || (int)$data['TASGN_MAC_ID'] <= 0) {
+                $this->messages = 'Machine harus dipilih.';
+                return false;
+            }
+
+            // Verify tool set exists
+            $tool_set = $this->get_by_id((int)$data['TASGN_TSET_ID']);
+            if (!$tool_set) {
+                $this->messages = 'Tool Set tidak ditemukan.';
+                return false;
+            }
+
+            // Get operation ID and part ID from MLR_ID
+            $op_id = null;
+            $part_id = null;
+            
+            if (isset($tool_set['TSET_BOM_MLR_ID']) && (int)$tool_set['TSET_BOM_MLR_ID'] > 0) {
+                $mlr_id = (int)$tool_set['TSET_BOM_MLR_ID'];
+                
+                // Get operation ID from MLR
+                $mlr_sql = "SELECT MLR_OP_ID, MLR_ML_ID FROM {$this->t('TMS_TOOL_MASTER_LIST_REV')} WHERE MLR_ID = ?";
+                $mlr_result = $this->db_tms->query($mlr_sql, array($mlr_id));
+                if ($mlr_result && $mlr_result->num_rows() > 0) {
+                    $mlr_row = $mlr_result->row();
+                    $op_id = isset($mlr_row->MLR_OP_ID) ? (int)$mlr_row->MLR_OP_ID : null;
+                    $ml_id = isset($mlr_row->MLR_ML_ID) ? (int)$mlr_row->MLR_ML_ID : null;
+                    
+                    // Get part ID from ML
+                    if ($ml_id) {
+                        $ml_sql = "SELECT TOP 1 TMLP_PART_ID 
+                                  FROM {$this->t('TMS_TOOL_MASTER_LIST_PARTS')} 
+                                  WHERE TMLP_ML_ID = ?";
+                        $ml_result = $this->db_tms->query($ml_sql, array($ml_id));
+                        if ($ml_result && $ml_result->num_rows() > 0) {
+                            $part_id = isset($ml_result->row()->TMLP_PART_ID) ? (int)$ml_result->row()->TMLP_PART_ID : null;
+                        }
+                    }
+                }
+            }
+
+            // Prepare insert data
+            $insert_data = array(
+                'TASGN_TSET_ID' => (int)$data['TASGN_TSET_ID'],
+                'TASGN_OP_ID' => $op_id,
+                'TASGN_MAC_ID' => (int)$data['TASGN_MAC_ID'],
+                'TASGN_PART_ID' => $part_id,
+                'TASGN_PROD_START' => isset($data['TASGN_PROD_START']) && !empty($data['TASGN_PROD_START']) 
+                    ? date('Y-m-d H:i:s', strtotime($data['TASGN_PROD_START'])) 
+                    : date('Y-m-d H:i:s'),
+                'TASGN_PROD_END' => isset($data['TASGN_PROD_END']) && !empty($data['TASGN_PROD_END']) 
+                    ? date('Y-m-d H:i:s', strtotime($data['TASGN_PROD_END'])) 
+                    : date('Y-m-d H:i:s'),
+                'TASGN_LOT_PRODUCED' => isset($data['TASGN_LOT_PRODUCED']) ? (int)$data['TASGN_LOT_PRODUCED'] : 0,
+                'TASGN_REMARKS' => isset($data['TASGN_REMARKS']) ? trim($data['TASGN_REMARKS']) : ''
+            );
+
+            $this->db_tms->insert($this->t('TMS_TOOL_ASSIGNMENT'), $insert_data);
+
+            $this->db_tms->trans_complete();
+
+            if ($this->db_tms->trans_status() === FALSE) {
+                $this->messages = 'Gagal menambahkan assignment.';
+                return false;
+            }
+
+            $this->messages = 'Assignment berhasil ditambahkan.';
+            return true;
+        } catch (Exception $e) {
+            log_message('error', '[M_tool_sets::add_assignment] Exception: ' . $e->getMessage());
+            $this->messages = 'Error: ' . $e->getMessage();
+            return false;
+        }
+    }
+
+    /**
+     * Update Assignment
+     * Source: TMS_TOOL_ASSIGNMENT
+     */
+    public function update_assignment($tasgn_id, $data)
+    {
+        try {
+            $tasgn_id = (int)$tasgn_id;
+            if ($tasgn_id <= 0) {
+                $this->messages = 'Assignment ID tidak valid.';
+                return false;
+            }
+
+            // Check if assignment exists
+            $existing = $this->get_assignment_by_id($tasgn_id);
+            if (!$existing) {
+                $this->messages = 'Assignment tidak ditemukan.';
+                return false;
+            }
+
+            $this->db_tms->trans_start();
+
+            // Prepare update data
+            $update_data = array();
+
+            if (isset($data['TASGN_PROD_START']) && !empty($data['TASGN_PROD_START'])) {
+                $update_data['TASGN_PROD_START'] = date('Y-m-d H:i:s', strtotime($data['TASGN_PROD_START']));
+            }
+
+            if (isset($data['TASGN_PROD_END']) && !empty($data['TASGN_PROD_END'])) {
+                $update_data['TASGN_PROD_END'] = date('Y-m-d H:i:s', strtotime($data['TASGN_PROD_END']));
+            }
+
+            if (isset($data['TASGN_LOT_PRODUCED'])) {
+                $update_data['TASGN_LOT_PRODUCED'] = (int)$data['TASGN_LOT_PRODUCED'];
+            }
+
+            if (isset($data['TASGN_REMARKS'])) {
+                $update_data['TASGN_REMARKS'] = trim($data['TASGN_REMARKS']);
+            }
+
+            if (empty($update_data)) {
+                $this->messages = 'Tidak ada data yang diupdate.';
+                $this->db_tms->trans_rollback();
+                return false;
+            }
+
+            // Update data
+            $this->db_tms->where('TASGN_ID', $tasgn_id);
+            $this->db_tms->update($this->t('TMS_TOOL_ASSIGNMENT'), $update_data);
+
+            $this->db_tms->trans_complete();
+
+            if ($this->db_tms->trans_status() === FALSE) {
+                $this->messages = 'Gagal mengupdate assignment.';
+                return false;
+            }
+
+            $this->messages = 'Assignment berhasil diupdate.';
+            return true;
+        } catch (Exception $e) {
+            log_message('error', '[M_tool_sets::update_assignment] Exception: ' . $e->getMessage());
+            $this->messages = 'Error: ' . $e->getMessage();
+            return false;
+        }
+    }
 }
