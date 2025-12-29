@@ -77,10 +77,13 @@ class Tool_sets extends MY_Controller
                     '<button class="btn btn-danger btn-sm btn-delete" data-id="' . $id . '" data-name="' . $name . '">Del</button>' .
                     '</div>';
 
+                // Make Name column clickable (link to edit page)
+                $name_html = '<a href="' . $edit_url . '" class="text-primary" style="text-decoration: underline; cursor: pointer;">' . $name . '</a>';
+
                 $formatted_data[] = array(
                     $action_html,
                     $id,
-                    htmlspecialchars(isset($row['TSET_NAME']) ? $row['TSET_NAME'] : '', ENT_QUOTES, 'UTF-8'),
+                    $name_html,
                     htmlspecialchars(isset($row['TOOL_BOM']) ? $row['TOOL_BOM'] : '', ENT_QUOTES, 'UTF-8'),
                     htmlspecialchars(isset($row['PRODUCT']) ? $row['PRODUCT'] : '', ENT_QUOTES, 'UTF-8'),
                     htmlspecialchars(isset($row['REVISION']) ? $row['REVISION'] : '0', ENT_QUOTES, 'UTF-8'),
