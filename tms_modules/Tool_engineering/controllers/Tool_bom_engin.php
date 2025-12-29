@@ -184,6 +184,7 @@ class Tool_bom_engin extends MY_Controller
             'EFFECTIVE_DATE' => isset($row['TD_EFFECTIVE_DATE']) ? $row['TD_EFFECTIVE_DATE'] : '',
             'CHANGE_SUMMARY' => isset($row['TD_CHANGE_SUMMARY']) ? $row['TD_CHANGE_SUMMARY'] : '',
             'DRAWING' => isset($row['MLR_DRAWING']) ? $row['MLR_DRAWING'] : '',
+            'ML_ID' => isset($row['MLR_ML_ID']) ? (int)$row['MLR_ML_ID'] : 0,
             'IS_TRIAL_BOM' => isset($row['ML_IS_TRIAL_BOM']) ? (int)$row['ML_IS_TRIAL_BOM'] : (isset($row['ML_TRIAL']) ? (int)$row['ML_TRIAL'] : 0)
         );
 
@@ -600,5 +601,62 @@ class Tool_bom_engin extends MY_Controller
                 return false;
             }
         }
+        
+        return false;
+    }
+
+    /**
+     * Serve BOM drawing file
+     * File structure: Attachment_TMS/BOM/{ML_ID}/{REVISION}/{filename}
+     */
+    public function serve_file()
+    {
+        if (ob_get_level()) {
+            ob_clean();
+        }
+        
+        $this->output->set_content_type('application/octet-stream');
+        
+        $ml_id = (int)$this->input->get('ml_id', TRUE);
+        $revision = (int)$this->input->get('revision', TRUE);
+        $filename = $this->input->get('filename', TRUE);
+        
+        if ($ml_id <= 0 || empty($filename)) {
+            show_404();
+            return;
+        }
+        
+        // Clean filename to prevent directory traversal
+        $filename = basename($filename);
+        
+        // File location: Attachment_TMS/BOM/{ML_ID}/{REVISION}/{filename}
+        $file_path = APPPATH . 'tms_modules/Attachment_TMS/BOM/' . $ml_id . '/' . $revision . '/' . $filename;
+        
+        if (file_exists($file_path) && is_file($file_path)) {
+            // Get MIME type
+            $mime_type = 'application/octet-stream';
+            if (function_exists('mime_content_type')) {
+                $detected_mime = @mime_content_type($file_path);
+                if ($detected_mime) {
+                    $mime_type = $detected_mime;
+                }
+            }
+            
+            $file_size = filesize($file_path);
+            
+            // Set headers
+            header('Content-Type: ' . $mime_type);
+            header('Content-Length: ' . $file_size);
+            header('Content-Disposition: inline; filename="' . $filename . '"');
+            header('Cache-Control: private, max-age=3600');
+            header('Pragma: cache');
+            header('Expires: ' . gmdate('D, d M Y H:i:s', time() + 3600) . ' GMT');
+            
+            // Output file
+            readfile($file_path);
+            exit;
+        }
+        
+        show_404();
     }
 }

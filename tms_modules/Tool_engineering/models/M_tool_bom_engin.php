@@ -638,7 +638,9 @@ class M_tool_bom_engin extends CI_Model
             SELECT 
                 members.TB_ID,
                 child_rev.MLR_ID AS TD_ID,
+                child_rev.MLR_ML_ID AS TD_ML_ID,
                 child_ml.ML_TOOL_DRAW_NO AS TD_DRAWING_NO,
+                ISNULL(child_rev.MLR_DRAWING, '') AS TD_DRAWING_FILE,
                 ISNULL(tc.TC_NAME, '') AS TD_TOOL_NAME,
                 ISNULL(child_rev.MLR_TC_ID, 0) AS TD_TOOL_ID,
                 child_rev.MLR_REV AS TD_REVISION,
