@@ -30,6 +30,15 @@ class Tool_sets extends MY_Controller
     }
 
     /**
+     * Test method to verify routing works
+     */
+    public function test_assignment()
+    {
+        echo "Assignment methods are accessible!";
+        exit;
+    }
+
+    /**
      * Server-side DataTable AJAX handler
      */
     public function get_data()
@@ -425,8 +434,11 @@ class Tool_sets extends MY_Controller
     /**
      * Add Assignment page
      */
-    public function add_assignment($tset_id = 0)
+    public function add_assignment_page($tset_id = 0)
     {
+        // Debug: Ensure method is accessible
+        log_message('info', '[Tool_sets::add_assignment] Method called with tset_id: ' . $tset_id);
+        
         try {
             $tset_id = (int)$tset_id;
             log_message('debug', '[Tool_sets::add_assignment] tset_id = ' . $tset_id);
@@ -465,8 +477,11 @@ class Tool_sets extends MY_Controller
     /**
      * Edit Assignment page
      */
-    public function edit_assignment($tasgn_id = 0)
+    public function edit_assignment_page($tasgn_id = 0)
     {
+        // Debug: Ensure method is accessible
+        log_message('info', '[Tool_sets::edit_assignment] Method called with tasgn_id: ' . $tasgn_id);
+        
         try {
             $tasgn_id = (int)$tasgn_id;
             log_message('debug', '[Tool_sets::edit_assignment] tasgn_id = ' . $tasgn_id);

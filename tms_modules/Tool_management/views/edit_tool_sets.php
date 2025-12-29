@@ -271,7 +271,7 @@
                     <div class="card-header">
                         <div class="sub-section-title">
                             <span>Usage Assignments List</span>
-                            <a href="<?= base_url('Tool_management/tool_sets/add_assignment/' . (isset($tool_set['TSET_ID']) ? $tool_set['TSET_ID'] : 0)); ?>" class="btn btn-sm btn-primary">
+                            <a href="<?= base_url('Tool_management/tool_sets/add_assignment_page/' . (isset($tool_set['TSET_ID']) ? $tool_set['TSET_ID'] : 0)); ?>" class="btn btn-sm btn-primary">
                                 <i class="fa fa-plus"></i> Add New
                             </a>
                         </div>
@@ -298,7 +298,7 @@
                                             <tr>
                                                 <td>
                                                     <div class="action-buttons">
-                                                        <a href="<?= base_url('Tool_management/tool_sets/edit_assignment/' . (isset($assign['TASGN_ID']) ? $assign['TASGN_ID'] : 0)); ?>" class="btn btn-secondary btn-sm">Edit</a>
+                                                        <a href="<?= base_url('Tool_management/tool_sets/edit_assignment_page/' . (isset($assign['TASGN_ID']) ? $assign['TASGN_ID'] : 0)); ?>" class="btn btn-secondary btn-sm">Edit</a>
                                                         <button class="btn btn-danger btn-sm btn-delete-assignment" data-id="<?= isset($assign['TASGN_ID']) ? $assign['TASGN_ID'] : ''; ?>">Delete</button>
                                                     </div>
                                                 </td>
