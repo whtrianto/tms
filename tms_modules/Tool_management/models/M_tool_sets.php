@@ -695,6 +695,30 @@ class M_tool_sets extends CI_Model
     }
 
     /**
+     * Generate Assignment Number
+     * Format: ASGN-ddmyy-####
+     * Source: TMS_TOOL_ASSIGNMENT
+     */
+    private function generate_assignment_no()
+    {
+        $date = date('dmy');
+        $sql = "SELECT TOP 1 TASGN_ASSIGN_NO FROM {$this->t('TMS_TOOL_ASSIGNMENT')} WHERE TASGN_ASSIGN_NO LIKE ? ORDER BY TASGN_ID DESC";
+        $q = $this->db_tms->query($sql, array('ASGN-' . $date . '-%'));
+
+        $seq = 1;
+        if ($q && $q->num_rows() > 0) {
+            $last_no = $q->row()->TASGN_ASSIGN_NO;
+            $parts = explode('-', $last_no);
+            if (count($parts) >= 3) {
+                $last_seq = (int)$parts[2];
+                $seq = $last_seq + 1;
+            }
+        }
+
+        return 'ASGN-' . $date . '-' . str_pad($seq, 4, '0', STR_PAD_LEFT);
+    }
+
+    /**
      * Add Assignment
      * Source: TMS_TOOL_ASSIGNMENT, TMS_TOOLSETS
      */
@@ -749,8 +773,12 @@ class M_tool_sets extends CI_Model
                 }
             }
 
+            // Generate assignment number
+            $assign_no = $this->generate_assignment_no();
+
             // Prepare insert data
             $insert_data = array(
+                'TASGN_ASSIGN_NO' => $assign_no,
                 'TASGN_TSET_ID' => (int)$data['TASGN_TSET_ID'],
                 'TASGN_OP_ID' => $op_id,
                 'TASGN_MAC_ID' => (int)$data['TASGN_MAC_ID'],
