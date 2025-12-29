@@ -425,52 +425,80 @@ class Tool_sets extends MY_Controller
     /**
      * Add Assignment page
      */
-    public function add_assignment_page($tset_id = 0)
+    public function add_assignment($tset_id = 0)
     {
-        $tset_id = (int)$tset_id;
-        if ($tset_id <= 0) {
-            show_404();
-            return;
+        try {
+            $tset_id = (int)$tset_id;
+            log_message('debug', '[Tool_sets::add_assignment] tset_id = ' . $tset_id);
+            
+            if ($tset_id <= 0) {
+                log_message('error', '[Tool_sets::add_assignment] Invalid tset_id: ' . $tset_id);
+                show_404();
+                return;
+            }
+
+            $tool_set = $this->tool_sets->get_by_id($tset_id);
+            if (!$tool_set) {
+                log_message('error', '[Tool_sets::add_assignment] Tool set not found for id: ' . $tset_id);
+                show_404();
+                return;
+            }
+
+            // Get machines list
+            $machines = $this->tool_sets->get_machines();
+
+            $data = array();
+            $data['tool_set'] = $tool_set;
+            $data['machines'] = $machines;
+            $this->view('add_tool_set_assignment', $data, FALSE);
+        } catch (Exception $e) {
+            log_message('error', '[Tool_sets::add_assignment] Exception: ' . $e->getMessage());
+            log_message('error', '[Tool_sets::add_assignment] Stack trace: ' . $e->getTraceAsString());
+            show_error('Error loading add assignment page: ' . $e->getMessage(), 500);
+        } catch (Error $e) {
+            log_message('error', '[Tool_sets::add_assignment] Error: ' . $e->getMessage());
+            log_message('error', '[Tool_sets::add_assignment] Stack trace: ' . $e->getTraceAsString());
+            show_error('System error occurred. Please check the logs.', 500);
         }
-
-        $tool_set = $this->tool_sets->get_by_id($tset_id);
-        if (!$tool_set) {
-            show_404();
-            return;
-        }
-
-        // Get machines list
-        $machines = $this->tool_sets->get_machines();
-
-        $data = array();
-        $data['tool_set'] = $tool_set;
-        $data['machines'] = $machines;
-        $this->view('add_tool_set_assignment', $data, FALSE);
     }
 
     /**
      * Edit Assignment page
      */
-    public function edit_assignment_page($tasgn_id = 0)
+    public function edit_assignment($tasgn_id = 0)
     {
-        $tasgn_id = (int)$tasgn_id;
-        if ($tasgn_id <= 0) {
-            show_404();
-            return;
+        try {
+            $tasgn_id = (int)$tasgn_id;
+            log_message('debug', '[Tool_sets::edit_assignment] tasgn_id = ' . $tasgn_id);
+            
+            if ($tasgn_id <= 0) {
+                log_message('error', '[Tool_sets::edit_assignment] Invalid tasgn_id: ' . $tasgn_id);
+                show_404();
+                return;
+            }
+
+            $assignment = $this->tool_sets->get_assignment_by_id($tasgn_id);
+            if (!$assignment) {
+                log_message('error', '[Tool_sets::edit_assignment] Assignment not found for id: ' . $tasgn_id);
+                show_404();
+                return;
+            }
+
+            // Get TASGN_TSET_ID for back link
+            $tset_id = isset($assignment['TASGN_TSET_ID']) ? (int)$assignment['TASGN_TSET_ID'] : 0;
+
+            $data = array();
+            $data['assignment'] = $assignment;
+            $this->view('edit_tool_set_assignment', $data, FALSE);
+        } catch (Exception $e) {
+            log_message('error', '[Tool_sets::edit_assignment] Exception: ' . $e->getMessage());
+            log_message('error', '[Tool_sets::edit_assignment] Stack trace: ' . $e->getTraceAsString());
+            show_error('Error loading edit assignment page: ' . $e->getMessage(), 500);
+        } catch (Error $e) {
+            log_message('error', '[Tool_sets::edit_assignment] Error: ' . $e->getMessage());
+            log_message('error', '[Tool_sets::edit_assignment] Stack trace: ' . $e->getTraceAsString());
+            show_error('System error occurred. Please check the logs.', 500);
         }
-
-        $assignment = $this->tool_sets->get_assignment_by_id($tasgn_id);
-        if (!$assignment) {
-            show_404();
-            return;
-        }
-
-        // Get TASGN_TSET_ID for back link
-        $tset_id = isset($assignment['TASGN_TSET_ID']) ? (int)$assignment['TASGN_TSET_ID'] : 0;
-
-        $data = array();
-        $data['assignment'] = $assignment;
-        $this->view('edit_tool_set_assignment', $data, FALSE);
     }
 
     /**
