@@ -438,13 +438,51 @@
             }
         });
 
-        // Delete Assignment handler
-        $('.btn-delete-assignment').on('click', function() {
+        // Delete Assignment handler (using event delegation for DataTables)
+        $(document).off('click', '.btn-delete-assignment').on('click', '.btn-delete-assignment', function() {
             var id = $(this).data('id');
+            var $btn = $(this);
+            
+            if (!id || id <= 0) {
+                alert('ID tidak valid');
+                return;
+            }
+            
             if (!confirm('Hapus assignment ini?')) return;
             
-            // TODO: Implement delete assignment
-            alert('Delete assignment functionality will be implemented');
+            $btn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i>');
+            
+            $.ajax({
+                url: '<?= base_url("Tool_management/tool_sets/delete_assignment"); ?>',
+                type: 'POST',
+                dataType: 'json',
+                data: { TASGN_ID: id }
+            }).done(function(res) {
+                if (res && res.success) {
+                    if (typeof toastr !== 'undefined') {
+                        toastr.success(res.message || 'Assignment berhasil dihapus');
+                    } else {
+                        alert(res.message || 'Assignment berhasil dihapus');
+                    }
+                    setTimeout(function() {
+                        window.location.reload();
+                    }, 600);
+                } else {
+                    if (typeof toastr !== 'undefined') {
+                        toastr.error(res && res.message ? res.message : 'Gagal menghapus assignment');
+                    } else {
+                        alert(res && res.message ? res.message : 'Gagal menghapus assignment');
+                    }
+                    $btn.prop('disabled', false).html('Delete');
+                }
+            }).fail(function(xhr, status, error) {
+                if (typeof toastr !== 'undefined') {
+                    toastr.error('Gagal menghapus: ' + (error || status));
+                } else {
+                    alert('Gagal menghapus: ' + (error || status));
+                }
+                $btn.prop('disabled', false).html('Delete');
+            });
         });
 
 

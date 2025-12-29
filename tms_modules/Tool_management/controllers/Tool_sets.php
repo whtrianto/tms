@@ -616,4 +616,36 @@ class Tool_sets extends MY_Controller
             echo json_encode(array('success' => false, 'message' => 'System error occurred. Please check the logs.'));
         }
     }
+
+    /**
+     * Delete Assignment (AJAX)
+     */
+    public function delete_assignment()
+    {
+        if (ob_get_level()) ob_clean();
+        $this->output->set_content_type('application/json', 'UTF-8');
+
+        try {
+            $tasgn_id = (int)$this->input->post('TASGN_ID', TRUE);
+            
+            if ($tasgn_id <= 0) {
+                echo json_encode(array('success' => false, 'message' => 'Assignment ID tidak valid.'));
+                return;
+            }
+
+            $ok = $this->tool_sets->delete_assignment($tasgn_id);
+            echo json_encode(array(
+                'success' => $ok,
+                'message' => $this->tool_sets->messages
+            ));
+        } catch (Exception $e) {
+            log_message('error', '[Tool_sets::delete_assignment] Exception: ' . $e->getMessage());
+            log_message('error', '[Tool_sets::delete_assignment] Stack trace: ' . $e->getTraceAsString());
+            echo json_encode(array('success' => false, 'message' => 'Error: ' . $e->getMessage()));
+        } catch (Error $e) {
+            log_message('error', '[Tool_sets::delete_assignment] Error: ' . $e->getMessage());
+            log_message('error', '[Tool_sets::delete_assignment] Stack trace: ' . $e->getTraceAsString());
+            echo json_encode(array('success' => false, 'message' => 'System error occurred. Please check the logs.'));
+        }
+    }
 }

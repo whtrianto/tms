@@ -877,4 +877,70 @@ class M_tool_sets extends CI_Model
             return false;
         }
     }
+
+    /**
+     * Delete Assignment
+     * Source: TMS_TOOL_ASSIGNMENT, TMS_ASSIGNED_TOOLS, TMS_TOOL_INSPECTION
+     */
+    public function delete_assignment($tasgn_id)
+    {
+        try {
+            $tasgn_id = (int)$tasgn_id;
+            if ($tasgn_id <= 0) {
+                $this->messages = 'Assignment ID tidak valid.';
+                return false;
+            }
+
+            // Check if assignment exists
+            $existing = $this->get_assignment_by_id($tasgn_id);
+            if (!$existing) {
+                $this->messages = 'Assignment tidak ditemukan.';
+                return false;
+            }
+
+            $this->db_tms->trans_start();
+
+            // Check if assignment has related assigned tools
+            $check_assigned_sql = "SELECT COUNT(*) as cnt FROM {$this->t('TMS_ASSIGNED_TOOLS')} WHERE ASSGN_TASGN_ID = ?";
+            $check_assigned_result = $this->db_tms->query($check_assigned_sql, array($tasgn_id));
+            if ($check_assigned_result && $check_assigned_result->num_rows() > 0) {
+                $count = (int)$check_assigned_result->row()->cnt;
+                if ($count > 0) {
+                    $this->messages = 'Assignment tidak dapat dihapus karena masih memiliki assigned tools.';
+                    $this->db_tms->trans_rollback();
+                    return false;
+                }
+            }
+
+            // Check if assignment has related inspections
+            $check_insp_sql = "SELECT COUNT(*) as cnt FROM {$this->t('TMS_TOOL_INSPECTION')} WHERE TINSP_TASGN_ID = ?";
+            $check_insp_result = $this->db_tms->query($check_insp_sql, array($tasgn_id));
+            if ($check_insp_result && $check_insp_result->num_rows() > 0) {
+                $count = (int)$check_insp_result->row()->cnt;
+                if ($count > 0) {
+                    $this->messages = 'Assignment tidak dapat dihapus karena masih memiliki inspection records.';
+                    $this->db_tms->trans_rollback();
+                    return false;
+                }
+            }
+
+            // Delete assignment
+            $this->db_tms->where('TASGN_ID', $tasgn_id);
+            $this->db_tms->delete($this->t('TMS_TOOL_ASSIGNMENT'));
+
+            $this->db_tms->trans_complete();
+
+            if ($this->db_tms->trans_status() === FALSE) {
+                $this->messages = 'Gagal menghapus assignment.';
+                return false;
+            }
+
+            $this->messages = 'Assignment berhasil dihapus.';
+            return true;
+        } catch (Exception $e) {
+            log_message('error', '[M_tool_sets::delete_assignment] Exception: ' . $e->getMessage());
+            $this->messages = 'Error: ' . $e->getMessage();
+            return false;
+        }
+    }
 }
