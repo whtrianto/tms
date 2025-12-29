@@ -107,13 +107,13 @@
                                 <!-- Kolom Kanan -->
                                 <div class="col-md-6">
                                     <div class="form-group">
-                                        <label>Production Start</label>
-                                        <input type="date" name="production_start" id="production_start" class="form-control" value="<?= date('Y-m-d'); ?>" readonly>
+                                        <label class="label-required">Production Start</label>
+                                        <input type="date" name="production_start" id="production_start" class="form-control" value="<?= date('Y-m-d'); ?>" required>
                                     </div>
 
                                     <div class="form-group">
-                                        <label>Production Finish</label>
-                                        <input type="date" name="production_finish" id="production_finish" class="form-control" value="<?= date('Y-m-d'); ?>" readonly>
+                                        <label class="label-required">Production Finish</label>
+                                        <input type="date" name="production_finish" id="production_finish" class="form-control" value="<?= date('Y-m-d'); ?>" required>
                                     </div>
 
                                     <div class="form-group">
@@ -151,11 +151,25 @@
             
             // Basic validation
             var machineId = $.trim($('#machine_id').val());
+            var productionStart = $.trim($('#production_start').val());
+            var productionFinish = $.trim($('#production_finish').val());
             var totalQuantity = $.trim($('#total_quantity').val());
             
             if (machineId === '' || machineId <= 0) {
                 alert('Machine harus dipilih.');
                 $('#machine_id').focus();
+                return;
+            }
+            
+            if (productionStart === '') {
+                alert('Production Start wajib diisi.');
+                $('#production_start').focus();
+                return;
+            }
+            
+            if (productionFinish === '') {
+                alert('Production Finish wajib diisi.');
+                $('#production_finish').focus();
                 return;
             }
             
@@ -171,7 +185,10 @@
                 url: $(this).attr('action'),
                 type: 'POST',
                 data: formData,
-                dataType: 'json'
+                dataType: 'json',
+                beforeSend: function() {
+                    $('button[type="submit"]').prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Saving...');
+                }
             }).done(function(res) {
                 if (res && res.success) {
                     if (typeof toastr !== 'undefined') {
@@ -188,6 +205,7 @@
                     } else {
                         alert(res && res.message ? res.message : 'Gagal menyimpan assignment');
                     }
+                    $('button[type="submit"]').prop('disabled', false).html('<i class="fa fa-save"></i> Save');
                 }
             }).fail(function(xhr, status) {
                 if (typeof toastr !== 'undefined') {
@@ -195,6 +213,7 @@
                 } else {
                     alert('Gagal menyimpan: ' + status);
                 }
+                $('button[type="submit"]').prop('disabled', false).html('<i class="fa fa-save"></i> Save');
             });
         });
     });
