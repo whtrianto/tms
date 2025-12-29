@@ -179,13 +179,16 @@
                                             <?php
                                             $td_id = isset($drawing['TD_ID']) ? (int)$drawing['TD_ID'] : 0;
                                             $td_rev = isset($drawing['TD_REVISION']) ? (int)$drawing['TD_REVISION'] : 0;
+                                            $drawing_no = htmlspecialchars($drawing['TD_DRAWING_NO'], ENT_QUOTES, 'UTF-8');
                                             $download_url = base_url('Tool_engineering/tool_draw_engin/serve_file_by_mlr?mlr_id=' . $td_id . '&mlr_rev=' . $td_rev . '&type=drawing');
                                             ?>
                                             <div class="small mt-1">
                                                 Current:
-                                                <a href="<?= $download_url; ?>" target="_blank" class="text-primary" style="text-decoration: underline; cursor: pointer;" title="Klik untuk download file">
-                                                    <?= htmlspecialchars($drawing['TD_DRAWING_NO']); ?>
-                                                    <i class="fa fa-download ml-1"></i>
+                                                <a href="<?= $download_url; ?>" download="<?= $drawing_no; ?>" class="text-primary" style="text-decoration: underline; cursor: pointer; display: inline-block; padding: 4px 8px; border: 1px solid #ccc; background: #fff; border-radius: 4px;"
+                                                    onmouseover="this.style.background='#f0f0f0';"
+                                                    onmouseout="this.style.background='#fff';"
+                                                    title="Klik untuk download file">
+                                                    <i class="fa fa-download"></i> <?= $drawing_no; ?>
                                                 </a>
                                             </div>
                                         <?php endif; ?>
