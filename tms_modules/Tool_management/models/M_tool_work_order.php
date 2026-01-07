@@ -266,7 +266,7 @@ class M_tool_work_order extends CI_Model
                     CASE WHEN wo.WO_ACTUAL_COM_DATE IS NULL THEN '' 
                          ELSE CONVERT(VARCHAR(19), wo.WO_ACTUAL_COM_DATE, 120) END AS ACTUAL_COMPLETION_DATE,
                     wo.WO_STATUS,
-                    ISNULL(wo.WO_CONDITION, 0) AS WO_CONDITION,
+                    wo.WO_CONDITION,
                     wo.WO_QTY,
                     wo.WO_URGENCY,
                     wo.WO_REMARKS,
@@ -274,14 +274,17 @@ class M_tool_work_order extends CI_Model
                     ISNULL(req_by.USR_NAME, '') AS REQUESTED_BY_NAME,
                     ISNULL(inv.INV_TOOL_ID, '') AS TOOL_ID,
                     ISNULL(inv.INV_TOOL_TAG, '') AS TOOL_TAG,
-                    ISNULL(ml.ML_TOOL_DRAW_NO, '') AS TOOL_DRAWING_NO,
-                    ISNULL(mlr.MLR_REV, 0) AS REVISION,
-                    ISNULL(tc.TC_NAME, '') AS TOOL_NAME
+                    ISNULL(COALESCE(wo_ml.ML_TOOL_DRAW_NO, inv_ml.ML_TOOL_DRAW_NO), '') AS TOOL_DRAWING_NO,
+                    ISNULL(COALESCE(wo_mlr.MLR_REV, inv_mlr.MLR_REV), 0) AS REVISION,
+                    ISNULL(COALESCE(wo_tc.TC_NAME, inv_tc.TC_NAME), '') AS TOOL_NAME
                 FROM {$this->t('TMS_WORKORDER')} wo
                 LEFT JOIN {$this->t('TMS_TOOL_INVENTORY')} inv ON inv.INV_ID = wo.WO_INV_ID
-                LEFT JOIN {$this->t('TMS_TOOL_MASTER_LIST_REV')} mlr ON mlr.MLR_ID = wo.WO_MLR_ID
-                LEFT JOIN {$this->t('TMS_TOOL_MASTER_LIST')} ml ON ml.ML_ID = mlr.MLR_ML_ID
-                LEFT JOIN {$this->t('MS_TOOL_CLASS')} tc ON tc.TC_ID = mlr.MLR_TC_ID
+                LEFT JOIN {$this->t('TMS_TOOL_MASTER_LIST_REV')} wo_mlr ON wo_mlr.MLR_ID = wo.WO_MLR_ID
+                LEFT JOIN {$this->t('TMS_TOOL_MASTER_LIST')} wo_ml ON wo_ml.ML_ID = wo_mlr.MLR_ML_ID
+                LEFT JOIN {$this->t('MS_TOOL_CLASS')} wo_tc ON wo_tc.TC_ID = wo_mlr.MLR_TC_ID
+                LEFT JOIN {$this->t('TMS_TOOL_MASTER_LIST_REV')} inv_mlr ON inv_mlr.MLR_ID = inv.INV_MLR_ID
+                LEFT JOIN {$this->t('TMS_TOOL_MASTER_LIST')} inv_ml ON inv_ml.ML_ID = inv_mlr.MLR_ML_ID
+                LEFT JOIN {$this->t('MS_TOOL_CLASS')} inv_tc ON inv_tc.TC_ID = inv_mlr.MLR_TC_ID
                 LEFT JOIN {$this->t('MS_USERS')} created_by ON created_by.USR_ID = wo.WO_CREATED_BY
                 LEFT JOIN {$this->t('MS_USERS')} req_by ON req_by.USR_ID = wo.WO_REQUESTED_BY
                 WHERE wo.WO_ID = ?";

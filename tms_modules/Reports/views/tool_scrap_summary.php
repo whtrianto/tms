@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <?= $head; ?>
+    <style>
+        #container-wrapper {
+            padding-bottom: 4rem;
+            margin-bottom: 2rem;
+        }
+        .filter-section {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border: 1px solid #dee2e6;
+        }
+        .filter-section h3 {
+            margin-top: 0;
+            margin-bottom: 15px;
+            color: #333;
+        }
+        .filter-form {
+            display: flex;
+            align-items: flex-end;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        .filter-form .form-group {
+            margin-bottom: 0;
+        }
+        .filter-form label {
+            font-weight: 500;
+            margin-bottom: 5px;
+            display: block;
+        }
+        .filter-form input,
+        .filter-form select {
+            width: 200px;
+        }
+        .report-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .report-title {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .report-subtitle {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 20px;
+        }
+        .report-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            font-size: 12px;
+        }
+        .report-table th {
+            background-color: #f0f0f0;
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+            font-weight: bold;
+        }
+        .report-table td {
+            border: 1px solid #ddd;
+            padding: 6px 8px;
+            text-align: right;
+        }
+        .report-table td:first-child,
+        .report-table th:first-child {
+            text-align: center;
+        }
+        .report-table td:nth-child(2),
+        .report-table th:nth-child(2),
+        .report-table td:nth-child(3),
+        .report-table th:nth-child(3),
+        .report-table td:nth-child(4),
+        .report-table th:nth-child(4),
+        .report-table td:nth-child(6),
+        .report-table th:nth-child(6) {
+            text-align: left;
+        }
+        .report-table tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .report-table tr:hover {
+            background-color: #f5f5f5;
+        }
+        .text-right {
+            text-align: right;
+        }
+        .text-left {
+            text-align: left;
+        }
+        .text-center {
+            text-align: center;
+        }
+        @media print {
+            body {
+                margin: 0;
+            }
+            .no-print {
+                display: none;
+            }
+        }
+        .action-buttons {
+            margin-bottom: 20px;
+        }
+        .btn {
+            padding: 8px 16px;
+            margin-right: 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .btn-primary {
+            background-color: #007bff;
+            color: white;
+        }
+        .btn-primary:hover {
+            background-color: #0056b3;
+        }
+        .btn-secondary {
+            background-color: #6c757d;
+            color: white;
+        }
+        .btn-secondary:hover {
+            background-color: #545b62;
+        }
+        .btn-success {
+            background-color: #28a745;
+            color: white;
+        }
+        .btn-success:hover {
+            background-color: #218838;
+        }
+    </style>
+</head>
+<body id="page-top">
+    <?= isset($loading) ? $loading : ''; ?>
+    <div id="wrapper">
+        <?= isset($sidebar) ? $sidebar : ''; ?>
+        <div id="content-wrapper" class="d-flex flex-column">
+            <div id="content">
+                <?= isset($topbar) ? $topbar : ''; ?>
+
+                <div class="container-fluid" id="container-wrapper">
+                    <!-- Filter Section -->
+                    <div class="filter-section no-print">
+                        <h3>Tool Scrap Summary Report</h3>
+                        <form method="GET" action="<?= base_url('Reports/tool_scrap_summary'); ?>" class="filter-form">
+                            <div class="form-group">
+                                <label for="date_from">Date From:</label>
+                                <input type="date" 
+                                       id="date_from" 
+                                       name="date_from" 
+                                       class="form-control" 
+                                       value="<?= htmlspecialchars($date_from, ENT_QUOTES, 'UTF-8'); ?>" 
+                                       required>
+                            </div>
+                            <div class="form-group">
+                                <label for="date_to">Date To:</label>
+                                <input type="date" 
+                                       id="date_to" 
+                                       name="date_to" 
+                                       class="form-control" 
+                                       value="<?= htmlspecialchars($date_to, ENT_QUOTES, 'UTF-8'); ?>" 
+                                       required>
+                            </div>
+                            <div class="form-group">
+                                <label for="reason_id">Reason:</label>
+                                <select id="reason_id" name="reason_id" class="form-control">
+                                    <option value="0">(Select All)</option>
+                                    <?php if (!empty($reasons)): ?>
+                                        <?php foreach ($reasons as $reason): ?>
+                                            <option value="<?= (int)$reason['ID']; ?>" <?= $reason_id == $reason['ID'] ? 'selected' : ''; ?>>
+                                                <?= htmlspecialchars($reason['NAME'], ENT_QUOTES, 'UTF-8'); ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    <?php endif; ?>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <button type="submit" class="btn btn-success">
+                                    <i class="fa fa-search"></i> Generate Report
+                                </button>
+                                <a href="<?= base_url('Reports/reports/index'); ?>" class="btn btn-secondary">
+                                    <i class="fa fa-arrow-left"></i> Back to Reports
+                                </a>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Report Content -->
+                    <?php if (!empty($date_from) && !empty($date_to)): ?>
+                        <div class="action-buttons no-print">
+                            <button onclick="window.print()" class="btn btn-primary">
+                                <i class="fa fa-print"></i> Print
+                            </button>
+                        </div>
+
+                        <div class="report-header">
+                            <div class="report-title">NEWCO INTL. PTE LTD.</div>
+                            <div class="report-subtitle">
+                                SCRAP TOOL (From <?= htmlspecialchars($date_from_formatted, ENT_QUOTES, 'UTF-8'); ?> To <?= htmlspecialchars($date_to_formatted, ENT_QUOTES, 'UTF-8'); ?>)
+                            </div>
+                        </div>
+
+                        <table class="report-table">
+                            <thead>
+                                <tr>
+                                    <th>SCRAP DATE</th>
+                                    <th>PRODUCT</th>
+                                    <th>TOOL NAME</th>
+                                    <th>TOOL ID</th>
+                                    <th>QTY</th>
+                                    <th>REASON</th>
+                                    <th>RM</th>
+                                    <th>PCS PRODUCED</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php if (!empty($scraps)): ?>
+                                    <?php 
+                                    // Format date function
+                                    function formatScrapDate($date) {
+                                        if (empty($date) || $date === null) return '';
+                                        try {
+                                            $d = new DateTime($date);
+                                            return $d->format('d-m-Y');
+                                        } catch (Exception $e) {
+                                            return $date;
+                                        }
+                                    }
+                                    ?>
+                                    <?php foreach ($scraps as $scrap): ?>
+                                        <tr>
+                                            <td class="text-center"><?= formatScrapDate($scrap['SCRAP_DATE']); ?></td>
+                                            <td class="text-left"><?= htmlspecialchars($scrap['PRODUCT'] ?: '', ENT_QUOTES, 'UTF-8'); ?></td>
+                                            <td class="text-left"><?= htmlspecialchars($scrap['TOOL_NAME'], ENT_QUOTES, 'UTF-8'); ?></td>
+                                            <td class="text-left"><?= htmlspecialchars($scrap['TOOL_ID'], ENT_QUOTES, 'UTF-8'); ?></td>
+                                            <td class="text-right"><?= number_format((int)$scrap['QTY'], 0); ?></td>
+                                            <td class="text-left"><?= htmlspecialchars($scrap['REASON'], ENT_QUOTES, 'UTF-8'); ?></td>
+                                            <td class="text-right"><?= number_format((float)$scrap['RM'], 2); ?></td>
+                                            <td class="text-right"><?= number_format((int)$scrap['PCS_PRODUCED'], 0); ?></td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                <?php else: ?>
+                                    <tr>
+                                        <td colspan="8" class="text-center">No data available</td>
+                                    </tr>
+                                <?php endif; ?>
+                            </tbody>
+                        </table>
+                    <?php endif; ?>
+                </div>
+                <?= isset($modal_logout) ? $modal_logout : ''; ?>
+            </div>
+            <?= isset($footer) ? $footer : ''; ?>
+        </div>
+    </div>
+
+    <?= isset($foot) ? $foot : ''; ?>
+</body>
+</html>
+

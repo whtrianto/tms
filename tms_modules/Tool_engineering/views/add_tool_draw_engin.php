@@ -147,7 +147,11 @@
                                 </div>
                                 <div class="form-group col-md-6">
                                     <label>Effective Date</label>
-                                    <input type="date" name="TD_EFFECTIVE_DATE" class="form-control" value="">
+                                        <input type="date"
+                                            name="TD_EFFECTIVE_DATE"
+                                            class="form-control"
+                                            value="<?= date('Y-m-d'); ?>">
+
                                     <small class="form-text text-muted">Optional: Select effective date</small>
                                 </div>
                             </div>

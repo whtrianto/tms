@@ -152,7 +152,7 @@
                                     <div class="form-group">
                                         <label>Effective Date</label>
                                         <div class="date-with-submit">
-                                            <input type="date" name="EFFECTIVE_DATE" id="effective_date" class="form-control">
+                                            <input type="date" name="EFFECTIVE_DATE" id="effective_date" class="form-control" value="<?= date('Y-m-d'); ?>">
                                             <!-- <button type="button" class="btn btn-primary btn-sm" onclick="alert('Submit Effective Date functionality')">
                                                 Submit
                                             </button> -->

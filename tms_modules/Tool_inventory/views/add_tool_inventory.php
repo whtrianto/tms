@@ -290,7 +290,7 @@
                                         <div class="col-md-3">
                                             <div class="form-group">
                                                 <label>Received Date</label>
-                                                <input type="date" name="received_date" class="form-control">
+                                                <input type="date" name="received_date" class="form-control" value="<?= date('Y-m-d'); ?>">
                                             </div>
                                         </div>
 

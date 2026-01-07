@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <?= $head; ?>
+    <style>
+        #container-wrapper {
+            padding-bottom: 4rem;
+            margin-bottom: 2rem;
+        }
+        .breadcrumb-nav {
+            background-color: #f8f9fa;
+            padding: 10px 15px;
+            border-bottom: 1px solid #dee2e6;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+        .breadcrumb-nav a {
+            color: #007bff;
+            text-decoration: none;
+        }
+        .breadcrumb-nav a:hover {
+            text-decoration: underline;
+        }
+        .breadcrumb-nav span {
+            color: #6c757d;
+            margin: 0 5px;
+        }
+        .reports-toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .search-section {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .search-section label {
+            margin: 0;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+        .search-section input {
+            width: 300px;
+        }
+        .action-buttons {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+        .reports-list {
+            background-color: white;
+            padding: 0;
+        }
+        .report-item {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            border-bottom: 1px solid #e9ecef;
+            cursor: pointer;
+        }
+        .report-item:hover {
+            background-color: #f8f9fa;
+        }
+        .report-item:last-child {
+            border-bottom: none;
+        }
+        .report-icon {
+            width: 24px;
+            height: 24px;
+            margin-right: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .report-icon i {
+            font-size: 20px;
+            color: #007bff;
+        }
+        .report-name {
+            flex: 1;
+            font-weight: 500;
+            color: #333;
+        }
+        .report-type {
+            color: #6c757d;
+            font-size: 0.9rem;
+            margin-left: 10px;
+        }
+    </style>
+</head>
+<body id="page-top">
+    <?= isset($loading) ? $loading : ''; ?>
+    <div id="wrapper">
+        <?= isset($sidebar) ? $sidebar : ''; ?>
+        <div id="content-wrapper" class="d-flex flex-column">
+            <div id="content">
+                <?= isset($topbar) ? $topbar : ''; ?>
+
+                <div class="container-fluid" id="container-wrapper">
+                    <!-- Breadcrumb Navigation -->
+                    <div class="breadcrumb-nav">
+                        <a href="#">Folder</a>
+                        <span>></span>
+                        <a href="#">SQL Server Reporting Services</a>
+                        <span>></span>
+                        <span>Reports</span>
+                    </div>
+
+                    <!-- Toolbar -->
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <div class="reports-toolbar">
+                                <div class="search-section">
+                                    <label for="searchReports" style="margin: 0; font-weight: 500;">Search</label>
+                                    <input type="text" id="searchReports" class="form-control" placeholder="Search reports..." style="display: inline-block; width: auto;">
+                                    <button type="button" class="btn btn-primary btn-sm" onclick="searchReports()">Go</button>
+                                </div>
+                                <div class="action-buttons">
+                                    <button type="button" class="btn btn-secondary btn-sm" onclick="newFolder()">
+                                        <i class="fa fa-folder"></i> New Folder
+                                    </button>
+                                    <button type="button" class="btn btn-secondary btn-sm" onclick="newDataSource()">
+                                        <i class="fa fa-database"></i> New Data Source
+                                    </button>
+                                    <button type="button" class="btn btn-secondary btn-sm" onclick="reportBuilder()">
+                                        <i class="fa fa-wrench"></i> Report Builder
+                                    </button>
+                                    <button type="button" class="btn btn-secondary btn-sm" onclick="folderSettings()">
+                                        <i class="fa fa-cog"></i> Folder Settings
+                                    </button>
+                                    <button type="button" class="btn btn-secondary btn-sm" onclick="uploadFile()">
+                                        <i class="fa fa-upload"></i> Upload File
+                                    </button>
+                                    <button type="button" class="btn btn-secondary btn-sm" onclick="toggleDetailsView()">
+                                        <i class="fa fa-list"></i> Details View
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Reports List -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="m-0 font-weight-bold text-primary">Reports</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="reports-list">
+                        <div class="report-item" onclick="openReport('All Tool List')">
+                            <div class="report-icon">
+                                <i class="fa fa-file-text"></i>
+                            </div>
+                            <div class="report-name">All Tool List</div>
+                            <div class="report-type">Report</div>
+                        </div>
+                        <div class="report-item" onclick="openReport('All Tool List_Old')">
+                            <div class="report-icon">
+                                <i class="fa fa-file-text"></i>
+                            </div>
+                            <div class="report-name">All Tool List_Old</div>
+                            <div class="report-type">Report</div>
+                        </div>
+                        <div class="report-item" onclick="openReport('ReOrder Point')">
+                            <div class="report-icon">
+                                <i class="fa fa-file-text"></i>
+                            </div>
+                            <div class="report-name">ReOrder Point</div>
+                            <div class="report-type">Report</div>
+                        </div>
+                        <div class="report-item" onclick="openReport('Tool Scrap Report')">
+                            <div class="report-icon">
+                                <i class="fa fa-file-text"></i>
+                            </div>
+                            <div class="report-name">Tool Scrap Report</div>
+                            <div class="report-type">Report</div>
+                        </div>
+                        <div class="report-item" onclick="openReport('Tool Scrap Summary Report')">
+                            <div class="report-icon">
+                                <i class="fa fa-file-text"></i>
+                            </div>
+                            <div class="report-name">Tool Scrap Summary Report</div>
+                            <div class="report-type">Report</div>
+                        </div>
+                        <div class="report-item" onclick="openReport('TOOLSET PM BM')">
+                            <div class="report-icon">
+                                <i class="fa fa-file-text"></i>
+                            </div>
+                            <div class="report-name">TOOLSET PM BM</div>
+                            <div class="report-type">Report</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <br><br><br>
+                <?= isset($modal_logout) ? $modal_logout : ''; ?>
+            </div>
+            <?= isset($footer) ? $footer : ''; ?>
+        </div>
+    </div>
+
+    <?= isset($foot) ? $foot : ''; ?>
+    <script>
+        function searchReports() {
+            var searchTerm = document.getElementById('searchReports').value;
+            if (searchTerm.trim() === '') {
+                // Show all reports
+                var reports = document.querySelectorAll('.report-item');
+                reports.forEach(function(report) {
+                    report.style.display = 'flex';
+                });
+            } else {
+                // Filter reports
+                var reports = document.querySelectorAll('.report-item');
+                reports.forEach(function(report) {
+                    var reportName = report.querySelector('.report-name').textContent.toLowerCase();
+                    if (reportName.includes(searchTerm.toLowerCase())) {
+                        report.style.display = 'flex';
+                    } else {
+                        report.style.display = 'none';
+                    }
+                });
+            }
+        }
+
+        function openReport(reportName) {
+            // Map report names to URLs
+            var reportUrls = {
+                'All Tool List': '<?= base_url("Reports/all_tool_list"); ?>',
+                'All Tool List_Old': '<?= base_url("Reports/all_tool_list_old"); ?>',
+                'ReOrder Point': '<?= base_url("Reports/reorder_point"); ?>',
+                'Tool Scrap Report': '<?= base_url("Reports/tool_scrap_report"); ?>',
+                'Tool Scrap Summary Report': '<?= base_url("Reports/tool_scrap_summary"); ?>',
+                'TOOLSET PM BM': '<?= base_url("Reports/toolset_pm_bm"); ?>'
+            };
+            
+            var url = reportUrls[reportName];
+            if (url) {
+                window.location.href = url;
+            } else {
+                alert('Report URL not configured for: ' + reportName);
+            }
+        }
+
+        function newFolder() {
+            alert('New Folder functionality - To be implemented');
+        }
+
+        function newDataSource() {
+            alert('New Data Source functionality - To be implemented');
+        }
+
+        function reportBuilder() {
+            alert('Report Builder functionality - To be implemented');
+        }
+
+        function folderSettings() {
+            alert('Folder Settings functionality - To be implemented');
+        }
+
+        function uploadFile() {
+            alert('Upload File functionality - To be implemented');
+        }
+
+        function toggleDetailsView() {
+            alert('Details View toggle - To be implemented');
+        }
+
+        // Allow Enter key to trigger search
+        document.getElementById('searchReports').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                searchReports();
+            }
+        });
+    </script>
+</body>
+</html>
+

@@ -1,4 +1,4 @@
-﻿﻿<!DOCTYPE html>
+﻿﻿﻿﻿<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -183,7 +183,7 @@
                                             $download_url = base_url('Tool_engineering/tool_draw_engin/serve_file_by_mlr?mlr_id=' . $td_id . '&mlr_rev=' . $td_rev . '&type=drawing');
                                             ?>
                                             <div class="small mt-1">
-                                                Current:
+                                                File saat ini:
                                                 <a href="<?= $download_url; ?>" download="<?= $drawing_no; ?>" class="text-primary" style="text-decoration: underline; cursor: pointer; display: inline-block; padding: 4px 8px; border: 1px solid #ccc; background: #fff; border-radius: 4px;"
                                                     onmouseover="this.style.background='#f0f0f0';"
                                                     onmouseout="this.style.background='#fff';"

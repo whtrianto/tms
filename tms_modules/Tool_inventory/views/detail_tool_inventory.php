@@ -53,6 +53,21 @@
             opacity: 1;
             cursor: not-allowed;
         }
+        .drawing-download-link {
+            color: #007bff;
+            text-decoration: underline;
+            cursor: pointer;
+            display: inline-block;
+            padding: 2px 6px;
+            border: 1px solid #ccc;
+            background: #fff;
+            border-radius: 4px;
+            margin-top: 5px;
+        }
+        .drawing-download-link:hover {
+            color: #0056b3;
+            background-color: #f0f0f0;
+        }
     </style>
 </head>
 <body id="page-top">
@@ -96,6 +111,19 @@
                                             </option>
                                         <?php endforeach; ?>
                                     </select>
+                                    <?php
+                                    // Check if we have MLR_ID and REVISION to create download link
+                                    $mlr_id = isset($inventory['INV_MLR_ID']) ? (int)$inventory['INV_MLR_ID'] : 0;
+                                    $revision = isset($inventory['REVISION']) ? (int)$inventory['REVISION'] : 0;
+                                    $tool_drawing_no = isset($inventory['TOOL_DRAWING_NO']) ? $inventory['TOOL_DRAWING_NO'] : '';
+                                    
+                                    if ($mlr_id > 0 && $revision >= 0 && !empty($tool_drawing_no)):
+                                        $download_url = base_url('Tool_engineering/tool_draw_engin/serve_file_by_mlr?mlr_id=' . $mlr_id . '&mlr_rev=' . $revision . '&type=drawing');
+                                    ?>
+                                        <a href="<?= $download_url; ?>" download="<?= htmlspecialchars($tool_drawing_no, ENT_QUOTES, 'UTF-8'); ?>" class="drawing-download-link" title="Klik untuk download file drawing">
+                                            <i class="fa fa-download"></i> Download Drawing File
+                                        </a>
+                                    <?php endif; ?>
                                 </div>
 
                                 <div class="form-group">

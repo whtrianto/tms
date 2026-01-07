@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+ <meta charset="UTF-8">
+ <meta name="viewport" content="width=device-width, initial-scale=1.0">
+ <title>LEMBAR PM - BM DIE</title>
+ <style>
+ body {
+ font-family: Arial, sans-serif;
+ font-size: 11px;
+ margin: 20px;
+ }
+ .container {
+ width: 100%;
+ max-width: 1000px;
+ margin: 0 auto;
+ }
+ table {
+ width: 100%;
+ border-collapse: collapse;
+ margin-bottom: 10px;
+ }
+ th, td {
+ border: 1px solid black;
+ padding: 4px;
+ vertical-align: middle;
+ }
+ .no-border {
+ border: none;
+ }
+ .text-center {
+ text-align: center;
+ }
+ .text-bold {
+ font-weight: bold;
+ }
+ .header-title {
+ font-size: 16px;
+ font-weight: bold;
+ text-align: center;
+ padding: 10px;
+ }
+ .section-header {
+ background-color: #f0f0f0;
+ font-weight: bold;
+ }
+ .signature-box {
+ height: 60px;
+ }
+ .small-col {
+ width: 30px;
+ }
+ .check-col {
+ width: 40px;
+ }
+ @media print {
+ .no-print {
+ display: none;
+ }
+ }
+ select {
+ padding: 5px;
+ font-size: 12px;
+ min-width: 300px;
+ }
+ </style>
+</head>
+<body>
+ <!-- Filter Section (No Print) -->
+ <div class="container no-print" style="margin-bottom: 20px; text-align: center; background: #f8f9fa; padding: 15px; border-radius: 5px; border: 1px solid #dee2e6;">
+ <label for="toolset_select" style="font-weight: bold; margin-right: 10px;">Filter Toolset / Die:</label>
+ <select id="toolset_select" onchange="updateDieInfo(this)">
+ <option value="">-- PILIH TOOLSET / DIE --</option>
+ <?php if(isset($toolsets) && !empty($toolsets)): ?>
+ <?php foreach($toolsets as $t): ?>
+ <option value="<?= $t['DRAWING_NO'] ?>" 
+ data-machine="<?= htmlspecialchars($t['MACHINE_NAME']) ?>" 
+ data-desc="<?= htmlspecialchars($t['DESCRIPTION']) ?>"
+ data-product="<?= htmlspecialchars($t['PRODUCT_NAME']) ?>"
+ data-id="<?= $t['TSET_ID'] ?>">
+ <?= htmlspecialchars($t['TSET_NAME']) ?>
+ </option>
+ <?php endforeach; ?>
+ <?php endif; ?>
+ </select>
+ </div>
+
+
+
+ <script>
+ function updateDieInfo(select) {
+ var option = select.options[select.selectedIndex];
+ var toolsetName = option.text.trim(); // Tipe Die = Toolset Name
+ var drawing = select.value || '';      // Nomor Die = Drawing No
+ var tsetId = option.getAttribute('data-id');
+ 
+ document.getElementById('tipe_die').innerText = toolsetName;
+ document.getElementById('nomor_die').innerText = drawing;
+ 
+ var tbody = document.getElementById('parts_table_body');
+ tbody.innerHTML = '<tr><td colspan="6" class="text-center">Loading...</td></tr>';
+ 
+ if (tsetId) {
+ var formData = new FormData();
+ formData.append('tset_id', tsetId);
+ 
+ fetch('<?= base_url("Reports/get_parts_over_lifetime") ?>', {
+ method: 'POST',
+ body: formData
+ })
+ .then(response => response.json())
+ .then(data => {
+ tbody.innerHTML = '';
+ if (data && data.length > 0) {
+ data.forEach((item, index) => {
+ var row = `<tr>
+ <td class="text-center">${index + 1}</td>
+ <td class="text-center">${item.TOOL_ID}</td>
+ <td class="text-center">${item.STD_LIFE}</td>
+ <td class="text-center">${item.END_CYCLE}</td>
+ <td class="text-center">¨</td>
+ <td></td>
+ </tr>`;
+ tbody.innerHTML += row;
+ });
+ } else {
+ tbody.innerHTML = '<tr><td colspan="6" class="text-center">No parts found</td></tr>';
+ }
+ 
+ // Fill remaining rows to maintain height if needed, or just let it adjust
+ while (tbody.children.length < 5) {
+ tbody.innerHTML += '<tr style="height: 20px;"><td colspan="6"></td></tr>';
+ }
+ })
+ .catch(error => {
+ console.error('Error:', error);
+ tbody.innerHTML = '<tr><td colspan="6" class="text-center">Error loading data</td></tr>';
+ });
+ } else {
+ tbody.innerHTML = '';
+ // Default empty rows
+ for(let i=0; i<5; i++) tbody.innerHTML += '<tr style="height: 20px;"><td colspan="6"></td></tr>';
+ }
+ }
+ </script>
+ </div>
+
+ <div class="container">
+ <!-- Header -->
+ <table style="border: none;">
+ <tr>
+ <td class="no-border" width="70%"></td>
+ <td class="no-border" width="30%">
+ <table>
+ <tr>
+ <td colspan="3">No. Doc : PN 005-CS-DM-001</td>
+ </tr>
+ <tr>
+ <td class="text-center">Approved</td>
+ <td class="text-center">Checked</td>
+ <td class="text-center">Inputed</td>
+ </tr>
+ <tr>
+ <td class="signature-box"></td>
+ <td class="signature-box"></td>
+ <td class="signature-box"></td>
+ </tr>
+ <tr>
+ <td class="text-center">Ngadirin / Prasetyo U.</td>
+ <td class="text-center">Foreman / Leader</td>
+ <td class="text-center">Operator</td>
+ </tr>
+ </table>
+ </td>
+ </tr>
+ </table>
+
+ <div class="header-title" style="border: 2px solid black; margin-bottom: 10px;">
+ LEMBAR PM - BM DIE
+ </div>
+
+ <!-- Info Die -->
+ <table>
+ <tr>
+ <td width="15%">Tipe Die:</td>
+ <td width="35%" id="tipe_die" style="font-weight: bold;"></td>
+ <td width="15%">Tgl. Mulai Perbaikan (Jam):</td>
+ <td width="35%"></td>
+ </tr>
+ <tr>
+ <td>Jenis Perbaikan:</td>
+ <td>
+ <input type="checkbox"> PM &nbsp;&nbsp;
+ <input type="checkbox"> BM &nbsp;&nbsp;
+ </td>
+ <td>Nomor Die:</td>
+ <td id="nomor_die" style="font-weight: bold;"></td>
+ </tr>
+ <tr>
+ <td>Tgl. Selesai Perbaikan (Total Jam):</td>
+ <td></td>
+ <td>PIC Repair Die:</td>
+ <td></td>
+ </tr>
+ <tr>
+ <td>Total Shoot Lifetime Die:</td>
+ <td colspan="3" style="text-align: right;">
+ Shoots &nbsp;&nbsp;
+ </td>
+ </tr>
+ </table>
+
+ <div style="margin-bottom: 10px; font-weight: bold; text-align: center;">
+ Pembersihan Die
+ </div>
+
+ <!-- Activities -->
+ <table>
+ <tr class="section-header text-center">
+ <td>No.</td>
+ <td>Aktivitas</td>
+ <td>Standar</td>
+ <td>Eva</td>
+ <td>No. SOP</td>
+ <td>No.</td>
+ <td>Aktivitas</td>
+ <td>Standar</td>
+ <td>Eva</td>
+ <td>No. SOP</td>
+ <td>Remark</td>
+ </tr>
+ <tr>
+ <td class="text-center">1</td>
+ <td>Die Washing (Cuci Die)</td>
+ <td>Bersih dari kotoran</td>
+ <td></td>
+ <td class="text-center">37</td>
+ <td class="text-center">2</td>
+ <td>Buang air cooling</td>
+ <td>Drain bersih</td>
+ <td></td>
+ <td class="text-center">37</td>
+ <td></td>
+ </tr>
+ </table>
+
+ <!-- Item Cek Die -->
+ <div class="text-bold" style="margin-bottom: 5px; font-weight: bold; text-align: center;">Item Cek Die</div>
+ <table>
+ <tr class="section-header text-center">
+ <td width="30">No.</td>
+ <td width="150">Item Cek</td>
+ <td width="200">Standar</td>
+ <td width="80">Interval Cek</td>
+ <td width="40">Eva</td>
+ <td width="100">Masalah</td>
+ <td width="100">Penanggulangan</td>
+ <td width="60">Result</td>
+ <td width="60">No. SOP<br>(Check Point)</td>
+ </tr>
+ <!-- Item 1 -->
+ <tr>
+ <td class="text-center">1</td>
+ <td>Gate</td>
+ <td>Tidak gompal / Aus / Galling<br>Profile bagus (Radius & Permukaan).</td>
+ <td class="text-center">Setiap PM</td>
+ <td></td>
+ <td></td>
+ <td></td>
+ <td></td>
+ <td class="text-center">19</td>
+ </tr>
+ <!-- Item 2 -->
+ <tr>
+ <td class="text-center">2</td>
+ <td>Sprue Bush</td>
+ <td>Bersih, Tidak gompal / Oblak / Scrat (Block Gage). Tidak Galing, Clearance bagus & Permukaan rata.</td>
+ <td class="text-center">Setiap PM</td>
+ <td></td>
+ <td></td>
+ <td></td>
+ <td></td>
+ <td class="text-center">13</td>
+ </tr>
+ <!-- Item 3 -->
+ <tr>
+ <td class="text-center">3</td>
+ <td>Sprue Core</td>
+ <td>Tidak galing / Tidak bocor.</td>
+ <td class="text-center">Setiap PM</td>
+ <td></td>
+ <td></td>
+ <td></td>
+ <td></td>
+ <td class="text-center">32</td>
+ </tr>
+ <!-- Item 4 -->
+ <tr>
+ <td class="text-center">4</td>
+ <td>MD Cavity<br>(Core Pin, Insert)</td>
+ <td>Bersih, Tidak Crack, Galing, Scratch, Bengkok.<br>Tidak Gompal, Profile & core pin bagus.</td>
+ <td class="text-center">Setiap PM</td>
+ <td></td>
+ <td></td>
+ <td></td>
+ <td></td>
+ <td class="text-center">33</td>
+ </tr>
+ <!-- Item 5 -->
+ <tr>
+ <td class="text-center">5</td>
+ <td>FD Cavity<br>(Insert, Core Pin)</td>
+ <td>Bersih, Tidak Crack, Galing, Scratch, Bengkok.<br>Tidak Gompal, Profile & core pin bagus.</td>
+ <td class="text-center">Setiap PM</td>
+ <td></td>
+ <td></td>
+ <td></td>
+ <td></td>
+ <td class="text-center">9</td>
+ </tr>
+ <!-- Item 6 -->
+ <tr>
+ <td class="text-center">6</td>
+ <td>Slide Core</td>
+ <td>Tidak Gompal / Aus / Scrat / Galling, Gerakan Lancar, Profile bagus (Radius & Permukaan).</td>
+ <td class="text-center">Setiap PM</td>
+ <td></td>
+ <td></td>
+ <td></td>
+ <td></td>
+ <td class="text-center">10</td>
+ </tr>
+ <!-- Item 7 -->
+ <tr>
+ <td class="text-center">7</td>
+ <td>Spring Slide Core</td>
+ <td>Tidak kendor & jarak pitch nya masih bagus, Tidak patah.</td>
+ <td class="text-center">Setiap PM</td>
+ <td></td>
+ <td></td>
+ <td></td>
+ <td></td>
+ <td class="text-center">15</td>
+ </tr>
+ <!-- Item 8 -->
+ <tr>
+ <td class="text-center">8</td>
+ <td>Chillvent (FD, MD)</td>
+ <td>Utuh, Tidak Gompal atau penyok<br>(Max Gompal > 3 Rib).</td>
+ <td class="text-center">Setiap PM</td>
+ <td></td>
+ <td></td>
+ <td></td>
+ <td></td>
+ <td class="text-center">20</td>
+ </tr>
+ <!-- Item 9 -->
+ <tr>
+ <td class="text-center">9</td>
+ <td>Squeeze (SQ Pin & sleeve, Coupler)</td>
+ <td>Tidak seret, Scratch, Tidak bocor & Sliding bagus.</td>
+ <td class="text-center">Setiap PM</td>
+ <td></td>
+ <td></td>
+ <td></td>
+ <td></td>
+ <td class="text-center">17</td>
+ </tr>
+ <!-- Item 10 -->
+ <tr>
+ <td class="text-center">10</td>
+ <td>Guide Post</td>
+ <td>Tidak retak, Permukaan sejajar dengan base Die.</td>
+ <td class="text-center">Setiap PM</td>
+ <td></td>
+ <td></td>
+ <td></td>
+ <td></td>
+ <td class="text-center">2</td>
+ </tr>
+ <!-- Item 11 -->
+ <tr>
+ <td class="text-center">11</td>
+ <td>Angular Pin</td>
+ <td>Tidak retak / Patah</td>
+ <td class="text-center">Setiap PM</td>
+ <td></td>
+ <td></td>
+ <td></td>
+ <td></td>
+ <td class="text-center">2</td>
+ </tr>
+ <!-- Item 12 -->
+ <tr>
+ <td class="text-center">12</td>
+ <td>Return Pin</td>
+ <td>Tidak pecah, Tidak karat.</td>
+ <td class="text-center">Setiap PM</td>
+ <td></td>
+ <td></td>
+ <td></td>
+ <td></td>
+ <td class="text-center">1</td>
+ </tr>
+ <!-- Item 13 -->
+ <tr>
+ <td class="text-center">13</td>
+ <td>Ejector Pin</td>
+ <td>Panjang sama, Tidak bengkok, Lurus / rata, Tidak karat.</td>
+ <td class="text-center">Setiap PM</td>
+ <td></td>
+ <td></td>
+ <td></td>
+ <td></td>
+ <td class="text-center">21</td>
+ </tr>
+ <!-- Item 14 -->
+ <tr>
+ <td class="text-center">14</td>
+ <td>Ejector Plate</td>
+ <td>Tidak melengkung, Lubang tidak oval.</td>
+ <td class="text-center">Setiap PM</td>
+ <td></td>
+ <td></td>
+ <td></td>
+ <td></td>
+ <td class="text-center">26</td>
+ </tr>
+ <!-- Item 15 -->
+ <tr>
+ <td class="text-center">15</td>
+ <td>Manifold</td>
+ <td>Tidak pecah (Aliran air lancar, Tidak karat)</td>
+ <td class="text-center">Setiap PM</td>
+ <td></td>
+ <td></td>
+ <td></td>
+ <td></td>
+ <td class="text-center">30</td>
+ </tr>
+ <!-- Item 16 -->
+ <tr>
+ <td class="text-center">16</td>
+ <td>Cooling Pipe (FD-MD)</td>
+ <td>Tidak gepeng, Tidak patah / Bocor, Tidak mampet. Aliran air lancar.</td>
+ <td class="text-center">Setiap PM</td>
+ <td></td>
+ <td></td>
+ <td></td>
+ <td></td>
+ <td class="text-center">12</td>
+ </tr>
+ <!-- Item 17 -->
+ <tr>
+ <td class="text-center">17</td>
+ <td>Cooling Hose<br>(Hitam / Hijau)</td>
+ <td>Tidak Robek / Bocor. Aliran air lancar.<br>Hose hitam Air in / Hose hijau Air Out.</td>
+ <td class="text-center">Setiap PM</td>
+ <td></td>
+ <td></td>
+ <td></td>
+ <td></td>
+ <td class="text-center">31</td>
+ </tr>
+ <!-- Item 18 -->
+ <tr>
+ <td class="text-center">18</td>
+ <td>Oring</td>
+ <td>Tidak putus / Tidak gepeng.</td>
+ <td class="text-center">Setiap PM</td>
+ <td></td>
+ <td></td>
+ <td></td>
+ <td></td>
+ <td class="text-center">17</td>
+ </tr>
+ <!-- Item 19 -->
+ <tr>
+ <td class="text-center">19</td>
+ <td>Vaccum</td>
+ <td>Tidak mampet.</td>
+ <td class="text-center">Setiap PM</td>
+ <td></td>
+ <td></td>
+ <td></td>
+ <td></td>
+ <td class="text-center">35</td>
+ </tr>
+ <!-- Item 20 -->
+ <tr>
+ <td class="text-center">20</td>
+ <td>Baut</td>
+ <td>Baut hexagon tidak aus, Tidak patah.</td>
+ <td class="text-center">Setiap PM</td>
+ <td></td>
+ <td></td>
+ <td></td>
+ <td></td>
+ <td class="text-center">14</td>
+ </tr>
+ <!-- Item 21 -->
+ <tr>
+ <td class="text-center">21</td>
+ <td>Baut Stopper</td>
+ <td>Tidak bengkok, Hexagon tidak aus.</td>
+ <td class="text-center">Setiap PM</td>
+ <td></td>
+ <td></td>
+ <td></td>
+ <td></td>
+ <td class="text-center">27</td>
+ </tr>
+ <!-- Item 22 -->
+ <tr>
+ <td class="text-center">22</td>
+ <td>Flatness</td>
+ <td>Parting Line Upper/Lower nempel (Komyotan) Lakukan Die Spotting (Kerataan 0,02 ~ 0,04).</td>
+ <td class="text-center">Setiap PM</td>
+ <td></td>
+ <td></td>
+ <td></td>
+ <td></td>
+ <td class="text-center">9</td>
+ </tr>
+ </table>
+
+ <!-- Keterangan & Parts Over Lifetime -->
+ <table style="border: none;">
+ <tr>
+ <!-- Keterangan -->
+ <td style="border: none; vertical-align: top;" width="30%">
+ <table>
+ <tr>
+ <td colspan="4" class="text-bold text-center section-header">Keterangan Pengisian (Eva & Result)</td>
+ </tr>
+ <tr>
+ <td class="text-center">Inputed</td>
+ <td class="text-center">O</td>
+ <td class="text-center">X</td>
+ <td class="text-center"></td>
+ </tr>
+ <tr>
+ <td></td>
+ <td class="text-center">OK</td>
+ <td class="text-center">NO</td>
+ <td class="text-center">Admin</td>
+ </tr>
+ </table>
+ </td>
+ 
+ <!-- Parts Over Lifetime -->
+ <td style="border: none; vertical-align: top; padding-left: 10px;" width="70%">
+ <div class="text-bold">Informasi Tambahan: Parts Over Lifetime</div>
+ <table>
+ <thead class="section-header text-center">
+ <tr>
+ <td>No.</td>
+ <td>Tool ID</td>
+ <td>Std T.Life</td>
+ <td>End Cycle</td>
+ <td>Tukar?</td>
+ <td>Remark</td>
+ </tr>
+ </thead>
+ <tbody id="parts_table_body">
+ <!-- Populated by JS -->
+ <tr style="height: 20px;"><td colspan="6"></td></tr>
+ <tr style="height: 20px;"><td colspan="6"></td></tr>
+ <tr style="height: 20px;"><td colspan="6"></td></tr>
+ <tr style="height: 20px;"><td colspan="6"></td></tr>
+ <tr style="height: 20px;"><td colspan="6"></td></tr>
+ </tbody>
+ </table>
+ </td>
+ </tr>
+ </table>
+
+ <!-- Check Kerataan & Welding/Coating -->
+ <div class="text-bold">Cek Kerataan Die (Flatness Check)</div>
+ <table>
+ <tr class="section-header text-center">
+ <td>No.</td>
+ <td>Aktivitas</td>
+ <td>Standar</td>
+ <td>No. SOP</td>
+ <td>Analisa Penyebab</td>
+ <td>Remark</td>
+ </tr>
+ <tr>
+ <td></td>
+ <td>DIE SPOTTING</td>
+ <td>GAP 0,04MM (ALUMINIUM PLAT)</td>
+ <td class="text-center">34</td>
+ <td></td>
+ <td></td>
+ </tr>
+ <tr>
+ <td></td>
+ <td>WELDING</td>
+ <td>Tidak Keropos</td>
+ <td class="text-center">-</td>
+ <td></td>
+ <td></td>
+ </tr>
+ <tr>
+ <td></td>
+ <td>SPARK DEPO (COATING)</td>
+ <td>Max. Thickness 0,02mm</td>
+ <td class="text-center">42</td>
+ <td></td>
+ <td></td>
+ </tr>
+ </table>
+
+ <!-- Analisa Die BM -->
+ <div class="text-bold">Analisa Die BM</div>
+ <table>
+ <tr class="section-header text-center">
+ <td>No.</td>
+ <td>Masalah</td>
+ <td>Posisi</td>
+ <td>Analisa Penyebab</td>
+ <td>Perbaikan</td>
+ </tr>
+ <tr style="height: 25px;"><td></td><td></td><td></td><td></td><td></td></tr>
+ <tr style="height: 25px;"><td></td><td></td><td></td><td></td><td></td></tr>
+ <tr style="height: 25px;"><td></td><td></td><td></td><td></td><td></td></tr>
+ <tr style="height: 25px;"><td></td><td></td><td></td><td></td><td></td></tr>
+ <tr style="height: 25px;"><td></td><td></td><td></td><td></td><td></td></tr>
+ </table>
+
+ <!-- Footer -->
+ <table style="border: none;">
+ <tr>
+ <td class="no-border">
+ Kode & Jumlah Part yang diganti:<br>
+ Notes:<br><br>
+ X = Laporkan masalah kepada Leader / Foreman
+ </td>
+ <td class="no-border" style="text-align: right; vertical-align: bottom;">
+ Revisi:<br><br><br>
+ 05/01/2017<br>
+ by Prasetyo U.
+ </td>
+ </tr>
+ </table>
+ </div>
+ <script>
+ function updateDieInfo(select) {
+ var option = select.options[select.selectedIndex];
+ var toolsetName = option.text.trim(); // Tipe Die = Toolset Name
+ var drawing = select.value || '';      // Nomor Die = Drawing No
+ var tsetId = option.getAttribute('data-id');
+ 
+ document.getElementById('tipe_die').innerText = toolsetName;
+ document.getElementById('nomor_die').innerText = drawing;
+
+ var tbody = document.getElementById('parts_table_body');
+ 
+ if (tsetId) {
+ tbody.innerHTML = '<tr><td colspan="6" class="text-center">Loading...</td></tr>';
+ 
+ var formData = new FormData();
+ formData.append('tset_id', tsetId);
+ 
+ fetch('<?= base_url("Reports/get_parts_over_lifetime") ?>', {
+ method: 'POST',
+ body: formData
+ })
+ .then(response => {
+ if (!response.ok) {
+ throw new Error('Network response was not ok: ' + response.statusText);
+ }
+ return response.text().then(text => {
+ try {
+ return JSON.parse(text);
+ } catch (e) {
+ throw new Error('Invalid JSON: ' + text);
+ }
+ });
+ })
+ .then(data => {
+ tbody.innerHTML = '';
+ if (data && data.length > 0) {
+ data.forEach((item, index) => {
+ var row = `<tr>
+ <td class="text-center">${index + 1}</td>
+ <td class="text-center">${item.TOOL_ID}</td>
+ <td class="text-center">${item.STD_LIFE}</td>
+ <td class="text-center">${item.END_CYCLE}</td>
+ <td class="text-center">¨</td>
+ <td></td>
+ </tr>`;
+ tbody.innerHTML += row;
+ });
+ } else {
+ tbody.innerHTML = '<tr><td colspan="6" class="text-center">No parts found</td></tr>';
+ }
+ 
+ // Fill remaining rows to maintain height if needed
+ while (tbody.children.length < 5) {
+ tbody.innerHTML += '<tr style="height: 20px;"><td colspan="6"></td></tr>';
+ }
+ })
+ .catch(error => {
+ console.error('Error fetching parts:', error);
+ tbody.innerHTML = '<tr><td colspan="6" class="text-center text-danger">Error: ' + error.message + '</td></tr>';
+ });
+ } else {
+ tbody.innerHTML = '';
+ // Default empty rows
+ for(let i=0; i<5; i++) tbody.innerHTML += '<tr style="height: 20px;"><td colspan="6"></td></tr>';
+ }
+ }
+ </script>
+</body>
+</html>

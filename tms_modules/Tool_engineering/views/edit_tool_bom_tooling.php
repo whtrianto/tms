@@ -214,7 +214,26 @@
                                         <tr>
                                             <td><?= $no++; ?></td>
                                             <td><?= htmlspecialchars($row['TD_ID']); ?></td>
-                                            <td><?= htmlspecialchars(isset($row['TD_DRAWING_NO']) ? $row['TD_DRAWING_NO'] : ''); ?></td>
+                                            <td>
+                                                <?php 
+                                                $td_id = isset($row['TD_ID']) ? (int)$row['TD_ID'] : 0;
+                                                $td_rev = isset($row['TD_REVISION']) ? (int)$row['TD_REVISION'] : 0;
+                                                $drawing_file = isset($row['TD_DRAWING_FILE']) && !empty($row['TD_DRAWING_FILE']) ? $row['TD_DRAWING_FILE'] : '';
+                                                
+                                                if (!empty($drawing_file) && $td_id > 0):
+                                                    $download_url = base_url('Tool_engineering/tool_draw_engin/serve_file_by_mlr?mlr_id=' . $td_id . '&mlr_rev=' . $td_rev . '&type=drawing');
+                                                    $drawing_no = htmlspecialchars(isset($row['TD_DRAWING_NO']) ? $row['TD_DRAWING_NO'] : '', ENT_QUOTES, 'UTF-8');
+                                                ?>
+                                                    <a href="<?= $download_url; ?>" download="<?= $drawing_no; ?>" class="text-primary" style="text-decoration: underline; cursor: pointer; display: inline-block; padding: 2px 6px; border: 1px solid #ccc; background: #fff; border-radius: 4px;"
+                                                        onmouseover="this.style.background='#f0f0f0';"
+                                                        onmouseout="this.style.background='#fff';"
+                                                        title="Klik untuk download file drawing">
+                                                        <i class="fa fa-download"></i> <?= $drawing_no; ?>
+                                                    </a>
+                                                <?php else: ?>
+                                                    <?= htmlspecialchars(isset($row['TD_DRAWING_NO']) ? $row['TD_DRAWING_NO'] : ''); ?>
+                                                <?php endif; ?>
+                                            </td>
                                             <td><?= htmlspecialchars(isset($row['TD_DRAWING_NO']) ? $row['TD_DRAWING_NO'] : ''); ?></td>
                                             <td><?= htmlspecialchars(isset($row['TD_TOOL_NAME']) ? $row['TD_TOOL_NAME'] : ''); ?></td>
                                             <td><?= htmlspecialchars(isset($row['TD_REVISION']) ? $row['TD_REVISION'] : 0); ?></td>

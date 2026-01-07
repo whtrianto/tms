@@ -231,14 +231,9 @@
                                         <label>Condition After Repair</label>
                                         <select name="WO_CONDITION" class="form-control">
                                             <?php 
-                                            $current_condition = '';
-                                            if (isset($work_order['WO_CONDITION'])) {
-                                                if ($work_order['WO_CONDITION'] === null || $work_order['WO_CONDITION'] === '') {
-                                                    $current_condition = '';
-                                                } else {
-                                                    $current_condition = (int)$work_order['WO_CONDITION'];
-                                                }
-                                            }
+                                            // Get current condition value from database
+                                            $current_wo_condition = isset($work_order['WO_CONDITION']) ? $work_order['WO_CONDITION'] : null;
+                                            
                                             $condition_map = array(
                                                 '' => '-- Select Condition --',
                                                 '0' => 'None',
@@ -247,15 +242,19 @@
                                                 '3' => 'N G Not Repairable',
                                                 '4' => 'O K Repaired'
                                             );
+                                            
                                             foreach ($condition_map as $val => $label): 
-                                                $selected = '';
+                                                $selected = false;
+                                                
                                                 if ($val === '') {
-                                                    $selected = ($current_condition === '' || $current_condition === null) ? 'selected' : '';
+                                                    // Empty option selected if current value is null or empty
+                                                    $selected = ($current_wo_condition === null || $current_wo_condition === '' || $current_wo_condition === false);
                                                 } else {
-                                                    $selected = ((string)$current_condition === $val) ? 'selected' : '';
+                                                    // Compare as integers for numeric values (handles 0, 1, 2, 3, 4)
+                                                    $selected = (isset($current_wo_condition) && (int)$current_wo_condition === (int)$val);
                                                 }
                                             ?>
-                                                <option value="<?= $val === '' ? '' : $val; ?>" <?= $selected; ?>>
+                                                <option value="<?= $val === '' ? '' : $val; ?>" <?= $selected ? 'selected="selected"' : ''; ?>>
                                                     <?= htmlspecialchars($label, ENT_QUOTES, 'UTF-8'); ?>
                                                 </option>
                                             <?php endforeach; ?>

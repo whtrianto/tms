@@ -71,15 +71,19 @@ class Tool_scrap extends MY_Controller
                 $id = (int)$row['SCRAP_ID'];
                 $scrap_no = htmlspecialchars(isset($row['SCRAP_NO']) ? $row['SCRAP_NO'] : '', ENT_QUOTES, 'UTF-8');
                 $report_url = base_url('Tool_inventory/tool_scrap/report_page/' . $id);
+                $detail_url = base_url('Tool_inventory/tool_scrap/detail_page/' . $id);
                 
                 $action_html = '<div class="action-buttons">' .
                     '<a href="' . $report_url . '" class="btn btn-info btn-sm" title="Report">Report</a>' .
                     '<button class="btn btn-danger btn-sm btn-delete" data-id="' . $id . '" data-scrap-no="' . $scrap_no . '">Del</button> ' .
                     '</div>';
 
+                // Make ID clickable
+                $id_html = '<a href="' . $detail_url . '" class="text-primary" style="text-decoration: underline; cursor: pointer;">' . $id . '</a>';
+
                 $formatted_data[] = array(
                     $action_html,
-                    $id,
+                    $id_html,
                     htmlspecialchars(isset($row['ISSUE_DATE']) ? $row['ISSUE_DATE'] : '', ENT_QUOTES, 'UTF-8'),
                     htmlspecialchars(isset($row['ACC_SCRAP_DATE']) ? $row['ACC_SCRAP_DATE'] : '', ENT_QUOTES, 'UTF-8'),
                     htmlspecialchars(isset($row['TOOL_ID']) ? $row['TOOL_ID'] : '', ENT_QUOTES, 'UTF-8'),
@@ -152,6 +156,122 @@ class Tool_scrap extends MY_Controller
     }
 
     /**
+     * Submit data: ADD Tool Scrap (AJAX)
+     */
+    public function submit_data()
+    {
+        if (ob_get_level()) ob_clean();
+        
+        $this->output->set_content_type('application/json');
+        $result = array('success' => false, 'message' => '', 'data' => array());
+        
+        try {
+            $action = strtoupper($this->input->post('action', TRUE));
+
+            if ($action !== 'ADD') {
+                $result['message'] = 'Action tidak valid.';
+                echo json_encode($result);
+                return;
+            }
+
+            // Get required fields
+            $issue_date = trim($this->input->post('issue_date', TRUE));
+            $requested_by = (int)$this->input->post('requested_by', TRUE);
+            $tool_id = trim($this->input->post('tool_id', TRUE));
+            $acc_scrap_date = trim($this->input->post('acc_scrap_date', TRUE));
+            $scrap_no = trim($this->input->post('scrap_no', TRUE));
+
+            // Validation
+            if (empty($issue_date)) {
+                $result['message'] = 'Issue Date harus diisi.';
+                echo json_encode($result);
+                return;
+            }
+
+            if ($requested_by <= 0) {
+                $result['message'] = 'Requested By harus dipilih.';
+                echo json_encode($result);
+                return;
+            }
+
+            if (empty($tool_id)) {
+                $result['message'] = 'Tool ID harus dipilih.';
+                echo json_encode($result);
+                return;
+            }
+
+            if (empty($acc_scrap_date)) {
+                $result['message'] = 'Accident/ Scrap Date harus diisi.';
+                echo json_encode($result);
+                return;
+            }
+
+            // Get optional fields
+            $inv_id = (int)$this->input->post('inv_id', TRUE);
+            $machine_id = (int)$this->input->post('machine_id', TRUE);
+            $operator = (int)$this->input->post('operator', TRUE);
+            $reason_id = (int)$this->input->post('reason_id', TRUE);
+            $cause_id = (int)$this->input->post('cause_id', TRUE);
+            $counter_measure = trim($this->input->post('counter_measure', TRUE));
+            $cause_remark = trim($this->input->post('cause_remark', TRUE));
+            $investigated_by = (int)$this->input->post('investigated_by', TRUE);
+            $suggestion = trim($this->input->post('suggestion', TRUE));
+            $to_order = trim($this->input->post('to_order', TRUE));
+            $approve_by = (int)$this->input->post('approve_by', TRUE);
+            $approve_date = trim($this->input->post('approve_date', TRUE));
+            $std_qty_this = (int)$this->input->post('std_qty_this', TRUE);
+            $not_received_qty_this = (int)$this->input->post('not_received_qty_this', TRUE);
+            $curr_qty_this = (int)$this->input->post('curr_qty_this', TRUE);
+
+            // If inv_id is not provided, try to get it from tool_id
+            if ($inv_id <= 0 && !empty($tool_id)) {
+                $tool_details = $this->tool_scrap->get_tool_inventory_details_by_tool_id($tool_id);
+                if ($tool_details && isset($tool_details['INV_ID'])) {
+                    $inv_id = (int)$tool_details['INV_ID'];
+                }
+            }
+
+            // Insert data
+            $ok = $this->tool_scrap->insert_data(
+                $scrap_no,
+                $issue_date,
+                $acc_scrap_date,
+                $inv_id,
+                $requested_by,
+                $machine_id,
+                $operator,
+                $reason_id,
+                $cause_id,
+                $counter_measure,
+                $cause_remark,
+                $investigated_by,
+                $suggestion,
+                $to_order,
+                $approve_by,
+                $approve_date,
+                $std_qty_this,
+                $not_received_qty_this,
+                $curr_qty_this
+            );
+
+            if ($ok) {
+                $result['success'] = true;
+                $result['message'] = $this->tool_scrap->messages ?: 'Tool Scrap berhasil ditambahkan.';
+            } else {
+                $result['success'] = false;
+                $result['message'] = $this->tool_scrap->messages ?: 'Gagal menyimpan Tool Scrap.';
+            }
+            
+            echo json_encode($result);
+            
+        } catch (Exception $e) {
+            log_message('error', '[Tool_scrap::submit_data] Exception: ' . $e->getMessage());
+            $result['message'] = 'Terjadi kesalahan: ' . $e->getMessage();
+            echo json_encode($result);
+        }
+    }
+
+    /**
      * Get tool inventory details by Tool ID (AJAX)
      */
     public function get_tool_inventory_details()
@@ -182,6 +302,83 @@ class Tool_scrap extends MY_Controller
             log_message('error', '[Tool_scrap::get_tool_inventory_details] Exception: ' . $e->getMessage());
             echo json_encode(array('success' => false, 'message' => 'Error: ' . $e->getMessage()));
         }
+    }
+
+    /**
+     * Detail page
+     */
+    public function detail_page($id = 0)
+    {
+        $id = (int)$id;
+        if ($id <= 0) {
+            show_404();
+            return;
+        }
+
+        $row = $this->tool_scrap->get_by_id($id);
+        if (!$row) {
+            show_404();
+            return;
+        }
+
+        // Map data to view format
+        $scrap = array(
+            'SCRAP_ID' => isset($row['SCRAP_ID']) ? (int)$row['SCRAP_ID'] : 0,
+            'SCRAP_NO' => isset($row['SCRAP_NO']) ? $row['SCRAP_NO'] : '',
+            'SCRAP_DATE' => isset($row['SCRAP_DATE']) ? $row['SCRAP_DATE'] : '',
+            'SCRAP_ACC_DATE' => isset($row['SCRAP_ACC_DATE']) ? $row['SCRAP_ACC_DATE'] : '',
+            'SCRAP_INV_ID' => isset($row['SCRAP_INV_ID']) ? (int)$row['SCRAP_INV_ID'] : 0,
+            'INV_TOOL_ID' => isset($row['INV_TOOL_ID']) ? $row['INV_TOOL_ID'] : '',
+            'TOOL_DRAWING_NO' => isset($row['ML_TOOL_DRAW_NO']) ? $row['ML_TOOL_DRAW_NO'] : (isset($row['TOOL_DRAWING_NO']) ? $row['TOOL_DRAWING_NO'] : ''),
+            'TOOL_NAME' => isset($row['TOOL_NAME']) ? $row['TOOL_NAME'] : '',
+            'ML_TOOL_DRAW_NO' => isset($row['ML_TOOL_DRAW_NO']) ? $row['ML_TOOL_DRAW_NO'] : '',
+            'SCRAP_REQUESTED_BY' => isset($row['SCRAP_REQUESTED_BY']) ? (int)$row['SCRAP_REQUESTED_BY'] : 0,
+            'REQUESTED_BY_NAME' => isset($row['REQUESTED_BY_NAME']) ? $row['REQUESTED_BY_NAME'] : '',
+            'SCRAP_MAC_ID' => isset($row['SCRAP_MAC_ID']) ? (int)$row['SCRAP_MAC_ID'] : 0,
+            'MACHINE' => isset($row['MACHINE']) ? $row['MACHINE'] : '',
+            'SCRAP_OPERATOR' => isset($row['SCRAP_OPERATOR']) ? (int)$row['SCRAP_OPERATOR'] : 0,
+            'OPERATOR_NAME' => isset($row['OPERATOR_NAME']) ? $row['OPERATOR_NAME'] : '',
+            'SCRAP_STATUS' => isset($row['SCRAP_STATUS']) ? (int)$row['SCRAP_STATUS'] : 0,
+            'SCRAP_REASON_ID' => isset($row['SCRAP_REASON_ID']) ? (int)$row['SCRAP_REASON_ID'] : 0,
+            'REASON' => isset($row['REASON']) ? $row['REASON'] : '',
+            'SCRAP_CI_ID' => isset($row['SCRAP_CI_ID']) ? (int)$row['SCRAP_CI_ID'] : 0,
+            'CAUSE_NAME' => isset($row['CAUSE_NAME']) ? $row['CAUSE_NAME'] : '',
+            'SCRAP_COUNTER_MEASURE' => isset($row['SCRAP_COUNTER_MEASURE']) ? $row['SCRAP_COUNTER_MEASURE'] : '',
+            'SCRAP_CAUSE_REMARK' => isset($row['SCRAP_CAUSE_REMARK']) ? $row['SCRAP_CAUSE_REMARK'] : '',
+            'SCRAP_INVESTIGATED_BY' => isset($row['SCRAP_INVESTIGATED_BY']) ? (int)$row['SCRAP_INVESTIGATED_BY'] : 0,
+            'INVESTIGATED_BY_NAME' => isset($row['INVESTIGATED_BY_NAME']) ? $row['INVESTIGATED_BY_NAME'] : '',
+            'SCRAP_DISPOSITION' => isset($row['SCRAP_DISPOSITION']) ? $row['SCRAP_DISPOSITION'] : '',
+            'SCRAP_TO_ORDER' => isset($row['SCRAP_TO_ORDER']) ? (int)$row['SCRAP_TO_ORDER'] : 0,
+            'SCRAP_APPROVED_BY' => isset($row['SCRAP_APPROVED_BY']) ? (int)$row['SCRAP_APPROVED_BY'] : 0,
+            'APPROVED_BY_NAME' => isset($row['APPROVED_BY_NAME']) ? $row['APPROVED_BY_NAME'] : '',
+            'SCRAP_APPROVED_DATE' => isset($row['SCRAP_APPROVED_DATE']) ? $row['SCRAP_APPROVED_DATE'] : '',
+            'SCRAP_STD_QTY_THIS' => isset($row['SCRAP_STD_QTY_THIS']) ? (int)$row['SCRAP_STD_QTY_THIS'] : 0,
+            'SCRAP_NRCV_QTY_THIS' => isset($row['SCRAP_NRCV_QTY_THIS']) ? (int)$row['SCRAP_NRCV_QTY_THIS'] : 0,
+            'SCRAP_CURRENT_QTY_THIS' => isset($row['SCRAP_CURRENT_QTY_THIS']) ? (int)$row['SCRAP_CURRENT_QTY_THIS'] : 0,
+            'TOOL_PRICE' => isset($row['TOOL_PRICE']) ? $row['TOOL_PRICE'] : 0,
+            'PCS_PRODUCED' => isset($row['PCS_PRODUCED']) ? (int)$row['PCS_PRODUCED'] : 0,
+            'ML_TOOL_DRAW_NO' => isset($row['ML_TOOL_DRAW_NO']) ? $row['ML_TOOL_DRAW_NO'] : ''
+        );
+
+        // Get tool inventory details for additional info
+        $tool_details = null;
+        if (!empty($scrap['INV_TOOL_ID'])) {
+            $tool_details = $this->tool_scrap->get_tool_inventory_details_by_tool_id($scrap['INV_TOOL_ID']);
+        }
+
+        // Get additional tool info from row if available
+        if ($tool_details) {
+            $scrap['MATERIAL'] = isset($tool_details['MATERIAL']) ? $tool_details['MATERIAL'] : '';
+            $scrap['RQ_NO'] = isset($tool_details['RQ_NO']) ? $tool_details['RQ_NO'] : '';
+            $scrap['TOOL_ASSIGNMENT_NO'] = isset($tool_details['TOOL_ASSIGNMENT_NO']) ? $tool_details['TOOL_ASSIGNMENT_NO'] : '';
+            $scrap['REVISION'] = isset($tool_details['REVISION']) ? $tool_details['REVISION'] : '0';
+        }
+
+        $data = array();
+        $data['scrap'] = $scrap;
+        $data['tool_details'] = $tool_details;
+        
+        $this->view('detail_tool_scrap', $data, FALSE);
     }
 
     /**

@@ -621,4 +621,114 @@ class M_tool_scrap extends CI_Model
         }
         return 'SCRAP-000001';
     }
+
+    /**
+     * Insert Tool Scrap data
+     * Source: TMS_TOOL_SCRAP
+     */
+    public function insert_data($scrap_no, $issue_date, $acc_scrap_date, $inv_id, $requested_by, $machine_id, $operator, $reason_id, $cause_id, $counter_measure, $cause_remark, $investigated_by, $suggestion, $to_order, $approve_by, $approve_date, $std_qty_this, $not_received_qty_this, $curr_qty_this)
+    {
+        try {
+            // Get next SCRAP_ID
+            $max_id_sql = "SELECT ISNULL(MAX(SCRAP_ID), 0) + 1 AS NEXT_ID FROM {$this->t('TMS_TOOL_SCRAP')}";
+            $max_q = $this->db_tms->query($max_id_sql);
+            $next_id = 1;
+            if ($max_q && $max_q->num_rows() > 0) {
+                $max_row = $max_q->row_array();
+                $next_id = isset($max_row['NEXT_ID']) ? (int)$max_row['NEXT_ID'] : 1;
+            }
+
+            // Generate SCRAP_NO if not provided
+            if (empty($scrap_no)) {
+                $scrap_no = 'SCRAP-' . str_pad($next_id, 6, '0', STR_PAD_LEFT);
+            }
+
+            // Convert dates
+            $issue_date_sql = !empty($issue_date) ? "CONVERT(DATETIME, ?, 120)" : "NULL";
+            $acc_scrap_date_sql = !empty($acc_scrap_date) ? "CONVERT(DATETIME, ?, 120)" : "NULL";
+            $approve_date_sql = !empty($approve_date) ? "CONVERT(DATETIME, ?, 120)" : "NULL";
+
+            // Build SQL
+            $sql = "INSERT INTO {$this->t('TMS_TOOL_SCRAP')} (
+                        SCRAP_NO,
+                        SCRAP_DATE,
+                        SCRAP_ACC_DATE,
+                        SCRAP_INV_ID,
+                        SCRAP_REQUESTED_BY,
+                        SCRAP_MAC_ID,
+                        SCRAP_OPERATOR,
+                        SCRAP_REASON_ID,
+                        SCRAP_CI_ID,
+                        SCRAP_COUNTER_MEASURE,
+                        SCRAP_CAUSE_REMARK,
+                        SCRAP_INVESTIGATED_BY,
+                        SCRAP_DISPOSITION,
+                        SCRAP_TO_ORDER,
+                        SCRAP_APPROVED_BY,
+                        SCRAP_APPROVED_DATE,
+                        SCRAP_STATUS,
+                        SCRAP_STD_QTY_THIS,
+                        SCRAP_NRCV_QTY_THIS,
+                        SCRAP_CURRENT_QTY_THIS
+                    ) VALUES (
+                        ?,
+                        " . $issue_date_sql . ",
+                        " . $acc_scrap_date_sql . ",
+                        ?,
+                        ?,
+                        ?,
+                        ?,
+                        ?,
+                        ?,
+                        ?,
+                        ?,
+                        ?,
+                        ?,
+                        ?,
+                        ?,
+                        " . $approve_date_sql . ",
+                        0,
+                        ?,
+                        ?,
+                        ?
+                    )";
+
+            $params = array();
+            $params[] = $scrap_no;
+            if (!empty($issue_date)) $params[] = $issue_date;
+            if (!empty($acc_scrap_date)) $params[] = $acc_scrap_date;
+            $params[] = $inv_id > 0 ? $inv_id : null;
+            $params[] = $requested_by > 0 ? $requested_by : null;
+            $params[] = $machine_id > 0 ? $machine_id : null;
+            $params[] = $operator > 0 ? $operator : null;
+            $params[] = $reason_id > 0 ? $reason_id : null;
+            $params[] = $cause_id > 0 ? $cause_id : null;
+            $params[] = !empty($counter_measure) ? $counter_measure : null;
+            $params[] = !empty($cause_remark) ? $cause_remark : null;
+            $params[] = $investigated_by > 0 ? $investigated_by : null;
+            $params[] = !empty($suggestion) ? $suggestion : null;
+            $params[] = $to_order == '1' ? 1 : 0;
+            $params[] = $approve_by > 0 ? $approve_by : null;
+            if (!empty($approve_date)) $params[] = $approve_date;
+            $params[] = $std_qty_this > 0 ? $std_qty_this : 0;
+            $params[] = $not_received_qty_this > 0 ? $not_received_qty_this : 0;
+            $params[] = $curr_qty_this > 0 ? $curr_qty_this : 0;
+
+            $ok = $this->db_tms->query($sql, $params);
+
+            if ($ok) {
+                $this->messages = 'Tool Scrap berhasil ditambahkan.';
+                return true;
+            } else {
+                $err = $this->db_tms->error();
+                $this->messages = 'Gagal menyimpan Tool Scrap. ' . (isset($err['message']) ? $err['message'] : 'Unknown error');
+                log_message('error', '[M_tool_scrap::insert_data] SQL Error: ' . (isset($err['message']) ? $err['message'] : 'Unknown'));
+                return false;
+            }
+        } catch (Exception $e) {
+            $this->messages = 'Error: ' . $e->getMessage();
+            log_message('error', '[M_tool_scrap::insert_data] Exception: ' . $e->getMessage());
+            return false;
+        }
+    }
 }

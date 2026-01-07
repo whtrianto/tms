@@ -214,5 +214,3 @@
 })(jQuery);
 </script>
 </body>
-</html>
-

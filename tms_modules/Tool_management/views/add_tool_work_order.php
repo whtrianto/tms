@@ -223,12 +223,12 @@
 
                                     <div class="form-group">
                                         <label>Target Completion Date</label>
-                                        <input type="date" name="WO_TARGET_COM_DATE" class="form-control">
+                                        <input type="date" name="WO_TARGET_COM_DATE" class="form-control" value="<?= date('Y-m-d'); ?>">
                                     </div>
 
                                     <div class="form-group">
                                         <label>Actual Completion Date</label>
-                                        <input type="date" name="WO_ACTUAL_COM_DATE" class="form-control">
+                                        <input type="date" name="WO_ACTUAL_COM_DATE" class="form-control" value="<?= date('Y-m-d'); ?>">
                                     </div>
 
                                     <div class="form-group">
@@ -513,7 +513,7 @@
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label>Date</label>
-                                <input type="date" name="EXTCOST_DATE" id="extcost_date" class="form-control">
+                                <input type="date" name="EXTCOST_DATE" id="extcost_date" class="form-control" value="<?= date('Y-m-d'); ?>">
                             </div>
 
                             <div class="form-group">
@@ -559,7 +559,7 @@
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label>GRN Date</label>
-                                <input type="date" name="EXTCOST_GRN_DATE" id="extcost_grn_date" class="form-control">
+                                <input type="date" name="EXTCOST_GRN_DATE" id="extcost_grn_date" class="form-control" value="<?= date('Y-m-d'); ?>">
                             </div>
 
                             <div class="form-group">

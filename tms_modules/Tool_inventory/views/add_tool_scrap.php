@@ -36,6 +36,16 @@
         .form-group {
             margin-bottom: 1rem;
         }
+        /* Make table rows clickable */
+        .table tbody tr {
+            cursor: pointer;
+        }
+        .table tbody tr:hover {
+            background-color: #f8f9fa !important;
+        }
+        .table tbody tr td {
+            user-select: none;
+        }
     </style>
 </head>
 <body id="page-top">
@@ -65,7 +75,7 @@
                                 <div class="col-md-6">
                                     <div class="form-group">
                                         <label class="label-required">Issue Date</label>
-                                        <input type="date" name="issue_date" id="issue_date" class="form-control" required>
+                                        <input type="date" name="issue_date" id="issue_date" class="form-control" value="<?= date('Y-m-d'); ?>" required>
                                     </div>
 
                                     <div class="form-group">
@@ -91,13 +101,13 @@
                                 <div class="col-md-6">
                                     <div class="form-group">
                                         <label class="label-required">Accident/ Scrap Date</label>
-                                        <input type="date" name="acc_scrap_date" id="acc_scrap_date" class="form-control" required>
+                                        <input type="date" name="acc_scrap_date" id="acc_scrap_date" class="form-control" value="<?= date('Y-m-d'); ?>" required>
                                     </div>
 
                                     <div class="form-group">
-                                        <label class="label-required">Machine</label>
+                                        <label>Machine</label>
                                         <div class="input-group">
-                                            <input type="text" name="machine_display" id="machine_display" class="form-control" placeholder="Click to select Machine" readonly required>
+                                            <input type="text" name="machine_display" id="machine_display" class="form-control" placeholder="Click to select Machine" readonly>
                                             <input type="hidden" name="machine_id" id="machine_id" value="">
                                             <div class="input-group-append">
                                                 <button type="button" class="btn btn-primary" id="btn-select-machine" data-toggle="modal" data-target="#modalMachine">
@@ -108,9 +118,9 @@
                                     </div>
 
                                     <div class="form-group">
-                                        <label class="label-required">Operator</label>
+                                        <label>Operator</label>
                                         <div class="input-group">
-                                            <input type="text" name="operator_display" id="operator_display" class="form-control" placeholder="Click to select User" readonly required>
+                                            <input type="text" name="operator_display" id="operator_display" class="form-control" placeholder="Click to select User" readonly>
                                             <input type="hidden" name="operator" id="operator" value="">
                                             <div class="input-group-append">
                                                 <button type="button" class="btn btn-primary" id="btn-select-operator" data-toggle="modal" data-target="#modalOperator">
@@ -245,9 +255,9 @@
                                 <!-- Left Column -->
                                 <div class="col-md-6">
                                     <div class="form-group">
-                                        <label class="label-required">Reason</label>
+                                        <label>Reason</label>
                                         <div class="input-group">
-                                            <input type="text" name="reason_display" id="reason_display" class="form-control" placeholder="Click to select Reason" readonly required>
+                                            <input type="text" name="reason_display" id="reason_display" class="form-control" placeholder="Click to select Reason" readonly>
                                             <input type="hidden" name="reason_id" id="reason_id" value="">
                                             <div class="input-group-append">
                                                 <button type="button" class="btn btn-primary" id="btn-select-reason" data-toggle="modal" data-target="#modalReason">
@@ -258,17 +268,17 @@
                                     </div>
 
                                     <div class="form-group">
-                                        <label class="label-required">Counter Measure</label>
-                                        <textarea name="counter_measure" id="counter_measure" class="form-control" rows="3" placeholder="Enter Counter Measure" required></textarea>
+                                        <label>Counter Measure</label>
+                                        <textarea name="counter_measure" id="counter_measure" class="form-control" rows="3" placeholder="Enter Counter Measure"></textarea>
                                     </div>
                                 </div>
 
                                 <!-- Right Column -->
                                 <div class="col-md-6">
                                     <div class="form-group">
-                                        <label class="label-required">Cause</label>
+                                        <label>Cause</label>
                                         <div class="input-group">
-                                            <input type="text" name="cause_display" id="cause_display" class="form-control" placeholder="Click to select Cause" readonly required>
+                                            <input type="text" name="cause_display" id="cause_display" class="form-control" placeholder="Click to select Cause" readonly>
                                             <input type="hidden" name="cause_id" id="cause_id" value="">
                                             <div class="input-group-append">
                                                 <button type="button" class="btn btn-primary" id="btn-select-cause" data-toggle="modal" data-target="#modalCause">
@@ -279,8 +289,8 @@
                                     </div>
 
                                     <div class="form-group">
-                                        <label class="label-required">Cause Remark</label>
-                                        <textarea name="cause_remark" id="cause_remark" class="form-control" rows="3" placeholder="Enter Cause Remark" required></textarea>
+                                        <label>Cause Remark</label>
+                                        <textarea name="cause_remark" id="cause_remark" class="form-control" rows="3" placeholder="Enter Cause Remark"></textarea>
                                     </div>
 
                                     <div class="form-group">
@@ -304,8 +314,8 @@
                                 <!-- Left Column -->
                                 <div class="col-md-6">
                                     <div class="form-group">
-                                        <label class="label-required">Suggestion</label>
-                                        <select name="suggestion" id="suggestion" class="form-control" required>
+                                        <label>Suggestion</label>
+                                        <select name="suggestion" id="suggestion" class="form-control">
                                             <option value="">-- Select Suggestion --</option>
                                             <option value="Scrap">Scrap</option>
                                             <option value="Can Use">Can Use</option>
@@ -316,8 +326,8 @@
                                     </div>
 
                                     <div class="form-group">
-                                        <label class="label-required">To Order</label>
-                                        <select name="to_order" id="to_order" class="form-control" required>
+                                        <label>To Order</label>
+                                        <select name="to_order" id="to_order" class="form-control">
                                             <option value="">-- Select --</option>
                                             <option value="0">No</option>
                                             <option value="1">Yes</option>
@@ -390,7 +400,10 @@
                         <tbody>
                             <?php if (isset($users_modal) && is_array($users_modal)): ?>
                                 <?php foreach ($users_modal as $u): ?>
-                                    <tr>
+                                    <tr class="row-select-user" 
+                                        data-id="<?= htmlspecialchars($u['ID'], ENT_QUOTES, 'UTF-8'); ?>"
+                                        data-user="<?= htmlspecialchars($u['USER'], ENT_QUOTES, 'UTF-8'); ?>"
+                                        data-field="requested_by">
                                         <td><?= htmlspecialchars($u['ID'], ENT_QUOTES, 'UTF-8'); ?></td>
                                         <td><?= htmlspecialchars($u['USER'], ENT_QUOTES, 'UTF-8'); ?></td>
                                         <td><?= htmlspecialchars($u['POSITION'], ENT_QUOTES, 'UTF-8'); ?></td>
@@ -440,7 +453,10 @@
                         <tbody>
                             <?php if (isset($users_modal) && is_array($users_modal)): ?>
                                 <?php foreach ($users_modal as $u): ?>
-                                    <tr>
+                                    <tr class="row-select-user" 
+                                        data-id="<?= htmlspecialchars($u['ID'], ENT_QUOTES, 'UTF-8'); ?>"
+                                        data-user="<?= htmlspecialchars($u['USER'], ENT_QUOTES, 'UTF-8'); ?>"
+                                        data-field="operator">
                                         <td><?= htmlspecialchars($u['ID'], ENT_QUOTES, 'UTF-8'); ?></td>
                                         <td><?= htmlspecialchars($u['USER'], ENT_QUOTES, 'UTF-8'); ?></td>
                                         <td><?= htmlspecialchars($u['POSITION'], ENT_QUOTES, 'UTF-8'); ?></td>
@@ -490,7 +506,9 @@
                         <tbody>
                             <?php if (isset($machines_modal) && is_array($machines_modal)): ?>
                                 <?php foreach ($machines_modal as $m): ?>
-                                    <tr>
+                                    <tr class="row-select-machine" 
+                                        data-id="<?= htmlspecialchars($m['ID'], ENT_QUOTES, 'UTF-8'); ?>"
+                                        data-name="<?= htmlspecialchars($m['MACHINE'], ENT_QUOTES, 'UTF-8'); ?>">
                                         <td><?= htmlspecialchars($m['ID'], ENT_QUOTES, 'UTF-8'); ?></td>
                                         <td><?= htmlspecialchars($m['MACHINE'], ENT_QUOTES, 'UTF-8'); ?></td>
                                         <td><?= htmlspecialchars($m['OPERATION'], ENT_QUOTES, 'UTF-8'); ?></td>
@@ -543,7 +561,9 @@
                         <tbody>
                             <?php if (isset($tool_inventory_modal) && is_array($tool_inventory_modal)): ?>
                                 <?php foreach ($tool_inventory_modal as $ti): ?>
-                                    <tr>
+                                    <tr class="row-select-tool-id" 
+                                        data-inv-id="<?= htmlspecialchars($ti['ID'], ENT_QUOTES, 'UTF-8'); ?>"
+                                        data-tool-id="<?= htmlspecialchars($ti['TOOL_ID'], ENT_QUOTES, 'UTF-8'); ?>">
                                         <td><?= htmlspecialchars($ti['ID'], ENT_QUOTES, 'UTF-8'); ?></td>
                                         <td>
                                             <a href="#" class="btn-select-tool-id-link text-primary" 
@@ -603,7 +623,9 @@
                         <tbody>
                             <?php if (isset($reasons_modal) && is_array($reasons_modal)): ?>
                                 <?php foreach ($reasons_modal as $r): ?>
-                                    <tr>
+                                    <tr class="row-select-reason" 
+                                        data-id="<?= htmlspecialchars($r['ID'], ENT_QUOTES, 'UTF-8'); ?>"
+                                        data-name="<?= htmlspecialchars($r['NAME'], ENT_QUOTES, 'UTF-8'); ?>">
                                         <td><?= htmlspecialchars($r['ID'], ENT_QUOTES, 'UTF-8'); ?></td>
                                         <td><?= htmlspecialchars($r['NAME'], ENT_QUOTES, 'UTF-8'); ?></td>
                                         <td><?= htmlspecialchars($r['DESCRIPTION'], ENT_QUOTES, 'UTF-8'); ?></td>
@@ -652,7 +674,9 @@
                         <tbody>
                             <?php if (isset($causes_modal) && is_array($causes_modal)): ?>
                                 <?php foreach ($causes_modal as $c): ?>
-                                    <tr>
+                                    <tr class="row-select-cause" 
+                                        data-id="<?= htmlspecialchars($c['ID'], ENT_QUOTES, 'UTF-8'); ?>"
+                                        data-name="<?= htmlspecialchars($c['NAME'], ENT_QUOTES, 'UTF-8'); ?>">
                                         <td><?= htmlspecialchars($c['ID'], ENT_QUOTES, 'UTF-8'); ?></td>
                                         <td><?= htmlspecialchars($c['NAME'], ENT_QUOTES, 'UTF-8'); ?></td>
                                         <td><?= htmlspecialchars($c['DESCRIPTION'], ENT_QUOTES, 'UTF-8'); ?></td>
@@ -701,7 +725,10 @@
                         <tbody>
                             <?php if (isset($users_modal) && is_array($users_modal)): ?>
                                 <?php foreach ($users_modal as $u): ?>
-                                    <tr>
+                                    <tr class="row-select-user" 
+                                        data-id="<?= htmlspecialchars($u['ID'], ENT_QUOTES, 'UTF-8'); ?>"
+                                        data-user="<?= htmlspecialchars($u['USER'], ENT_QUOTES, 'UTF-8'); ?>"
+                                        data-field="investigated_by">
                                         <td><?= htmlspecialchars($u['ID'], ENT_QUOTES, 'UTF-8'); ?></td>
                                         <td><?= htmlspecialchars($u['USER'], ENT_QUOTES, 'UTF-8'); ?></td>
                                         <td><?= htmlspecialchars($u['POSITION'], ENT_QUOTES, 'UTF-8'); ?></td>
@@ -751,7 +778,10 @@
                         <tbody>
                             <?php if (isset($users_modal) && is_array($users_modal)): ?>
                                 <?php foreach ($users_modal as $u): ?>
-                                    <tr>
+                                    <tr class="row-select-user" 
+                                        data-id="<?= htmlspecialchars($u['ID'], ENT_QUOTES, 'UTF-8'); ?>"
+                                        data-user="<?= htmlspecialchars($u['USER'], ENT_QUOTES, 'UTF-8'); ?>"
+                                        data-field="approve_by">
                                         <td><?= htmlspecialchars($u['ID'], ENT_QUOTES, 'UTF-8'); ?></td>
                                         <td><?= htmlspecialchars($u['USER'], ENT_QUOTES, 'UTF-8'); ?></td>
                                         <td><?= htmlspecialchars($u['POSITION'], ENT_QUOTES, 'UTF-8'); ?></td>
@@ -842,35 +872,72 @@
             columnDefs: [{ orderable: false, targets: [3] }]
         });
 
+        // Function to convert snake_case to PascalCase for modal ID
+        function snakeToPascal(str) {
+            return str.split('_').map(function(word) {
+                return word.charAt(0).toUpperCase() + word.slice(1);
+            }).join('');
+        }
+
         // Handle User selection (Requested By, Operator, Investigated By, Approve By)
-        $(document).on('click', '.btn-select-user', function() {
-            var userId = $(this).data('id');
-            var userName = $(this).data('user');
-            var field = $(this).data('field');
-            
+        function selectUser(userId, userName, field) {
             $('#' + field).val(userId);
             $('#' + field + '_display').val(userName);
             
-            $('#modal' + field.charAt(0).toUpperCase() + field.slice(1).replace('_', '')).modal('hide');
+            // Close modal based on field name
+            var modalId = '#modal' + snakeToPascal(field);
+            $(modalId).modal('hide');
+        }
+
+        // Handle User selection via button click
+        $(document).on('click', '.btn-select-user', function(e) {
+            e.stopPropagation(); // Prevent row click event
+            var userId = $(this).data('id');
+            var userName = $(this).data('user');
+            var field = $(this).data('field');
+            selectUser(userId, userName, field);
+        });
+
+        // Handle User selection via row click
+        $(document).on('click', '.row-select-user', function(e) {
+            // Don't trigger if clicking on button
+            if ($(e.target).closest('.btn-select-user').length) {
+                return;
+            }
+            var userId = $(this).data('id');
+            var userName = $(this).data('user');
+            var field = $(this).data('field');
+            selectUser(userId, userName, field);
         });
 
         // Handle Machine selection
-        $(document).on('click', '.btn-select-machine', function() {
-            var machineId = $(this).data('id');
-            var machineName = $(this).data('name');
-            
+        function selectMachine(machineId, machineName) {
             $('#machine_id').val(machineId);
             $('#machine_display').val(machineName);
-            
             $('#modalMachine').modal('hide');
+        }
+
+        // Handle Machine selection via button click
+        $(document).on('click', '.btn-select-machine', function(e) {
+            e.stopPropagation(); // Prevent row click event
+            var machineId = $(this).data('id');
+            var machineName = $(this).data('name');
+            selectMachine(machineId, machineName);
+        });
+
+        // Handle Machine selection via row click
+        $(document).on('click', '.row-select-machine', function(e) {
+            // Don't trigger if clicking on button
+            if ($(e.target).closest('.btn-select-machine').length) {
+                return;
+            }
+            var machineId = $(this).data('id');
+            var machineName = $(this).data('name');
+            selectMachine(machineId, machineName);
         });
 
         // Handle Tool ID selection
-        $(document).on('click', '.btn-select-tool-id, .btn-select-tool-id-link', function(e) {
-            e.preventDefault();
-            var invId = $(this).data('inv-id');
-            var toolId = $(this).data('tool-id');
-            
+        function selectToolId(invId, toolId) {
             // Trim and validate Tool ID
             if (toolId) {
                 toolId = String(toolId).trim();
@@ -895,28 +962,78 @@
             
             // Load tool inventory details to auto-fill all fields
             loadToolInventoryDetails(toolId);
+        }
+
+        // Handle Tool ID selection via button/link click
+        $(document).on('click', '.btn-select-tool-id, .btn-select-tool-id-link', function(e) {
+            e.preventDefault();
+            e.stopPropagation(); // Prevent row click event
+            var invId = $(this).data('inv-id');
+            var toolId = $(this).data('tool-id');
+            selectToolId(invId, toolId);
+        });
+
+        // Handle Tool ID selection via row click
+        $(document).on('click', '.row-select-tool-id', function(e) {
+            // Don't trigger if clicking on button or link
+            if ($(e.target).closest('.btn-select-tool-id, .btn-select-tool-id-link').length) {
+                return;
+            }
+            var invId = $(this).data('inv-id');
+            var toolId = $(this).data('tool-id');
+            selectToolId(invId, toolId);
         });
 
         // Handle Reason selection
-        $(document).on('click', '.btn-select-reason', function() {
-            var reasonId = $(this).data('id');
-            var reasonName = $(this).data('name');
-            
+        function selectReason(reasonId, reasonName) {
             $('#reason_id').val(reasonId);
             $('#reason_display').val(reasonName);
-            
             $('#modalReason').modal('hide');
+        }
+
+        // Handle Reason selection via button click
+        $(document).on('click', '.btn-select-reason', function(e) {
+            e.stopPropagation(); // Prevent row click event
+            var reasonId = $(this).data('id');
+            var reasonName = $(this).data('name');
+            selectReason(reasonId, reasonName);
+        });
+
+        // Handle Reason selection via row click
+        $(document).on('click', '.row-select-reason', function(e) {
+            // Don't trigger if clicking on button
+            if ($(e.target).closest('.btn-select-reason').length) {
+                return;
+            }
+            var reasonId = $(this).data('id');
+            var reasonName = $(this).data('name');
+            selectReason(reasonId, reasonName);
         });
 
         // Handle Cause selection
-        $(document).on('click', '.btn-select-cause', function() {
-            var causeId = $(this).data('id');
-            var causeName = $(this).data('name');
-            
+        function selectCause(causeId, causeName) {
             $('#cause_id').val(causeId);
             $('#cause_display').val(causeName);
-            
             $('#modalCause').modal('hide');
+        }
+
+        // Handle Cause selection via button click
+        $(document).on('click', '.btn-select-cause', function(e) {
+            e.stopPropagation(); // Prevent row click event
+            var causeId = $(this).data('id');
+            var causeName = $(this).data('name');
+            selectCause(causeId, causeName);
+        });
+
+        // Handle Cause selection via row click
+        $(document).on('click', '.row-select-cause', function(e) {
+            // Don't trigger if clicking on button
+            if ($(e.target).closest('.btn-select-cause').length) {
+                return;
+            }
+            var causeId = $(this).data('id');
+            var causeName = $(this).data('name');
+            selectCause(causeId, causeName);
         });
 
         // Function to load Tool Inventory details

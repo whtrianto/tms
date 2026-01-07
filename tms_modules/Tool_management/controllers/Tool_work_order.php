@@ -105,9 +105,12 @@ class Tool_work_order extends MY_Controller
                     $actual_date = substr($actual_date, 0, 10);
                 }
 
+                $detail_url = base_url('Tool_management/tool_work_order/detail_page/' . $id);
+                $id_html = '<a href="' . $detail_url . '" class="text-primary" style="text-decoration: underline;">' . $id . '</a>';
+                
                 $formatted_data[] = array(
                     $action_html,
-                    $id,
+                    $id_html,
                     htmlspecialchars($date, ENT_QUOTES, 'UTF-8'),
                     htmlspecialchars(isset($row['WO_NO']) ? $row['WO_NO'] : '', ENT_QUOTES, 'UTF-8'),
                     htmlspecialchars($wo_type_name, ENT_QUOTES, 'UTF-8'),
@@ -204,6 +207,29 @@ class Tool_work_order extends MY_Controller
         $data['users'] = $this->tool_work_order->get_users();
         $data['departments'] = $this->tool_work_order->get_departments();
         $this->view('edit_tool_work_order', $data, FALSE);
+    }
+
+    /**
+     * Detail page (read-only)
+     */
+    public function detail_page($id = 0)
+    {
+        $id = (int)$id;
+        if ($id <= 0) {
+            show_404();
+            return;
+        }
+
+        $wo = $this->tool_work_order->get_by_id($id);
+        if (!$wo) {
+            show_404();
+            return;
+        }
+
+        $data = array();
+        $data['work_order'] = $wo;
+        $data['external_costs'] = $this->tool_work_order->get_external_costs($id);
+        $this->view('detail_tool_work_order', $data, FALSE);
     }
 
     /**
